@@ -93,6 +93,11 @@ Management System{% endblock %} {% block extra_css %}
           </li>
           <li><hr class="dropdown-divider" /></li>
           <li>
+            <a class="dropdown-item" href="{% url 'dashboard:backup_management' %}"
+              ><i class="fas fa-database me-2"></i>System Backup</a
+            >
+          </li>
+          <li>
             <a class="dropdown-item" href="{% url 'users:school_settings' %}"
               ><i class="fas fa-envelope me-2"></i>Email & School Settings</a
             >
@@ -855,6 +860,23 @@ Management System{% endblock %} {% block extra_css %}
                       <i class="fas fa-file-alt"></i>
                     </div>
                     <h6>Admission Letters</h6>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <!-- System Backup Management -->
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'dashboard:backup_management' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-info text-white mx-auto mb-3">
+                      <i class="fas fa-database"></i>
+                    </div>
+                    <h6>System Backup</h6>
+                    <div class="small text-muted">Backup & restore data</div>
                   </div>
                 </div>
               </a>

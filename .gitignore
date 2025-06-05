@@ -156,6 +156,10 @@ local_settings.py
 # Backup files
 *.bak
 *.backup
+backups/
+test_backup/
+school_backup_*/
+*.zip
 
 # Log files
 *.log

@@ -1,3 +1,4 @@
+APScheduler==3.10.4
 asgiref==3.8.1
 Brotli==1.1.0
 cffi==1.17.1
@@ -5,30 +6,34 @@ chardet==5.2.0
 crispy-bootstrap4==2024.10
 cssselect2==0.8.0
 Django==5.1.6
+django-apscheduler==0.6.2
 django-crispy-forms==2.3
 django-mathfilters==1.0.0
+django-tinymce==4.1.0
 django-widget-tweaks==1.4.12
-et_xmlfile==2.0.0
+et-xmlfile==2.0.0
 fonttools==4.56.0
 openpyxl==3.1.5
 pillow==11.1.0
 pycparser==2.22
 pydyf==0.11.0
 pyphen==0.17.2
+pytz==2025.2
 reportlab==4.3.1
-setuptools==78.1.0
+six==1.17.0
 sqlparse==0.5.3
 tinycss2==1.4.0
 tinyhtml5==2.0.0
+typing_extensions==4.14.0
 tzdata==2025.1
+tzlocal==5.3.1
 weasyprint==64.1
 webencodings==0.5.1
 zopfli==0.2.3.post1
-django-tinymce==4.1.0
-APScheduler==3.10.4
-django-apscheduler==0.6.2
 python-decouple==3.8
 
-
-I wanna deploy my site on fly.io.
-prepare every file for me to deply it on fly.io. create a complete guide with copy and paste code to deploy it
+# Production dependencies
+gunicorn==21.2.0
+psycopg2-binary==2.9.9
+whitenoise==6.6.0
+dj-database-url==2.1.0

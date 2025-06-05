@@ -64,4 +64,12 @@ urlpatterns = [
     # Student promotion management
     path('admin/students/promotion/', views.admin_student_promotion, name='admin_student_promotion'),
     path('admin/activities/', views.admin_activities, name='admin_activities'),
+
+    # Backup and Restore
+    path('admin/backup/', views.backup_management, name='backup_management'),
+    path('admin/backup/create/', views.backup_system, name='backup_system'),
+    path('admin/backup/download/<str:filename>/', views.download_backup, name='download_backup'),
+    path('admin/backup/delete/<str:filename>/', views.delete_backup, name='delete_backup'),
+    path('admin/backup/upload-restore/', views.upload_restore_backup, name='upload_restore_backup'),
+    path('admin/backup/progress/', views.backup_progress, name='backup_progress'),
 ]

@@ -1,0 +1,538 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Backup Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .backup-card {
+        transition: transform 0.2s;
+    }
+    .backup-card:hover {
+        transform: translateY(-2px);
+    }
+    .backup-stats {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .backup-item {
+        border-left: 4px solid #007bff;
+    }
+    .backup-actions .btn {
+        margin: 0 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-database mr-2"></i>System Backup Management
+        </h1>
+        <div>
+            <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i>Back to Dashboard
+            </a>
+            <form method="post" action="{% url 'dashboard:backup_system' %}" class="d-inline" id="createBackupForm">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-sm" id="createBackupBtn">
+                    <i class="fas fa-plus mr-1"></i>Create New Backup
+                </button>
+            </form>
+
+            <!-- Backup Creation Progress Modal -->
+            <div class="modal fade" id="backupProgressModal" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-database mr-2"></i>Creating System Backup
+                            </h5>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="mb-3">Please wait while we create your system backup...</p>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-2 d-block" id="backupProgressText">Initializing backup...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card backup-stats h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Backups</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ backup_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-archive fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card backup-stats h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Size</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ total_size_mb|floatformat:1 }} MB</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hdd fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card backup-stats h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Latest Backup</div>
+                            <div class="h6 mb-0 font-weight-bold">
+                                {% if backups %}
+                                    {{ backups.0.date|date:"M d, Y" }}
+                                {% else %}
+                                    No backups
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card backup-stats h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Status</div>
+                            <div class="h6 mb-0 font-weight-bold">
+                                <span class="badge badge-success">System Ready</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Instructions and Upload -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle mr-2"></i>Backup Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">What's Included in Backups:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success mr-2"></i>Complete database (all tables and data)</li>
+                                <li><i class="fas fa-check text-success mr-2"></i>All media files (student photos, documents)</li>
+                                <li><i class="fas fa-check text-success mr-2"></i>System configuration and settings</li>
+                                <li><i class="fas fa-check text-success mr-2"></i>Restore script for easy restoration</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">Restore Methods:</h6>
+                            <ol class="list-unstyled">
+                                <li><i class="fas fa-upload text-success mr-2"></i><strong>Web Upload:</strong> Use the restore form →</li>
+                                <li><i class="fas fa-terminal text-info mr-2"></i><strong>Command Line:</strong> Extract ZIP and run restore script</li>
+                                <li><i class="fas fa-download text-primary mr-2"></i><strong>Manual:</strong> Download and extract files</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload and Restore Form -->
+        <div class="col-md-4">
+            <div class="card border-left-warning">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-upload mr-2"></i>Restore from Backup
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form id="restoreForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="backup_file" class="form-label">Select Backup File:</label>
+                            <input type="file" class="form-control" id="backup_file" name="backup_file" accept=".zip" required>
+                            <small class="form-text text-muted">Only ZIP backup files are allowed</small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="flush_database" name="flush_database">
+                                <label class="form-check-label" for="flush_database">
+                                    <small>Clear existing data first</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="restore_media" name="restore_media" checked>
+                                <label class="form-check-label" for="restore_media">
+                                    <small>Restore media files</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning btn-block">
+                            <i class="fas fa-upload mr-2"></i>Upload & Restore
+                        </button>
+                    </form>
+
+                    <!-- Progress Bar -->
+                    <div id="restoreProgress" class="mt-3" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted mt-1" id="progressText">Preparing restore...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list mr-2"></i>Available Backups
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if backups %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="backupTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Backup Name</th>
+                                <th>Date Created</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-file-archive text-primary mr-2"></i>
+                                    {{ backup.name }}
+                                </td>
+                                <td>
+                                    <i class="fas fa-calendar text-muted mr-2"></i>
+                                    {{ backup.date|date:"M d, Y H:i" }}
+                                </td>
+                                <td>
+                                    <i class="fas fa-weight text-muted mr-2"></i>
+                                    {{ backup.size_mb|floatformat:2 }} MB
+                                </td>
+                                <td class="backup-actions">
+                                    <a href="{{ backup.download_url }}" class="btn btn-success btn-sm" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'dashboard:delete_backup' backup.name %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm" 
+                                                onclick="return confirm('Are you sure you want to delete this backup? This action cannot be undone.')"
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-archive fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No backups available</h5>
+                    <p class="text-muted">Create your first backup to get started.</p>
+                    <form method="post" action="{% url 'dashboard:backup_system' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('This will create a full system backup. Continue?')">
+                            <i class="fas fa-plus mr-2"></i>Create First Backup
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Database Migration Notice -->
+    <div class="card border-left-warning shadow mb-4">
+        <div class="card-body">
+            <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                        Database Migration Support
+                    </div>
+                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                        These backups are compatible with PostgreSQL, MySQL, and other databases.
+                        The restore script will automatically handle database differences.
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <i class="fas fa-database fa-2x text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable if backups exist
+    {% if backups %}
+    $('#backupTable').DataTable({
+        "order": [[ 1, "desc" ]], // Sort by date descending
+        "pageLength": 10,
+        "responsive": true
+    });
+    {% endif %}
+
+    // Handle backup creation with progress
+    $('#createBackupForm').on('submit', function(e) {
+        e.preventDefault();
+
+        if (!confirm('This will create a full system backup. Continue?')) {
+            return;
+        }
+
+        // Show progress modal
+        $('#backupProgressModal').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+
+        // Simulate progress
+        var progress = 0;
+        var progressTexts = [
+            'Initializing backup...',
+            'Backing up database...',
+            'Backing up media files...',
+            'Backing up static files...',
+            'Creating system info...',
+            'Compressing backup...',
+            'Finalizing backup...'
+        ];
+
+        var progressInterval = setInterval(function() {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+
+            $('.modal .progress-bar').css('width', progress + '%');
+
+            var textIndex = Math.floor(progress / 15);
+            if (textIndex < progressTexts.length) {
+                $('#backupProgressText').text(progressTexts[textIndex]);
+            }
+        }, 800);
+
+        // Submit the actual form
+        var formData = new FormData(this);
+
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response, status, xhr) {
+                clearInterval(progressInterval);
+
+                // Complete progress
+                $('.modal .progress-bar').css('width', '100%');
+                $('#backupProgressText').text('Backup completed successfully!');
+
+                setTimeout(function() {
+                    $('#backupProgressModal').modal('hide');
+
+                    // Check if response is a file download
+                    if (xhr.getResponseHeader('Content-Disposition')) {
+                        // File download - reload page to show new backup
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        location.reload();
+                    }
+                }, 1500);
+            },
+            error: function(xhr, status, error) {
+                clearInterval(progressInterval);
+                $('.modal .progress-bar').addClass('bg-danger');
+                $('#backupProgressText').text('Backup failed: ' + error);
+
+                setTimeout(function() {
+                    $('#backupProgressModal').modal('hide');
+                }, 3000);
+            }
+        });
+    });
+
+    // Handle restore form submission
+    $('#restoreForm').on('submit', function(e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+        var fileInput = $('#backup_file')[0];
+
+        if (!fileInput.files.length) {
+            alert('Please select a backup file');
+            return;
+        }
+
+        // Show progress bar
+        $('#restoreProgress').show();
+        $('.progress-bar').css('width', '10%');
+        $('#progressText').text('Uploading backup file...');
+
+        // Disable form
+        $('#restoreForm button').prop('disabled', true);
+        $('#restoreForm input').prop('disabled', true);
+
+        // Add form data
+        formData.append('flush_database', $('#flush_database').is(':checked'));
+        formData.append('restore_media', $('#restore_media').is(':checked'));
+
+        $.ajax({
+            url: '{% url "dashboard:upload_restore_backup" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                // Upload progress
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        var percentComplete = (evt.loaded / evt.total) * 50; // 50% for upload
+                        $('.progress-bar').css('width', percentComplete + '%');
+                        $('#progressText').text('Uploading... ' + Math.round(percentComplete) + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Simulate restore progress
+                    var progress = 50;
+                    var interval = setInterval(function() {
+                        progress += 10;
+                        $('.progress-bar').css('width', progress + '%');
+
+                        if (progress >= 90) {
+                            $('#progressText').text('Finalizing restore...');
+                        } else if (progress >= 70) {
+                            $('#progressText').text('Restoring media files...');
+                        } else {
+                            $('#progressText').text('Restoring database...');
+                        }
+
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            $('.progress-bar').removeClass('progress-bar-animated');
+                            $('.progress-bar').addClass('bg-success');
+                            $('#progressText').text('Restore completed successfully!');
+
+                            // Show success message
+                            setTimeout(function() {
+                                alert('Backup restored successfully! The page will reload.');
+                                location.reload();
+                            }, 1000);
+                        }
+                    }, 500);
+                } else {
+                    // Show error
+                    $('.progress-bar').addClass('bg-danger');
+                    $('.progress-bar').removeClass('progress-bar-animated');
+                    $('#progressText').text('Error: ' + response.error);
+
+                    // Re-enable form
+                    setTimeout(function() {
+                        $('#restoreForm button').prop('disabled', false);
+                        $('#restoreForm input').prop('disabled', false);
+                        $('#restoreProgress').hide();
+                    }, 3000);
+                }
+            },
+            error: function(xhr, status, error) {
+                $('.progress-bar').addClass('bg-danger');
+                $('.progress-bar').removeClass('progress-bar-animated');
+                $('#progressText').text('Upload failed: ' + error);
+
+                // Re-enable form
+                setTimeout(function() {
+                    $('#restoreForm button').prop('disabled', false);
+                    $('#restoreForm input').prop('disabled', false);
+                    $('#restoreProgress').hide();
+                }, 3000);
+            }
+        });
+    });
+
+    // File input validation
+    $('#backup_file').on('change', function() {
+        var file = this.files[0];
+        if (file) {
+            if (!file.name.toLowerCase().endsWith('.zip')) {
+                alert('Please select a ZIP backup file');
+                $(this).val('');
+                return;
+            }
+
+            // Show file size
+            var size = (file.size / 1024 / 1024).toFixed(2);
+            $(this).next('.form-text').text('Selected: ' + file.name + ' (' + size + ' MB)');
+        }
+    });
+
+    // Warning for flush database
+    $('#flush_database').on('change', function() {
+        if ($(this).is(':checked')) {
+            if (!confirm('WARNING: This will delete ALL existing data before restoring. Are you sure?')) {
+                $(this).prop('checked', false);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404, reverse
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
@@ -7,9 +7,14 @@ from django.utils import timezone
 from django.db.models import Count, Avg, Sum, Q, F, Case, When, Value, IntegerField, Max, Min
 from django.db.models.functions import TruncMonth, TruncWeek, ExtractWeekDay, ExtractYear
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.management import call_command
+from django.conf import settings
 from datetime import datetime, timedelta, date
 import json
 import calendar
+import os
+import tempfile
+import subprocess
 
 from users.models import CustomUser, Teacher, Student, Parent, StaffMember, SchoolSettings
 from courses.models import ClassSubject, ClassRoom, CourseMaterial, YouTubeVideo, Subject, Schedule
@@ -4981,3 +4986,193 @@ def create_default_widgets(user):
             is_visible=True
         )
         position += 1
+
+
+# Backup and Restore Views
+@user_passes_test(is_admin)
+def backup_system(request):
+    """Create a comprehensive system backup"""
+    if request.method == 'POST':
+        try:
+            # Create backup directory
+            backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+            os.makedirs(backup_dir, exist_ok=True)
+
+            # Generate timestamp
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+            # Create backup using management command
+            with tempfile.TemporaryDirectory() as temp_dir:
+                backup_name = f'school_backup_{timestamp}'
+                backup_path = os.path.join(temp_dir, backup_name)
+
+                # Run backup command
+                call_command('backup_system',
+                           output_dir=temp_dir,
+                           compress=True)
+
+                # Find the created backup file
+                backup_file = None
+                for file in os.listdir(temp_dir):
+                    if file.endswith('.zip') and 'school_backup' in file:
+                        backup_file = os.path.join(temp_dir, file)
+                        break
+
+                if backup_file and os.path.exists(backup_file):
+                    # Move backup to permanent location
+                    final_backup_path = os.path.join(backup_dir, os.path.basename(backup_file))
+                    os.rename(backup_file, final_backup_path)
+
+                    # Return file for download
+                    response = FileResponse(
+                        open(final_backup_path, 'rb'),
+                        as_attachment=True,
+                        filename=os.path.basename(final_backup_path)
+                    )
+
+                    messages.success(request, 'System backup created successfully!')
+                    return response
+                else:
+                    messages.error(request, 'Failed to create backup file.')
+
+        except Exception as e:
+            messages.error(request, f'Backup failed: {str(e)}')
+
+    return redirect('dashboard:admin_dashboard')
+
+
+@user_passes_test(is_admin)
+def backup_management(request):
+    """Backup management page"""
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    backups = []
+
+    if os.path.exists(backup_dir):
+        for file in os.listdir(backup_dir):
+            if file.endswith('.zip') and 'school_backup' in file:
+                file_path = os.path.join(backup_dir, file)
+                file_size = os.path.getsize(file_path)
+                file_date = datetime.fromtimestamp(os.path.getmtime(file_path))
+
+                backups.append({
+                    'name': file,
+                    'path': file_path,
+                    'size': file_size,
+                    'size_mb': round(file_size / (1024 * 1024), 2),
+                    'date': file_date,
+                    'download_url': reverse('dashboard:download_backup', args=[file])
+                })
+
+    # Sort by date (newest first)
+    backups.sort(key=lambda x: x['date'], reverse=True)
+
+    context = {
+        'backups': backups,
+        'backup_count': len(backups),
+        'total_size_mb': sum(backup['size_mb'] for backup in backups)
+    }
+
+    return render(request, 'dashboard/backup_management.html', context)
+
+
+@user_passes_test(is_admin)
+def download_backup(request, filename):
+    """Download a backup file"""
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    file_path = os.path.join(backup_dir, filename)
+
+    if os.path.exists(file_path) and filename.endswith('.zip'):
+        return FileResponse(
+            open(file_path, 'rb'),
+            as_attachment=True,
+            filename=filename
+        )
+    else:
+        messages.error(request, 'Backup file not found.')
+        return redirect('dashboard:backup_management')
+
+
+@user_passes_test(is_admin)
+def delete_backup(request, filename):
+    """Delete a backup file"""
+    if request.method == 'POST':
+        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+        file_path = os.path.join(backup_dir, filename)
+
+        if os.path.exists(file_path) and filename.endswith('.zip'):
+            try:
+                os.remove(file_path)
+                messages.success(request, f'Backup {filename} deleted successfully.')
+            except Exception as e:
+                messages.error(request, f'Failed to delete backup: {str(e)}')
+        else:
+            messages.error(request, 'Backup file not found.')
+
+    return redirect('dashboard:backup_management')
+
+
+@user_passes_test(is_admin)
+def upload_restore_backup(request):
+    """Upload and restore backup file"""
+    if request.method == 'POST':
+        if 'backup_file' not in request.FILES:
+            return JsonResponse({'success': False, 'error': 'No file uploaded'})
+
+        backup_file = request.FILES['backup_file']
+
+        if not backup_file.name.endswith('.zip'):
+            return JsonResponse({'success': False, 'error': 'Only ZIP files are allowed'})
+
+        try:
+            # Save uploaded file temporarily
+            upload_dir = os.path.join(settings.BASE_DIR, 'temp_uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+
+            temp_file_path = os.path.join(upload_dir, backup_file.name)
+
+            with open(temp_file_path, 'wb+') as destination:
+                for chunk in backup_file.chunks():
+                    destination.write(chunk)
+
+            # Get restore options
+            flush_database = request.POST.get('flush_database') == 'true'
+            restore_media = request.POST.get('restore_media') == 'true'
+
+            # Run restore command
+            call_command('restore_system',
+                        temp_file_path,
+                        flush_database=flush_database,
+                        restore_media=restore_media,
+                        migrate_first=True)
+
+            # Clean up temp file
+            os.remove(temp_file_path)
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Backup restored successfully!'
+            })
+
+        except Exception as e:
+            # Clean up temp file if it exists
+            if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+
+            return JsonResponse({
+                'success': False,
+                'error': f'Restore failed: {str(e)}'
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@user_passes_test(is_admin)
+def backup_progress(request):
+    """Get backup creation progress"""
+    # This is a simple implementation - in production you might want to use Celery
+    # For now, we'll just return a simple status
+    return JsonResponse({
+        'progress': 100,
+        'status': 'completed',
+        'message': 'Backup completed successfully'
+    })
