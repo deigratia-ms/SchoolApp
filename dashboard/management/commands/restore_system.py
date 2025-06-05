@@ -37,6 +37,11 @@ class Command(BaseCommand):
             default=True,
             help='Run migrations before restoring data (default: True)'
         )
+        parser.add_argument(
+            '--no-input',
+            action='store_true',
+            help='Skip confirmation prompts (for automated restore)',
+        )
 
     def handle(self, *args, **options):
         backup_path = options['backup_path']
@@ -87,8 +92,8 @@ class Command(BaseCommand):
             # Show backup information
             self.show_backup_info(backup_dir)
             
-            # Confirm restore
-            if not self.confirm_restore():
+            # Confirm restore (skip if no-input)
+            if not options.get('no_input', False) and not self.confirm_restore():
                 self.stdout.write(self.style.WARNING('Restore cancelled by user'))
                 return
             
@@ -120,40 +125,97 @@ class Command(BaseCommand):
     def verify_backup(self, backup_dir):
         """Verify backup integrity"""
         self.stdout.write('Verifying backup integrity...')
-        
-        required_files = ['system_info.json']
-        required_dirs = ['database']
-        
-        for file in required_files:
-            if not os.path.exists(os.path.join(backup_dir, file)):
-                raise Exception(f'Required backup file missing: {file}')
-        
-        for dir in required_dirs:
-            if not os.path.exists(os.path.join(backup_dir, dir)):
-                raise Exception(f'Required backup directory missing: {dir}')
-        
-        # Check if database backup exists
-        db_dir = os.path.join(backup_dir, 'database')
-        if not os.path.exists(os.path.join(db_dir, 'full_database.json')):
-            raise Exception('Database backup file missing: full_database.json')
-        
+
+        # Check for database backup files (more flexible)
+        db_backup_found = False
+        possible_db_files = [
+            'full_database.json',
+            'database.json',
+            'backup.json',
+            'data.json'
+        ]
+
+        # Check in root directory first
+        for db_file in possible_db_files:
+            if os.path.exists(os.path.join(backup_dir, db_file)):
+                db_backup_found = True
+                self.stdout.write(f'Found database backup: {db_file}')
+                break
+
+        # Check in database subdirectory
+        if not db_backup_found:
+            db_dir = os.path.join(backup_dir, 'database')
+            if os.path.exists(db_dir):
+                for db_file in possible_db_files:
+                    if os.path.exists(os.path.join(db_dir, db_file)):
+                        db_backup_found = True
+                        self.stdout.write(f'Found database backup: database/{db_file}')
+                        break
+
+        # Check for any JSON files that might be database backups
+        if not db_backup_found:
+            json_files = []
+            for root, dirs, files in os.walk(backup_dir):
+                for file in files:
+                    if file.endswith('.json'):
+                        json_files.append(os.path.join(root, file))
+
+            if json_files:
+                # Use the largest JSON file as it's likely the database backup
+                largest_json = max(json_files, key=os.path.getsize)
+                db_backup_found = True
+                self.stdout.write(f'Using largest JSON file as database backup: {os.path.relpath(largest_json, backup_dir)}')
+
+        if not db_backup_found:
+            raise Exception('No database backup file found. Expected JSON file with database data.')
+
         self.stdout.write(self.style.SUCCESS('Backup verification passed'))
 
     def show_backup_info(self, backup_dir):
         """Show backup information"""
         info_path = os.path.join(backup_dir, 'system_info.json')
 
-        with open(info_path, 'r', encoding='utf-8') as f:
-            system_info = json.load(f)
-        
         self.stdout.write('\n' + '='*50)
         self.stdout.write('BACKUP INFORMATION')
         self.stdout.write('='*50)
-        self.stdout.write(f"Backup Date: {system_info['backup_date']}")
-        self.stdout.write(f"Django Version: {system_info['django_version']}")
-        self.stdout.write(f"Database Engine: {system_info['database_engine']}")
-        self.stdout.write(f"Number of Apps: {len(system_info['installed_apps'])}")
-        
+
+        if os.path.exists(info_path):
+            try:
+                with open(info_path, 'r', encoding='utf-8') as f:
+                    system_info = json.load(f)
+
+                self.stdout.write(f"Backup Date: {system_info.get('backup_date', 'Unknown')}")
+                self.stdout.write(f"Django Version: {system_info.get('django_version', 'Unknown')}")
+                self.stdout.write(f"Database Engine: {system_info.get('database_engine', 'Unknown')}")
+
+                installed_apps = system_info.get('installed_apps', [])
+                if installed_apps:
+                    self.stdout.write(f"Number of Apps: {len(installed_apps)}")
+                else:
+                    self.stdout.write("Number of Apps: Unknown")
+            except Exception as e:
+                self.stdout.write(f"Could not read system info: {e}")
+                self.stdout.write("Backup Type: Legacy or External Backup")
+        else:
+            self.stdout.write("Backup Type: Legacy or External Backup")
+            self.stdout.write("System Info: Not available")
+
+        # Check for database files
+        db_files = []
+        for root, dirs, files in os.walk(backup_dir):
+            for file in files:
+                if file.endswith('.json'):
+                    file_path = os.path.join(root, file)
+                    file_size = os.path.getsize(file_path) / (1024 * 1024)  # MB
+                    db_files.append(f"{os.path.relpath(file_path, backup_dir)} ({file_size:.2f} MB)")
+
+        if db_files:
+            self.stdout.write("Database Files:")
+            for db_file in db_files[:5]:  # Show first 5 files
+                self.stdout.write(f"  - {db_file}")
+            if len(db_files) > 5:
+                self.stdout.write(f"  ... and {len(db_files) - 5} more files")
+
         # Check for media files
         media_dir = os.path.join(backup_dir, 'media')
         if os.path.exists(media_dir):
@@ -161,7 +223,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Media Files: {media_size:.2f} MB")
         else:
             self.stdout.write("Media Files: None")
-        
+
         self.stdout.write('='*50 + '\n')
 
     def confirm_restore(self):
@@ -194,31 +256,83 @@ class Command(BaseCommand):
     def restore_database(self, backup_dir):
         """Restore database from backup"""
         self.stdout.write('Restoring database...')
-        
-        db_file = os.path.join(backup_dir, 'database', 'full_database.json')
-        
-        try:
-            call_command('loaddata', db_file)
-            self.stdout.write(self.style.SUCCESS('Database restored successfully'))
-        except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f'Database restore failed: {str(e)}')
-            )
-            
-            # Try restoring individual apps
-            self.stdout.write('Attempting to restore individual apps...')
+
+        # Find database backup file(s)
+        db_files_to_try = []
+
+        # Check for common database backup file names
+        possible_db_files = [
+            'full_database.json',
+            'database.json',
+            'backup.json',
+            'data.json'
+        ]
+
+        # Check in root directory
+        for db_file in possible_db_files:
+            file_path = os.path.join(backup_dir, db_file)
+            if os.path.exists(file_path):
+                db_files_to_try.append(file_path)
+
+        # Check in database subdirectory
+        db_dir = os.path.join(backup_dir, 'database')
+        if os.path.exists(db_dir):
+            for db_file in possible_db_files:
+                file_path = os.path.join(db_dir, db_file)
+                if os.path.exists(file_path):
+                    db_files_to_try.append(file_path)
+
+        # If no standard files found, find all JSON files and try the largest one
+        if not db_files_to_try:
+            json_files = []
+            for root, dirs, files in os.walk(backup_dir):
+                for file in files:
+                    if file.endswith('.json'):
+                        json_files.append(os.path.join(root, file))
+
+            if json_files:
+                # Sort by size (largest first) as main database backup is usually largest
+                json_files.sort(key=os.path.getsize, reverse=True)
+                db_files_to_try = json_files
+
+        if not db_files_to_try:
+            raise Exception('No database backup files found')
+
+        # Try to restore database files
+        restored = False
+        for db_file in db_files_to_try:
+            try:
+                self.stdout.write(f'Trying to restore from: {os.path.relpath(db_file, backup_dir)}')
+                call_command('loaddata', db_file)
+                self.stdout.write(self.style.SUCCESS(f'Database restored successfully from {os.path.basename(db_file)}'))
+                restored = True
+                break
+            except Exception as e:
+                self.stdout.write(
+                    self.style.WARNING(f'Failed to restore from {os.path.basename(db_file)}: {str(e)}')
+                )
+                continue
+
+        if not restored:
+            # Try restoring individual app files if they exist
+            self.stdout.write('Attempting to restore individual app files...')
             db_dir = os.path.join(backup_dir, 'database')
-            
-            for file in os.listdir(db_dir):
-                if file.endswith('.json') and file != 'full_database.json':
+
+            if os.path.exists(db_dir):
+                app_files = [f for f in os.listdir(db_dir) if f.endswith('.json')]
+                for file in app_files:
                     try:
                         app_file = os.path.join(db_dir, file)
                         call_command('loaddata', app_file)
                         self.stdout.write(f'Restored {file}')
+                        restored = True
                     except Exception as app_error:
                         self.stdout.write(
                             self.style.WARNING(f'Failed to restore {file}: {app_error}')
                         )
+
+            if not restored:
+                raise Exception('Could not restore any database files')
 
     def restore_media_files(self, backup_dir):
         """Restore media files"""

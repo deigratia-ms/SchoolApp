@@ -5138,22 +5138,44 @@ def upload_restore_backup(request):
             flush_database = request.POST.get('flush_database') == 'true'
             restore_media = request.POST.get('restore_media') == 'true'
 
-            # Run restore command
-            call_command('restore_system',
-                        temp_file_path,
-                        flush_database=flush_database,
-                        restore_media=restore_media,
-                        migrate_first=True)
+            # Capture command output
+            from io import StringIO
+            import sys
+
+            # Redirect stdout to capture output
+            old_stdout = sys.stdout
+            sys.stdout = captured_output = StringIO()
+
+            try:
+                # Run restore command
+                call_command('restore_system',
+                            temp_file_path,
+                            flush_database=flush_database,
+                            restore_media=restore_media,
+                            migrate_first=True,
+                            no_input=True,
+                            verbosity=1)
+
+                output = captured_output.getvalue()
+
+            finally:
+                # Restore stdout
+                sys.stdout = old_stdout
 
             # Clean up temp file
             os.remove(temp_file_path)
 
             return JsonResponse({
                 'success': True,
-                'message': 'Backup restored successfully!'
+                'message': 'Backup restored successfully!',
+                'output': output
             })
 
         except Exception as e:
+            # Restore stdout if needed
+            if 'old_stdout' in locals():
+                sys.stdout = old_stdout
+
             # Clean up temp file if it exists
             if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
                 os.remove(temp_file_path)
