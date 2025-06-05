@@ -4,6 +4,10 @@
 {% block title %}System Backup Management{% endblock %}
 
 {% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
 <style>
     .backup-card {
         transition: transform 0.2s;
@@ -20,6 +24,19 @@
     }
     .backup-actions .btn {
         margin: 0 2px;
+    }
+
+    /* DataTables custom styling */
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        margin-bottom: 1rem;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
     }
 </style>
 {% endblock %}
@@ -317,6 +334,12 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- DataTables JavaScript -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
 <script>
 $(document).ready(function() {
     // Initialize DataTable if backups exist
