@@ -1474,6 +1474,13 @@
               <i class="fas fa-balance-scale"></i>
               <span>Assessment Weights</span>
             </a>
+            <a
+              href="{% url 'dashboard:backup_management' %}"
+              class="menu-item menu-subitem {% if '/dashboard/admin/backup/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-database"></i>
+              <span>System Backup</span>
+            </a>
 
           </div>
         </div>
