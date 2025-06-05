@@ -95,22 +95,13 @@ WSGI_APPLICATION = 'ricas_school_manager.wsgi.application'
 
 
 # Database - SINGLE DATABASE FOR BOTH SYSTEMS
-# Use PostgreSQL in production, SQLite in development
-DATABASE_URL = config('DATABASE_URL', default=None)
+# Use PostgreSQL for both local development and production
+DATABASE_URL = config('DATABASE_URL', default='postgresql://neondb_owner:npg_UgOjXAbZ49Gn@ep-little-recipe-a23uiq8a-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require')
 
-if DATABASE_URL:
-    # Production database (PostgreSQL)
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
-    }
-else:
-    # Development database (SQLite)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# Always use PostgreSQL (both local and production)
+DATABASES = {
+    'default': dj_database_url.parse(DATABASE_URL)
+}
 
 
 # Password validation

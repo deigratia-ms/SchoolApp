@@ -144,8 +144,9 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
-# Media files (uploaded content)
-media/
+# Media files (uploaded content) - but keep directory structure
+media/*
+!media/.gitkeep
 
 # Static files (collected for production)
 staticfiles/
