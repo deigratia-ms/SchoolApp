@@ -303,14 +303,50 @@ class Command(BaseCommand):
         for db_file in db_files_to_try:
             try:
                 self.stdout.write(f'Trying to restore from: {os.path.relpath(db_file, backup_dir)}')
-                call_command('loaddata', db_file)
+
+                # Check file content first
+                file_size = os.path.getsize(db_file) / (1024 * 1024)  # MB
+                self.stdout.write(f'File size: {file_size:.2f} MB')
+
+                # Try to read and validate JSON
+                try:
+                    with open(db_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+
+                    if isinstance(data, list) and len(data) > 0:
+                        self.stdout.write(f'Found {len(data)} records in JSON file')
+
+                        # Check if it looks like Django fixture format
+                        first_record = data[0]
+                        if isinstance(first_record, dict) and 'model' in first_record:
+                            self.stdout.write('File appears to be in Django fixture format')
+                        else:
+                            self.stdout.write('File does not appear to be in Django fixture format')
+                            continue
+                    else:
+                        self.stdout.write('File is empty or not a list')
+                        continue
+
+                except json.JSONDecodeError as je:
+                    self.stdout.write(f'Invalid JSON format: {je}')
+                    continue
+                except UnicodeDecodeError as ue:
+                    self.stdout.write(f'Encoding error: {ue}')
+                    continue
+
+                # Try to load the data
+                call_command('loaddata', db_file, verbosity=2)
                 self.stdout.write(self.style.SUCCESS(f'Database restored successfully from {os.path.basename(db_file)}'))
                 restored = True
                 break
+
             except Exception as e:
                 self.stdout.write(
                     self.style.WARNING(f'Failed to restore from {os.path.basename(db_file)}: {str(e)}')
                 )
+                # Print more detailed error info
+                import traceback
+                self.stdout.write(f'Detailed error: {traceback.format_exc()}')
                 continue
 
         if not restored:
@@ -323,7 +359,8 @@ class Command(BaseCommand):
                 for file in app_files:
                     try:
                         app_file = os.path.join(db_dir, file)
-                        call_command('loaddata', app_file)
+                        self.stdout.write(f'Trying individual file: {file}')
+                        call_command('loaddata', app_file, verbosity=2)
                         self.stdout.write(f'Restored {file}')
                         restored = True
                     except Exception as app_error:
@@ -331,8 +368,13 @@ class Command(BaseCommand):
                             self.style.WARNING(f'Failed to restore {file}: {app_error}')
                         )
 
+            # Try alternative restore methods
             if not restored:
-                raise Exception('Could not restore any database files')
+                self.stdout.write('Trying alternative restore methods...')
+                restored = self.try_alternative_restore(backup_dir, db_files_to_try)
+
+            if not restored:
+                raise Exception('Could not restore any database files. Please check the backup format and try manual restoration.')
 
     def restore_media_files(self, backup_dir):
         """Restore media files"""
@@ -370,3 +412,58 @@ class Command(BaseCommand):
                 if os.path.exists(filepath):
                     total_size += os.path.getsize(filepath)
         return total_size / (1024 * 1024)  # Convert to MB
+
+    def try_alternative_restore(self, backup_dir, db_files):
+        """Try alternative restore methods for problematic backups"""
+        self.stdout.write('Attempting alternative restore approaches...')
+
+        for db_file in db_files:
+            try:
+                # Method 1: Try with natural foreign keys
+                self.stdout.write(f'Trying natural foreign keys for: {os.path.basename(db_file)}')
+                call_command('loaddata', db_file, use_natural_foreign_keys=True, verbosity=2)
+                self.stdout.write(self.style.SUCCESS('Restored using natural foreign keys'))
+                return True
+            except Exception as e:
+                self.stdout.write(f'Natural foreign keys failed: {e}')
+
+            try:
+                # Method 2: Try ignoring conflicts
+                self.stdout.write(f'Trying to ignore conflicts for: {os.path.basename(db_file)}')
+                call_command('loaddata', db_file, ignore_conflicts=True, verbosity=2)
+                self.stdout.write(self.style.SUCCESS('Restored ignoring conflicts'))
+                return True
+            except Exception as e:
+                self.stdout.write(f'Ignore conflicts failed: {e}')
+
+            try:
+                # Method 3: Try loading specific models
+                self.stdout.write(f'Analyzing file structure: {os.path.basename(db_file)}')
+                with open(db_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                if isinstance(data, list) and len(data) > 0:
+                    # Try loading just a few records first
+                    sample_data = data[:10]  # First 10 records
+                    temp_file = os.path.join(backup_dir, 'temp_sample.json')
+
+                    with open(temp_file, 'w', encoding='utf-8') as tf:
+                        json.dump(sample_data, tf, indent=2)
+
+                    call_command('loaddata', temp_file, verbosity=1)
+                    self.stdout.write('Sample data loaded successfully')
+                    os.remove(temp_file)
+
+                    # If sample works, try the full file
+                    call_command('loaddata', db_file, ignore_conflicts=True, verbosity=1)
+                    self.stdout.write(self.style.SUCCESS('Full data loaded successfully'))
+                    return True
+
+            except Exception as e:
+                self.stdout.write(f'Sample loading failed: {e}')
+                # Clean up temp file if it exists
+                temp_file = os.path.join(backup_dir, 'temp_sample.json')
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+
+        return False
