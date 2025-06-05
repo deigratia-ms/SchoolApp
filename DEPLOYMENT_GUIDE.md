@@ -10,6 +10,21 @@ This guide covers deploying the School Management System to various platforms wi
 
 ### Step 1: Deploy the Application
 
+# Deploying Django Application to Fly.io
+
+This guide provides step-by-step instructions for deploying a Django application to Fly.io.
+## Prerequisites
+
+- [Fly.io account](https://fly.io/signup)
+- [Fly CLI installed](https://fly.io/docs/hands-on/install-flyctl/)
+- Git repository with your Django project
+- Docker installed (for local testing)
+
+## Step 1: Install Fly CLI
+
+Install the Fly CLI tool:
+
+### On macOS:
 ```bash
 # Clone your repository
 git clone https://github.com/deigratia-ms/SchoolApp.git
@@ -28,6 +43,7 @@ flyctl secrets set ALLOWED_HOSTS="school-management-system.fly.dev,.fly.dev"
 
 # Deploy
 flyctl deploy
+brew install flyctl
 ```
 
 ### Step 2: Set up PostgreSQL Database
@@ -311,3 +327,4 @@ For deployment issues:
 ---
 
 **Note**: Always test backup and restore procedures in a development environment before using in production.
+

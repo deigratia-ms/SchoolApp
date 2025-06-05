@@ -314,7 +314,7 @@ class SchoolSettings(models.Model):
     """
     Model to store school-wide settings like name, logo, etc.
     """
-    school_name = models.CharField(max_length=255, default='Ricas School Management System')
+    school_name = models.CharField(max_length=255, default='Deigratia Montessori School')
     logo = models.ImageField(upload_to='school_logo/', blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)

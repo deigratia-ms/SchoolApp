@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             name='SchoolSettings',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('school_name', models.CharField(default='Ricas School Management System', max_length=255)),
+                ('school_name', models.CharField(default='Deigratia Montessori School', max_length=255)),
                 ('logo', models.ImageField(blank=True, null=True, upload_to='school_logo/')),
                 ('address', models.TextField(blank=True, null=True)),
                 ('phone', models.CharField(blank=True, max_length=20, null=True)),

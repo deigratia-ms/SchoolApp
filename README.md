@@ -1,6 +1,19 @@
-# Ricas School Management System
+# Deigratia Montessori School Management System
 
-A comprehensive Django-based school management system that integrates both a public website and an internal management system for educational institutions.
+A comprehensive Django-based school management system for Deigratia Montessori School, integrating a public website and internal management for educational excellence in Ghana.
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Deigratia Montessori School Management System - Modern, secure, and feature-rich platform for school administration, parent communication, and student learning in Ghana.">
+<meta name="keywords" content="Deigratia Montessori School, Montessori, School Management, Education, Ghana, Django, Parent Portal, Student Portal, School Website, School ERP, School Software">
+<meta name="author" content="Deigratia Montessori School">
+<meta property="og:title" content="Deigratia Montessori School Management System">
+<meta property="og:description" content="Modern, secure, and feature-rich platform for school administration, parent communication, and student learning in Ghana.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://deigratiams.edu.gh/">
+<meta property="og:site_name" content="Deigratia Montessori School">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Deigratia Montessori School Management System">
+<meta name="twitter:description" content="Modern, secure, and feature-rich platform for school administration, parent communication, and student learning in Ghana.">
 
 ## Features
 
@@ -116,7 +129,7 @@ EMAIL_HOST_PASSWORD=your-app-password
 ## Project Structure
 
 ```
-SchoolApp/
+DeigratiaMontessori/
 ├── ricas_school_manager/     # Main Django project
 ├── website/                  # Public website app
 ├── users/                    # User management
@@ -133,8 +146,11 @@ SchoolApp/
 ├── media/                    # User uploaded files
 ├── requirements.txt          # Python dependencies
 ├── .env                      # Environment variables
-├── .gitignore               # Git ignore rules
-└── manage.py                # Django management script
+├── .gitignore                # Git ignore rules
+├── robots.txt                # SEO robots file
+├── sitemap.xml               # SEO sitemap file
+├── seo.html                  # SEO meta tags snippet
+└── manage.py                 # Django management script
 ```
 
 ## Contributing
@@ -161,3 +177,71 @@ For support and questions, please contact the development team or create an issu
 - ✅ Implemented environment variable configuration
 - ✅ Updated requirements and dependencies
 - ✅ Improved error handling and logging
+
+## SEO Deployment Checklist
+- [x] robots.txt present
+- [x] sitemap.xml present
+- [x] SEO meta tags in base templates and README
+- [x] School name and branding updated to Deigratia Montessori School
+- [x] Canonical URL set to https://deigratiams.edu.gh/
+
+## Improving SEO in Django Templates
+- Use the `{% block title %}` in every template for unique, descriptive page titles.
+- Add meta description and keywords in the `<head>` of your base template.
+- Use Open Graph and Twitter Card tags for social sharing.
+- Ensure all images have descriptive alt text.
+- Use semantic HTML (header, nav, main, footer, article, section, etc.).
+- Submit your sitemap.xml to Google Search Console.
+
+## Submitting to Google Search Console
+1. Go to https://search.google.com/search-console/
+2. Add your site (https://deigratiams.edu.gh/)
+3. Verify ownership (using DNS or HTML file)
+4. Submit your sitemap.xml
+
+## SEO Best Practices for Django
+- Always use HTTPS
+- Set canonical URLs
+- Avoid duplicate content
+- Use robots.txt and sitemap.xml
+- Optimize page speed (minify CSS/JS, compress images)
+- Use descriptive URLs and slugs
+- Add structured data (JSON-LD) if possible
+- Monitor with Google Search Console and Analytics
+
+## Favicon and Branding
+- Place your favicon.ico in /static/website/img/favicon.ico
+- Reference it in your base template and seo.html
+
+## Social Media SEO
+- Add Open Graph and Twitter Card meta tags
+- Use high-quality images for sharing
+- Keep your school’s social profiles up to date
+
+## Local SEO for Ghana
+- Add your school to Google Maps
+- Use Ghana-specific keywords
+- List your school in local directories
+- Encourage parents to leave reviews
+
+## Monitoring SEO Performance
+- Use Google Analytics and Google Search Console
+- Track keyword rankings
+- Monitor site speed and mobile usability
+
+## Accessibility and SEO
+- Ensure your site is accessible to all users
+- Use proper heading structure (h1, h2, h3, ...)
+- Provide alt text for all images
+- Test with screen readers
+
+## Keeping SEO Up to Date
+- Regularly update your content
+- Monitor for broken links
+- Refresh meta tags as needed
+- Stay informed about SEO best practices
+
+## Django SEO Packages
+- [django-meta](https://github.com/nephila/django-meta)
+- [django-seo2](https://github.com/jazzband/django-seo2)
+- [django-sitemap](https://docs.djangoproject.com/en/5.1/ref/contrib/sitemaps/)

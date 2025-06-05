@@ -168,3 +168,4 @@ school_backup_*/
 # Temporary files
 *.tmp
 *.temp
+*deploy_django_flyio_windows_UPDATED.md
