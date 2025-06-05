@@ -1,0 +1,590 @@
+{% extends 'base.html' %} {% block title %} Admission Letter Details - School
+Management System {% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Admission Letter Details</h1>
+    <div>
+      <a
+        href="{% url 'users:admission_letter_list' %}"
+        class="btn btn-secondary"
+      >
+        <i class="fas fa-arrow-left me-2"></i>Back to Letters
+      </a>
+      <a
+        href="{% url 'users:admission_letter_print' letter_id=letter.id %}"
+        class="btn btn-primary"
+      >
+        <i class="fas fa-print me-2"></i>Print Letter
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Letter Preview -->
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div
+          class="card-header py-3 d-flex justify-content-between align-items-center"
+        >
+          <h6 class="m-0 font-weight-bold text-primary">Letter Preview</h6>
+          <a
+            href="{% url 'users:admission_letter_print' letter_id=letter.id %}"
+            class="btn btn-sm btn-outline-primary"
+          >
+            <i class="fas fa-print me-1"></i>Print View
+          </a>
+        </div>
+        <div class="card-body">
+          <!-- School Header -->
+          <div class="text-center mb-4">
+            <h2>DEIGRATIA MONTESSORY SCHOOL</h2>
+            <p>Excellence in Education</p>
+          </div>
+
+          <!-- Reference & Date -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <p><strong>Reference:</strong> {{ letter.reference_number }}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+              <p>
+                <strong>Date:</strong> {{ letter.created_at|date:"F d, Y" }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Letter Body -->
+          <div class="mb-4">{{ processed_body|safe }}</div>
+
+          <!-- Letter Footer -->
+          <div class="mt-4 text-center">
+            <p>Deigratia Montessory School | Oyibi Near Kas Properties</p>
+            <p>Tel: +234-123-456-7890 | Email: info@deigratia.edu.gh</p>
+          </div>
+
+          <!-- Signature -->
+          <div class="mt-5 mb-3">
+            {% if letter.template.signature_image %}
+            <img
+              src="{{ letter.template.signature_image.url }}"
+              alt="Signature"
+              style="max-height: 60px"
+              class="mb-2"
+            />
+            {% endif %}
+            <p class="mb-0">
+              <strong
+                >{{ letter.template.signatory_name|default:"School Principal"
+                }}</strong
+              >
+            </p>
+            <p class="text-muted">
+              {{ letter.template.signatory_position|default:"Principal" }}
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div class="border-top pt-3 mt-5 text-center">
+            <p class="small text-muted">
+              {% if letter.template.footer_text %} {{
+              letter.template.footer_text }} {% else %} This is an official
+              document from {{ school_settings.school_name|default:"School
+              Management System" }}. Please keep this letter for your records.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Letter Information -->
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Letter Information</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <h6 class="small text-uppercase text-muted mb-2">
+              Student Information
+            </h6>
+            <div class="d-flex align-items-center mb-3">
+              {% if letter.student.user.profile_picture %}
+              <img
+                src="{{ letter.student.user.profile_picture.url }}"
+                alt="{{ letter.student.user.get_full_name }}"
+                class="rounded-circle me-3"
+                style="width: 50px; height: 50px"
+              />
+              {% else %}
+              <div
+                class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                style="width: 50px; height: 50px"
+              >
+                <i class="fas fa-user"></i>
+              </div>
+              {% endif %}
+              <div>
+                <h6 class="mb-0">{{ letter.student.user.get_full_name }}</h6>
+                <p class="small text-muted mb-0">
+                  ID: {{ letter.student.student_id }}
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="mb-3 p-3 bg-light rounded border-start border-4 border-primary"
+            >
+              <h6 class="small text-uppercase text-primary mb-2">
+                <i class="fas fa-lock me-1"></i> Student Login Credentials
+              </h6>
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="small text-muted">Student ID</div>
+                  <div class="fw-bold">{{ letter.student.student_id }}</div>
+                </div>
+                <div class="col-6">
+                  <div class="small text-muted">PIN</div>
+                  <div class="fw-bold">{{ letter.student.pin }}</div>
+                </div>
+              </div>
+              <div class="small text-muted mt-2">
+                <i class="fas fa-info-circle me-1"></i>
+                Students can log in using these credentials on the student login
+                page.
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <div class="small text-muted">Current Grade</div>
+                <div>{{ letter.student.grade }}</div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted">Current Section</div>
+                <div>{{ letter.student.section }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h6 class="small text-uppercase text-muted mb-2">
+              Admission Details
+            </h6>
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="small text-muted">Admission Date</div>
+                <div>{{ letter.admission_date|date:"M d, Y" }}</div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted">Academic Year</div>
+                <div>{{ letter.academic_year }}</div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted">Grade Admitted</div>
+                <div>{{ letter.grade_admitted }}</div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted">Section</div>
+                <div>{{ letter.section_admitted|default:"Not Specified" }}</div>
+              </div>
+            </div>
+          </div>
+
+          {% if letter.fee_details %}
+          <div class="mb-4">
+            <h6 class="small text-uppercase text-muted mb-2">Fee Details</h6>
+            <div class="p-3 bg-light rounded small">
+              {{ letter.fee_details|linebreaks }}
+            </div>
+          </div>
+          {% endif %} {% if letter.additional_info %}
+          <div class="mb-4">
+            <h6 class="small text-uppercase text-muted mb-2">
+              Additional Information
+            </h6>
+            <div class="p-3 bg-light rounded small">
+              <dl class="row mb-0">
+                {% for key, value in letter.additional_info.items %}
+                <dt class="col-sm-6">{{ key|title }}</dt>
+                <dd class="col-sm-6">{{ value }}</dd>
+                {% endfor %}
+              </dl>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="mb-4">
+            <h6 class="small text-uppercase text-muted mb-2">
+              Template Information
+            </h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="small text-muted">Template</div>
+              <div>{{ letter.template.name }}</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="small text-muted">Created</div>
+              <div>{{ letter.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="small text-muted">Printed</div>
+              <div>
+                {% if letter.is_printed %}
+                <span class="badge bg-success">Yes</span>
+                {% else %}
+                <span class="badge bg-secondary">No</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Card -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Actions</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a
+              href="{% url 'users:admission_letter_print' letter_id=letter.id %}"
+              class="btn btn-primary"
+            >
+              <i class="fas fa-print me-2"></i>Print Admission Letter
+            </a>
+
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#emailLetterModal"
+            >
+              <i class="fas fa-envelope me-2"></i>Email to Parent
+            </button>
+
+            <a href="#" class="btn btn-outline-secondary">
+              <i class="fas fa-copy me-2"></i>Generate New Letter
+            </a>
+
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteLetterModal"
+            >
+              <i class="fas fa-trash-alt me-2"></i>Delete Letter
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Letter Modal -->
+<div
+  class="modal fade"
+  id="emailLetterModal"
+  tabindex="-1"
+  aria-labelledby="emailLetterModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="emailLetterModalLabel">
+          Email Admission Letter
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form
+          id="emailLetterForm"
+          method="post"
+          action="{% url 'users:email_admission_letter' letter_id=letter.id %}"
+        >
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="recipient" class="form-label">Recipient Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="recipient"
+              name="recipient"
+              value="{{ letter.student.user.email }}"
+              required
+            />
+            <div class="form-text">
+              The letter will be sent as a formatted email with all the
+              information included.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="subject" class="form-label">Subject</label>
+            <input
+              type="text"
+              class="form-control"
+              id="subject"
+              name="subject"
+              value="Admission Letter for {{ letter.student.user.get_full_name }}"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="emailBody" class="form-label">Email Message</label>
+            <textarea
+              class="form-control"
+              id="emailBody"
+              name="emailBody"
+              rows="4"
+              required
+            >
+Dear Parent,
+
+Please find below the admission letter for {{ letter.student.user.get_full_name }} for the {{ letter.academic_year }} academic year.
+
+Regards,
+{{ school_settings.school_name|default:"School Management System" }}</textarea
+            >
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          form="emailLetterForm"
+          id="sendEmailBtn"
+          class="btn btn-primary"
+        >
+          Send Email
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Letter Modal -->
+<div
+  class="modal fade"
+  id="deleteLetterModal"
+  tabindex="-1"
+  aria-labelledby="deleteLetterModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteLetterModalLabel">
+          Confirm Deletion
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Are you sure you want to delete this admission letter? This action
+          cannot be undone.
+        </p>
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          This will permanently remove the letter from the system.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <form
+          method="post"
+          action="{% url 'users:admission_letter_delete' letter_id=letter.id %}"
+          id="deleteLetterForm"
+          class="d-inline"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger" id="deleteLetterBtn">
+            Delete Letter
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %} {% block extra_js %}
+<script>
+  $(document).ready(function () {
+    // Handle Email Letter Form submission with AJAX
+    const emailLetterForm = document.getElementById("emailLetterForm");
+    const sendEmailBtn = document.getElementById("sendEmailBtn");
+
+    // Handle Delete Letter Form submission with AJAX
+    const deleteLetterForm = document.getElementById("deleteLetterForm");
+    const deleteLetterBtn = document.getElementById("deleteLetterBtn");
+
+    if (deleteLetterForm && deleteLetterBtn) {
+      deleteLetterForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        // Show loading state
+        const originalBtnText = deleteLetterBtn.innerHTML;
+        deleteLetterBtn.innerHTML =
+          '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+        deleteLetterBtn.disabled = true;
+
+        // Clear any existing alerts
+        $(this).closest(".modal-content").find(".alert-dynamic").remove();
+
+        // Get form data
+        const formData = new FormData(this);
+
+        // Add AJAX header
+        const headers = {
+          "X-Requested-With": "XMLHttpRequest",
+        };
+
+        // Send AJAX request
+        fetch(this.action, {
+          method: "POST",
+          body: formData,
+          headers: headers,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Reset button state
+            deleteLetterBtn.innerHTML = originalBtnText;
+            deleteLetterBtn.disabled = false;
+
+            if (data.success) {
+              // Show success message
+              const alertDiv = $("<div>")
+                .addClass("alert alert-success mt-3 alert-dynamic")
+                .html(
+                  `<i class="fas fa-check-circle me-2"></i> ${data.message}`
+                );
+
+              $(this).closest(".modal-body").append(alertDiv);
+
+              // Redirect to list page after 2 seconds
+              setTimeout(() => {
+                window.location.href =
+                  "{% url 'users:admission_letter_list' %}";
+              }, 2000);
+            } else {
+              // Show error message
+              const alertDiv = $("<div>")
+                .addClass("alert alert-danger mt-3 alert-dynamic")
+                .html(
+                  `<i class="fas fa-exclamation-circle me-2"></i> ${data.message}`
+                );
+
+              $(this).closest(".modal-body").append(alertDiv);
+            }
+          })
+          .catch((error) => {
+            console.error("Error deleting letter:", error);
+
+            // Show error message
+            const errorDiv = $("<div>")
+              .addClass("alert alert-danger mt-3 alert-dynamic")
+              .html(
+                `<i class="fas fa-exclamation-circle me-2"></i> An error occurred while deleting the letter. Please try again.`
+              );
+
+            $(this).closest(".modal-body").append(errorDiv);
+
+            // Reset button state
+            deleteLetterBtn.innerHTML = originalBtnText;
+            deleteLetterBtn.disabled = false;
+          });
+      });
+    }
+
+    if (emailLetterForm && sendEmailBtn) {
+      emailLetterForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        // Show loading state
+        const originalBtnText = sendEmailBtn.innerHTML;
+        sendEmailBtn.innerHTML =
+          '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+        sendEmailBtn.disabled = true;
+
+        // Clear any existing alerts
+        $(this).find(".alert").remove();
+
+        // Get form data
+        const formData = new FormData(this);
+
+        // Add AJAX header
+        const headers = {
+          "X-Requested-With": "XMLHttpRequest",
+        };
+
+        // Send AJAX request
+        fetch(this.action, {
+          method: "POST",
+          body: formData,
+          headers: headers,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Add result message to modal
+            const alertClass = data.success ? "alert-success" : "alert-danger";
+            const alertIcon = data.success
+              ? "check-circle"
+              : "exclamation-circle";
+            const alertDiv = $("<div>")
+              .addClass(`alert ${alertClass} mt-3`)
+              .html(`<i class="fas fa-${alertIcon} me-2"></i> ${data.message}`);
+
+            $(this).prepend(alertDiv);
+
+            // Reset button state
+            sendEmailBtn.innerHTML = originalBtnText;
+            sendEmailBtn.disabled = false;
+
+            // If successful, close the modal after 3 seconds
+            if (data.success) {
+              setTimeout(() => {
+                const emailModal = bootstrap.Modal.getInstance(
+                  document.getElementById("emailLetterModal")
+                );
+                if (emailModal) {
+                  emailModal.hide();
+                }
+              }, 3000);
+            }
+          })
+          .catch((error) => {
+            console.error("Error sending email:", error);
+
+            // Show error message
+            const errorDiv = $("<div>")
+              .addClass("alert alert-danger mt-3")
+              .html(
+                `<i class="fas fa-exclamation-circle me-2"></i> An error occurred while sending the email. Please try again.`
+              );
+
+            $(this).prepend(errorDiv);
+
+            // Reset button state
+            sendEmailBtn.innerHTML = originalBtnText;
+            sendEmailBtn.disabled = false;
+          });
+      });
+    }
+  });
+</script>
+{% endblock %}

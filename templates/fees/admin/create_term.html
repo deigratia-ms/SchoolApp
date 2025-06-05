@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Academic Term - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Academic Term</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:term_list' %}">Terms</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Create</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Create New Academic Term</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'fees:create_term' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="name" class="form-label">Term Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="name" name="name" required>
+              <div class="form-text">E.g., First Term, Second Term, etc.</div>
+            </div>
+            <div class="mb-3">
+              <label for="academic_year" class="form-label">Academic Year <span class="text-danger">*</span></label>
+              {% if academic_years %}
+                <select class="form-select" id="academic_year" name="academic_year" required>
+                  {% for year in academic_years %}
+                    <option value="{{ year }}">{{ year }}</option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                <input type="text" class="form-control" id="academic_year" name="academic_year" placeholder="e.g., 2023-2024" required>
+              {% endif %}
+              <div class="form-text">The academic year this term belongs to.</div>
+            </div>
+            <div class="mb-3">
+              <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="start_date" name="start_date" required>
+            </div>
+            <div class="mb-3">
+              <label for="end_date" class="form-label">End Date</label>
+              <input type="date" class="form-control" id="end_date" name="end_date">
+              <div class="form-text">Optional. Leave blank if the term is ongoing.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_current" name="is_current">
+              <label class="form-check-label" for="is_current">Set as current term</label>
+              <div class="form-text">If checked, this will become the active term for new fees.</div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'fees:term_list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Create Term</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">About Academic Terms</h6>
+        </div>
+        <div class="card-body">
+          <p>Academic terms are used to organize the school year and manage fees for each period.</p>
+          <p>Examples of academic terms include:</p>
+          <ul>
+            <li>First Term</li>
+            <li>Second Term</li>
+            <li>Third Term</li>
+          </ul>
+          <p>You can set one term as the current term, which will be used as the default when creating new fees.</p>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>After creating terms, you can assign fees to classes for each term.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

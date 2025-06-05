@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}Event Calendar - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .calendar th, .calendar td {
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        vertical-align: top;
+        min-height: 100px;
+    }
+    
+    .calendar th {
+        background-color: #f8f9fa;
+        text-align: center;
+        font-weight: bold;
+    }
+    
+    .calendar td {
+        height: 120px;
+    }
+    
+    .calendar .today {
+        background-color: rgba(32, 201, 151, 0.1);
+        font-weight: bold;
+    }
+    
+    .calendar .other-month {
+        background-color: #f9f9f9;
+        color: #aaa;
+    }
+    
+    .calendar .day-number {
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .calendar .event {
+        padding: 3px 5px;
+        margin-bottom: 4px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    
+    .event-holiday {
+        background-color: #f5365c;
+        color: white;
+    }
+    
+    .event-meeting {
+        background-color: #11cdef;
+        color: white;
+    }
+    
+    .event-activity {
+        background-color: #2dce89;
+        color: white;
+    }
+    
+    .event-exam {
+        background-color: #fb6340;
+        color: white;
+    }
+    
+    .event-other {
+        background-color: #5e72e4;
+        color: white;
+    }
+    
+    .month-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .month-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 class="mb-0">School Event Calendar</h5>
+                            <p class="text-sm mb-0">View and manage school events in calendar format</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a href="{% url 'communications:event_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-list"></i> List View
+                            </a>
+                            {% if request.user.role == 'ADMIN' or request.user.role == 'TEACHER' %}
+                            <a href="{% url 'communications:create_event' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add New Event
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filters -->
+                    <div class="row mb-4">
+                        <div class="col-md-9">
+                            <form method="get" class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="filter_type" class="form-label">Event Type</label>
+                                    <select class="form-select form-select-sm" id="filter_type" name="type" onchange="this.form.submit()">
+                                        <option value="">All Types</option>
+                                        <option value="HOLIDAY" {% if request.GET.type == 'HOLIDAY' %}selected{% endif %}>Holiday</option>
+                                        <option value="MEETING" {% if request.GET.type == 'MEETING' %}selected{% endif %}>Meeting</option>
+                                        <option value="ACTIVITY" {% if request.GET.type == 'ACTIVITY' %}selected{% endif %}>Activity</option>
+                                        <option value="EXAM" {% if request.GET.type == 'EXAM' %}selected{% endif %}>Exam</option>
+                                        <option value="OTHER" {% if request.GET.type == 'OTHER' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                                {% if request.user.role == 'ADMIN' %}
+                                <div class="col-md-3">
+                                    <label for="filter_target" class="form-label">Target Audience</label>
+                                    <select class="form-select form-select-sm" id="filter_target" name="target" onchange="this.form.submit()">
+                                        <option value="">All Audiences</option>
+                                        <option value="ALL" {% if request.GET.target == 'ALL' %}selected{% endif %}>Everyone</option>
+                                        <option value="TEACHERS" {% if request.GET.target == 'TEACHERS' %}selected{% endif %}>Teachers Only</option>
+                                        <option value="STUDENTS" {% if request.GET.target == 'STUDENTS' %}selected{% endif %}>Students Only</option>
+                                        <option value="PARENTS" {% if request.GET.target == 'PARENTS' %}selected{% endif %}>Parents Only</option>
+                                        <option value="SPECIFIC_CLASS" {% if request.GET.target == 'SPECIFIC_CLASS' %}selected{% endif %}>Class Specific</option>
+                                    </select>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-3">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <a href="{% url 'communications:event_calendar' %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Clear Filters
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <label class="form-label d-block">&nbsp;</label>
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="printCalendar()">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="exportCalendar()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Month Navigation -->
+                    <div class="month-nav mb-4">
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'month' and key != 'year' %}{{ key }}={{ value }}&{% endif %}{% endfor %}month={{ prev_month }}&year={{ prev_year }}" class="btn btn-outline-primary">
+                            <i class="fas fa-chevron-left"></i> Previous Month
+                        </a>
+                        <h5 class="month-title">{{ current_month_name }} {{ year }}</h5>
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'month' and key != 'year' %}{{ key }}={{ value }}&{% endif %}{% endfor %}month={{ next_month }}&year={{ next_year }}" class="btn btn-outline-primary">
+                            Next Month <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                    
+                    <!-- Calendar -->
+                    <table class="calendar">
+                        <thead>
+                            <tr>
+                                <th>Sunday</th>
+                                <th>Monday</th>
+                                <th>Tuesday</th>
+                                <th>Wednesday</th>
+                                <th>Thursday</th>
+                                <th>Friday</th>
+                                <th>Saturday</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for week in calendar_weeks %}
+                            <tr>
+                                {% for day in week %}
+                                <td class="{% if day.today %}today{% endif %} {% if day.other_month %}other-month{% endif %}">
+                                    <div class="day-number">{{ day.day }}</div>
+                                    {% if day.events %}
+                                        {% for event in day.events %}
+                                        <div class="event event-{{ event.event_type|lower }}" 
+                                             onclick="window.location='{% url 'communications:event_detail' event.id %}'">
+                                            {% if event.is_all_day %}
+                                                <i class="fas fa-calendar-day"></i>
+                                            {% else %}
+                                                <i class="fas fa-clock"></i> {{ event.start_time|time:"g:i A" }}
+                                            {% endif %}
+                                            {{ event.title }}
+                                        </div>
+                                        {% endfor %}
+                                        {% if day.more_events %}
+                                        <div class="text-center">
+                                            <small><a href="{% url 'communications:event_list' %}?date={{ day.date|date:'Y-m-d' }}">+ {{ day.more_events }} more</a></small>
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <!-- Legend -->
+                    <div class="mt-4">
+                        <h6 class="text-uppercase text-muted mb-2">Legend</h6>
+                        <div class="d-flex flex-wrap">
+                            <div class="me-3 mb-2">
+                                <span class="badge event-holiday">Holiday</span>
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge event-meeting">Meeting</span>
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge event-activity">Activity</span>
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge event-exam">Exam</span>
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge event-other">Other</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function printCalendar() {
+        window.print();
+    }
+    
+    function exportCalendar() {
+        // This would be replaced with actual export functionality
+        alert('Calendar export functionality would be implemented here.');
+    }
+</script>
+{% endblock %}
+{% endblock %}

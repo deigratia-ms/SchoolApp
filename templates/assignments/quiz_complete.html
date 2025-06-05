@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ quiz.title }} - Quiz Completed - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .completion-card {
+        max-width: 800px;
+        margin: 0 auto;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+
+    .completion-header {
+        background-color: #1cc88a;
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .completion-body {
+        background-color: white;
+        padding: 30px;
+    }
+
+    .completion-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+
+    .stats-container {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        margin: 30px 0;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        min-width: 150px;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #4e73df;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        color: #5a5c69;
+        font-weight: 600;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .action-button {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .feedback-container {
+        background-color: #f8f9fc;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+
+    .feedback-title {
+        font-weight: 600;
+        color: #4e73df;
+        margin-bottom: 15px;
+    }
+
+    .feedback-message {
+        font-style: italic;
+    }
+
+    .score-pending {
+        background-color: #f8f9fc;
+        border-left: 4px solid #4e73df;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="completion-card">
+        <div class="completion-header">
+            <div class="completion-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Quiz Completed!</h2>
+            <p class="mb-0">{{ quiz.title }}</p>
+        </div>
+
+        <div class="completion-body">
+            <div class="alert alert-success">
+                <i class="fas fa-thumbs-up"></i> Great job! You have successfully completed the quiz.
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-value">{{ answered_count }}</div>
+                    <div class="stat-label">Questions Answered</div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-value">{{ total_questions }}</div>
+                    <div class="stat-label">Total Questions</div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-value">{{ completion_time }}</div>
+                    <div class="stat-label">Completion Time</div>
+                </div>
+
+                {% if is_graded %}
+                    <div class="stat-item">
+                        <div class="stat-value">{{ score }}%</div>
+                        <div class="stat-label">Score</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if is_graded %}
+                <div class="result-summary">
+                    <h4>Your Results</h4>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ score }}%" aria-valuenow="{{ score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white mb-3">
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <h5>Correct</h5>
+                                        <h2>{{ correct_count }}</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card bg-danger text-white mb-3">
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <h5>Incorrect</h5>
+                                        <h2>{{ incorrect_count }}</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card bg-warning text-white mb-3">
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <h5>Unanswered</h5>
+                                        <h2>{{ unanswered_count }}</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if feedback %}
+                    <div class="feedback-container">
+                        <div class="feedback-title">Teacher's Feedback</div>
+                        <div class="feedback-message">{{ feedback }}</div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="score-pending">
+                    <h5><i class="fas fa-hourglass-half"></i> Score Pending</h5>
+                    <p>Your quiz has been submitted and is awaiting grading. You will be able to see your results once it has been graded.</p>
+                </div>
+            {% endif %}
+
+            <div class="action-buttons">
+                <a href="{% url 'assignments:assignment_list' %}" class="btn btn-primary action-button">
+                    <i class="fas fa-list"></i> Back to Assignments
+                </a>
+
+                {% if can_retake %}
+                    <a href="{% url 'assignments:quiz_start' quiz.id %}" class="btn btn-success action-button">
+                        <i class="fas fa-redo"></i> Retake Quiz
+                    </a>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Your highest score will be kept if you retake this quiz.
+                        </small>
+                    </div>
+                {% endif %}
+
+                {% if is_graded %}
+                    <a href="{% url 'assignments:view_quiz_result' quiz_version.id %}" class="btn btn-info action-button">
+                        <i class="fas fa-search"></i> View Detailed Results
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

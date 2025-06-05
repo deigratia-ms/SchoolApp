@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Batch Generate Admission Letters{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Batch Generate Admission Letters</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Generate Admission Letters</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="template_id">Template</label>
+                        <select class="form-control select2" id="template_id" name="template_id" required>
+                            {% for template in templates %}
+                                <option value="{{ template.id }}">{{ template.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a template.</div>
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label for="academic_year">Academic Year</label>
+                        <input type="text" class="form-control" id="academic_year" name="academic_year" 
+                               value="{{ academic_year_suggestion }}" required>
+                        <div class="invalid-feedback">Please enter the academic year.</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="admission_date">Admission Date</label>
+                        <input type="date" class="form-control" id="admission_date" name="admission_date" 
+                               value="{{ today|date:'Y-m-d' }}" required>
+                        <div class="invalid-feedback">Please select the admission date.</div>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="grade_admitted">Grade Admitted</label>
+                        <select class="form-control select2" id="grade_admitted" name="grade_admitted" required>
+                            {% for grade in grades %}
+                                <option value="{{ grade }}">{{ grade }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a grade.</div>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="section_admitted">Section (Optional)</label>
+                        <select class="form-control select2" id="section_admitted" name="section_admitted">
+                            <option value="">Select Section</option>
+                            {% for section in sections %}
+                                <option value="{{ section }}">{{ section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Students</label>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="studentSearch" placeholder="Search students...">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="studentTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all"></th>
+                                    <th>Name</th>
+                                    <th>Student ID</th>
+                                    <th>Grade</th>
+                                    <th>Section</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students %}
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="student_ids" value="{{ student.id }}">
+                                        </td>
+                                        <td>{{ student.user.get_full_name }}</td>
+                                        <td>{{ student.student_id }}</td>
+                                        <td>{{ student.grade }}</td>
+                                        <td>{{ student.section }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-group text-right">
+                    <button type="submit" class="btn btn-primary" id="generateButton">
+                        <i class="fas fa-file-pdf mr-2"></i>Generate Letters
+                    </button>
+                    <a href="{% url 'users:admission_letter_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Select an option',
+            allowClear: true
+        });
+
+        // Select all checkbox functionality
+        $('#select-all').change(function() {
+            $('input[name="student_ids"]').prop('checked', this.checked);
+        });
+
+        // Student search functionality
+        $('#studentSearch').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            $('#studentTable tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+
+        // Clear search
+        $('#clearSearch').click(function() {
+            $('#studentSearch').val('');
+            $('#studentTable tbody tr').show();
+        });
+
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Disable generate button during processing
+        $('form').submit(function() {
+            $('#generateButton').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+        });
+    });
+</script>
+{% endblock %}

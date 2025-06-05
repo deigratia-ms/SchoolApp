@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Link Parent to Child | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Link Parent to Child</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'users:user_management' %}">User Management</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Link Parent to Child</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{% url 'users:user_management' %}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to User Management
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Current Parent-Child Associations -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Current Parent-Child Relationships</h6>
+                </div>
+                <div class="card-body">
+                    {% if parents %}
+                    <div class="accordion" id="parentAccordion">
+                        {% for parent in parents %}
+                        <div class="accordion-item mb-2">
+                            <h2 class="accordion-header" id="heading{{ parent.id }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ parent.id }}" aria-expanded="false" aria-controls="collapse{{ parent.id }}">
+                                    <span class="fw-bold">{{ parent.user.get_full_name }}</span>
+                                    <span class="ms-2 badge bg-secondary">{{ parent.relationship }}</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ parent.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ parent.id }}" data-bs-parent="#parentAccordion">
+                                <div class="accordion-body">
+                                    <div class="mb-2">
+                                        <small class="text-muted">Email: {{ parent.user.email }}</small>
+                                    </div>
+                                    
+                                    {% if parent.children.all %}
+                                    <div class="list-group">
+                                        <div class="list-group-item active">
+                                            <i class="fas fa-child me-2"></i>Children
+                                        </div>
+                                        {% for child in parent.children.all %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span>{{ child.user.get_full_name }}</span>
+                                                <small class="text-muted d-block">ID: {{ child.student_id }} | Grade: {{ child.grade }}</small>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>No children associated
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-0">No parents registered in the system.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Link Form -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Associate Parent with Child</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="parent_id" class="form-label">Select Parent *</label>
+                            <select class="form-select" id="parent_id" name="parent_id" required>
+                                <option value="">-- Select Parent --</option>
+                                {% for parent in parents %}
+                                <option value="{{ parent.id }}">{{ parent.user.get_full_name }} ({{ parent.user.email }})</option>
+                                {% endfor %}
+                            </select>
+                            
+                            <div class="form-text text-muted">
+                                Select a parent from the list.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="student_id" class="form-label">Select Student *</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="studentSearch" placeholder="Search students...">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <select class="form-select" id="student_id" name="student_id" required>
+                                <option value="">-- Select Student --</option>
+                                {% for student in students %}
+                                <option value="{{ student.id }}">
+                                    {{ student.user.get_full_name }} (ID: {{ student.student_id }}, Grade: {{ student.grade }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            
+                            <div class="form-text text-muted">
+                                Select a student to link to the parent.
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You can link multiple children to the same parent by repeating this process for each child.
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-link me-2"></i>Link Parent to Child
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quick Help -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Help</h6>
+                </div>
+                <div class="card-body">
+                    <h6><i class="fas fa-question-circle text-info me-2"></i>About Parent-Child Linking</h6>
+                    <ul class="small">
+                        <li>Parents can be linked to multiple children.</li>
+                        <li>Children can have multiple parents/guardians linked to them.</li>
+                        <li>This relationship allows parents to view their children's academic records, grades, attendance, etc.</li>
+                        <li>Linked parents will receive notifications about their children's academic activities.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Select2 for dropdowns if available
+        if (typeof $.fn.select2 !== 'undefined') {
+            $('#parent_id, #student_id').select2({
+                placeholder: "Select...",
+                width: '100%'
+            });
+            
+            // Student search
+            $('#studentSearch').on('keyup', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                
+                $("#student_id option").each(function() {
+                    const text = $(this).text().toLowerCase();
+                    $(this).toggle(text.indexOf(searchTerm) > -1);
+                });
+                
+                // Refresh Select2
+                $('#student_id').select2('destroy');
+                $('#student_id').select2({
+                    placeholder: "Select...",
+                    width: '100%'
+                });
+            });
+            
+            // Clear search
+            $('#clearSearch').on('click', function() {
+                $('#studentSearch').val('');
+                $('#studentSearch').trigger('keyup');
+            });
+        }
+    });
+</script>
+{% endblock %}

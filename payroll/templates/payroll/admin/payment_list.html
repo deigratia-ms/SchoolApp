@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payments - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Payments</h1>
+    <div>
+      <a href="{% url 'payroll:admin_dashboard' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Form -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+          <form method="get" class="row g-3">
+            <div class="col-md-3">
+              <label for="period" class="form-label">Payroll Period</label>
+              <select name="period" id="period" class="form-select">
+                <option value="">All Periods</option>
+                {% for period in periods %}
+                  <option value="{{ period.id }}" {% if selected_period == period.id|stringformat:"i" %}selected{% endif %}>
+                    {{ period.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="method" class="form-label">Payment Method</label>
+              <select name="method" id="method" class="form-select">
+                <option value="">All Methods</option>
+                {% for method_code, method_name in payment_methods %}
+                  <option value="{{ method_code }}" {% if selected_method == method_code %}selected{% endif %}>
+                    {{ method_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="start_date" class="form-label">Start Date</label>
+              <input type="date" class="form-control" id="start_date" name="start_date" value="{{ selected_start_date }}">
+            </div>
+            <div class="col-md-2">
+              <label for="end_date" class="form-label">End Date</label>
+              <input type="date" class="form-control" id="end_date" name="end_date" value="{{ selected_end_date }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter me-2"></i>Filter
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Payments
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_paid|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payments List -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payments</h6>
+        </div>
+        <div class="card-body">
+          {% if payments %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Staff Name</th>
+                    <th>Period</th>
+                    <th>Amount</th>
+                    <th>Payment Date</th>
+                    <th>Method</th>
+                    <th>Transaction ID</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payment in payments %}
+                    <tr>
+                      <td>{{ payment.payroll.staff_salary.user.get_full_name }}</td>
+                      <td>{{ payment.payroll.period.name }}</td>
+                      <td>GH₵ {{ payment.amount|floatformat:2|intcomma }}</td>
+                      <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                      <td>
+                        {% if payment.payment_method == 'CASH' %}
+                          <span class="badge bg-success">Cash</span>
+                        {% elif payment.payment_method == 'BANK_TRANSFER' %}
+                          <span class="badge bg-primary">Bank Transfer</span>
+                        {% elif payment.payment_method == 'MOBILE_MONEY' %}
+                          <span class="badge bg-info">Mobile Money</span>
+                        {% elif payment.payment_method == 'CHECK' %}
+                          <span class="badge bg-warning">Check</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ payment.get_payment_method_display }}</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ payment.transaction_id|default:"-" }}</td>
+                      <td>
+                        <a href="{% url 'payroll:payment_detail' payment.id %}" class="btn btn-sm btn-primary">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'payroll:payroll_detail' payment.payroll.id %}" class="btn btn-sm btn-info">
+                          <i class="fas fa-file-invoice-dollar"></i>
+                        </a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if payments.has_other_pages %}
+              <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  {% if payments.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_method %}&method={{ selected_method }}{% endif %}{% if selected_start_date %}&start_date={{ selected_start_date }}{% endif %}{% if selected_end_date %}&end_date={{ selected_end_date }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payments.previous_page_number }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_method %}&method={{ selected_method }}{% endif %}{% if selected_start_date %}&start_date={{ selected_start_date }}{% endif %}{% if selected_end_date %}&end_date={{ selected_end_date }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                  
+                  {% for i in payments.paginator.page_range %}
+                    {% if payments.number == i %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > payments.number|add:'-3' and i < payments.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_method %}&method={{ selected_method }}{% endif %}{% if selected_start_date %}&start_date={{ selected_start_date }}{% endif %}{% if selected_end_date %}&end_date={{ selected_end_date }}{% endif %}">{{ i }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                  
+                  {% if payments.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payments.next_page_number }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_method %}&method={{ selected_method }}{% endif %}{% if selected_start_date %}&start_date={{ selected_start_date }}{% endif %}{% if selected_end_date %}&end_date={{ selected_end_date }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payments.paginator.num_pages }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_method %}&method={{ selected_method }}{% endif %}{% if selected_start_date %}&start_date={{ selected_start_date }}{% endif %}{% if selected_end_date %}&end_date={{ selected_end_date }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No payments found for the selected filters.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

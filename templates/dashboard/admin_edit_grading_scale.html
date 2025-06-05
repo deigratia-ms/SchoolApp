@@ -1,0 +1,506 @@
+{% extends 'base.html' %} {% block title %}Edit Grading Scale - School
+Management System{% endblock %} {% block extra_css %}
+<style>
+  .grade-row {
+    transition: all 0.2s;
+    border-radius: 5px;
+    margin-bottom: 8px;
+  }
+  .grade-row:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  .btn-circle {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 12px;
+    line-height: 30px;
+  }
+  .grade-badge {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    margin-right: 15px;
+  }
+  .form-section {
+    background-color: #f8f9fc;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e3e6f0;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Edit Grading Scale</h1>
+      <p class="mb-0 text-muted">
+        Update an existing grading scale for the school system
+      </p>
+    </div>
+    <div>
+      <a
+        href="{% url 'dashboard:admin_grading_scales' %}"
+        class="btn btn-sm btn-outline-primary"
+      >
+        <i class="fas fa-arrow-left me-2"></i>Back to Grading Scales
+      </a>
+    </div>
+  </div>
+
+  <!-- Edit Grading Scale Card -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Grading Scale Details</h6>
+    </div>
+    <div class="card-body p-4">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="row mb-4 form-section">
+          <div class="col-lg-6">
+            <div class="mb-3">
+              <label for="name" class="form-label"
+                >Scale Name <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="name"
+                value="{{ grading_scale.name }}"
+                required
+              />
+              <div class="form-text">
+                A descriptive name for this grading scale
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea
+                class="form-control"
+                id="description"
+                name="description"
+                rows="3"
+              >{{ grading_scale.description }}</textarea>
+              <div class="form-text">
+                Optional details about this grading scale's purpose or use
+              </div>
+            </div>
+
+            <div class="form-check mb-3">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="is_default"
+                name="is_default"
+                {% if grading_scale.is_default %}checked{% endif %}
+              />
+              <label class="form-check-label" for="is_default">
+                Set as default grading scale
+              </label>
+              <div class="form-text">
+                If checked, this scale will become the system default
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="alert alert-info">
+              <h5>
+                <i class="fas fa-info-circle me-2"></i>Grading Scale Information
+              </h5>
+              <p class="mb-0">
+                A grading scale defines how numeric scores are converted to
+                letter grades. Each grade threshold specifies the minimum
+                percentage needed to achieve that grade.
+              </p>
+              <hr />
+              <ul class="mb-0">
+                <li>Higher grades should have higher minimum scores</li>
+                <li>
+                  The lowest grade (usually F) should have a minimum score of 0
+                </li>
+                <li>Arrange grades from highest to lowest</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <h5 class="border-bottom pb-2 mb-4">Grade Thresholds</h5>
+
+        <div class="alert alert-warning mb-4">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <strong>Important:</strong> Arrange grades from highest to lowest with
+          appropriate minimum score thresholds
+        </div>
+
+        <div class="table-responsive mb-4 form-section">
+          <table class="table table-bordered" id="grade-thresholds-table">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 50px">#</th>
+                <th style="width: 40%">Grade</th>
+                <th style="width: 40%">Minimum Score (%)</th>
+                <th style="width: 10%">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="grade-thresholds-body">
+              <!-- Existing grade thresholds from database -->
+              {% for threshold in thresholds %}
+              <tr class="grade-row" id="grade-row-{{ forloop.counter }}">
+                <td class="text-center row-number">{{ forloop.counter }}</td>
+                <td>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="grade"
+                    value="{{ threshold.letter_grade }}"
+                    required
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-control"
+                    name="min_score"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value="{{ threshold.min_percent }}"
+                    required
+                  />
+                </td>
+                <td class="text-center">
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-circle remove-grade-btn"
+                    data-row="{{ forloop.counter }}"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                </td>
+              </tr>
+              {% empty %}
+              <!-- If no thresholds exist, provide default rows -->
+              <tr class="grade-row" id="grade-row-1">
+                <td class="text-center row-number">1</td>
+                <td>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="grade"
+                    value="A"
+                    required
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-control"
+                    name="min_score"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value="90"
+                    required
+                  />
+                </td>
+                <td class="text-center">
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-circle remove-grade-btn"
+                    data-row="1"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+              <!-- Dynamic rows can be added below by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mb-4">
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            id="add-grade-btn"
+          >
+            <i class="fas fa-plus me-2"></i>Add Grade Threshold
+          </button>
+        </div>
+
+        <hr />
+
+        <!-- Common Grade Letters (Collapsible) -->
+        <div class="mb-4 form-section">
+          <button class="btn btn-link p-0 text-decoration-none d-flex align-items-center" 
+                  type="button" 
+                  data-bs-toggle="collapse" 
+                  data-bs-target="#commonGradeLetters" 
+                  aria-expanded="false" 
+                  aria-controls="commonGradeLetters">
+            <h6 class="mb-0">Common Grade Letters</h6>
+            <i class="fas fa-chevron-down ms-2 small"></i>
+          </button>
+
+          <div class="collapse mt-3" id="commonGradeLetters">
+            <p class="text-muted small">
+              Click to add these common grade letters
+            </p>
+            <div class="d-flex flex-wrap">
+            <!-- Hard-coded common grades -->
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="A+"
+            >
+              A+
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="A"
+            >
+              A
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="A-"
+            >
+              A-
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="B+"
+            >
+              B+
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="B"
+            >
+              B
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="B-"
+            >
+              B-
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="C+"
+            >
+              C+
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="C"
+            >
+              C
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="C-"
+            >
+              C-
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="D+"
+            >
+              D+
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="D"
+            >
+              D
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="D-"
+            >
+              D-
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2 mb-2 add-default-grade"
+              data-grade="F"
+            >
+              F
+            </button>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <a
+            href="{% url 'dashboard:admin_grading_scales' %}"
+            class="btn btn-outline-secondary"
+            >Cancel</a
+          >
+          <button type="submit" class="btn btn-primary">
+            Update Grading Scale
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  // Make sure JavaScript runs even if there are errors
+  document.addEventListener("DOMContentLoaded", function () {
+    try {
+      let rowCounter = {% if thresholds %}{{ thresholds|length }}{% else %}0{% endif %};
+
+      // Function to add a new grade threshold row
+      function addGradeRow(grade = "", minScore = "") {
+        rowCounter++;
+
+        const newRow = `
+          <tr class="grade-row" id="grade-row-${rowCounter}">
+            <td class="text-center row-number">${rowCounter}</td>
+            <td>
+              <input type="text" class="form-control" name="grade" value="${grade}" required>
+            </td>
+            <td>
+              <input type="number" class="form-control" name="min_score" min="0" max="100" step="0.1" value="${minScore}" required>
+            </td>
+            <td class="text-center">
+              <button type="button" class="btn btn-danger btn-circle remove-grade-btn" data-row="${rowCounter}">
+                <i class="fas fa-times"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+
+        document
+          .getElementById("grade-thresholds-body")
+          .insertAdjacentHTML("beforeend", newRow);
+        updateRowNumbers();
+      }
+
+      // Update row numbers
+      function updateRowNumbers() {
+        document
+          .querySelectorAll(".row-number")
+          .forEach(function (cell, index) {
+            cell.textContent = index + 1;
+          });
+      }
+
+      // Add empty row button
+      document
+        .getElementById("add-grade-btn")
+        .addEventListener("click", function () {
+          addGradeRow();
+        });
+
+      // Add default grade buttons
+      document
+        .querySelectorAll(".add-default-grade")
+        .forEach(function (button) {
+          button.addEventListener("click", function () {
+            const grade = this.getAttribute("data-grade");
+            let minScore = "";
+
+            // Assign default minimum scores based on grade
+            switch (grade) {
+              case "A+":
+                minScore = "97";
+                break;
+              case "A":
+                minScore = "93";
+                break;
+              case "A-":
+                minScore = "90";
+                break;
+              case "B+":
+                minScore = "87";
+                break;
+              case "B":
+                minScore = "83";
+                break;
+              case "B-":
+                minScore = "80";
+                break;
+              case "C+":
+                minScore = "77";
+                break;
+              case "C":
+                minScore = "73";
+                break;
+              case "C-":
+                minScore = "70";
+                break;
+              case "D+":
+                minScore = "67";
+                break;
+              case "D":
+                minScore = "63";
+                break;
+              case "D-":
+                minScore = "60";
+                break;
+              case "F":
+                minScore = "0";
+                break;
+              default:
+                minScore = "";
+            }
+
+            addGradeRow(grade, minScore);
+          });
+        });
+
+      // Remove row function
+      document.addEventListener("click", function (e) {
+        if (
+          e.target.classList.contains("remove-grade-btn") ||
+          e.target.parentElement.classList.contains("remove-grade-btn")
+        ) {
+          const button = e.target.classList.contains("remove-grade-btn")
+            ? e.target
+            : e.target.parentElement;
+
+          const rowId = button.getAttribute("data-row");
+          const row = document.getElementById(`grade-row-${rowId}`);
+
+          if (row && document.querySelectorAll(".grade-row").length > 1) {
+            row.remove();
+            updateRowNumbers();
+          } else {
+            alert("You must have at least one grade threshold");
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error in grading scale edit form JavaScript:", error);
+    }
+  });
+</script>
+{% endblock %}

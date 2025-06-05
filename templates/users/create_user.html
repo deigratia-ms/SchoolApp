@@ -1,0 +1,1038 @@
+{% extends 'base.html' %} {% block title %}Create New User - School Management
+System{% endblock %} {% block extra_css %}
+<!-- Optional: Add any additional CSS you need -->
+<style>
+  .role-fields {
+    display: none;
+  }
+
+  .form-section {
+    background-color: #f8f9fc;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e3e6f0;
+  }
+
+  .form-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4e73df;
+    margin-bottom: 1.25rem;
+  }
+
+  .sidebar-card {
+    position: sticky;
+    top: 20px;
+  }
+
+  .role-help {
+    display: none;
+  }
+
+  .selected-role-display {
+    padding: 10px;
+    border-radius: 0.35rem;
+    background-color: #f8f9fc;
+    border: 1px solid #e3e6f0;
+  }
+
+  .form-control, .form-select {
+    padding: 0.75rem 1rem;
+  }
+
+  .input-group-text {
+    background-color: #f8f9fc;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Create New User</h1>
+    <a href="{% url 'users:user_management' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-2"></i>Back to User Management
+    </a>
+  </div>
+
+  <div class="row">
+    <!-- Main Form Column -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">User Information</h6>
+          <span class="badge bg-primary">Step 1 of 1</span>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data" id="createUserForm" action="{% url 'users:create_user' %}">
+            {% csrf_token %}
+
+            <!-- Debug info -->
+            <div class="alert alert-info alert-dismissible fade show mb-4">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Form Action:</strong> {% url 'users:create_user' %}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            {% if messages %} {% for message in messages %}
+            <div
+              class="alert alert-{{ message.tags }} alert-dismissible fade show"
+              role="alert"
+            >
+              {{ message }}
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+              ></button>
+            </div>
+            {% endfor %} {% endif %}
+
+            <!-- Account Type Selection -->
+            <div class="form-section mb-4">
+              <h5 class="form-section-title">Account Type</h5>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="userRole" class="form-label">Select User Role <span class="text-danger">*</span></label>
+                    <select class="form-select" id="userRole" name="role" required>
+                      <option value="" selected disabled>-- Select User Role --</option>
+
+                      <!-- Administrative Roles -->
+                      <optgroup label="Administrative Roles">
+                        <option value="ADMIN" data-icon="fas fa-user-shield text-danger">Administrator</option>
+                      </optgroup>
+
+                      <!-- Teaching Staff -->
+                      <optgroup label="Teaching Staff">
+                        <option value="TEACHER" data-icon="fas fa-chalkboard-teacher text-success">Teacher</option>
+                      </optgroup>
+
+                      <!-- Non-Teaching Staff -->
+                      <optgroup label="Non-Teaching Staff">
+                        <option value="ACCOUNTANT" data-icon="fas fa-calculator text-warning">Accountant</option>
+                        <option value="SECRETARY" data-icon="fas fa-clipboard text-info">Secretary</option>
+                        <option value="RECEPTIONIST" data-icon="fas fa-headset text-primary">Receptionist</option>
+                        <option value="SECURITY" data-icon="fas fa-shield-alt text-danger">Security</option>
+                        <option value="JANITOR" data-icon="fas fa-broom text-secondary">Janitor</option>
+                        <option value="COOK" data-icon="fas fa-utensils text-success">Cook</option>
+                        <option value="CLEANER" data-icon="fas fa-soap text-info">Cleaner</option>
+                        <option value="STAFF" data-icon="fas fa-user-tie text-primary">Other Staff</option>
+                      </optgroup>
+
+                      <!-- Students and Parents -->
+                      <optgroup label="Students & Parents">
+                        <option value="STUDENT" data-icon="fas fa-user-graduate text-primary">Student</option>
+                        <option value="PARENT" data-icon="fas fa-users text-info">Parent/Guardian</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Selected Role</label>
+                    <div class="selected-role-display">
+                      <div id="selectedRoleDisplay" class="d-flex align-items-center">
+                        <i class="fas fa-question-circle text-muted me-2 fa-lg"></i>
+                        <span>Please select a user role</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="form-section mb-4">
+              <h5 class="form-section-title">Basic Information</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="first_name" class="form-label"
+                    >First Name <span class="text-danger">*</span></label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="first_name"
+                      name="first_name"
+                      placeholder="Enter first name"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="last_name" class="form-label"
+                    >Last Name <span class="text-danger">*</span></label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="last_name"
+                      name="last_name"
+                      placeholder="Enter last name"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="email"
+                      name="email"
+                      placeholder="Enter email address"
+                      required
+                    />
+                  </div>
+                  <div class="form-text">Must be unique. Used for login.</div>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="phone_number" class="form-label">Phone Number</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="phone_number"
+                      name="phone_number"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+
+                <div class="col-md-6" id="password-field">
+                  <label for="password" class="form-label"
+                    >Password <span class="text-danger">*</span></label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="password"
+                      name="password"
+                      placeholder="Enter password or generate one"
+                      required
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="togglePassword"
+                      title="Show/Hide Password"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                  <div class="form-text" id="password-help-text">
+                    At least 8 characters with a mix of letters, numbers, and
+                    symbols.
+                  </div>
+                  <div id="password-generate-container" class="mt-2">
+                    <button
+                      type="button"
+                      id="generatePassword"
+                      class="btn btn-sm btn-outline-primary w-100"
+                    >
+                      <i class="fas fa-key me-1"></i> Generate Strong Password
+                    </button>
+                    <div class="small text-info mt-1">
+                      Password will be sent to the user's email.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="profile_picture" class="form-label"
+                    >Profile Picture</label
+                  >
+                  <input
+                    class="form-control"
+                    type="file"
+                    id="profile_picture"
+                    name="profile_picture"
+                    accept="image/*"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Teacher-specific Fields -->
+            <div id="teacher-fields" class="role-fields form-section mb-4">
+              <h5 class="form-section-title">Teacher Information</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="employee_id" class="form-label"
+                    >Employee ID <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="employee_id"
+                    name="employee_id"
+                  />
+                  <div class="form-text">
+                    Unique identifier for the teacher.
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="department" class="form-label"
+                    >Department <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="department"
+                    name="department"
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label for="qualification" class="form-label"
+                    >Qualification</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="qualification"
+                    name="qualification"
+                  />
+                  <div class="form-text">
+                    Teacher's highest academic qualification.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+<!-- Student-specific Fields -->
+<div id="student-fields" class="role-fields form-section mb-4">
+  <h5 class="form-section-title">Student Information</h5>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label for="student_id" class="form-label">Student ID</label>
+      <div class="input-group">
+        <input type="text" class="form-control" id="student_id" name="student_id" placeholder="Auto-generate if blank" />
+        <button class="btn btn-outline-secondary" type="button" id="generateID">
+          <i class="fas fa-sync"></i>
+        </button>
+      </div>
+      <div class="form-text text-muted">Leave blank to auto-generate</div>
+    </div>
+    <div class="col-md-6">
+      <label for="pin" class="form-label">PIN</label>
+      <div class="input-group">
+        <input type="text" class="form-control" id="pin" name="pin" placeholder="Auto-generate if blank" />
+        <button class="btn btn-outline-secondary" type="button" id="generatePIN">
+          <i class="fas fa-sync"></i>
+        </button>
+      </div>
+      <div class="form-text text-muted">Leave blank to auto-generate</div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="classroom" class="form-label">Classroom <span class="text-danger">*</span></label>
+      <select class="form-select" id="classroom" name="classroom" data-required="true">
+        <option value="" selected disabled>-- Select a Classroom --</option>
+        {% for classroom in classrooms %}
+            <option value="{{ classroom.id }}">{{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      <div class="form-text">Assign the student to a classroom</div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="date_of_birth" class="form-label">Date of Birth</label>
+      <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" />
+    </div>
+
+    <div class="mb-3">
+      <label for="parent_id" class="form-label">Link to Parent</label>
+      <select class="form-select" id="parent_id" name="parent_id">
+          <option value="">-- No Parent Selected --</option>
+          {% for parent in parents %}
+              <option value="{{ parent.id }}">{{ parent.user.get_full_name }} ({{ parent.user.email }})</option>
+          {% endfor %}
+      </select>
+    </div>
+  </div>
+</div>
+
+            <!-- Parent-specific Fields -->
+            <div id="parent-fields" class="role-fields form-section mb-4">
+              <h5 class="form-section-title">Parent/Guardian Information</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="relationship" class="form-label"
+                    >Relationship <span class="text-danger">*</span></label
+                  >
+                  <select
+                    class="form-select"
+                    id="relationship"
+                    name="relationship"
+                  >
+                    <option value="Parent" selected>Parent</option>
+                    <option value="Father">Father</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Guardian">Guardian</option>
+                    <option value="Grandparent">Grandparent</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="occupation" class="form-label">Occupation</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="occupation"
+                    name="occupation"
+                  />
+                </div>
+
+            <!-- Staff-specific Fields -->
+            <div id="staff-fields" class="role-fields form-section mb-4">
+              <h5 class="form-section-title">Staff Information</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="employee_id" class="form-label"
+                    >Employee ID <span class="text-danger">*</span></label
+                  >
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="employee_id"
+                      name="employee_id"
+                      placeholder="Auto-generate if blank"
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="generateEmployeeID"
+                    >
+                      <i class="fas fa-sync"></i>
+                    </button>
+                  </div>
+                  <div class="form-text text-muted">
+                    Leave blank to auto-generate
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="staff_type" class="form-label"
+                    >Staff Type <span class="text-danger">*</span></label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fas fa-user-tag"></i></span>
+                    <select
+                      class="form-select"
+                      id="staff_type"
+                      name="staff_type"
+                      data-required="true"
+                    >
+                      <option value="" selected disabled>
+                        -- Select Staff Type --
+                      </option>
+                      <option value="ADMINISTRATIVE">Administrative</option>
+                      <option value="SUPPORT">Support</option>
+                      <option value="MAINTENANCE">Maintenance</option>
+                      <option value="SECURITY">Security</option>
+                      <option value="FOOD_SERVICE">Food Service</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div class="form-text">Type of staff position (required for all staff roles)</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="department" class="form-label">Department</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="department"
+                    name="department"
+                    placeholder="Department"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="position" class="form-label">Position</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="position"
+                    name="position"
+                    placeholder="Position"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="date_joined" class="form-label">Date Joined</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="date_joined"
+                    name="date_joined"
+                    value="{{ today|date:'Y-m-d' }}"
+                  />
+                </div>
+                <div class="col-12">
+                  <label for="responsibilities" class="form-label">Responsibilities</label>
+                  <textarea
+                    class="form-control"
+                    id="responsibilities"
+                    name="responsibilities"
+                    rows="3"
+                    placeholder="Staff responsibilities"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+                <div class="col-12">
+                  <label class="form-label">Link to Children</label>
+                  <div class="card">
+                    <div class="card-body">
+                      <p class="small text-muted">
+                        You can link children to this parent after creating the
+                        account.
+                      </p>
+                      <a
+                        href="#"
+                        class="btn btn-sm btn-outline-primary disabled"
+                      >
+                        <i class="fas fa-link me-1"></i> Link Children
+                        (Available after saving)
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+              <a
+                href="{% url 'users:user_management' %}"
+                class="btn btn-outline-secondary"
+              >
+                <i class="fas fa-times me-2"></i>Cancel
+              </a>
+              <div>
+                <button
+                  type="submit"
+                  name="save_and_add"
+                  class="btn btn-outline-primary me-2"
+                >
+                  <i class="fas fa-save me-2"></i>Save & Add Another
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-user-plus me-2"></i>Create User
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div class="col-lg-4">
+      <!-- Quick Help Card -->
+      <div class="card shadow-sm border-0 mb-4 sticky-top" style="top: 20px; z-index: 100;">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Quick Help</h6>
+          <i class="fas fa-question-circle text-primary"></i>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Select the appropriate user role first. Required fields will change
+            based on role selection.
+          </div>
+
+          <div id="admin-help" class="role-help mb-3">
+            <h6>
+              <i class="fas fa-user-shield text-danger me-2"></i>Administrator
+            </h6>
+            <p class="small text-muted">
+              Administrators have full access to the system, can manage users,
+              classes, and all system settings.
+            </p>
+          </div>
+
+          <div id="teacher-help" class="role-help mb-3">
+            <h6>
+              <i class="fas fa-chalkboard-teacher text-success me-2"></i>Teacher
+            </h6>
+            <p class="small text-muted">
+              Teachers can manage classes, create assignments, take attendance,
+              and generate report cards.
+            </p>
+            <ul class="small text-muted">
+              <li>Employee ID is required for identification</li>
+              <li>Department helps organize by subject area</li>
+            </ul>
+          </div>
+
+          <div id="student-help" class="role-help mb-3">
+            <h6>
+              <i class="fas fa-user-graduate text-primary me-2"></i>Student
+            </h6>
+            <p class="small text-muted">
+              Students can view assignments, submit work, access course
+              materials, and view their grades.
+            </p>
+            <ul class="small text-muted">
+              <li>Student ID and PIN are used for student login</li>
+              <li>You can generate these automatically</li>
+              <li>Grade and section are required for class placement</li>
+            </ul>
+          </div>
+
+          <div id="parent-help" class="role-help mb-3">
+            <h6><i class="fas fa-users text-info me-2"></i>Parent/Guardian</h6>
+            <p class="small text-muted">
+              Parents can view their children's grades, attendance, assignments,
+              and communicate with teachers.
+            </p>
+            <ul class="small text-muted">
+              <li>Children can be linked after account creation</li>
+              <li>Parents can have multiple children in the system</li>
+            </ul>
+          </div>
+
+          <div id="staff-help" class="role-help mb-3">
+            <h6><i class="fas fa-user-tie text-warning me-2"></i>Staff Member</h6>
+            <p class="small text-muted">
+              Staff members have specific roles in the school administration and operations.
+            </p>
+            <ul class="small text-muted">
+              <li><strong>Staff Type is required</strong> - select from the dropdown in the Staff Information section</li>
+              <li>Employee ID will be auto-generated based on role</li>
+              <li>Department and position help organize staff hierarchy</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Settings Card -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Account Settings</h6>
+          <i class="fas fa-cog text-primary"></i>
+        </div>
+        <div class="card-body">
+          <div class="form-check form-switch mb-3">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="is_verified"
+              name="is_verified"
+              checked
+            />
+            <label class="form-check-label" for="is_verified">
+              Verify account immediately
+            </label>
+            <div class="form-text small">
+              If unchecked, the user will need to verify their email before
+              login.
+            </div>
+          </div>
+
+          <div class="form-check form-switch mb-3">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="is_active"
+              name="is_active"
+              checked
+            />
+            <label class="form-check-label" for="is_active">
+              Account active
+            </label>
+            <div class="form-text small">
+              If unchecked, the user cannot log in to the system.
+            </div>
+          </div>
+
+          <div class="form-check form-switch">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="skip_welcome_email"
+              name="skip_welcome_email"
+            />
+            <label class="form-check-label" for="skip_welcome_email">
+              Skip sending welcome email
+            </label>
+            <div class="form-text small">
+              If checked, no welcome email will be sent. By default, login credentials will be emailed to the user.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Get role radio buttons
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+
+    // Get role-specific field containers
+    const teacherFields = document.getElementById("teacher-fields");
+    const studentFields = document.getElementById("student-fields");
+    const parentFields = document.getElementById("parent-fields");
+    const staffFields = document.getElementById("staff-fields");
+
+    // Get role display elements
+    const selectedRoleDisplay = document.getElementById("selectedRoleDisplay");
+    const userRoleSelect = document.getElementById("userRole");
+
+    // Get password field and generate elements
+    const passwordField = document.getElementById("password-field");
+    const passwordInput = document.getElementById("password");
+    const generatePasswordContainer = document.getElementById(
+      "password-generate-container"
+    );
+    const generatePasswordBtn = document.getElementById("generatePassword");
+    const togglePasswordBtn = document.getElementById("togglePassword");
+
+    // Get help sections
+    const adminHelp = document.getElementById("admin-help");
+    const teacherHelp = document.getElementById("teacher-help");
+    const studentHelp = document.getElementById("student-help");
+    const parentHelp = document.getElementById("parent-help");
+    const staffHelp = document.getElementById("staff-help");
+
+    // Hide all role-specific helps initially
+    hideAllHelp();
+
+    // Toggle password visibility
+    if (togglePasswordBtn) {
+      togglePasswordBtn.addEventListener("click", function () {
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          togglePasswordBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        } else {
+          passwordInput.type = "password";
+          togglePasswordBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        }
+      });
+    }
+
+    // Generate password function
+    if (generatePasswordBtn) {
+      generatePasswordBtn.addEventListener("click", function () {
+        // Generate a strong random password
+        const chars =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+        let password = "";
+        for (let i = 0; i < 12; i++) {
+          password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        passwordInput.type = "text";
+        passwordInput.value = password;
+        togglePasswordBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+
+        // After 3 seconds, hide password again
+        setTimeout(function () {
+          passwordInput.type = "password";
+          togglePasswordBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        }, 3000);
+      });
+    }
+
+    // Add event listener to role dropdown
+    userRoleSelect.addEventListener("change", function () {
+      // Hide all role-specific fields
+      hideAllRoleFields();
+      hideAllHelp();
+
+      // Get selected role
+      const selectedRole = this.value;
+
+      // Update the role display with icon
+      updateRoleDisplay(selectedRole);
+
+      // Handle password field based on role
+      if (selectedRole === "ADMIN") {
+        // Admin: Show password field but hide generator
+        passwordField.style.display = "block";
+        generatePasswordContainer.style.display = "none";
+        passwordInput.required = true;
+        adminHelp.style.display = "block";
+      } else if (selectedRole === "TEACHER") {
+        // Teacher: Show password field with auto-generator
+        passwordField.style.display = "block";
+        generatePasswordContainer.style.display = "block";
+        passwordInput.required = true;
+        teacherFields.style.display = "block";
+        teacherHelp.style.display = "block";
+      } else if (selectedRole === "STUDENT") {
+        // Student: Hide password field, use PIN instead
+        passwordField.style.display = "none";
+        passwordInput.required = false;
+        // Generate a password automatically in the background
+        const chars =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+        let password = "";
+        for (let i = 0; i < 12; i++) {
+          password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        passwordInput.value = password;
+        studentFields.style.display = "block";
+        studentHelp.style.display = "block";
+      } else if (selectedRole === "PARENT") {
+        // Parent: Show password field with auto-generator
+        passwordField.style.display = "block";
+        generatePasswordContainer.style.display = "block";
+        passwordInput.required = true;
+        parentFields.style.display = "block";
+        parentHelp.style.display = "block";
+      } else if (["ACCOUNTANT", "SECRETARY", "RECEPTIONIST", "SECURITY", "JANITOR", "COOK", "CLEANER", "STAFF"].includes(selectedRole)) {
+        // Staff: Show password field with auto-generator
+        passwordField.style.display = "block";
+        generatePasswordContainer.style.display = "block";
+        passwordInput.required = true;
+        staffFields.style.display = "block";
+
+        // Make sure staff_type field is visible and required
+        const staffTypeField = document.getElementById("staff_type");
+        if (staffTypeField) {
+          staffTypeField.style.display = "block";
+          staffTypeField.setAttribute("data-required", "true");
+
+          // Pre-select a staff type based on role
+          if (selectedRole === "ACCOUNTANT") staffTypeField.value = "ADMINISTRATIVE";
+          else if (selectedRole === "SECRETARY" || selectedRole === "RECEPTIONIST") staffTypeField.value = "SUPPORT";
+          else if (selectedRole === "SECURITY") staffTypeField.value = "SECURITY";
+          else if (selectedRole === "JANITOR" || selectedRole === "CLEANER") staffTypeField.value = "MAINTENANCE";
+          else if (selectedRole === "COOK") staffTypeField.value = "FOOD_SERVICE";
+          else staffTypeField.value = "OTHER";
+        }
+
+        // We're using data-required attribute instead of the required attribute
+        // This is handled in the form validation function
+
+        // Auto-generate employee ID based on role
+        const employeeIdInput = document.getElementById("employee_id");
+        if (employeeIdInput && !employeeIdInput.value) {
+          let prefix = "STF";
+
+          // Set prefix based on role
+          if (selectedRole === "ACCOUNTANT") prefix = "ACC";
+          else if (selectedRole === "SECRETARY") prefix = "SEC";
+          else if (selectedRole === "RECEPTIONIST") prefix = "REC";
+          else if (selectedRole === "SECURITY") prefix = "SCR";
+          else if (selectedRole === "JANITOR") prefix = "JAN";
+          else if (selectedRole === "COOK") prefix = "COK";
+          else if (selectedRole === "CLEANER") prefix = "CLN";
+
+          employeeIdInput.value = prefix + Math.floor(10000 + Math.random() * 90000).toString();
+        }
+      }
+
+      // Update required fields based on role
+      updateRequiredFields(selectedRole);
+    });
+
+    // Function to update the role display with icon
+    function updateRoleDisplay(role) {
+      if (!role) {
+        selectedRoleDisplay.innerHTML = `
+          <i class="fas fa-question-circle text-muted me-2 fa-lg"></i>
+          <span>Please select a user role</span>
+        `;
+        return;
+      }
+
+      // Find the selected option to get its data-icon
+      const selectedOption = userRoleSelect.options[userRoleSelect.selectedIndex];
+      const iconClass = selectedOption.getAttribute('data-icon');
+      const roleName = selectedOption.text;
+
+      // Update the display
+      selectedRoleDisplay.innerHTML = `
+        <i class="${iconClass} me-2 fa-lg"></i>
+        <span><strong>${roleName}</strong></span>
+      `;
+    }
+
+    // Configure PIN input and generator
+    const pinInput = document.getElementById("pin");
+    if (pinInput) {
+      // Add button next to PIN input for auto-generation
+      const pinInputParent = pinInput.parentElement;
+      const generatePinBtn = document.createElement("button");
+      generatePinBtn.type = "button";
+      generatePinBtn.className = "btn btn-sm btn-outline-secondary mt-2";
+      generatePinBtn.innerHTML = '<i class="fas fa-key me-1"></i> Generate PIN';
+      generatePinBtn.addEventListener("click", function () {
+        // Generate a random 5-digit PIN
+        const pin = Math.floor(10000 + Math.random() * 90000).toString();
+        pinInput.value = pin;
+      });
+      pinInputParent.appendChild(generatePinBtn);
+    }
+
+    // Auto-generate student ID if empty
+    const studentIdInput = document.getElementById("student_id");
+    if (studentIdInput && !studentIdInput.value) {
+      studentIdInput.value =
+        "STU" + Math.floor(10000 + Math.random() * 90000).toString();
+    }
+    // Auto-generate ID for teachers if needed
+    const employeeIdInput = document.getElementById("employee_id");
+    if (employeeIdInput) {
+      const employeeIdParent = employeeIdInput.parentElement;
+      const generateIdBtn = document.createElement("button");
+      generateIdBtn.type = "button";
+      generateIdBtn.className = "btn btn-sm btn-outline-secondary mt-2";
+      generateIdBtn.innerHTML =
+        '<i class="fas fa-id-badge me-1"></i> Generate ID';
+      generateIdBtn.addEventListener("click", function () {
+        // Generate a random teacher ID
+        employeeIdInput.value =
+          "TCH" + Math.floor(10000 + Math.random() * 90000).toString();
+      });
+      employeeIdParent.appendChild(generateIdBtn);
+    }
+
+    // Helper functions
+    function hideAllRoleFields() {
+      teacherFields.style.display = "none";
+      studentFields.style.display = "none";
+      parentFields.style.display = "none";
+      staffFields.style.display = "none";
+    }
+
+    function hideAllHelp() {
+      adminHelp.style.display = "none";
+      teacherHelp.style.display = "none";
+      studentHelp.style.display = "none";
+      parentHelp.style.display = "none";
+    }
+
+    function updateRequiredFields(role) {
+      // We're using data-required attributes instead of the required attribute
+      // This is handled in the form validation function
+      // This function is kept for backward compatibility
+    }
+
+    function resetRequiredFields() {
+      // We're using data-required attributes instead of the required attribute
+      // This is handled in the form validation function
+      // This function is kept for backward compatibility
+
+      // Reset any validation styling
+      document.querySelectorAll('.is-invalid').forEach(field => {
+        field.classList.remove('is-invalid');
+      });
+    }
+
+    // Form validation
+    const createUserForm = document.getElementById("createUserForm");
+    if (createUserForm) {
+      createUserForm.addEventListener("submit", function (event) {
+        // Prevent default submission to handle validation
+        event.preventDefault();
+
+        // Get the selected role
+        const selectedRole = userRoleSelect.value;
+        if (!selectedRole) {
+          showValidationError("Please select a user role");
+          return;
+        }
+
+        // Check password strength if visible
+        if (passwordField.style.display !== "none") {
+          const password = document.getElementById("password").value;
+          if (password.length < 8) {
+            showValidationError("Password must be at least 8 characters long");
+            return;
+          }
+        }
+
+        // Validate role-specific required fields
+        let isValid = true;
+
+        // For students, validate classroom
+        if (selectedRole === "STUDENT") {
+          const classroomField = document.getElementById("classroom");
+          if (classroomField && classroomField.getAttribute("data-required") === "true" && !classroomField.value) {
+            showValidationError("Please select a classroom for the student");
+            classroomField.classList.add("is-invalid");
+            isValid = false;
+          }
+        }
+
+        // For staff, validate staff_type
+        if (["ACCOUNTANT", "SECRETARY", "RECEPTIONIST", "SECURITY", "JANITOR", "COOK", "CLEANER", "STAFF"].includes(selectedRole)) {
+          const staffTypeField = document.getElementById("staff_type");
+          if (staffTypeField && staffTypeField.getAttribute("data-required") === "true" && !staffTypeField.value) {
+            showValidationError("Please select a staff type in the Staff Information section below");
+            staffTypeField.classList.add("is-invalid");
+
+            // Scroll to the staff type field to make it visible
+            staffTypeField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Add a temporary highlight effect
+            staffTypeField.parentElement.classList.add("bg-light");
+            setTimeout(() => {
+              staffTypeField.parentElement.classList.remove("bg-light");
+            }, 2000);
+
+            isValid = false;
+          }
+        }
+
+        // If validation fails, return early
+        if (!isValid) {
+          return;
+        }
+
+        // If validation passes, show loading state
+        const submitBtn = event.submitter;
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        }
+
+        // Submit the form
+        this.submit();
+      });
+
+      // Function to show validation errors
+      function showValidationError(message) {
+        // Create alert at the top of the form
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show mb-4';
+        alertDiv.innerHTML = `
+          <i class="fas fa-exclamation-circle me-2"></i>${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+        // Insert at the top of the form
+        const firstChild = createUserForm.firstChild;
+        createUserForm.insertBefore(alertDiv, firstChild);
+
+        // Scroll to the top of the form
+        alertDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+          alertDiv.classList.remove('show');
+          setTimeout(() => alertDiv.remove(), 300);
+        }, 5000);
+      }
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Schedule | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Create Schedule</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'courses:schedule_list' %}">Schedules</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Create</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Schedule Information</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="class_subject" class="form-label">Class & Subject <span class="text-danger">*</span></label>
+                            <select class="form-select" id="class_subject" name="class_subject" required>
+                                <option value="">-- Select Class & Subject --</option>
+                                {% for class_subject in class_subjects %}
+                                <option value="{{ class_subject.id }}">
+                                    {{ class_subject.classroom.name }} 
+                                    {% if class_subject.classroom.section %}
+                                        ({{ class_subject.classroom.section }})
+                                    {% endif %} 
+                                    - {{ class_subject.subject.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the class and subject for this schedule entry.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="day_of_week" class="form-label">Day of Week <span class="text-danger">*</span></label>
+                            <select class="form-select" id="day_of_week" name="day_of_week" required>
+                                <option value="">-- Select Day --</option>
+                                {% for day_num, day_name in days_of_week %}
+                                <option value="{{ day_num }}">{{ day_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the day of the week for this class.</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_time" class="form-label">Start Time <span class="text-danger">*</span></label>
+                                    <input type="time" class="form-control" id="start_time" name="start_time" required>
+                                    <div class="form-text">The time when the class starts (24-hour format).</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_time" class="form-label">End Time <span class="text-danger">*</span></label>
+                                    <input type="time" class="form-control" id="end_time" name="end_time" required>
+                                    <div class="form-text">The time when the class ends (24-hour format).</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info duration-info" style="display: none;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span id="duration-text"></span>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'courses:schedule_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Schedule</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <p>Please fill in the form to create a new schedule entry:</p>
+                    <ul>
+                        <li>Select the <strong>Class & Subject</strong> for which you want to schedule a class time.</li>
+                        <li>Choose the <strong>Day of Week</strong> when this class will take place.</li>
+                        <li>Set the <strong>Start Time</strong> when the class will begin.</li>
+                        <li>Set the <strong>End Time</strong> when the class will finish.</li>
+                    </ul>
+                    <p>Note: The system will check for schedule conflicts to ensure that classes don't overlap for the same classroom.</p>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Scheduling Tips</h6>
+                </div>
+                <div class="card-body">
+                    <p>For effective scheduling:</p>
+                    <ol>
+                        <li>Allow sufficient time between classes (at least 5-10 minutes).</li>
+                        <li>Consider appropriate class durations based on subject and student age.</li>
+                        <li>Elementary classes: 30-45 minutes recommended.</li>
+                        <li>Middle/High school classes: 45-60 minutes recommended.</li>
+                        <li>Distribute challenging subjects throughout the week.</li>
+                        <li>Consider teacher availability and workload.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+        const durationInfo = document.querySelector('.duration-info');
+        const durationText = document.getElementById('duration-text');
+        
+        // Function to calculate and display class duration
+        function updateDuration() {
+            if (startTimeInput.value && endTimeInput.value) {
+                // Convert to Date objects for easier comparison
+                const startDate = new Date('2023-01-01T' + startTimeInput.value + ':00');
+                const endDate = new Date('2023-01-01T' + endTimeInput.value + ':00');
+                
+                // Check if end time is after start time
+                if (endDate <= startDate) {
+                    durationInfo.style.display = 'block';
+                    durationInfo.className = 'alert alert-danger duration-info';
+                    durationText.textContent = 'End time must be after start time.';
+                    return;
+                }
+                
+                // Calculate duration in minutes
+                const durationMinutes = (endDate - startDate) / (1000 * 60);
+                const hours = Math.floor(durationMinutes / 60);
+                const minutes = durationMinutes % 60;
+                
+                // Display duration
+                durationInfo.style.display = 'block';
+                durationInfo.className = 'alert alert-info duration-info';
+                
+                if (hours > 0) {
+                    durationText.textContent = `Class duration: ${hours} hour${hours > 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''}.`;
+                } else {
+                    durationText.textContent = `Class duration: ${minutes} minute${minutes !== 1 ? 's' : ''}.`;
+                }
+                
+                // Warning for very short or long classes
+                if (durationMinutes < 30) {
+                    durationInfo.className = 'alert alert-warning duration-info';
+                    durationText.textContent += ' This seems quite short for a class period.';
+                } else if (durationMinutes > 120) {
+                    durationInfo.className = 'alert alert-warning duration-info';
+                    durationText.textContent += ' This seems quite long for a class period.';
+                }
+            } else {
+                durationInfo.style.display = 'none';
+            }
+        }
+        
+        // Add event listeners
+        if (startTimeInput && endTimeInput) {
+            startTimeInput.addEventListener('change', updateDuration);
+            endTimeInput.addEventListener('change', updateDuration);
+        }
+        
+        // Form validation
+        const form = document.querySelector('form');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (startTimeInput.value && endTimeInput.value) {
+                    const startDate = new Date('2023-01-01T' + startTimeInput.value + ':00');
+                    const endDate = new Date('2023-01-01T' + endTimeInput.value + ':00');
+                    
+                    if (endDate <= startDate) {
+                        e.preventDefault();
+                        alert('End time must be after start time.');
+                        return false;
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

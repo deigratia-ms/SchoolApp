@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Create Bulk Payment{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h1 class="h3">Create Bulk Payment</h1>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <p class="mb-0">You are about to create payments for <strong>{{ payrolls|length }}</strong> staff members with a total amount of <strong>GH₵ {{ total_amount|floatformat:2|intcomma }}</strong>.</p>
+          </div>
+          
+          <form method="post" action="{% url 'payroll:bulk_actions' %}">
+            {% csrf_token %}
+            <input type="hidden" name="bulk_action" value="pay">
+            <input type="hidden" name="confirm" value="1">
+            
+            {% for payroll_id in payroll_ids %}
+              <input type="hidden" name="payroll_ids" value="{{ payroll_id }}">
+            {% endfor %}
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="payment_date" class="form-label">Payment Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="payment_date" name="payment_date" value="{{ today|date:'Y-m-d' }}" required>
+              </div>
+              <div class="col-md-6">
+                <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                <select class="form-select" id="payment_method" name="payment_method" required>
+                  <option value="">-- Select Payment Method --</option>
+                  {% for value, label in payment_methods %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="transaction_id" class="form-label">Transaction ID</label>
+                <input type="text" class="form-control" id="transaction_id" name="transaction_id" placeholder="Optional transaction reference">
+              </div>
+              <div class="col-md-6">
+                <label for="remarks" class="form-label">Remarks</label>
+                <textarea class="form-control" id="remarks" name="remarks" rows="3" placeholder="Optional remarks"></textarea>
+              </div>
+            </div>
+            
+            <div class="table-responsive mb-4">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Staff Name</th>
+                    <th>Period</th>
+                    <th>Net Salary</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payroll in payrolls %}
+                    <tr>
+                      <td>{{ payroll.staff_salary.user.get_full_name }}</td>
+                      <td>{{ payroll.period.name }}</td>
+                      <td>GH₵ {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr class="table-active">
+                    <th colspan="2" class="text-end">Total:</th>
+                    <th>GH₵ {{ total_amount|floatformat:2|intcomma }}</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'payroll:payroll_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check me-2"></i>Create Payments
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payment Details - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Payment Details</h1>
+    <div>
+      <a href="{% url 'payroll:payment_list' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Payments
+      </a>
+    </div>
+  </div>
+
+  <!-- Payment Information -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payment Information</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Staff Name:</th>
+                  <td>{{ payment.payroll.staff_salary.user.get_full_name }}</td>
+                </tr>
+                <tr>
+                  <th>Payroll Period:</th>
+                  <td>{{ payment.payroll.period.name }}</td>
+                </tr>
+                <tr>
+                  <th>Payment Date:</th>
+                  <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                </tr>
+                <tr>
+                  <th>Amount:</th>
+                  <td>GH₵ {{ payment.amount|floatformat:2|intcomma }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Payment Method:</th>
+                  <td>{{ payment.get_payment_method_display }}</td>
+                </tr>
+                <tr>
+                  <th>Transaction ID:</th>
+                  <td>{{ payment.transaction_id|default:"-" }}</td>
+                </tr>
+                <tr>
+                  <th>Processed By:</th>
+                  <td>{{ payment.paid_by.get_full_name }}</td>
+                </tr>
+                <tr>
+                  <th>Remarks:</th>
+                  <td>{{ payment.remarks|default:"-" }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payroll Information -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Payroll Information</h6>
+          <a href="{% url 'payroll:payroll_detail' payment.payroll.id %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-eye me-1"></i> View Payroll
+          </a>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Base Salary:</th>
+                  <td>GH₵ {{ payment.payroll.base_salary|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Transport Allowance:</th>
+                  <td>GH₵ {{ payment.payroll.transport_allowance|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Housing Allowance:</th>
+                  <td>GH₵ {{ payment.payroll.housing_allowance|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Other Allowances:</th>
+                  <td>GH₵ {{ payment.payroll.other_allowances|floatformat:2|intcomma }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Gross Salary:</th>
+                  <td>GH₵ {{ payment.payroll.gross_salary|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>SSNIT Deduction:</th>
+                  <td>GH₵ {{ payment.payroll.ssnit_deduction|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Tax Deduction:</th>
+                  <td>GH₵ {{ payment.payroll.tax_deduction|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Other Deductions:</th>
+                  <td>GH₵ {{ payment.payroll.other_deductions|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Total Deductions:</th>
+                  <td>GH₵ {{ payment.payroll.total_deductions|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Net Salary:</th>
+                  <td>GH₵ {{ payment.payroll.net_salary|floatformat:2|intcomma }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

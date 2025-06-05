@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Reply to Message - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 class="mb-0">Reply to Message</h5>
+                            <p class="text-sm mb-0">Send a reply to the message</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a href="{% url 'communications:message_detail' original_message.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Message
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <ul>
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li>{{ field.label }}: {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Reply To (read-only) -->
+                        <div class="mb-3">
+                            <label for="recipient_name" class="form-label">Reply To</label>
+                            <input type="text" class="form-control bg-light" id="recipient_name" value="{{ original_message.sender.get_full_name }} ({{ original_message.sender.email }})" readonly>
+                            <input type="hidden" name="recipient" value="{{ original_message.sender.id }}">
+                        </div>
+                        
+                        <!-- Subject (pre-filled with Re: prefix) -->
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="subject" name="subject" required value="{{ subject }}">
+                        </div>
+                        
+                        <!-- Message Content -->
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Message</label>
+                            <textarea class="form-control" id="content" name="content" rows="6" required>{{ content_with_quote }}</textarea>
+                        </div>
+                        
+                        <!-- Attachment (optional) -->
+                        <div class="mb-3">
+                            <label for="attachment" class="form-label">Attachment (optional)</label>
+                            <input type="file" class="form-control" id="attachment" name="attachment">
+                        </div>
+                        
+                        <!-- Original Message Preview (collapsed by default) -->
+                        <div class="mb-3">
+                            <div class="card">
+                                <div class="card-header p-2 bg-light" data-bs-toggle="collapse" data-bs-target="#originalMessage" style="cursor: pointer;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-envelope me-2"></i> Original Message</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
+                                <div class="collapse" id="originalMessage">
+                                    <div class="card-body p-3">
+                                        <div class="original-message-header mb-2">
+                                            <strong>From:</strong> {{ original_message.sender.get_full_name }}<br>
+                                            <strong>Date:</strong> {{ original_message.created_at|date:"F d, Y" }} at {{ original_message.created_at|time:"H:i" }}<br>
+                                            <strong>Subject:</strong> {{ original_message.subject }}
+                                        </div>
+                                        <div class="original-message-content p-3 bg-light rounded">
+                                            {{ original_message.content|linebreaks }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submission Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-eraser"></i> Clear
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send Reply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

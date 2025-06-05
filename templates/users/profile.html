@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">My Profile</h1>
+        <a href="{% url 'dashboard:index' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Profile Form -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Personal Information</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="profileForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 text-center">
+                                <div class="profile-image-container mb-3">
+                                    {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" 
+                                             class="rounded-circle img-thumbnail" style="width: 180px; height: 180px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                                             style="width: 180px; height: 180px;">
+                                            <span style="font-size: 72px;">{{ user.first_name|first }}{{ user.last_name|first }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="profile_picture" class="form-label">Profile Picture</label>
+                                    <input class="form-control form-control-sm" type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                                    <div class="form-text">
+                                        Max size: 2MB. Square images work best.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" 
+                                               value="{{ user.first_name }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" 
+                                               value="{{ user.last_name }}" required>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               value="{{ user.email }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone_number" class="form-label">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                               value="{{ user.phone_number|default:'' }}">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" value="{{ user.username }}" 
+                                               readonly disabled>
+                                        <div class="form-text">Username cannot be changed</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="role" class="form-label">Role</label>
+                                        <input type="text" class="form-control" id="role" value="{{ user.get_role_display }}" 
+                                               readonly disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Role-specific information -->
+                        {% if user.is_student %}
+                            <div class="mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">Student Information</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="student_id" class="form-label">Student ID</label>
+                                        <input type="text" class="form-control" id="student_id" value="{{ student.student_id }}" 
+                                               readonly disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="pin" class="form-label">PIN</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="pin" value="{{ student.pin }}" 
+                                                   readonly disabled>
+                                            <button class="btn btn-outline-secondary" type="button" id="togglePin">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">Use this PIN for student login</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="grade" class="form-label">Grade</label>
+                                        <input type="text" class="form-control" id="grade" value="{{ student.grade }}" 
+                                               readonly disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="section" class="form-label">Section</label>
+                                        <input type="text" class="form-control" id="section" value="{{ student.section }}" 
+                                               readonly disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif user.is_teacher %}
+                            <div class="mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">Teacher Information</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="employee_id" class="form-label">Employee ID</label>
+                                        <input type="text" class="form-control" id="employee_id" value="{{ teacher.employee_id }}" 
+                                               readonly disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="department" class="form-label">Department</label>
+                                        <input type="text" class="form-control" id="department" value="{{ teacher.department }}" 
+                                               readonly disabled>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label for="qualification" class="form-label">Qualification</label>
+                                        <input type="text" class="form-control" id="qualification" value="{{ teacher.qualification }}" 
+                                               readonly disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif user.is_parent %}
+                            <div class="mb-4">
+                                <h5 class="border-bottom pb-2 mb-3">Parent Information</h5>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="relationship" class="form-label">Relationship</label>
+                                        <input type="text" class="form-control" id="relationship" value="{{ parent.relationship }}" 
+                                               readonly disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="occupation" class="form-label">Occupation</label>
+                                        <input type="text" class="form-control" id="occupation" value="{{ parent.occupation }}" 
+                                               readonly disabled>
+                                    </div>
+                                </div>
+                                
+                                <h6 class="mb-2">Children</h6>
+                                {% if parent.children.all %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Student ID</th>
+                                                    <th>Grade</th>
+                                                    <th>Section</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for child in parent.children.all %}
+                                                    <tr>
+                                                        <td>{{ child.user.get_full_name }}</td>
+                                                        <td>{{ child.student_id }}</td>
+                                                        <td>{{ child.grade }}</td>
+                                                        <td>{{ child.section }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No children are linked to your account yet. Please contact the administrator.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Save Button -->
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Security Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Security</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Password Management</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Password</h6>
+                                <p class="text-muted mb-0">
+                                    Last changed: {{ user.last_password_change|default:"Unknown" }}
+                                </p>
+                            </div>
+                            <a href="{% url 'users:change_password' %}" class="btn btn-primary">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Session Management</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Active Sessions</h6>
+                                <p class="text-muted mb-0">
+                                    Current login: {{ user.last_login|date:"F j, Y, g:i a" }}
+                                </p>
+                            </div>
+                            <a href="{% url 'users:logout' %}" class="btn btn-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout Everywhere
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Account Status Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Account Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="mb-0">Status</h6>
+                        {% if user.is_active and user.is_verified %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif user.is_active and not user.is_verified %}
+                            <span class="badge bg-warning">Unverified</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="mb-0">Account Type</h6>
+                        <span class="badge {% if user.is_admin %}bg-danger{% elif user.is_teacher %}bg-success{% elif user.is_student %}bg-primary{% elif user.is_parent %}bg-info{% else %}bg-secondary{% endif %}">
+                            {{ user.get_role_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="mb-0">Joined</h6>
+                        <span>{{ user.date_joined|date:"F j, Y" }}</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0">Last Login</h6>
+                        <span>{{ user.last_login|date:"F j, Y, g:i a" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Links Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Links</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'dashboard:index' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                        <a href="{% url 'users:change_password' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </a>
+                        
+                        {% if user.is_student %}
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-book me-2"></i>My Courses
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-clipboard-list me-2"></i>My Assignments
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-chart-line me-2"></i>My Grades
+                            </a>
+                        {% elif user.is_teacher %}
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-chalkboard me-2"></i>My Classes
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-tasks me-2"></i>My Assignments
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-user-check me-2"></i>Attendance Records
+                            </a>
+                        {% elif user.is_parent %}
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-child me-2"></i>My Children
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-chart-bar me-2"></i>Progress Reports
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-calendar-alt me-2"></i>Events & Meetings
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'communications:message_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope me-2"></i>Messages
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ID Card Card (for students) -->
+            {% if user.is_student %}
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">My ID Card</h6>
+                    </div>
+                    <div class="card-body text-center">
+                        {% if student_id_card %}
+                            <div class="id-card-preview mb-3">
+                                <!-- ID Card Preview -->
+                                <div class="card" style="max-width: 300px; margin: 0 auto;">
+                                    <div class="card-header bg-primary text-white text-center">
+                                        {{ student_id_card.template.header_text }}
+                                    </div>
+                                    <div class="card-body">
+                                        {% if user.profile_picture %}
+                                            <img src="{{ user.profile_picture.url }}" class="rounded mx-auto d-block mb-3" 
+                                                 alt="{{ user.get_full_name }}" style="width: 120px; height: 150px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-light border mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                                                 style="width: 120px; height: 150px;">
+                                                <i class="fas fa-user fa-3x text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <h5 class="card-title text-center">{{ user.get_full_name }}</h5>
+                                        <ul class="list-unstyled">
+                                            <li><strong>ID:</strong> {{ student.student_id }}</li>
+                                            <li><strong>Grade:</strong> {{ student.grade }}</li>
+                                            <li><strong>Valid Until:</strong> {{ student_id_card.expiry_date|date:"F j, Y" }}</li>
+                                        </ul>
+                                        
+                                        {% if student_id_card.barcode_data %}
+                                            <div class="barcode text-center mt-2">
+                                                <img src="{{ student_id_card.barcode_image.url }}" alt="Barcode" class="img-fluid">
+                                                <div class="small">{{ student_id_card.barcode_data }}</div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <a href="{% url 'users:id_card_print' student_id_card.id %}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-print me-2"></i>Print ID Card
+                            </a>
+                        {% else %}
+                            <div class="mb-3">
+                                <i class="fas fa-id-card fa-3x text-muted"></i>
+                            </div>
+                            <h6 class="text-muted">No ID Card Available</h6>
+                            <p class="small text-muted">Contact the school administrator to get your ID card.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Profile picture preview
+        const profilePictureInput = document.getElementById('profile_picture');
+        
+        if (profilePictureInput) {
+            profilePictureInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        // If there's an existing image, update its source
+                        const existingImage = document.querySelector('.profile-image-container img');
+                        
+                        if (existingImage) {
+                            existingImage.src = e.target.result;
+                        } else {
+                            // If there's an avatar placeholder, replace it with the image
+                            const avatarPlaceholder = document.querySelector('.profile-image-container div');
+                            
+                            if (avatarPlaceholder) {
+                                avatarPlaceholder.innerHTML = `<img src="${e.target.result}" alt="Profile Preview" 
+                                                                class="rounded-circle img-thumbnail" style="width: 180px; height: 180px; object-fit: cover;">`;
+                            }
+                        }
+                    }
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+        
+        // Toggle PIN visibility (for students)
+        const togglePinBtn = document.getElementById('togglePin');
+        const pinInput = document.getElementById('pin');
+        
+        if (togglePinBtn && pinInput) {
+            togglePinBtn.addEventListener('click', function() {
+                const type = pinInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                pinInput.setAttribute('type', type);
+                
+                // Toggle icon
+                const icon = this.querySelector('i');
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

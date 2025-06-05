@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+
+{% block title %}Take Attendance | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Take Attendance</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'attendance:home' %}">Attendance</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Take Attendance</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">My Classes</h6>
+                    <div class="input-group date w-25">
+                        <input type="date" class="form-control" id="attendanceDate" name="attendance_date" value="{{ today|date:'Y-m-d' }}">
+                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Select a class to take attendance for <strong>{{ selected_date|date:"F j, Y" }}</strong>:</p>
+                    
+                    <div class="row">
+                        {% for classroom in teacher_classes %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border {% if classroom.has_attendance %}border-success{% else %}border-warning{% endif %}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <h5 class="card-title">{{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}</h5>
+                                        {% if classroom.has_attendance %}
+                                        <span class="badge bg-success">Attendance Taken</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <p class="card-text small">
+                                        <strong>Students:</strong> {{ classroom.students_count }} |
+                                        {% if classroom.is_class_teacher %}
+                                        <span class="text-success">You are the class teacher</span>
+                                        {% else %}
+                                        <strong>Class Teacher:</strong> 
+                                        {% if classroom.class_teacher %}
+                                            {{ classroom.class_teacher.user.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">Not assigned</span>
+                                        {% endif %}
+                                        {% endif %}
+                                    </p>
+                                    
+                                    {% if classroom.has_attendance %}
+                                    <p class="card-text small">
+                                        <strong>Last taken by:</strong> {{ classroom.attendance_record.taken_by.user.get_full_name }} at {{ classroom.attendance_record.created_at|time:"H:i" }}
+                                    </p>
+                                    <div class="small mb-2">
+                                        <span class="badge bg-success">Present: {{ classroom.present_count }}</span>
+                                        <span class="badge bg-danger">Absent: {{ classroom.absent_count }}</span>
+                                        <span class="badge bg-warning">Late: {{ classroom.late_count }}</span>
+                                        <span class="badge bg-info">Excused: {{ classroom.excused_count }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer d-flex justify-content-between bg-transparent">
+                                    {% if is_subject_teacher %}
+                                        {% if classroom.has_attendance %}
+                                        <a href="{% url 'attendance:record_detail' classroom.attendance_record.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye me-1"></i>View Attendance
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted small">
+                                            <i class="fas fa-info-circle me-1"></i>Attendance not marked yet
+                                        </span>
+                                        {% endif %}
+                                        <div class="small text-muted">
+                                            <i class="fas fa-lock me-1"></i>Only class teachers can mark attendance
+                                        </div>
+                                    {% else %}
+                                        <a href="{% url 'attendance:take_class_attendance' classroom.id %}?date={{ selected_date|date:'Y-m-d' }}" class="btn btn-primary btn-sm">
+                                            {% if classroom.has_attendance %}
+                                            <i class="fas fa-edit me-1"></i>Edit Attendance
+                                            {% else %}
+                                            <i class="fas fa-clipboard-check me-1"></i>Take Attendance
+                                            {% endif %}
+                                        </a>
+                                        
+                                        {% if classroom.has_attendance %}
+                                        <a href="{% url 'attendance:record_detail' classroom.attendance_record.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye me-1"></i>View Details
+                                        </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">
+                                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                <p>You are not assigned to any classes at the moment.</p>
+                                <p>Please contact the administrator if you believe this is incorrect.</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Attendance Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Today's Date:</strong> {{ today|date:"F j, Y" }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Selected Date:</strong> {{ selected_date|date:"F j, Y" }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Day of Week:</strong> {{ selected_date|date:"l" }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Teacher:</strong> {{ request.user.get_full_name }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Assigned Classes:</strong> {{ teacher_classes|length }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <strong>Classes with Attendance Taken:</strong> {{ completed_attendance_count }} / {{ teacher_classes|length }}
+                        <div class="progress mt-2">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ attendance_completion_percentage }}%;" 
+                                 aria-valuenow="{{ attendance_completion_percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ attendance_completion_percentage }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-primary" id="changeDate">
+                            <i class="fas fa-calendar-alt me-1"></i>Change Selected Date
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Recent Attendance Records</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for record in recent_records %}
+                        <a href="{% url 'attendance:record_detail' record.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    {{ record.classroom.name }} {% if record.classroom.section %}({{ record.classroom.section }}){% endif %}
+                                </h6>
+                                <small>{{ record.date|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mb-1">Taken by: {{ record.taken_by.user.get_full_name }}</p>
+                            <div class="small">
+                                <span class="badge bg-success">P: {{ record.present_count }}</span>
+                                <span class="badge bg-danger">A: {{ record.absent_count }}</span>
+                                <span class="badge bg-warning">L: {{ record.late_count }}</span>
+                                <span class="badge bg-info">E: {{ record.excused_count }}</span>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="text-center py-3">
+                            <span class="text-muted">No recent attendance records found.</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if recent_records %}
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'attendance:records' %}" class="btn btn-outline-primary">
+                            View All Records
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Change date functionality
+        const dateInput = document.getElementById('attendanceDate');
+        const changeDateBtn = document.getElementById('changeDate');
+        
+        if (dateInput && changeDateBtn) {
+            changeDateBtn.addEventListener('click', function() {
+                const newDate = dateInput.value;
+                if (newDate) {
+                    window.location.href = `?date=${newDate}`;
+                }
+            });
+            
+            // Also allow changing date by pressing Enter in the date input
+            dateInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    const newDate = dateInput.value;
+                    if (newDate) {
+                        window.location.href = `?date=${newDate}`;
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

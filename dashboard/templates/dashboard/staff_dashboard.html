@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- Welcome Banner -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-primary text-white">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div>
+              <h2 class="mb-1">Welcome, {{ request.user.get_full_name }}</h2>
+              <p class="mb-0">{{ request.user.get_role_display }} Dashboard</p>
+            </div>
+            <div class="ms-auto">
+              <div class="display-4">
+                <i class="fas fa-user-tie"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="row mb-4">
+    {% if request.user.is_accountant %}
+    <!-- Accountant-specific stats -->
+    <div class="col-md-3 mb-4">
+      <div class="card border-left-primary h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Pending Payrolls</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_payrolls|default:"0" }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-money-check-alt fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-4">
+      <div class="card border-left-success h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Pending Fees</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_fees|default:"0" }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- General staff stats -->
+    <div class="col-md-3 mb-4">
+      <div class="card border-left-info h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Announcements</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ announcements_count|default:"0" }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-bullhorn fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-4">
+      <div class="card border-left-warning h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Upcoming Events</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ upcoming_events_count|default:"0" }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Payroll Information (for all staff) -->
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">My Payroll Information</h5>
+        </div>
+        <div class="card-body">
+          {% if staff_salary %}
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <tr>
+                  <th>Base Salary:</th>
+                  <td>GH₵ {{ staff_salary.base_salary|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Transport Allowance:</th>
+                  <td>GH₵ {{ staff_salary.transport_allowance|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Housing Allowance:</th>
+                  <td>GH₵ {{ staff_salary.housing_allowance|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Other Allowances:</th>
+                  <td>GH₵ {{ staff_salary.other_allowances|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr class="table-active">
+                  <th>Gross Salary:</th>
+                  <td>GH₵ {{ staff_salary.gross_salary|floatformat:2|intcomma }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <a href="{% url 'payroll:staff_payslips' %}" class="btn btn-primary">
+                <i class="fas fa-file-invoice-dollar me-2"></i>View My Payslips
+              </a>
+              <a href="{% url 'payroll:staff_payment_history' %}" class="btn btn-success">
+                <i class="fas fa-history me-2"></i>Payment History
+              </a>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <p class="mb-0">No salary information available. Please contact the administration.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Announcements -->
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Recent Announcements</h5>
+        </div>
+        <div class="card-body">
+          {% if recent_announcements %}
+            <div class="list-group">
+              {% for announcement in recent_announcements %}
+                <a href="{% url 'communications:announcement_detail' announcement.id %}" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ announcement.title }}</h6>
+                    <small>{{ announcement.created_at|date:"M d, Y" }}</small>
+                  </div>
+                  <p class="mb-1 text-truncate">{{ announcement.content|striptags|truncatechars:100 }}</p>
+                  <small>By: {{ announcement.created_by.get_full_name }}</small>
+                </a>
+              {% endfor %}
+            </div>
+            <div class="mt-3">
+              <a href="{% url 'communications:announcement_list' %}" class="btn btn-outline-primary btn-sm">
+                View All Announcements
+              </a>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <p class="mb-0">No recent announcements.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Upcoming Events -->
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Upcoming Events</h5>
+        </div>
+        <div class="card-body">
+          {% if upcoming_events %}
+            <div class="list-group">
+              {% for event in upcoming_events %}
+                <a href="{% url 'communications:event_detail' event.id %}" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ event.title }}</h6>
+                    <small>{{ event.start_date|date:"M d, Y" }}</small>
+                  </div>
+                  <p class="mb-1 text-truncate">{{ event.description|striptags|truncatechars:100 }}</p>
+                  <small>
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ event.location|default:"School" }}
+                    {% if event.start_date != event.end_date %}
+                      <span class="ms-2"><i class="fas fa-calendar-alt me-1"></i>{{ event.start_date|date:"M d" }} - {{ event.end_date|date:"M d, Y" }}</span>
+                    {% endif %}
+                  </small>
+                </a>
+              {% endfor %}
+            </div>
+            <div class="mt-3">
+              <a href="{% url 'communications:event_list' %}" class="btn btn-outline-primary btn-sm">
+                View All Events
+              </a>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <p class="mb-0">No upcoming events.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Role-specific content -->
+    {% if request.user.is_accountant %}
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Accountant Quick Links</h5>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            <a href="{% url 'payroll:payroll_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-money-bill-wave me-2"></i>Manage Payroll
+            </a>
+            <a href="{% url 'fees:admin_dashboard' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-file-invoice-dollar me-2"></i>Manage Student Fees
+            </a>
+            <a href="{% url 'payroll:payment_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-credit-card me-2"></i>Payment Records
+            </a>
+            <a href="{% url 'payroll:staff_salary_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-users me-2"></i>Staff Salary Management
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% elif request.user.is_secretary or request.user.is_receptionist %}
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Administrative Quick Links</h5>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            <a href="{% url 'communications:announcement_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-bullhorn me-2"></i>Announcements
+            </a>
+            <a href="{% url 'communications:event_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-calendar-alt me-2"></i>Events
+            </a>
+            <a href="{% url 'users:student_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-user-graduate me-2"></i>Student Directory
+            </a>
+            <a href="{% url 'users:teacher_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-chalkboard-teacher me-2"></i>Staff Directory
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Quick Links</h5>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            <a href="{% url 'communications:announcement_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-bullhorn me-2"></i>Announcements
+            </a>
+            <a href="{% url 'communications:event_list' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-calendar-alt me-2"></i>Events
+            </a>
+            <a href="{% url 'payroll:staff_payslips' %}" class="list-group-item list-group-item-action">
+              <i class="fas fa-file-invoice-dollar me-2"></i>My Payslips
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

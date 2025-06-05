@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Event - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 class="mb-0">Edit Event</h5>
+                            <p class="text-sm mb-0">Update event details</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a href="{% url 'communications:event_detail' event.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Event
+                            </a>
+                            <a href="{% url 'communications:event_calendar' %}" class="btn btn-info">
+                                <i class="fas fa-calendar-alt"></i> Calendar View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Event Title -->
+                        <div class="mb-4">
+                            <label for="id_title" class="form-label">Event Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                                   id="id_title" name="title" required
+                                   value="{{ event.title }}">
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Enter a descriptive title for the event (max 200 characters)
+                            </small>
+                        </div>
+
+                        <!-- Event Type & Target -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="id_event_type" class="form-label">Event Type <span class="text-danger">*</span></label>
+                                <select class="form-select {% if form.event_type.errors %}is-invalid{% endif %}"
+                                        id="id_event_type" name="event_type" required>
+                                    <option value="">Select event type...</option>
+                                    {% for type_value, type_label in event_types %}
+                                        <option value="{{ type_value }}" {% if event.event_type == type_value %}selected{% endif %}>
+                                            {{ type_label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.event_type.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.event_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_target_type" class="form-label">Target Audience <span class="text-danger">*</span></label>
+                                <select class="form-select {% if form.target_type.errors %}is-invalid{% endif %}"
+                                        id="id_target_type" name="target_type" required>
+                                    <option value="">Select audience...</option>
+                                    <option value="ALL" {% if event.is_school_wide %}selected{% endif %}>
+                                        Everyone
+                                    </option>
+                                    <option value="TEACHERS" {% if not event.is_school_wide and event.target_type == 'TEACHERS' %}selected{% endif %}>
+                                        All Teachers
+                                    </option>
+                                    <option value="STUDENTS" {% if not event.is_school_wide and event.target_type == 'STUDENTS' %}selected{% endif %}>
+                                        All Students
+                                    </option>
+                                    <option value="PARENTS" {% if not event.is_school_wide and event.target_type == 'PARENTS' %}selected{% endif %}>
+                                        All Parents
+                                    </option>
+                                    <option value="SPECIFIC_CLASS" {% if not event.is_school_wide and event.target_type == 'SPECIFIC_CLASS' %}selected{% endif %}>
+                                        Specific Class
+                                    </option>
+                                </select>
+                                {% if form.target_type.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.target_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- School-Wide Event Setting -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="id_is_school_wide" name="is_school_wide"
+                                  {% if event.is_school_wide %}checked{% endif %}>
+                            <label class="form-check-label" for="id_is_school_wide">
+                                <strong>Is school wide</strong> - Make this event visible to all users regardless of target audience
+                            </label>
+                            {% if form.is_school_wide.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.is_school_wide.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                If checked, this event will appear on all users' dashboards and calendars. If unchecked, it will only be visible to the selected target audience.
+                            </small>
+                        </div>
+
+                        <!-- Class/Subject Selection (conditionally shown) -->
+                        <div id="class_selection" class="card bg-light mb-4" style="display: none;">
+                            <div class="card-header bg-light pb-0">
+                                <h6 class="mb-0">Class & Subject Selection</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_specific_class" class="form-label">Select Class</label>
+                                        <select class="form-select" id="id_specific_class" name="specific_class">
+                                            <option value="">Select a class...</option>
+                                            {% for classroom in class_rooms %}
+                                                <option value="{{ classroom.id }}" {% if event.specific_class and event.specific_class.id == classroom.id %}selected{% endif %}>
+                                                    {{ classroom.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_specific_subject" class="form-label">Select Subject (Optional)</label>
+                                        <select class="form-select" id="id_specific_subject" name="specific_subject">
+                                            <option value="">All subjects</option>
+                                            {% for subject in subjects %}
+                                                <option value="{{ subject.id }}" {% if event.specific_subject and event.specific_subject.id == subject.id %}selected{% endif %}>
+                                                    {{ subject.subject.name }} ({{ subject.classroom.name }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date & Time Settings -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header bg-light pb-0">
+                                <h6 class="mb-0">Date & Time Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="id_start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control {% if form.start_date.errors %}is-invalid{% endif %}"
+                                               id="id_start_date" name="start_date" required
+                                               value="{{ event.start_date|date:'Y-m-d' }}">
+                                        {% if form.start_date.errors %}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.start_date.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="id_end_date" class="form-label">End Date</label>
+                                        <input type="date" class="form-control {% if form.end_date.errors %}is-invalid{% endif %}"
+                                               id="id_end_date" name="end_date"
+                                               value="{{ event.end_date|date:'Y-m-d' }}">
+                                        {% if form.end_date.errors %}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.end_date.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            If left blank, end date will be the same as start date
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="id_all_day" name="all_day" {% if event.all_day %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_all_day">
+                                        All-day event
+                                    </label>
+                                </div>
+                                <div id="time_fields" class="row mb-3" style="{% if event.all_day %}display: none;{% endif %}">
+                                    <div class="col-md-6">
+                                        <label for="id_start_time" class="form-label">Start Time <span class="text-danger">*</span></label>
+                                        <input type="time" class="form-control {% if form.start_time.errors %}is-invalid{% endif %}"
+                                               id="id_start_time" name="start_time"
+                                               value="{{ event.start_time|time:'H:i'|default:'' }}">
+                                        {% if form.start_time.errors %}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.start_time.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="id_end_time" class="form-label">End Time</label>
+                                        <input type="time" class="form-control {% if form.end_time.errors %}is-invalid{% endif %}"
+                                               id="id_end_time" name="end_time"
+                                               value="{{ event.end_time|time:'H:i'|default:'' }}">
+                                        {% if form.end_time.errors %}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.end_time.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Settings -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header bg-light pb-0">
+                                <h6 class="mb-0">Location Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="id_location" class="form-label">Location</label>
+                                    <input type="text" class="form-control {% if form.location.errors %}is-invalid{% endif %}"
+                                           id="id_location" name="location"
+                                           value="{{ event.location|default:'' }}">
+                                    {% if form.location.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.location.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Where will this event take place? (e.g., Main Hall, Classroom 3, etc.)
+                                    </small>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="id_is_virtual" name="is_virtual" {% if event.is_virtual %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_is_virtual">
+                                        This is a virtual event
+                                    </label>
+                                </div>
+                                <div id="virtual_link_field" class="mb-3" style="{% if not event.is_virtual %}display: none;{% endif %}">
+                                    <label for="id_meeting_link" class="form-label">Meeting Link</label>
+                                    <input type="url" class="form-control {% if form.meeting_link.errors %}is-invalid{% endif %}"
+                                           id="id_meeting_link" name="meeting_link"
+                                           value="{{ event.virtual_link|default:'' }}"
+                                           placeholder="https://...">
+                                    {% if form.meeting_link.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.meeting_link.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        URL for virtual meeting (Zoom, Google Meet, etc.)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Event Description -->
+                        <div class="mb-4">
+                            <label for="id_description" class="form-label">Description</label>
+                            <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                                      id="id_description" name="description" rows="5">{{ event.description|default:'' }}</textarea>
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Provide details about the event (agenda, what to bring, etc.)
+                            </small>
+                        </div>
+
+                        <!-- Website Integration -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header bg-light pb-0">
+                                <h6 class="mb-0">Website Integration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="id_show_on_website" name="show_on_website" {% if event.show_on_website %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_show_on_website">
+                                        Show this event on the public website
+                                    </label>
+                                    <div class="form-text">
+                                        If checked, this event will be displayed on the public website events page.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_attachment" class="form-label">Attachment / Image</label>
+                                    <input type="file" class="form-control {% if form.attachment.errors %}is-invalid{% endif %}"
+                                           id="id_attachment" name="attachment">
+                                    {% if event.attachment %}
+                                        <div class="mt-2">
+                                            <span class="badge bg-info">Current file: {{ event.attachment.name }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if form.attachment.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.attachment.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Max file size: 10MB. Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG<br>
+                                        <strong>Note:</strong> If the event is shown on the website, this attachment will be used as the event image.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'communications:event_detail' event.id %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const targetTypeSelect = document.getElementById('id_target_type');
+        const classSelection = document.getElementById('class_selection');
+        const isAllDayCheckbox = document.getElementById('id_all_day');
+        const timeFields = document.getElementById('time_fields');
+        const isVirtualCheckbox = document.getElementById('id_is_virtual');
+        const virtualLinkField = document.getElementById('virtual_link_field');
+
+        // Target audience selection
+        function updateTargetFields() {
+            if (targetTypeSelect.value === 'SPECIFIC_CLASS') {
+                classSelection.style.display = 'block';
+            } else {
+                classSelection.style.display = 'none';
+            }
+        }
+
+        // All-day event toggle
+        function updateTimeFields() {
+            if (isAllDayCheckbox.checked) {
+                timeFields.style.display = 'none';
+            } else {
+                timeFields.style.display = 'flex';
+            }
+        }
+
+        // Virtual event toggle
+        function updateVirtualFields() {
+            if (isVirtualCheckbox.checked) {
+                virtualLinkField.style.display = 'block';
+            } else {
+                virtualLinkField.style.display = 'none';
+            }
+        }
+
+        // Initial state
+        updateTargetFields();
+        updateTimeFields();
+        updateVirtualFields();
+
+        // Update on change
+        targetTypeSelect.addEventListener('change', updateTargetFields);
+        isAllDayCheckbox.addEventListener('change', updateTimeFields);
+        isVirtualCheckbox.addEventListener('change', updateVirtualFields);
+
+        // End date validation
+        const startDateInput = document.getElementById('id_start_date');
+        const endDateInput = document.getElementById('id_end_date');
+
+        endDateInput.addEventListener('change', function() {
+            if (endDateInput.value && startDateInput.value && endDateInput.value < startDateInput.value) {
+                alert('End date cannot be before start date');
+                endDateInput.value = startDateInput.value;
+            }
+        });
+
+        startDateInput.addEventListener('change', function() {
+            if (endDateInput.value && startDateInput.value && endDateInput.value < startDateInput.value) {
+                endDateInput.value = startDateInput.value;
+            }
+        });
+    });
+</script>
+{% endblock %}

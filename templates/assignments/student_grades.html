@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}My Grades - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">My Grades</h1>
+    <div>
+      <div class="btn-group">
+        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fas fa-filter me-2"></i>Filter by Subject
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item {% if not subject_filter %}active{% endif %}" href="{% url 'assignments:student_grades' %}">All Subjects</a></li>
+          <li><hr class="dropdown-divider"></li>
+          {% for subject in enrolled_subjects %}
+            <li><a class="dropdown-item {% if subject_filter == subject.subject.id|stringformat:'i' %}active{% endif %}" href="{% url 'assignments:student_grades' %}?subject={{ subject.subject.id }}">{{ subject.subject.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grade Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-primary text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Average Grade</div>
+              <div class="display-6">{{ average_grade|floatformat:1 }}%</div>
+            </div>
+            <i class="fas fa-chart-line fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-success text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Highest Grade</div>
+              <div class="display-6">{{ highest_grade|floatformat:1 }}%</div>
+            </div>
+            <i class="fas fa-trophy fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-info text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Assignments Graded</div>
+              <div class="display-6">{{ graded_count }}</div>
+            </div>
+            <i class="fas fa-clipboard-check fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-warning text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Pending Grades</div>
+              <div class="display-6">{{ pending_count }}</div>
+            </div>
+            <i class="fas fa-hourglass-half fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance Chart Section -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Performance by Subject</h5>
+    </div>
+    <div class="card-body">
+      {% if subject_performance %}
+        <div class="row">
+          {% for subject, data in subject_performance.items %}
+            <div class="col-md-4 col-sm-6 mb-4">
+              <div class="card h-100">
+                <div class="card-header">{{ subject }}</div>
+                <div class="card-body text-center">
+                  <div class="display-4 mb-2 
+                    {% if data.average >= 90 %}text-success
+                    {% elif data.average >= 80 %}text-primary
+                    {% elif data.average >= 70 %}text-info
+                    {% elif data.average >= 60 %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ data.average|floatformat:1 }}%
+                  </div>
+                  <div class="text-muted mb-3">Average Grade</div>
+                  <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ data.grade_distribution.A }}%"></div>
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ data.grade_distribution.B }}%"></div>
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ data.grade_distribution.C }}%"></div>
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ data.grade_distribution.D }}%"></div>
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ data.grade_distribution.F }}%"></div>
+                  </div>
+                  <div class="d-flex justify-content-between small text-muted">
+                    <span>Completed: {{ data.completed }}/{{ data.total }}</span>
+                    <span>Highest: {{ data.highest|floatformat:1 }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No grade data available yet.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Grade Details Section -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">Grade Details</h5>
+    </div>
+    <div class="card-body">
+      {% if grades %}
+        <div class="table-responsive">
+          <table class="table table-hover table-striped">
+            <thead>
+              <tr>
+                <th>Assignment</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Score</th>
+                <th>Grade</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for grade in grades %}
+                <tr>
+                  <td>
+                    {% if grade.submission %}
+                      {{ grade.submission.assignment.title }}
+                    {% else %}
+                      {{ grade.grade_type }}
+                    {% endif %}
+                  </td>
+                  <td>{{ grade.class_subject.subject.name }}</td>
+                  <td>
+                    {% if grade.submission %}
+                      <span class="badge bg-{% if grade.submission.assignment.assignment_type == 'HOMEWORK' %}info{% elif grade.submission.assignment.assignment_type == 'QUIZ' %}success{% elif grade.submission.assignment.assignment_type == 'TEST' %}warning{% else %}danger{% endif %}">
+                        {{ grade.submission.assignment.get_assignment_type_display }}
+                      </span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ grade.grade_type }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {{ grade.score }}/
+                    {% if grade.submission %}
+                      {{ grade.submission.assignment.max_score }}
+                    {% else %}
+                      {{ grade.max_score|default:100 }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge {% if grade.score_percentage >= 90 %}bg-success{% elif grade.score_percentage >= 80 %}bg-primary{% elif grade.score_percentage >= 70 %}bg-info{% elif grade.score_percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}">
+                      {{ grade.letter_grade|default:"-" }}
+                      ({{ grade.score_percentage|floatformat:1 }}%)
+                    </span>
+                  </td>
+                  <td>{{ grade.created_at|date:"M d, Y" }}</td>
+                  <td>
+                    {% if grade.submission %}
+                      <a href="{% url 'assignments:assignment_detail' grade.submission.assignment.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          {% if subject_filter %}
+            No grades found for the selected subject. <a href="{% url 'assignments:student_grades' %}" class="alert-link">View all grades</a>
+          {% else %}
+            You don't have any grades yet.
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

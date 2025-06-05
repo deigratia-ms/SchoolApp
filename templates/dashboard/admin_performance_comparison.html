@@ -1,0 +1,515 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Performance Comparison - School Management System{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet" />
+<style>
+    .comparison-stats-card {
+        transition: all 0.3s;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .comparison-stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 24px;
+    }
+    .comparison-row {
+        transition: all 0.2s;
+    }
+    .comparison-row:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    .chart-container {
+        height: 400px;
+    }
+    .comparison-type-btn {
+        transition: all 0.2s;
+    }
+    .comparison-type-btn.active {
+        background-color: #4e73df;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Performance Comparison</h1>
+            <p class="mb-0 text-muted">Compare academic performance across classes, subjects, or terms</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:admin_performance_overview' %}" class="btn btn-sm btn-outline-primary me-2">
+                <i class="fas fa-arrow-left me-2"></i>Back to Overview
+            </a>
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog me-2"></i>Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="{% url 'dashboard:admin_performance_trends' %}">
+                        <i class="fas fa-chart-line me-2"></i>Performance Trends
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'dashboard:admin_grading_scales' %}">
+                        <i class="fas fa-sliders-h me-2"></i>Manage Grading Scales
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'assignments:report_card_list' %}">
+                        <i class="fas fa-file-alt me-2"></i>Report Cards
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Type Selection -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Select Comparison Type</h6>
+        </div>
+        <div class="card-body">
+            <div class="row justify-content-center mb-3">
+                <div class="col-md-8">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'dashboard:admin_performance_comparison' %}?comparison_type=classes{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_grade_level %}&grade_level={{ selected_grade_level }}{% endif %}" 
+                           class="btn btn-lg comparison-type-btn {% if comparison_type == 'classes' %}active{% endif %}">
+                            <i class="fas fa-school me-2"></i>Classes
+                        </a>
+                        <a href="{% url 'dashboard:admin_performance_comparison' %}?comparison_type=subjects{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_grade_level %}&grade_level={{ selected_grade_level }}{% endif %}" 
+                           class="btn btn-lg comparison-type-btn {% if comparison_type == 'subjects' %}active{% endif %}">
+                            <i class="fas fa-book me-2"></i>Subjects
+                        </a>
+                        <a href="{% url 'dashboard:admin_performance_comparison' %}?comparison_type=terms{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_grade_level %}&grade_level={{ selected_grade_level }}{% endif %}" 
+                           class="btn btn-lg comparison-type-btn {% if comparison_type == 'terms' %}active{% endif %}">
+                            <i class="fas fa-calendar-alt me-2"></i>Terms
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <form method="get" class="row g-3">
+                <input type="hidden" name="comparison_type" value="{{ comparison_type }}">
+                
+                {% if comparison_type != 'terms' %}
+                <div class="col-md-3">
+                    <label for="term" class="form-label">Term</label>
+                    <select class="form-select" id="term" name="term">
+                        <option value="">All Terms</option>
+                        {% for term_value in all_terms %}
+                            <option value="{{ term_value }}" {% if selected_term == term_value %}selected{% endif %}>{{ term_value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                {% if comparison_type == 'classes' %}
+                <div class="col-md-3">
+                    <label for="class_filter" class="form-label">Class</label>
+                    <select class="form-select" id="class_filter" name="class_id">
+                        <option value="">All Classes</option>
+                        {% for classroom in all_classrooms %}
+                            <option value="{{ classroom.id }}" {% if selected_class_id == classroom.id %}selected{% endif %}>{{ classroom.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                {% if comparison_type == 'subjects' %}
+                <div class="col-md-3">
+                    <label for="subject_filter" class="form-label">Subject</label>
+                    <select class="form-select" id="subject_filter" name="subject_id">
+                        <option value="">All Subjects</option>
+                        {% for subject in all_subjects %}
+                            <option value="{{ subject.id }}" {% if selected_subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                {% if comparison_type != 'terms' %}
+                <div class="col-md-3">
+                    <label for="grade_level" class="form-label">Grade Level</label>
+                    <select class="form-select" id="grade_level" name="grade_level">
+                        <option value="">All Grades</option>
+                        {% for level in all_grade_levels %}
+                            <option value="{{ level }}" {% if selected_grade_level == level %}selected{% endif %}>Grade {{ level }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Apply Filters
+                    </button>
+                    <a href="{% url 'dashboard:admin_performance_comparison' %}?comparison_type={{ comparison_type }}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-redo me-2"></i>Reset Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Comparison Content -->
+    <div class="row mb-4">
+        <!-- Charts Section -->
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% if comparison_type == 'classes' %}
+                            Class Performance Comparison
+                        {% elif comparison_type == 'subjects' %}
+                            Subject Performance Comparison
+                        {% else %}
+                            Term Performance Comparison
+                        {% endif %}
+                    </h6>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary active" id="avgScoresChartBtn">Average Scores</button>
+                        <button class="btn btn-sm btn-outline-primary" id="passRatesChartBtn">Pass Rates</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Comparison Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detailed Comparison Data</h6>
+        </div>
+        <div class="card-body">
+            {% if comparison_data %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    {% if comparison_type == 'classes' %}
+                                        Class
+                                    {% elif comparison_type == 'subjects' %}
+                                        Subject
+                                    {% else %}
+                                        Term
+                                    {% endif %}
+                                </th>
+                                <th>Average Score</th>
+                                <th>Pass Rate</th>
+                                <th>Total Grades</th>
+                                {% if comparison_type != 'terms' %}
+                                <th>Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in comparison_data %}
+                                <tr class="comparison-row">
+                                    <td>{{ item.name }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ item.avg_score|floatformat:0|less_than:60|yesno:'danger,item.avg_score|floatformat:0|less_than:70|yesno:warning,item.avg_score|floatformat:0|less_than:80|yesno:info,success' }}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ item.avg_score }}%"></div>
+                                            </div>
+                                            <span>{{ item.avg_score }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.pass_rate }}%</td>
+                                    <td>{{ item.total_grades }}</td>
+                                    {% if comparison_type != 'terms' %}
+                                    <td>
+                                        {% if comparison_type == 'classes' %}
+                                            <a href="{% url 'dashboard:admin_class_performance' class_id=item.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                        {% elif comparison_type == 'subjects' %}
+                                            <a href="{% url 'dashboard:admin_performance_overview' %}?subject={{ item.id }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                        {% endif %}
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        {% if comparison_type == 'classes' %}
+                            <i class="fas fa-school fa-4x text-muted"></i>
+                        {% elif comparison_type == 'subjects' %}
+                            <i class="fas fa-book fa-4x text-muted"></i>
+                        {% else %}
+                            <i class="fas fa-calendar-alt fa-4x text-muted"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="text-muted">No comparison data available</h5>
+                    <p class="text-muted small">Try adjusting your filters or check if grades have been recorded.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Insights Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Insights & Recommendations</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {% if comparison_type == 'classes' %}
+                                    <i class="fas fa-chart-line me-2"></i>Class Performance Analysis
+                                {% elif comparison_type == 'subjects' %}
+                                    <i class="fas fa-chart-line me-2"></i>Subject Performance Analysis
+                                {% else %}
+                                    <i class="fas fa-chart-line me-2"></i>Term-by-Term Analysis
+                                {% endif %}
+                            </h5>
+                            <p class="card-text">
+                                {% if comparison_type == 'classes' %}
+                                    This comparison highlights performance variations between different classes.
+                                    Consider investigating classes with significantly lower average scores to identify potential issues.
+                                {% elif comparison_type == 'subjects' %}
+                                    This comparison highlights performance variations between different subjects.
+                                    Subjects with lower performance metrics may need curriculum adjustments or additional teaching resources.
+                                {% else %}
+                                    This comparison tracks performance trends across academic terms.
+                                    Look for patterns of improvement or decline that may indicate the effectiveness of academic policies.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-lightbulb me-2"></i>Recommended Actions</h5>
+                            <ul class="mb-0">
+                                {% if comparison_type == 'classes' %}
+                                    <li>Schedule teacher conferences for classes with lower performance</li>
+                                    <li>Analyze teaching methods across high-performing classes</li>
+                                    <li>Consider resource allocation based on class needs</li>
+                                {% elif comparison_type == 'subjects' %}
+                                    <li>Review curriculum for subjects with lower performance</li>
+                                    <li>Organize teacher training for challenging subjects</li>
+                                    <li>Consider adjusting teaching hours or providing additional resources</li>
+                                {% else %}
+                                    <li>Identify successful policy changes between terms</li>
+                                    <li>Analyze seasonal patterns in academic performance</li>
+                                    <li>Set term-specific goals based on historical data</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle comparison type change
+        const urlParams = new URLSearchParams(window.location.search);
+        const comparisonType = urlParams.get('comparison_type') || 'classes';
+        
+        // Show/hide appropriate filter based on comparison type
+        function updateFilterVisibility() {
+            const classFilter = document.getElementById('class_filter')?.closest('.col-md-3');
+            const subjectFilter = document.getElementById('subject_filter')?.closest('.col-md-3');
+            const termFilter = document.getElementById('term')?.closest('.col-md-3');
+            const gradeLevelFilter = document.getElementById('grade_level')?.closest('.col-md-3');
+            
+            if (classFilter) classFilter.style.display = comparisonType === 'classes' ? 'block' : 'none';
+            if (subjectFilter) subjectFilter.style.display = comparisonType === 'subjects' ? 'block' : 'none';
+            if (termFilter) termFilter.style.display = comparisonType !== 'terms' ? 'block' : 'none';
+            if (gradeLevelFilter) gradeLevelFilter.style.display = comparisonType !== 'terms' ? 'block' : 'none';
+        }
+        
+        // Initialize filter visibility
+        updateFilterVisibility();
+        
+        // Chart configuration
+        const ctx = document.getElementById('comparisonChart').getContext('2d');
+        const labels = {{ labels|safe }};
+        const avgScores = {{ avg_scores|safe }};
+        const passRates = {{ pass_rates|safe }};
+        
+        let comparisonChart;
+        
+        function createAvgScoresChart() {
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Average Score (%)',
+                        data: avgScores,
+                        backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 100,
+                            title: {
+                                display: true,
+                                text: 'Average Score (%)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: comparisonType === 'classes' ? 'Classes' : 
+                                    (comparisonType === 'subjects' ? 'Subjects' : 'Terms')
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Average Score: ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createPassRatesChart() {
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pass Rate (%)',
+                        data: passRates,
+                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 100,
+                            title: {
+                                display: true,
+                                text: 'Pass Rate (%)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: comparisonType === 'classes' ? 'Classes' : 
+                                    (comparisonType === 'subjects' ? 'Subjects' : 'Terms')
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Pass Rate: ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create initial chart
+        createAvgScoresChart();
+        
+        // Chart toggle buttons
+        document.getElementById('avgScoresChartBtn').addEventListener('click', function() {
+            document.getElementById('avgScoresChartBtn').classList.add('active');
+            document.getElementById('passRatesChartBtn').classList.remove('active');
+            createAvgScoresChart();
+        });
+        
+        document.getElementById('passRatesChartBtn').addEventListener('click', function() {
+            document.getElementById('passRatesChartBtn').classList.add('active');
+            document.getElementById('avgScoresChartBtn').classList.remove('active');
+            createPassRatesChart();
+        });
+        
+        // Term change event
+        const termSelect = document.getElementById('term');
+        if (termSelect) {
+            termSelect.addEventListener('change', function() {
+                // You can optionally add AJAX to reload data when term changes
+                // For now, we'll just rely on form submission
+            });
+        }
+        
+        // Grade level change event
+        const gradeLevelSelect = document.getElementById('grade_level');
+        if (gradeLevelSelect) {
+            gradeLevelSelect.addEventListener('change', function() {
+                // You can optionally add AJAX to reload data when grade level changes
+                // For now, we'll just rely on form submission
+            });
+        }
+    });
+</script>
+{% endblock %}

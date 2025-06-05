@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+
+{% block title %}Generate Admission Letter - School Management System{% endblock %}
+
+{% block extra_head %}
+<style>
+    .preview-container {
+        border: 1px solid #ddd;
+        padding: 2rem;
+        margin-bottom: 1rem;
+        position: relative;
+        background-color: #fff;
+    }
+    
+    .preview-container.loading::after {
+        content: "Select a template to preview";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        font-style: italic;
+        color: #6c757d;
+    }
+    
+    .letter-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #ddd;
+    }
+    
+    .letter-body {
+        min-height: 300px;
+    }
+    
+    .template-card {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .template-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .template-card.selected {
+        border-color: #4e73df;
+        background-color: #f8f9fc;
+    }
+    
+    .template-card.selected::after {
+        content: "\f00c";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: #4e73df;
+        color: white;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Generate Admission Letter</h1>
+        <a href="{% url 'users:admission_letter_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Letters
+        </a>
+    </div>
+    
+    <form method="post" id="admissionLetterForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Form Inputs -->
+            <div class="col-lg-7">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Admission Letter Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Student Selection -->
+                        <div class="mb-4">
+                            <h5 class="small text-uppercase text-muted mb-3">Step 1: Select Student</h5>
+                            <div class="mb-3">
+                                <label for="student_id" class="form-label">Student <span class="text-danger">*</span></label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="student_search" placeholder="Search by name or ID...">
+                                    <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <select class="form-select" id="student_id" name="student_id" required>
+                                    <option value="">Select a student</option>
+                                    {% for student in students %}
+                                        <option value="{{ student.id }}" data-name="{{ student.user.get_full_name|lower }}" data-id="{{ student.student_id|lower }}">
+                                            {{ student.user.get_full_name }} (ID: {{ student.student_id }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">The student for whom this admission letter will be generated.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Template Selection -->
+                        <div class="mb-4">
+                            <h5 class="small text-uppercase text-muted mb-3">Step 2: Select Template</h5>
+                            <div class="mb-3">
+                                <label for="template_id" class="form-label">Letter Template <span class="text-danger">*</span></label>
+                                <select class="form-select" id="template_id" name="template_id" required>
+                                    <option value="">Select a template</option>
+                                    {% for template in templates %}
+                                        <option value="{{ template.id }}">
+                                            {{ template.name }}
+                                            {% if template.is_active %}(Active){% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">The template defines the layout and content structure of the letter.</div>
+                            </div>
+                            
+                            <div class="row">
+                                {% for template in templates %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card shadow-sm template-card position-relative" data-template-id="{{ template.id }}">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">{{ template.name }}</h6>
+                                            <p class="small text-muted mb-0">
+                                                {{ template.header_text|truncatechars:50 }}
+                                            </p>
+                                            <div class="mt-2">
+                                                {% if template.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Admission Details -->
+                        <div class="mb-4">
+                            <h5 class="small text-uppercase text-muted mb-3">Step 3: Admission Details</h5>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="reference_number" class="form-label">Reference Number</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="reference_number" name="reference_number" 
+                                               placeholder="ADM-2024-0001">
+                                        <button class="btn btn-outline-secondary" type="button" id="generateRefBtn">
+                                            <i class="fas fa-random"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Will be auto-generated if left blank.</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="admission_date" class="form-label">Admission Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="admission_date" name="admission_date" 
+                                           value="{{ today|date:'Y-m-d' }}" required>
+                                    <div class="form-text">The official date of admission.</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="academic_year" class="form-label">Academic Year <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="academic_year" name="academic_year" 
+                                           value="{{ academic_year_suggestion }}" required>
+                                    <div class="form-text">E.g., 2024-2025</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="grade_admitted" class="form-label">Grade Admitted <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="grade_admitted" name="grade_admitted" required>
+                                        <option value="">Select grade</option>
+                                        {% for grade in grades %}
+                                            <option value="{{ grade }}">{{ grade }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="section_admitted" class="form-label">Section</label>
+                                    <select class="form-select" id="section_admitted" name="section_admitted">
+                                        <option value="">Select section</option>
+                                        {% for section in sections %}
+                                            <option value="{{ section }}">{{ section }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fee Details -->
+                        <div class="mb-4">
+                            <h5 class="small text-uppercase text-muted mb-3">Step 4: Fee Information</h5>
+                            
+                            <div class="mb-3">
+                                <label for="fee_details" class="form-label">Fee Details</label>
+                                <textarea class="form-control" id="fee_details" name="fee_details" rows="4">Tuition Fee: [Fee Amount]
+Registration Fee: [Registration Fee]
+Books and Materials: [Materials Fee]
+Total: [Total Fee]
+
+Payment Schedule:
+1st Installment: [Date]
+2nd Installment: [Date]</textarea>
+                                <div class="form-text">Include details on tuition fees, payment schedule, etc.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="mb-4">
+                            <h5 class="small text-uppercase text-muted mb-3">Step 5: Additional Information</h5>
+                            
+                            <div id="additional-fields">
+                                <div class="row g-3 mb-2 additional-field-row">
+                                    <div class="col-md-5">
+                                        <input type="text" class="form-control" name="additional_key[]" placeholder="Field Name">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" name="additional_value[]" placeholder="Field Value">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-outline-danger remove-field">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-field-btn">
+                                <i class="fas fa-plus me-1"></i>Add Field
+                            </button>
+                            
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                These additional fields can be referenced in the template using <code>{field_name}</code> placeholders.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'users:admission_letter_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-alt me-2"></i>Generate Letter
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Letter Preview -->
+            <div class="col-lg-5">
+                <div class="card shadow mb-4 sticky-top" style="top: 15px;">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Letter Preview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="preview-container loading" id="letter-preview">
+                            <!-- Letter Header -->
+                            <div class="letter-header">
+                                <h4 id="preview-school-name">{{ school_settings.school_name|default:"School Management System" }}</h4>
+                                <p class="small text-muted" id="preview-school-address">{{ school_settings.address|default:"School Address" }}</p>
+                            </div>
+                            
+                            <!-- Reference & Date -->
+                            <div class="d-flex justify-content-between mb-4">
+                                <div><strong>Ref:</strong> <span id="preview-ref">ADM-2024-0001</span></div>
+                                <div><strong>Date:</strong> <span id="preview-date">{{ today|date:"F d, Y" }}</span></div>
+                            </div>
+                            
+                            <!-- Letter Body -->
+                            <div class="letter-body mb-4" id="preview-body">
+                                <p>Dear <span id="preview-student">[Student Name]</span>,</p>
+                                
+                                <p>We are pleased to inform you that you have been admitted to <span id="preview-grade">Grade [X]</span> for the academic year <span id="preview-year">[YEAR]</span>.</p>
+                                
+                                <p>The academic session will commence on <span id="preview-start-date">[START DATE]</span>. Please ensure you bring the following documents on your first day:</p>
+                                
+                                <ol>
+                                    <li>Previous academic records</li>
+                                    <li>Birth certificate</li>
+                                    <li>2 passport-sized photographs</li>
+                                </ol>
+                                
+                                <p id="preview-fee-summary">Fee details will appear here.</p>
+                                
+                                <p>We look forward to welcoming you to our school community.</p>
+                            </div>
+                            
+                            <!-- Signature -->
+                            <div class="mt-5 mb-3 text-end">
+                                <p class="mb-0"><strong id="preview-signatory">School Principal</strong></p>
+                                <p class="text-muted" id="preview-position">Principal</p>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            This is just a preview. The actual letter will be generated based on the selected template.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Template selection card click
+        const templateCards = document.querySelectorAll('.template-card');
+        const templateSelect = document.getElementById('template_id');
+        
+        templateCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const templateId = this.dataset.templateId;
+                
+                // Update select dropdown
+                templateSelect.value = templateId;
+                
+                // Update selected card styling
+                templateCards.forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update preview
+                updatePreview();
+            });
+        });
+        
+        // Update preview when form fields change
+        const previewFields = [
+            'student_id', 'template_id', 'reference_number', 'admission_date', 
+            'academic_year', 'grade_admitted', 'section_admitted', 'fee_details'
+        ];
+        
+        previewFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element) {
+                element.addEventListener('change', updatePreview);
+                element.addEventListener('input', updatePreview);
+            }
+        });
+        
+        // Generate reference number
+        document.getElementById('generateRefBtn').addEventListener('click', function() {
+            const academicYear = document.getElementById('academic_year').value.split('-')[0] || new Date().getFullYear();
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('reference_number').value = `ADM-${academicYear}-${randomNum}`;
+            updatePreview();
+        });
+        
+        // Add/remove additional fields
+        document.getElementById('add-field-btn').addEventListener('click', function() {
+            const fieldsContainer = document.getElementById('additional-fields');
+            const newRow = document.querySelector('.additional-field-row').cloneNode(true);
+            
+            // Clear input values
+            newRow.querySelectorAll('input').forEach(input => input.value = '');
+            
+            // Add remove functionality
+            newRow.querySelector('.remove-field').addEventListener('click', function() {
+                this.closest('.additional-field-row').remove();
+            });
+            
+            fieldsContainer.appendChild(newRow);
+        });
+        
+        // Add remove functionality to initial row
+        document.querySelector('.remove-field').addEventListener('click', function() {
+            this.closest('.additional-field-row').querySelectorAll('input').forEach(input => input.value = '');
+        });
+        
+        // Student search functionality
+        const studentSearch = document.getElementById('student_search');
+        const studentSelect = document.getElementById('student_id');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        
+        studentSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const options = studentSelect.options;
+            
+            for (let i = 1; i < options.length; i++) { // Start from 1 to skip the placeholder option
+                const option = options[i];
+                const studentName = option.getAttribute('data-name');
+                const studentId = option.getAttribute('data-id');
+                
+                if (studentName.includes(searchTerm) || studentId.includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+        
+        // Clear search
+        clearSearchBtn.addEventListener('click', function() {
+            studentSearch.value = '';
+            const options = studentSelect.options;
+            
+            for (let i = 1; i < options.length; i++) {
+                options[i].style.display = '';
+            }
+            
+            studentSearch.focus();
+        });
+        
+        // Preview update function
+        function updatePreview() {
+            const preview = document.getElementById('letter-preview');
+            const templateId = document.getElementById('template_id').value;
+            
+            if (!templateId) {
+                preview.classList.add('loading');
+                return;
+            }
+            
+            preview.classList.remove('loading');
+            
+            // Update basic preview elements
+            document.getElementById('preview-ref').textContent = document.getElementById('reference_number').value || 'ADM-2024-0001';
+            
+            const admissionDate = document.getElementById('admission_date').value;
+            if (admissionDate) {
+                document.getElementById('preview-date').textContent = new Date(admissionDate).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+            }
+            
+            document.getElementById('preview-year').textContent = document.getElementById('academic_year').value || '[YEAR]';
+            document.getElementById('preview-grade').textContent = document.getElementById('grade_admitted').value || 'Grade [X]';
+            
+            // Update student name if selected
+            const studentSelect = document.getElementById('student_id');
+            const selectedStudent = studentSelect.options[studentSelect.selectedIndex];
+            document.getElementById('preview-student').textContent = selectedStudent.text !== 'Select a student' ? 
+                selectedStudent.text.split(' (ID:')[0] : '[Student Name]';
+            
+            // Update fee details
+            const feeDetails = document.getElementById('fee_details').value;
+            document.getElementById('preview-fee-summary').innerHTML = feeDetails ? feeDetails.replace(/\n/g, '<br>') : '';
+            
+            // In a real implementation, we would fetch the actual template content from the server
+            // and render it with the selected values. For now, this is just a simplified preview.
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

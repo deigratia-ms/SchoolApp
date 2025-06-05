@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Card Insights{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Report Card Insights</h1>
+        <div>
+            <a href="{% url 'assignments:report_card_list' %}" class="btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-list fa-sm text-white-50 mr-1"></i> View All Report Cards
+            </a>
+            <a href="{% url 'assignments:generate_report_cards' %}" class="btn btn-sm btn-success shadow-sm">
+                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Generate Report Cards
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row">
+                <!-- Term filter -->
+                <div class="col-md-3 mb-3">
+                    <label for="term">Academic Term</label>
+                    <select name="term" id="term" class="form-control">
+                        <option value="">All Terms</option>
+                        {% for term_value in all_terms %}
+                            <option value="{{ term_value }}" {% if selected_term == term_value %}selected{% endif %}>{{ term_value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Grade level filter -->
+                <div class="col-md-3 mb-3">
+                    <label for="grade_level">Grade Level</label>
+                    <select name="grade_level" id="grade_level" class="form-control">
+                        <option value="">All Grade Levels</option>
+                        {% for grade_level_value in all_grade_levels %}
+                            <option value="{{ grade_level_value }}" {% if selected_grade_level == grade_level_value %}selected{% endif %}>{{ grade_level_value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Insight type filter -->
+                <div class="col-md-3 mb-3">
+                    <label for="insight_type">Insight Type</label>
+                    <select name="insight_type" id="insight_type" class="form-control">
+                        <option value="at_risk" {% if selected_insight_type == 'at_risk' %}selected{% endif %}>At-Risk Students</option>
+                        <option value="improvement" {% if selected_insight_type == 'improvement' %}selected{% endif %}>Performance Improvement</option>
+                        <option value="decline" {% if selected_insight_type == 'decline' %}selected{% endif %}>Performance Decline</option>
+                    </select>
+                </div>
+                
+                <!-- Minimum reports for comparison -->
+                <div class="col-md-3 mb-3">
+                    <label for="min_reports">Min. Reports for Comparison</label>
+                    <select name="min_reports" id="min_reports" class="form-control">
+                        <option value="2" {% if min_reports == 2 %}selected{% endif %}>2</option>
+                        <option value="3" {% if min_reports == 3 %}selected{% endif %}>3</option>
+                        <option value="4" {% if min_reports == 4 %}selected{% endif %}>4</option>
+                    </select>
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{% url 'dashboard:admin_report_insights' %}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row">
+        <!-- At-Risk Students Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">At-Risk Students</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ at_risk_count }} ({{ at_risk_percentage }}%)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Improved Students Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Improved Students</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ improved_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Declined Students Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Declined Students</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ declined_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Students Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Students</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_students }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- At Risk Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">At-Risk Student Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="atRiskDistributionChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> High Risk
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-warning"></i> Medium Risk
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Low Risk
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights by Class -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Class Performance Insights</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="classInsightsChart"></canvas>
+                    </div>
+                    <hr>
+                    <div class="text-center small">
+                        <p>Percentage of at-risk students per class</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Sections -->
+    <div class="row">
+        <!-- At-Risk Students Section -->
+        <div class="col-lg-12 {% if selected_insight_type != 'at_risk' %}d-none{% endif %}" id="atRiskSection">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">At-Risk Students</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Export Options:</div>
+                            <a class="dropdown-item" href="#"><i class="fas fa-file-excel fa-sm fa-fw mr-2 text-gray-400"></i>Export to Excel</a>
+                            <a class="dropdown-item" href="#"><i class="fas fa-file-pdf fa-sm fa-fw mr-2 text-gray-400"></i>Export to PDF</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if at_risk_students %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="atRiskTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Student ID</th>
+                                    <th>Class</th>
+                                    <th>Average Score</th>
+                                    <th>Attendance</th>
+                                    <th>Subjects Failed</th>
+                                    <th>Risk Level</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student_data in at_risk_students %}
+                                <tr>
+                                    <td>{{ student_data.student.user.get_full_name }}</td>
+                                    <td>{{ student_data.student.student_id }}</td>
+                                    <td>{% if student_data.student.grade %}{{ student_data.student.grade.name }}{% else %}N/A{% endif %}</td>
+                                    <td>
+                                        <span class="badge badge-{% if student_data.avg_score < 50 %}danger{% elif student_data.avg_score < 60 %}warning{% else %}info{% endif %}">
+                                            {{ student_data.avg_score|floatformat:1 }}%
+                                        </span>
+                                    </td>
+                                    <td>{{ student_data.attendance_rate|floatformat:1 }}%</td>
+                                    <td>{{ student_data.subjects_failed }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if student_data.risk_level == 'high' %}danger{% else %}warning{% endif %}">
+                                            {{ student_data.risk_level|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'dashboard:admin_student_performance' student_data.student.id %}" class="btn btn-sm btn-primary">View Performance</a>
+                                        <a href="{% url 'assignments:view_report_card' student_data.report_card.id %}" class="btn btn-sm btn-info">View Report</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">No at-risk students found with the current filters.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Improved Students Section -->
+        <div class="col-lg-12 {% if selected_insight_type != 'improvement' %}d-none{% endif %}" id="improvedSection">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Students with Significant Improvement</h6>
+                </div>
+                <div class="card-body">
+                    {% if improved_students %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="improvedTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Student ID</th>
+                                    <th>Class</th>
+                                    <th>Initial Score</th>
+                                    <th>Current Score</th>
+                                    <th>Improvement</th>
+                                    <th>Terms Analyzed</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student_data in improved_students %}
+                                <tr>
+                                    <td>{{ student_data.student.user.get_full_name }}</td>
+                                    <td>{{ student_data.student.student_id }}</td>
+                                    <td>{% if student_data.student.grade %}{{ student_data.student.grade.name }}{% else %}N/A{% endif %}</td>
+                                    <td>{{ student_data.initial_score|floatformat:1 }}%</td>
+                                    <td>{{ student_data.final_score|floatformat:1 }}%</td>
+                                    <td>
+                                        <span class="text-success">+{{ student_data.change|floatformat:1 }}%</span>
+                                    </td>
+                                    <td>{{ student_data.terms_analyzed }}</td>
+                                    <td>
+                                        <a href="{% url 'dashboard:admin_student_performance' student_data.student.id %}" class="btn btn-sm btn-primary">View Performance</a>
+                                        <a href="{% url 'assignments:view_report_card' student_data.report_card.id %}" class="btn btn-sm btn-info">Latest Report</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">No students with significant improvement found with the current filters.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Declined Students Section -->
+        <div class="col-lg-12 {% if selected_insight_type != 'decline' %}d-none{% endif %}" id="declinedSection">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Students with Significant Decline</h6>
+                </div>
+                <div class="card-body">
+                    {% if declined_students %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="declinedTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Student ID</th>
+                                    <th>Class</th>
+                                    <th>Initial Score</th>
+                                    <th>Current Score</th>
+                                    <th>Decline</th>
+                                    <th>Terms Analyzed</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student_data in declined_students %}
+                                <tr>
+                                    <td>{{ student_data.student.user.get_full_name }}</td>
+                                    <td>{{ student_data.student.student_id }}</td>
+                                    <td>{% if student_data.student.grade %}{{ student_data.student.grade.name }}{% else %}N/A{% endif %}</td>
+                                    <td>{{ student_data.initial_score|floatformat:1 }}%</td>
+                                    <td>{{ student_data.final_score|floatformat:1 }}%</td>
+                                    <td>
+                                        <span class="text-danger">{{ student_data.change|floatformat:1 }}%</span>
+                                    </td>
+                                    <td>{{ student_data.terms_analyzed }}</td>
+                                    <td>
+                                        <a href="{% url 'dashboard:admin_student_performance' student_data.student.id %}" class="btn btn-sm btn-primary">View Performance</a>
+                                        <a href="{% url 'assignments:view_report_card' student_data.report_card.id %}" class="btn btn-sm btn-info">Latest Report</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">No students with significant decline found with the current filters.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Class Insights Section -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Class-Level Insights</h6>
+                </div>
+                <div class="card-body">
+                    {% if class_insights %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="classInsightsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Average Score</th>
+                                    <th>At-Risk %</th>
+                                    <th>At-Risk Count</th>
+                                    <th>Total Students</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for insight in class_insights %}
+                                <tr>
+                                    <td>{{ insight.classroom.name }}</td>
+                                    <td>{{ insight.average_score }}</td>
+                                    <td>
+                                        <div class="progress mb-1">
+                                            <div class="progress-bar {% if insight.at_risk_percentage > 30 %}bg-danger{% elif insight.at_risk_percentage > 15 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ insight.at_risk_percentage }}%" aria-valuenow="{{ insight.at_risk_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small>{{ insight.at_risk_percentage|floatformat:1 }}%</small>
+                                    </td>
+                                    <td>{{ insight.at_risk_count }}</td>
+                                    <td>{{ insight.total_students }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">No class insights available with the current filters.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject Insights Section -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Subject Performance Insights</h6>
+                </div>
+                <div class="card-body">
+                    {% if subject_insights %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="subjectInsightsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Average Score</th>
+                                    <th>Failure Rate</th>
+                                    <th>Failed Grades</th>
+                                    <th>Total Grades</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for insight in subject_insights %}
+                                <tr>
+                                    <td>{{ insight.subject.name }}</td>
+                                    <td>{{ insight.average_score }}</td>
+                                    <td>
+                                        <div class="progress mb-1">
+                                            <div class="progress-bar {% if insight.fail_percentage > 30 %}bg-danger{% elif insight.fail_percentage > 15 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ insight.fail_percentage }}%" aria-valuenow="{{ insight.fail_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small>{{ insight.fail_percentage|floatformat:1 }}%</small>
+                                    </td>
+                                    <td>{{ insight.fail_count }}</td>
+                                    <td>{{ insight.total_grades }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">No subject insights available with the current filters.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set new default font family and font color to mimic Bootstrap's default styling
+    Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+    Chart.defaults.global.defaultFontColor = '#858796';
+
+    // At-Risk Distribution Pie Chart
+    var ctx = document.getElementById("atRiskDistributionChart");
+    var atRiskData = {{ at_risk_counts|safe }};
+    var myPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ["High Risk", "Medium Risk", "Low Risk"],
+            datasets: [{
+                data: atRiskData,
+                backgroundColor: ['#e74a3b', '#f6c23e', '#1cc88a'],
+                hoverBackgroundColor: ['#d52a1a', '#f4b619', '#17a673'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: false
+            },
+            cutoutPercentage: 80,
+        },
+    });
+
+    // Class Insights Bar Chart
+    var ctx2 = document.getElementById("classInsightsChart");
+    var myBarChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: {{ class_labels|safe }},
+            datasets: [{
+                label: "At-Risk Percentage",
+                backgroundColor: "#4e73df",
+                hoverBackgroundColor: "#2e59d9",
+                borderColor: "#4e73df",
+                data: {{ class_risks|safe }},
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                xAxes: [{
+                    time: {
+                        unit: 'class'
+                    },
+                    gridLines: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 6
+                    },
+                    maxBarThickness: 25,
+                }],
+                yAxes: [{
+                    ticks: {
+                        min: 0,
+                        max: 100,
+                        maxTicksLimit: 5,
+                        padding: 10,
+                        callback: function(value, index, values) {
+                            return value + '%';
+                        }
+                    },
+                    gridLines: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            },
+            tooltips: {
+                titleMarginBottom: 10,
+                titleFontColor: '#6e707e',
+                titleFontSize: 14,
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+                callbacks: {
+                    label: function(tooltipItem, chart) {
+                        return tooltipItem.yLabel + '%';
+                    }
+                }
+            },
+        }
+    });
+
+    // Insight Type Selector Change Event
+    document.getElementById('insight_type').addEventListener('change', function() {
+        var insightType = this.value;
+        
+        // Hide all sections
+        document.getElementById('atRiskSection').classList.add('d-none');
+        document.getElementById('improvedSection').classList.add('d-none');
+        document.getElementById('declinedSection').classList.add('d-none');
+        
+        // Show selected section
+        if (insightType === 'at_risk') {
+            document.getElementById('atRiskSection').classList.remove('d-none');
+        } else if (insightType === 'improvement') {
+            document.getElementById('improvedSection').classList.remove('d-none');
+        } else if (insightType === 'decline') {
+            document.getElementById('declinedSection').classList.remove('d-none');
+        }
+    });
+
+    // Initialize DataTables
+    $(document).ready(function() {
+        $('#atRiskTable').DataTable({
+            "order": [[3, "asc"]]
+        });
+        $('#improvedTable').DataTable({
+            "order": [[5, "desc"]]
+        });
+        $('#declinedTable').DataTable({
+            "order": [[5, "asc"]]
+        });
+        $('#classInsightsTable').DataTable({
+            "order": [[2, "desc"]]
+        });
+        $('#subjectInsightsTable').DataTable({
+            "order": [[2, "desc"]]
+        });
+    });
+</script>
+{% endblock %}

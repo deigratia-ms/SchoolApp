@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Announcement - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 class="mb-0">Create Announcement</h5>
+                            <p class="text-sm mb-0">Post a new announcement to the school community</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a href="{% url 'communications:announcement_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Announcements
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-4">
+                            <label for="id_title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
+                                   id="id_title" name="title" required
+                                   value="{{ form.title.value|default:'' }}" maxlength="200">
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Enter a descriptive title for your announcement (max 200 characters)
+                            </small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="id_content" class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control {% if form.content.errors %}is-invalid{% endif %}"
+                                      id="id_content" name="content" rows="6" required>{{ form.content.value|default:'' }}</textarea>
+                            {% if form.content.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.content.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="id_target_type" class="form-label">Target Audience <span class="text-danger">*</span></label>
+                                <select class="form-select {% if form.target_type.errors %}is-invalid{% endif %}"
+                                        id="id_target_type" name="target_type" required>
+                                    <option value="">Select audience...</option>
+                                    <option value="ALL" {% if form.target_type.value == 'ALL' %}selected{% endif %}>
+                                        Everyone
+                                    </option>
+                                    <option value="TEACHERS" {% if form.target_type.value == 'TEACHERS' %}selected{% endif %}>
+                                        All Teachers
+                                    </option>
+                                    <option value="STUDENTS" {% if form.target_type.value == 'STUDENTS' %}selected{% endif %}>
+                                        All Students
+                                    </option>
+                                    <option value="PARENTS" {% if form.target_type.value == 'PARENTS' %}selected{% endif %}>
+                                        All Parents
+                                    </option>
+                                    <option value="SPECIFIC_CLASS" {% if form.target_type.value == 'SPECIFIC_CLASS' %}selected{% endif %}>
+                                        Specific Class
+                                    </option>
+                                    <option value="SPECIFIC_USER" {% if form.target_type.value == 'SPECIFIC_USER' %}selected{% endif %}>
+                                        Specific User
+                                    </option>
+                                </select>
+                                {% if form.target_type.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.target_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Conditional fields based on target type -->
+                        <div id="class_selection" class="mb-4" style="display: none;">
+                            <label for="id_target_class" class="form-label">Select Class <span class="text-danger">*</span></label>
+                            <select class="form-select {% if form.target_class.errors %}is-invalid{% endif %}" 
+                                    id="id_target_class" name="target_class">
+                                <option value="">Select a class...</option>
+                                {% for class in classes %}
+                                    <option value="{{ class.id }}" {% if form.target_class.value == class.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ class.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.target_class.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.target_class.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="user_selection" class="mb-4" style="display: none;">
+                            <label for="id_target_user" class="form-label">Select User <span class="text-danger">*</span></label>
+                            <select class="form-select {% if form.target_user.errors %}is-invalid{% endif %}" 
+                                    id="id_target_user" name="target_user">
+                                <option value="">Select a user...</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}" {% if form.target_user.value == user.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ user.get_full_name }} ({{ user.get_role_display }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.target_user.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.target_user.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="id_expires_at" class="form-label">Expiration Date (Optional)</label>
+                                <input type="date" class="form-control {% if form.expires_at.errors %}is-invalid{% endif %}" 
+                                       id="id_expires_at" name="expires_at" 
+                                       value="{{ form.expires_at.value|date:'Y-m-d'|default:'' }}">
+                                {% if form.expires_at.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.expires_at.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    Leave blank if the announcement should not expire
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="id_is_active" class="form-label">Status</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="id_is_active" name="is_active" 
+                                           {% if form.is_active.value or form.is_active.value is None %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_is_active">Active (Publish immediately)</label>
+                                </div>
+                                {% if form.is_active.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.is_active.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    Uncheck to save as draft
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="id_attachment" class="form-label">Attachment (Optional)</label>
+                            <input type="file" class="form-control {% if form.attachment.errors %}is-invalid{% endif %}" 
+                                   id="id_attachment" name="attachment">
+                            {% if form.attachment.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.attachment.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Max file size: 10MB. Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="button" class="btn btn-outline-secondary me-md-2" onclick="history.back()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Post Announcement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const targetTypeSelect = document.getElementById('id_target_type');
+        const classSelection = document.getElementById('class_selection');
+        const userSelection = document.getElementById('user_selection');
+        
+        function updateTargetFields() {
+            const selectedValue = targetTypeSelect.value;
+            
+            // Hide all conditional fields first
+            classSelection.style.display = 'none';
+            userSelection.style.display = 'none';
+            
+            // Show relevant fields based on selection
+            if (selectedValue === 'SPECIFIC_CLASS') {
+                classSelection.style.display = 'block';
+            } else if (selectedValue === 'SPECIFIC_USER') {
+                userSelection.style.display = 'block';
+            }
+        }
+        
+        // Initial state
+        updateTargetFields();
+        
+        // Update on change
+        targetTypeSelect.addEventListener('change', updateTargetFields);
+    });
+</script>
+{% endblock %}
+{% endblock %}

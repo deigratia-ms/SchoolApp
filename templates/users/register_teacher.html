@@ -1,0 +1,242 @@
+{% extends 'base.html' %} {% block title %}Register New Teacher | Ricas School
+Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Register New Teacher</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'dashboard:index' %}">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{% url 'users:user_management' %}">User Management</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">
+            Register Teacher
+          </li>
+        </ol>
+      </nav>
+    </div>
+    <a href="{% url 'users:user_management' %}" class="btn btn-primary">
+      <i class="fas fa-arrow-left me-2"></i>Back to User Management
+    </a>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        Teacher Registration Form
+      </h6>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="row mb-4">
+          <div class="col-lg-6">
+            <h5 class="text-dark">Basic Information</h5>
+            <hr />
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password *</label>
+              <div class="input-group">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  name="password"
+                  required
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="showPassword"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="generatePassword"
+                >
+                  <i class="fas fa-key"></i>
+                </button>
+              </div>
+              <div class="form-text">
+                A password will be automatically generated and sent to the
+                teacher's email. Click the key icon to generate a new password.
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="first_name" class="form-label">First Name *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="first_name"
+                  name="first_name"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label for="last_name" class="form-label">Last Name *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="last_name"
+                  name="last_name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address *</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="profile_picture" class="form-label"
+                >Profile Picture</label
+              >
+              <input
+                type="file"
+                class="form-control"
+                id="profile_picture"
+                name="profile_picture"
+                accept="image/*"
+              />
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <h5 class="text-dark">Teacher Information</h5>
+            <hr />
+            
+            <div class="mb-3 form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="skip_welcome_email" name="skip_welcome_email">
+              <label class="form-check-label" for="skip_welcome_email">
+                Skip sending welcome email
+              </label>
+              <div class="form-text">
+                If checked, no welcome email will be sent. By default, login credentials will be emailed to the teacher.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="employee_id" class="form-label">Employee ID *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="employee_id"
+                name="employee_id"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="department" class="form-label">Department *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="department"
+                name="department"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="qualification" class="form-label"
+                >Qualification *</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="qualification"
+                name="qualification"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="date_of_birth" class="form-label"
+                >Date of Birth</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="date_of_birth"
+                name="date_of_birth"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="phone" class="form-label">Phone Number</label>
+              <input type="tel" class="form-control" id="phone" name="phone" />
+            </div>
+
+            <div class="mb-3">
+              <label for="address" class="form-label">Address</label>
+              <textarea
+                class="form-control"
+                id="address"
+                name="address"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-end">
+          <button type="reset" class="btn btn-secondary me-2">Reset</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Register Teacher
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Show/hide password
+    const passwordField = document.getElementById("password");
+    const showPasswordBtn = document.getElementById("showPassword");
+
+    showPasswordBtn.addEventListener("click", function () {
+      const type =
+        passwordField.getAttribute("type") === "password" ? "text" : "password";
+      passwordField.setAttribute("type", type);
+      this.innerHTML =
+        type === "password"
+          ? '<i class="fas fa-eye"></i>'
+          : '<i class="fas fa-eye-slash"></i>';
+    });
+
+    // Generate random password
+    const generatePasswordBtn = document.getElementById("generatePassword");
+    if (generatePasswordBtn) {
+      generatePasswordBtn.addEventListener("click", function () {
+        const chars =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        let password = "";
+        for (let i = 0; i < 12; i++) {
+          password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        passwordField.value = password;
+        passwordField.setAttribute("type", "text");
+        showPasswordBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      });
+    }
+  });
+</script>
+{% endblock %}

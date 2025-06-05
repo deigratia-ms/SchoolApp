@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Appointment - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .parent-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .parent-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .parent-card.selected {
+        border-color: #0a2351;
+        background-color: #f0f7ff;
+    }
+    .time-slot-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .time-slot-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .time-slot-card.selected {
+        border-color: #28a745;
+        background-color: #f0fff4;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'appointments:admin_dashboard' %}">Appointment Administration</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Create Appointment</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Create New Appointment</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="appointmentForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5 class="mb-3">1. Select Parent</h5>
+                                <div class="input-group mb-3">
+                                    <input type="text" id="parentSearch" class="form-control" placeholder="Search by name or email...">
+                                    <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                
+                                <div id="parentResults" class="row">
+                                    {% for parent in parents %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card parent-card h-100" data-parent-id="{{ parent.id }}">
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ parent.user.get_full_name }}</h6>
+                                                <p class="card-text small text-muted mb-1">
+                                                    <i class="fas fa-envelope me-1"></i> {{ parent.user.email }}
+                                                </p>
+                                                <p class="card-text small text-muted mb-2">
+                                                    <i class="fas fa-phone me-1"></i> {{ parent.phone_number|default:"No phone" }}
+                                                </p>
+                                                <p class="card-text small">
+                                                    <strong>Children:</strong>
+                                                    {% for child in parent.children.all %}
+                                                        {{ child.user.get_full_name }}{% if not forloop.last %}, {% endif %}
+                                                    {% empty %}
+                                                        No children
+                                                    {% endfor %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="parent_id" id="selectedParentId">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5 class="mb-3">2. Select Time Slot</h5>
+                                <div class="input-group mb-3">
+                                    <input type="date" id="dateFilter" class="form-control" min="{{ today|date:'Y-m-d' }}">
+                                    <button class="btn btn-outline-secondary" type="button" id="filterButton">
+                                        <i class="fas fa-filter"></i> Filter
+                                    </button>
+                                </div>
+                                
+                                <div id="timeSlotResults" class="row">
+                                    {% for slot in available_slots %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card time-slot-card h-100" data-slot-id="{{ slot.id }}">
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ slot.date|date:"M d, Y" }}</h6>
+                                                <p class="card-text">
+                                                    <i class="fas fa-clock me-1"></i> {{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="slot_id" id="selectedSlotId">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="mb-3">3. Appointment Details</h5>
+                                <div class="form-group mb-3">
+                                    <label for="purpose">Purpose</label>
+                                    <textarea name="purpose" id="purpose" class="form-control" rows="3" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary" id="submitButton" disabled>
+                                <i class="fas fa-calendar-plus me-1"></i> Create Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parent selection
+        const parentCards = document.querySelectorAll('.parent-card');
+        const selectedParentId = document.getElementById('selectedParentId');
+        
+        parentCards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove selected class from all cards
+                parentCards.forEach(c => c.classList.remove('selected'));
+                
+                // Add selected class to clicked card
+                this.classList.add('selected');
+                
+                // Set the selected parent ID
+                selectedParentId.value = this.dataset.parentId;
+                
+                // Check if we can enable the submit button
+                checkSubmitButton();
+            });
+        });
+        
+        // Time slot selection
+        const timeSlotCards = document.querySelectorAll('.time-slot-card');
+        const selectedSlotId = document.getElementById('selectedSlotId');
+        
+        timeSlotCards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove selected class from all cards
+                timeSlotCards.forEach(c => c.classList.remove('selected'));
+                
+                // Add selected class to clicked card
+                this.classList.add('selected');
+                
+                // Set the selected slot ID
+                selectedSlotId.value = this.dataset.slotId;
+                
+                // Check if we can enable the submit button
+                checkSubmitButton();
+            });
+        });
+        
+        // Parent search
+        const parentSearch = document.getElementById('parentSearch');
+        const searchButton = document.getElementById('searchButton');
+        const parentResults = document.getElementById('parentResults');
+        
+        function searchParents() {
+            const searchTerm = parentSearch.value.toLowerCase();
+            
+            // If search term is empty, show all parents
+            if (!searchTerm) {
+                parentCards.forEach(card => {
+                    card.parentElement.style.display = 'block';
+                });
+                return;
+            }
+            
+            // Filter parents based on search term
+            parentCards.forEach(card => {
+                const name = card.querySelector('.card-title').textContent.toLowerCase();
+                const email = card.querySelector('.card-text:nth-child(2)').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                    card.parentElement.style.display = 'block';
+                } else {
+                    card.parentElement.style.display = 'none';
+                }
+            });
+        }
+        
+        searchButton.addEventListener('click', searchParents);
+        parentSearch.addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                searchParents();
+            }
+        });
+        
+        // Date filter
+        const dateFilter = document.getElementById('dateFilter');
+        const filterButton = document.getElementById('filterButton');
+        
+        function filterTimeSlots() {
+            const selectedDate = dateFilter.value;
+            
+            // If no date selected, show all time slots
+            if (!selectedDate) {
+                timeSlotCards.forEach(card => {
+                    card.parentElement.style.display = 'block';
+                });
+                return;
+            }
+            
+            // Filter time slots based on selected date
+            timeSlotCards.forEach(card => {
+                const dateText = card.querySelector('.card-title').textContent;
+                const cardDate = new Date(dateText);
+                const filterDate = new Date(selectedDate);
+                
+                // Compare year, month, and day
+                if (cardDate.getFullYear() === filterDate.getFullYear() &&
+                    cardDate.getMonth() === filterDate.getMonth() &&
+                    cardDate.getDate() === filterDate.getDate()) {
+                    card.parentElement.style.display = 'block';
+                } else {
+                    card.parentElement.style.display = 'none';
+                }
+            });
+        }
+        
+        filterButton.addEventListener('click', filterTimeSlots);
+        
+        // Check if we can enable the submit button
+        function checkSubmitButton() {
+            const submitButton = document.getElementById('submitButton');
+            const purpose = document.getElementById('purpose').value.trim();
+            
+            if (selectedParentId.value && selectedSlotId.value && purpose) {
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
+        }
+        
+        // Check purpose field
+        document.getElementById('purpose').addEventListener('input', checkSubmitButton);
+    });
+</script>
+{% endblock %}

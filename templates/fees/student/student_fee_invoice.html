@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}Fee Invoice - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #invoice-section, #invoice-section * {
+      visibility: visible;
+    }
+    #invoice-section {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    .no-print {
+      display: none !important;
+    }
+  }
+  .invoice-header {
+    border-bottom: 2px solid #dee2e6;
+  }
+  .invoice-footer {
+    border-top: 2px solid #dee2e6;
+  }
+  .invoice-title {
+    color: #4e73df;
+  }
+  .table-fees th {
+    background-color: #f8f9fc;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h1 class="h3 mb-0 text-gray-800">Fee Invoice</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:student_fees' student.id %}">My Fees</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Invoice</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mb-4 no-print">
+    <button onclick="window.print();" class="btn btn-primary">
+      <i class="fas fa-print me-2"></i>Print Invoice
+    </button>
+    <button onclick="generatePDF();" class="btn btn-info">
+      <i class="fas fa-file-pdf me-2"></i>Download PDF
+    </button>
+    {% if parent and parent.user.email %}
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#emailInvoiceModal">
+      <i class="fas fa-envelope me-2"></i>Email to Parent
+    </button>
+    {% endif %}
+    <a href="{% url 'fees:student_fees' student.id %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-2"></i>Back to Fees
+    </a>
+  </div>
+
+  <!-- Invoice Section -->
+  <div class="card mb-4" id="invoice-section">
+    <div class="card-body">
+      <!-- Invoice Header -->
+      <div class="row invoice-header pb-4 mb-4">
+        <div class="col-md-6">
+          <div class="d-flex align-items-center mb-3">
+            <img src="{{ school_logo_url }}" alt="School Logo" class="me-3" style="max-height: 80px;">
+            <div>
+              <h4 class="mb-0">{{ school_name }}</h4>
+              <p class="text-muted mb-0">{{ school_address }}</p>
+              <p class="text-muted mb-0">{{ school_contact }}</p>
+              {% if school_email %}
+              <p class="text-muted mb-0">{{ school_email }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <h2 class="invoice-title mb-2">FEE INVOICE</h2>
+          <p class="mb-1"><strong>Invoice #:</strong> {{ invoice_number }}</p>
+          <p class="mb-1"><strong>Date:</strong> {{ today|date:"F d, Y" }}</p>
+          <p class="mb-1"><strong>Term:</strong> {{ student_fee.class_fee.term.name }} ({{ student_fee.class_fee.term.academic_year }})</p>
+          <p class="mb-1"><strong>Due Date:</strong> {{ student_fee.due_date|date:"F d, Y" }}</p>
+        </div>
+      </div>
+
+      <!-- Student Information -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <h5 class="mb-3">Student Information</h5>
+          <p class="mb-1"><strong>Name:</strong> {{ student.user.get_full_name }}</p>
+          <p class="mb-1"><strong>Student ID:</strong> {{ student.student_id }}</p>
+          <p class="mb-1"><strong>Class:</strong> {{ student_fee.class_fee.classroom.name }}</p>
+          {% if student.user.email %}
+          <p class="mb-1"><strong>Email:</strong> {{ student.user.email }}</p>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-3">Parent/Guardian Information</h5>
+          {% if parent %}
+          <p class="mb-1"><strong>Name:</strong> {{ parent.user.get_full_name }}</p>
+          <p class="mb-1"><strong>Relationship:</strong> {{ parent.relationship }}</p>
+          {% if parent.user.email %}
+          <p class="mb-1"><strong>Email:</strong> {{ parent.user.email }}</p>
+          {% endif %}
+          {% if parent.phone_number %}
+          <p class="mb-1"><strong>Phone:</strong> {{ parent.phone_number }}</p>
+          {% endif %}
+          {% else %}
+          <p class="text-muted">No parent/guardian information available</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Fee Details -->
+      <div class="mb-4">
+        <h5 class="mb-3">Fee Details</h5>
+        <div class="table-responsive">
+          <table class="table table-bordered table-fees">
+            <thead>
+              <tr>
+                <th>Fee Type</th>
+                <th>Description</th>
+                <th class="text-end">Amount (GHS)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ student_fee.class_fee.fee_category.name }}</td>
+                <td>{{ student_fee.class_fee.description|default:"" }}</td>
+                <td class="text-end">{{ student_fee.amount|floatformat:2 }}</td>
+              </tr>
+              {% if related_fees %}
+                {% for fee in related_fees %}
+                <tr>
+                  <td>{{ fee.class_fee.fee_category.name }}</td>
+                  <td>{{ fee.class_fee.description|default:"" }}</td>
+                  <td class="text-end">{{ fee.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+              {% endif %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="2" class="text-end">Total:</th>
+                <th class="text-end">{{ total_amount|floatformat:2 }}</th>
+              </tr>
+              <tr>
+                <th colspan="2" class="text-end">Amount Paid:</th>
+                <th class="text-end">{{ total_paid|floatformat:2 }}</th>
+              </tr>
+              <tr>
+                <th colspan="2" class="text-end">Balance Due:</th>
+                <th class="text-end">{{ total_balance|floatformat:2 }}</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payment History -->
+      {% if payments %}
+      <div class="mb-4">
+        <h5 class="mb-3">Payment History</h5>
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount (GHS)</th>
+                <th>Method</th>
+                <th>Receipt #</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments %}
+              <tr>
+                <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                <td>{{ payment.amount|floatformat:2 }}</td>
+                <td>{{ payment.get_payment_method_display }}</td>
+                <td>{{ payment.receipt.receipt_number|default:"-" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Payment Instructions -->
+      <div class="mb-4">
+        <h5 class="mb-3">Payment Instructions</h5>
+        <div class="card bg-light">
+          <div class="card-body">
+            <p class="mb-2"><strong>Bank Transfer:</strong> Bank Name, Account #: 1234567890, Account Name: Ricas School</p>
+            <p class="mb-2"><strong>Mobile Money:</strong> MTN: 0244123456, Vodafone: 0502123456</p>
+            <p class="mb-0"><strong>Note:</strong> Please include student name and ID in the payment reference.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Footer -->
+      <div class="row invoice-footer pt-4 mt-4">
+        <div class="col-md-6">
+          <p class="mb-1"><strong>Terms & Conditions:</strong></p>
+          <ul class="ps-3 mb-0">
+            <li>All fees must be paid by the due date.</li>
+            <li>Late payments may incur additional charges.</li>
+            <li>This invoice is valid for 30 days from the issue date.</li>
+          </ul>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <p class="mb-1">If you have any questions concerning this invoice, please contact:</p>
+          <p class="mb-0"><strong>Finance Office:</strong> finance@ricasschool.edu.gh | +233 123 456 789</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Invoice Modal -->
+{% if parent and parent.user.email %}
+<div class="modal fade" id="emailInvoiceModal" tabindex="-1" aria-labelledby="emailInvoiceModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'fees:email_invoice' student.id student_fee.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="emailInvoiceModalLabel">Email Invoice to Parent</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="recipient_email" class="form-label">Recipient Email</label>
+            <input type="email" class="form-control" id="recipient_email" name="recipient_email" value="{{ parent.user.email }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="email_subject" class="form-label">Subject</label>
+            <input type="text" class="form-control" id="email_subject" name="email_subject" value="Fee Invoice for {{ student.user.get_full_name }} - {{ student_fee.class_fee.fee_category.name }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="email_message" class="form-label">Message</label>
+            <textarea class="form-control" id="email_message" name="email_message" rows="4" required>Dear {{ parent.user.get_full_name }},
+
+Please find attached the fee invoice for {{ student.user.get_full_name }} for {{ student_fee.class_fee.fee_category.name }} - {{ student_fee.class_fee.term.name }} ({{ student_fee.class_fee.term.academic_year }}).
+
+Total Amount: GHS {{ total_amount|floatformat:2 }}
+Amount Paid: GHS {{ total_paid|floatformat:2 }}
+Balance Due: GHS {{ total_balance|floatformat:2 }}
+Due Date: {{ student_fee.due_date|date:"F d, Y" }}
+
+Thank you.
+{{ school_name }}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Send Email</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  function generatePDF() {
+    // Get the invoice element
+    const element = document.getElementById('invoice-section');
+
+    // Clone the element to avoid modifying the original
+    const clone = element.cloneNode(true);
+
+    // Set options for PDF generation
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: '{{ invoice_number }}.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Generate PDF
+    html2pdf().set(opt).from(clone).save();
+  }
+
+  // Initialize tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  });
+</script>
+{% endblock %}

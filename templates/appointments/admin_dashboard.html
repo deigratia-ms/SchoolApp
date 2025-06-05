@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Appointment Administration - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Appointment Administration</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Appointment System Administration</h5>
+                    <div>
+                        <a href="{% url 'appointments:manage_settings' %}" class="btn btn-primary btn-sm me-2">
+                            <i class="fas fa-cog me-1"></i> Settings
+                        </a>
+                        <a href="{% url 'appointments:generate_time_slots' %}" class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-calendar-plus me-1"></i> Generate Slots
+                        </a>
+                        <a href="{% url 'appointments:appointment_list' %}" class="btn btn-secondary btn-sm me-2">
+                            <i class="fas fa-list me-1"></i> All Appointments
+                        </a>
+                        <a href="{% url 'appointments:create_appointment' %}" class="btn btn-info btn-sm">
+                            <i class="fas fa-plus-circle me-1"></i> Create Appointment
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>Manage appointments, time slots, and system settings from this dashboard.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-check fa-3x mb-3"></i>
+                    <h3>{{ today_appointments.count }}</h3>
+                    <p class="mb-0">Today's Appointments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                    <h3>{{ upcoming_appointments.count }}</h3>
+                    <p class="mb-0">Upcoming Appointments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-3x mb-3"></i>
+                    <h3>{{ pending_appointments.count }}</h3>
+                    <p class="mb-0">Pending Appointments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-cog fa-3x mb-3"></i>
+                    <h3>{{ settings.appointment_duration }}</h3>
+                    <p class="mb-0">Minutes Per Slot</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Appointments -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-calendar-day text-primary me-2"></i>Today's Appointments
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if today_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Parent</th>
+                                <th>Children</th>
+                                <th>Purpose</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in today_appointments %}
+                                <tr>
+                                    <td>{{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}</td>
+                                    <td>{{ appointment.parent.user.get_full_name }}</td>
+                                    <td>
+                                        {% for child in appointment.parent.children.all %}
+                                            {{ child.user.get_full_name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ appointment.purpose|truncatechars:50 }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'pending' %}warning{% elif appointment.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                            {{ appointment.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'appointments:appointment_detail' appointment.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if appointment.status == 'pending' %}
+                                        <form method="post" action="{% url 'appointments:update_appointment_status' appointment.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="confirmed">
+                                            <button type="submit" class="btn btn-sm btn-outline-success me-1">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if appointment.status == 'confirmed' %}
+                                        <form method="post" action="{% url 'appointments:update_appointment_status' appointment.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="completed">
+                                            <button type="submit" class="btn btn-sm btn-outline-info me-1">
+                                                <i class="fas fa-check-double"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if appointment.status != 'cancelled' and appointment.status != 'completed' %}
+                                        <a href="{% url 'appointments:cancel_appointment' appointment.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-day fa-3x text-muted mb-3"></i>
+                    <h5>No Appointments Today</h5>
+                    <p class="text-muted">There are no appointments scheduled for today.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-calendar-alt text-primary me-2"></i>Upcoming Appointments
+            </h5>
+            <a href="{% url 'appointments:manage_time_slots' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-cog me-1"></i> Manage Time Slots
+            </a>
+        </div>
+        <div class="card-body">
+            {% if upcoming_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Parent</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in upcoming_appointments %}
+                                <tr>
+                                    <td>{{ appointment.time_slot.date|date:"D, M d, Y" }}</td>
+                                    <td>{{ appointment.time_slot.start_time|time:"g:i A" }}</td>
+                                    <td>{{ appointment.parent.user.get_full_name }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                            {{ appointment.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'appointments:appointment_detail' appointment.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5>No Upcoming Appointments</h5>
+                    <p class="text-muted">There are no upcoming appointments scheduled.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Appointments -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-clock text-primary me-2"></i>Pending Appointments
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pending_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Parent</th>
+                                <th>Purpose</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in pending_appointments %}
+                                <tr>
+                                    <td>{{ appointment.time_slot.date|date:"D, M d, Y" }}</td>
+                                    <td>{{ appointment.time_slot.start_time|time:"g:i A" }}</td>
+                                    <td>{{ appointment.parent.user.get_full_name }}</td>
+                                    <td>{{ appointment.purpose|truncatechars:50 }}</td>
+                                    <td>
+                                        <a href="{% url 'appointments:appointment_detail' appointment.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'appointments:update_appointment_status' appointment.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="confirmed">
+                                            <button type="submit" class="btn btn-sm btn-outline-success me-1">
+                                                <i class="fas fa-check"></i> Confirm
+                                            </button>
+                                        </form>
+                                        <a href="{% url 'appointments:cancel_appointment' appointment.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                    <h5>No Pending Appointments</h5>
+                    <p class="text-muted">There are no appointments waiting for confirmation.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .table td, .table th {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

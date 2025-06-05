@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Admin Login - Ricas School Management System{% endblock %}
+{% block auth_content %}
+<div class="login-container">
+  <div class="login-card shadow-lg border-0 rounded-lg">
+    <div class="login-header text-center p-4 bg-primary text-white rounded-top">
+      <h2 class="text-center mb-2">
+        <i class="fas fa-user-shield fa-2x mb-3"></i><br />
+        Admin Login
+      </h2>
+      <p class="text-white mb-0">Ricas School Management System</p>
+    </div>
+    <div class="login-body p-4">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'my_admin:admin_login' %}">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label for="email" class="form-label">Admin Email</label>
+          <div class="input-group">
+            <span class="input-group-text bg-primary text-white"><i class="fas fa-envelope"></i></span>
+            <input type="email" class="form-control form-control-lg" id="email" name="email" placeholder="Enter your admin email address" required />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-primary text-white"><i class="fas fa-lock"></i></span>
+            <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="Enter your password" required />
+            <button class="btn btn-outline-primary" type="button" id="toggle-password">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <div class="mt-2 text-end">
+            <a href="#" id="forgot-password" class="text-decoration-none small">
+              <i class="fas fa-question-circle"></i> Forgot Password?
+            </a>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 mb-4">
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-in-alt me-2"></i> Admin Login
+          </button>
+        </div>
+
+        {% if next %}
+          <input type="hidden" name="next" value="{{ next }}" />
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Password Reset Modal -->
+<div class="modal fade" id="passwordResetModal" tabindex="-1" aria-labelledby="passwordResetModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="passwordResetModalLabel">Reset Admin Password</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Enter your admin email address below and we'll send you instructions to reset your password.</p>
+        <form id="password-reset-form" method="post" action="{% url 'users:password_reset' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="reset_email" class="form-label">Email Address</label>
+            <input type="email" class="form-control" id="reset_email" name="email" required />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" form="password-reset-form" class="btn btn-primary">Send Reset Link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Password visibility toggle
+    const togglePasswordBtn = document.getElementById("toggle-password");
+    const passwordInput = document.getElementById("password");
+
+    if (togglePasswordBtn && passwordInput) {
+      togglePasswordBtn.addEventListener("click", function () {
+        const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+        passwordInput.setAttribute("type", type);
+        togglePasswordBtn.querySelector("i").classList.toggle("fa-eye");
+        togglePasswordBtn.querySelector("i").classList.toggle("fa-eye-slash");
+      });
+    }
+
+    // Forgot Password modal
+    const forgotPasswordLink = document.getElementById("forgot-password");
+    const passwordResetModal = new bootstrap.Modal(document.getElementById("passwordResetModal"));
+
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        passwordResetModal.show();
+      });
+    }
+  });
+</script>
+{% endblock %}

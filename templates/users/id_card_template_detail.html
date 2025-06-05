@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+
+{% block title %}ID Card Template Details | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">ID Card Template Details</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'users:id_card_template_list' %}">ID Card Templates</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Template Details</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'users:id_card_template_update' template.id %}" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-2"></i>Edit Template
+            </a>
+            <a href="{% url 'users:id_card_template_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Templates
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Template Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Template Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 150px;">Name</th>
+                                <td>{{ template.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Role</th>
+                                <td>{{ template.get_role_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td>
+                                    {% if template.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Header Text</th>
+                                <td>{{ template.header_text }}</td>
+                            </tr>
+                            <tr>
+                                <th>Dimensions</th>
+                                <td>{{ template.card_width }} x {{ template.card_height }} px</td>
+                            </tr>
+                            <tr>
+                                <th>Text Color</th>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 20px; height: 20px; background-color: {{ template.text_color }}; border: 1px solid #ddd; margin-right: 10px;"></div>
+                                        {{ template.text_color }}
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Background Color</th>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 20px; height: 20px; background-color: {{ template.background_color }}; border: 1px solid #ddd; margin-right: 10px;"></div>
+                                        {{ template.background_color }}
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Header Color</th>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 20px; height: 20px; background-color: {{ template.header_color|default:'#4e73df' }}; border: 1px solid #ddd; margin-right: 10px;"></div>
+                                        {{ template.header_color|default:'#4e73df' }}
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Footer Color</th>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 20px; height: 20px; background-color: {{ template.footer_color|default:'#f8f9fc' }}; border: 1px solid #ddd; margin-right: 10px;"></div>
+                                        {{ template.footer_color|default:'#f8f9fc' }}
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Curved Design</th>
+                                <td>
+                                    {% if template.use_curved_design %}
+                                    <span class="badge bg-success">Enabled</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Disabled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Background Image</th>
+                                <td>
+                                    {% if template.background_image %}
+                                    <img src="{{ template.background_image.url }}" alt="Background Image" style="max-width: 100px; max-height: 100px;">
+                                    {% else %}
+                                    <span class="text-muted">No background image</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Created At</th>
+                                <td>{{ template.created_at }}</td>
+                            </tr>
+                            <tr>
+                                <th>Last Updated</th>
+                                <td>{{ template.updated_at }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template Preview -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Template Preview</h6>
+                </div>
+                <div class="card-body">
+                    <!-- CR80 ID Card Preview - Landscape Format -->
+                    <div style="text-align: center; margin-bottom: 10px; font-size: 12px; color: #666;">
+                        CR80 Standard (2.125" × 3.375" or 54.02mm × 85.77mm) - Landscape
+                    </div>
+                    
+                    <div class="id-card-preview" style="width: 100%; max-width: 400px; height: 250px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color: {{ template.background_color }}; color: {{ template.text_color }}; position: relative; display: flex; flex-direction: column;">
+                        <!-- Curved design elements if enabled -->
+                        {% if template.use_curved_design %}
+                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 80px; background-color: {{ template.header_color|default:'#4e73df' }}; z-index: 1;"></div>
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background-color: {{ template.header_color|default:'#4e73df' }}; z-index: 1;"></div>
+                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 70px; background-color: rgba(255,255,255,0.1); border-radius: 100% 0 100% 0 / 0 0 100% 100%; z-index: 2;"></div>
+                        <div style="position: absolute; bottom: 0; right: 0; width: 120px; height: 60px; background-color: rgba(255,255,255,0.1); border-radius: 100% 0 0 0; z-index: 2;"></div>
+                        {% endif %}
+                        
+                        <!-- Header with school name and card title -->
+                        <div style="background-color: {{ template.header_color|default:'rgba(0,0,0,0.15)' }}; color: {{ template.text_color }}; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); position: relative; z-index: 5;">
+                            <div>
+                                {% if school_settings and school_settings.logo %}
+                                <img src="{{ school_settings.logo.url }}" alt="School Logo" style="height: 20px; margin-right: 5px; vertical-align: middle;">
+                                {% endif %}
+                                {% if school_settings %}{{ school_settings.school_name }}{% else %}School Name{% endif %}
+                            </div>
+                            <div>{{ template.header_text }}</div>
+                        </div>
+                        
+                        <!-- Card Body - Landscape layout with photo on left, info on right -->
+                        <div style="flex: 1; display: flex; padding: 15px; position: relative; z-index: 3; {% if template.background_image %}background-image: url('{{ template.background_image.url }}'); background-size: cover; background-position: center;{% endif %}">
+                            <!-- Left Column - Photo Section -->
+                            <div style="width: 90px; display: flex; flex-direction: column; align-items: center; margin-right: 15px;">
+                                {% if school_settings and school_settings.logo %}
+                                <img src="{{ school_settings.logo.url }}" alt="School Logo" style="width: 30px; height: 30px; margin-bottom: 8px;">
+                                {% endif %}
+                                
+                                <div style="width: 80px; height: 100px; background-color: #f8f9fc; border: {% if template.use_curved_design %}2px solid rgba(255,255,255,0.3); border-radius: 8px;{% else %}2px solid rgba(0,0,0,0.1); border-radius: 4px;{% endif %} display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user fa-2x text-muted"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column - Information Section -->
+                            <div style="flex: 1; display: flex; flex-direction: column;">
+                                <!-- Role Badge -->
+                                <div style="{% if template.use_curved_design %}background: rgba(255,255,255,0.2); border-radius: 20px; padding: 3px 10px;{% else %}background-color: rgba(0,0,0,0.2); border-radius: 10px; padding: 2px 8px;{% endif %} display: inline-block; font-size: 11px; margin-bottom: 5px; max-width: fit-content;">
+                                    {{ template.get_role_display }}
+                                </div>
+                                
+                                <!-- Name -->
+                                <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: {% if template.use_curved_design %}1px solid rgba(255,255,255,0.3){% else %}1px solid rgba(0,0,0,0.1){% endif %};">
+                                    John Doe
+                                </div>
+                                
+                                <!-- Sample User Info -->
+                                <div style="font-size: 12px;">
+                                    <div style="margin-bottom: 4px; display: flex;">
+                                        <div style="font-weight: bold; min-width: 60px;">ID:</div>
+                                        <div>{% if template.role == 'STUDENT' %}STU12345{% elif template.role == 'TEACHER' %}TCH12345{% elif template.role == 'PARENT' %}PRT12345{% else %}ADM12345{% endif %}</div>
+                                    </div>
+                                    
+                                    {% if template.role == 'STUDENT' %}
+                                    <div style="margin-bottom: 4px; display: flex;">
+                                        <div style="font-weight: bold; min-width: 60px;">Class:</div>
+                                        <div>Grade 10-A</div>
+                                    </div>
+                                    {% elif template.role == 'TEACHER' %}
+                                    <div style="margin-bottom: 4px; display: flex;">
+                                        <div style="font-weight: bold; min-width: 60px;">Dept:</div>
+                                        <div>Mathematics</div>
+                                    </div>
+                                    {% elif template.role == 'PARENT' %}
+                                    <div style="margin-bottom: 4px; display: flex;">
+                                        <div style="font-weight: bold; min-width: 60px;">Child:</div>
+                                        <div>Jane Doe</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div style="margin-bottom: 4px; display: flex;">
+                                        <div style="font-weight: bold; min-width: 60px;">Valid:</div>
+                                        <div>Dec 31, 2025</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Barcode -->
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <div style="padding: 5px; background-color: rgba(255,255,255,0.8); border-radius: 3px; display: inline-block;">
+                                        <i class="fas fa-barcode" style="font-size: 20px; color: #333;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer with contact info -->
+                        <div style="background-color: {{ template.footer_color|default:'rgba(0,0,0,0.1)' }}; padding: 5px; text-align: center; font-size: 9px; position: relative; z-index: 5;">
+                            {% if school_settings %}{{ school_settings.school_name }}{% else %}School Name{% endif %} | 
+                            {% if school_settings %}{{ school_settings.address|default:"School Address" }}{% else %}School Address{% endif %} | 
+                            {% if school_settings %}{{ school_settings.phone|default:"Phone Number" }}{% else %}Phone Number{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate ID Card Section -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Generate ID Card with this Template</h6>
+        </div>
+        <div class="card-body">
+            <p>Use this template to generate new ID cards for {{ template.get_role_display }}s.</p>
+            <a href="{% url 'users:id_card_generate' %}?template={{ template.id }}" class="btn btn-success mt-2">
+                <i class="fas fa-id-card me-2"></i>Generate New ID Card
+            </a>
+            <a href="{% url 'users:id_card_batch_generate' %}?template={{ template.id }}&role={{ template.role }}" class="btn btn-info mt-2 ms-2">
+                <i class="fas fa-id-badge me-2"></i>Batch Generate ID Cards
+            </a>
+        </div>
+    </div>
+
+    <!-- Sample Users Section -->
+    {% if sample_users %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Sample {{ template.get_role_display }}s for this Template</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID</th>
+                            {% if template.role == 'STUDENT' %}
+                            <th>Grade</th>
+                            {% elif template.role == 'TEACHER' %}
+                            <th>Department</th>
+                            {% elif template.role == 'PARENT' %}
+                            <th>Children</th>
+                            {% endif %}
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_obj in sample_users %}
+                        <tr>
+                            <td>
+                                {% if user_obj.user.profile_picture %}
+                                <img src="{{ user_obj.user.profile_picture.url }}" alt="{{ user_obj.user.get_full_name }}" class="img-profile rounded-circle me-2" style="width: 30px; height: 30px;">
+                                {% else %}
+                                <i class="fas fa-user-circle me-2"></i>
+                                {% endif %}
+                                {{ user_obj.user.get_full_name }}
+                            </td>
+                            <td>
+                                {% if template.role == 'STUDENT' %}
+                                {{ user_obj.student_id }}
+                                {% elif template.role == 'TEACHER' %}
+                                {{ user_obj.employee_id }}
+                                {% else %}
+                                {{ user_obj.user.id }}
+                                {% endif %}
+                            </td>
+                            {% if template.role == 'STUDENT' %}
+                            <td>{{ user_obj.grade }} {{ user_obj.section }}</td>
+                            {% elif template.role == 'TEACHER' %}
+                            <td>{{ user_obj.department }}</td>
+                            {% elif template.role == 'PARENT' %}
+                            <td>
+                                {% for child in user_obj.children.all %}
+                                {{ child.user.get_full_name }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                <span class="text-muted">No children linked</span>
+                                {% endfor %}
+                            </td>
+                            {% endif %}
+                            <td>
+                                <a href="{% url 'users:id_card_generate' %}?user={{ user_obj.user.id }}&template={{ template.id }}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-id-card"></i> Generate ID
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

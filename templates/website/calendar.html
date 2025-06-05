@@ -1,0 +1,379 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Calendar content styling */
+    .calendar-content {
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Ensure the section expands with content */
+    section.py-5.mb-5 {
+        min-height: 400px;
+        position: relative;
+        z-index: 1;
+        overflow: visible;
+    }
+
+    .calendar-content table {
+        width: 100%;
+        margin-bottom: 1rem;
+        border-collapse: collapse;
+    }
+
+    .calendar-content table, .calendar-content th, .calendar-content td {
+        border: 1px solid #dee2e6;
+    }
+
+    .calendar-content th, .calendar-content td {
+        padding: 0.75rem;
+        vertical-align: top;
+    }
+
+    .calendar-content th {
+        background-color: #f8f9fa;
+    }
+
+    /* Make sure content doesn't overflow */
+    .calendar-content img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Ensure proper spacing before footer */
+    .container {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Fix for footer positioning */
+    footer {
+        position: relative;
+        z-index: 0;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block title %}School Calendar | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+{% if calendar_hero and calendar_hero.image %}
+<!-- Use calendar hero image if available -->
+<section class="hero-banner" style="background-image: url('{{ calendar_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ calendar_hero.title|default:"School Calendar" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ calendar_hero.content|default:"Stay informed about important dates, events, and activities throughout the academic year." }}
+        </p>
+    </div>
+</section>
+{% elif contact_hero and contact_hero.image %}
+<!-- Use contact hero image as fallback -->
+<section class="hero-banner" style="background-image: url('{{ contact_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ calendar_hero.title|default:"School Calendar" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ calendar_hero.content|default:"Stay informed about important dates, events, and activities throughout the academic year." }}
+        </p>
+    </div>
+</section>
+{% else %}
+<!-- Fallback to color background if no images available -->
+<section class="py-5 bg-primary-teal text-white text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-4" data-aos="fade-up">School Calendar</h1>
+                <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                    Stay informed about important dates, events, and activities throughout the academic year.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Calendar Content Section -->
+<section class="py-5 mb-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                {% if calendar_content %}
+                <div class="mb-5" data-aos="fade-up">
+                    <h2 class="section-title text-center">{{ calendar_content.title }}</h2>
+                </div>
+
+                {% if calendar_content.content %}
+                <!-- Calendar Content from Admin -->
+                <div class="card shadow-sm border-0 mb-5 overflow-hidden" data-aos="fade-up">
+                    <div class="card-body p-4">
+                        <div class="calendar-content">
+                            {{ calendar_content.content|safe }}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Default Calendar Tabs -->
+                <div class="card shadow-sm border-0 mb-5 overflow-hidden" data-aos="fade-up">
+                    <div class="card-header bg-white">
+                        <ul class="nav nav-tabs card-header-tabs" id="calendarTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="academic-tab" data-bs-toggle="tab" data-bs-target="#academic" type="button" role="tab" aria-controls="academic" aria-selected="true">
+                                    <i class="fas fa-graduation-cap me-2"></i>Academic Calendar
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab" aria-controls="events" aria-selected="false">
+                                    <i class="fas fa-calendar-alt me-2"></i>Events & Activities
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="holidays-tab" data-bs-toggle="tab" data-bs-target="#holidays" type="button" role="tab" aria-controls="holidays" aria-selected="false">
+                                    <i class="fas fa-umbrella-beach me-2"></i>Holidays & Breaks
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="tab-content" id="calendarTabsContent">
+                            <!-- Academic Calendar Tab -->
+                            <div class="tab-pane fade show active" id="academic" role="tabpanel" aria-labelledby="academic-tab">
+                                <h4 class="mb-4">Academic Year 2023-2024</h4>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Event</th>
+                                                <th>Date</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>First Day of School</td>
+                                                <td>September 4, 2023</td>
+                                                <td>Welcome back to all students and staff</td>
+                                            </tr>
+                                            <tr>
+                                                <td>First Quarter Ends</td>
+                                                <td>November 3, 2023</td>
+                                                <td>End of first grading period</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Parent-Teacher Conferences</td>
+                                                <td>November 10-11, 2023</td>
+                                                <td>First quarter progress review</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Second Quarter Ends</td>
+                                                <td>January 26, 2024</td>
+                                                <td>End of second grading period</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Parent-Teacher Conferences</td>
+                                                <td>February 2-3, 2024</td>
+                                                <td>Second quarter progress review</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Third Quarter Ends</td>
+                                                <td>March 29, 2024</td>
+                                                <td>End of third grading period</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Parent-Teacher Conferences</td>
+                                                <td>April 5-6, 2024</td>
+                                                <td>Third quarter progress review</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Last Day of School</td>
+                                                <td>June 14, 2024</td>
+                                                <td>End of academic year</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Events & Activities Tab -->
+                            <div class="tab-pane fade" id="events" role="tabpanel" aria-labelledby="events-tab">
+                                <h4 class="mb-4">School Events & Activities</h4>
+
+                                <div class="accordion" id="eventsAccordion">
+                                    <!-- Fall Events -->
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="fallEventsHeading">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fallEvents" aria-expanded="true" aria-controls="fallEvents">
+                                                Fall Events (September - December)
+                                            </button>
+                                        </h2>
+                                        <div id="fallEvents" class="accordion-collapse collapse show" aria-labelledby="fallEventsHeading">
+                                            <div class="accordion-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Event</th>
+                                                                <th>Date</th>
+                                                                <th>Description</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>Back to School Night</td>
+                                                                <td>September 15, 2023</td>
+                                                                <td>Meet teachers and learn about the curriculum</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Fall Festival</td>
+                                                                <td>October 20, 2023</td>
+                                                                <td>Annual celebration with games, food, and activities</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Science Fair</td>
+                                                                <td>November 17, 2023</td>
+                                                                <td>Student science projects and demonstrations</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Winter Concert</td>
+                                                                <td>December 15, 2023</td>
+                                                                <td>Student musical performances</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Winter/Spring Events -->
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="winterSpringEventsHeading">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#winterSpringEvents" aria-expanded="false" aria-controls="winterSpringEvents">
+                                                Winter/Spring Events (January - June)
+                                            </button>
+                                        </h2>
+                                        <div id="winterSpringEvents" class="accordion-collapse collapse" aria-labelledby="winterSpringEventsHeading">
+                                            <div class="accordion-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Event</th>
+                                                                <th>Date</th>
+                                                                <th>Description</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>International Day</td>
+                                                                <td>February 16, 2024</td>
+                                                                <td>Celebration of cultural diversity</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Art Exhibition</td>
+                                                                <td>March 22, 2024</td>
+                                                                <td>Display of student artwork</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Spring Concert</td>
+                                                                <td>April 26, 2024</td>
+                                                                <td>Student musical performances</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Field Day</td>
+                                                                <td>May 24, 2024</td>
+                                                                <td>Outdoor sports and activities</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Graduation Ceremony</td>
+                                                                <td>June 13, 2024</td>
+                                                                <td>Celebration for graduating students</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Holidays & Breaks Tab -->
+                            <div class="tab-pane fade" id="holidays" role="tabpanel" aria-labelledby="holidays-tab">
+                                <h4 class="mb-4">School Holidays & Breaks</h4>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Holiday/Break</th>
+                                                <th>Dates</th>
+                                                <th>Notes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Labor Day</td>
+                                                <td>September 4, 2023</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Fall Break</td>
+                                                <td>October 9-13, 2023</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Thanksgiving Break</td>
+                                                <td>November 22-24, 2023</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Winter Break</td>
+                                                <td>December 18, 2023 - January 2, 2024</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Martin Luther King Jr. Day</td>
+                                                <td>January 15, 2024</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Presidents' Day</td>
+                                                <td>February 19, 2024</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Spring Break</td>
+                                                <td>April 8-12, 2024</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Memorial Day</td>
+                                                <td>May 27, 2024</td>
+                                                <td>School closed</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <!-- Clearfix to ensure container expands with content -->
+                <div class="clearfix mb-5"></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

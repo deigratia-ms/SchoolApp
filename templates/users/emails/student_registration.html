@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .credentials { background-color: #f8f9fa; padding: 15px; margin: 20px 0; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>{{ school_name }}</h2>
+            <h3>Student Registration Notification</h3>
+        </div>
+        
+        <div class="content">
+            <p>Dear {{ parent_name }},</p>
+            
+            <p>We are pleased to inform you that your child, <strong>{{ student_name }}</strong>, has been successfully registered in our system.</p>
+            
+            <p>Your child has been assigned to:</p>
+            <ul>
+                <li>Grade: {{ grade }}</li>
+                {% if section %}<li>Section: {{ section }}</li>{% endif %}
+            </ul>
+            
+            <div class="credentials">
+                <h4>Student Login Credentials:</h4>
+                <p>Student ID: <strong>{{ student_id }}</strong></p>
+                <p>PIN: <strong>{{ pin }}</strong></p>
+            </div>
+            
+            <p>Please keep these credentials safe and share them with your child. These will be needed to access the student portal.</p>
+            
+            <p>If you have any questions or concerns, please don't hesitate to contact the school administration.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from {{ school_name }}. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

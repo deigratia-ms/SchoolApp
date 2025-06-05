@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assessment Weight Configurations | {{ block.super }}{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Assessment Weight Configurations</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Assessment Weight Configurations</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'dashboard:admin_create_assessment_weight' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus"></i> Add New Configuration
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Assessment weight configurations determine how different types of assessments are weighted when calculating final grades for report cards.
+                        You can create multiple configurations for different terms or grade levels.
+                    </p>
+                    
+                    {% if configs %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Term</th>
+                                        <th>Components Included</th>
+                                        <th>Weight Distribution</th>
+                                        <th>Default</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for config in configs %}
+                                        <tr>
+                                            <td>{{ config.name }}</td>
+                                            <td>{{ config.term|default:"All Terms" }}</td>
+                                            <td>
+                                                <ul class="list-unstyled mb-0">
+a                                                    {% if config.include_classwork %}<li><span class="badge badge-primary">Classwork</span></li>{% endif %}
+                                                    {% if config.include_quizzes %}<li><span class="badge badge-primary">Quizzes</span></li>{% endif %}
+                                                    {% if config.include_tests %}<li><span class="badge badge-primary">Tests</span></li>{% endif %}
+                                                    {% if config.include_midterm %}<li><span class="badge badge-primary">Midterms</span></li>{% endif %}
+                                                    {% if config.include_projects %}<li><span class="badge badge-primary">Projects</span></li>{% endif %}
+                                                    {% if config.include_final_exam %}<li><span class="badge badge-primary">Exams</span></li>{% endif %}
+                                                    {% if config.include_attendance %}<li><span class="badge badge-primary">Attendance</span></li>{% endif %}
+                                                </ul>
+                                            </td>
+                                            <td>
+                                                <div class="progress">
+                                                    {% if config.include_classwork %}
+                                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ config.classwork_weight }}%" 
+                                                             aria-valuenow="{{ config.classwork_weight }}" aria-valuemin="0" aria-valuemax="100" 
+                                                             title="Classwork: {{ config.classwork_weight }}%"></div>
+                                                    {% endif %}
+                                                    {% if config.include_quizzes %}
+                                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ config.quiz_weight }}%" 
+                                                             aria-valuenow="{{ config.quiz_weight }}" aria-valuemin="0" aria-valuemax="100" 
+                                                             title="Quizzes: {{ config.quiz_weight }}%"></div>
+                                                    {% endif %}
+                                                    {% if config.include_tests %}
+                                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ config.test_weight }}%" 
+                                                             aria-valuenow="{{ config.test_weight }}" aria-valuemin="0" aria-valuemax="100" 
+                                                             title="Tests: {{ config.test_weight }}%"></div>
+                                                    {% endif %}
+                                                    {% if config.include_midterm %}
+                                                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ config.midterm_weight }}%" 
+                                                             aria-valuenow="{{ config.midterm_weight }}" aria-valuemin="0" aria-valuemax="100" 
+                                                             title="Midterms: {{ config.midterm_weight }}%"></div>
+                                                    {% endif %}
+                                                    {% if config.include_projects %}
+                                                        <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ config.project_weight }}%" 
+                                                             aria-valuenow="{{ config.project_weight }}" aria-valuemin="0" aria-valuemax="100" 
+                                                             title="Projects: {{ config.project_weight }}%"></div>
+                                                    {% endif %}
+                                                    {% if config.include_final_exam %}
+                                                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ config.final_exam_weight }}%" 
+                                                             aria-valuenow="{{ config.final_exam_weight }}" aria-valuemin="0" aria-valuemax="100" 
+                                                             title="Exams: {{ config.final_exam_weight }}%"></div>
+                                                    {% endif %}
+                                                    {% if config.include_attendance %}
+                                                        <div class="progress-bar bg-dark" role="progressbar" style="width: {{ config.attendance_weight }}%" 
+                                                             aria-valuenow="{{ config.attendance_weight }}" aria-valuemin="0" aria-valuemax="100" 
+                                                             title="Attendance: {{ config.attendance_weight }}%"></div>
+                                                    {% endif %}
+                                                </div>
+                                                <small class="text-dark">
+                                                    {% if config.include_classwork %}Classwork: {{ config.classwork_weight }}% {% endif %}
+                                                    {% if config.include_quizzes %}Quizzes: {{ config.quiz_weight }}% {% endif %}
+                                                    {% if config.include_tests %}Tests: {{ config.test_weight }}% {% endif %}
+                                                    {% if config.include_midterm %}Midterms: {{ config.midterm_weight }}% {% endif %}
+                                                    {% if config.include_projects %}Projects: {{ config.project_weight }}% {% endif %}
+                                                    {% if config.include_final_exam %}Exams: {{ config.final_exam_weight }}% {% endif %}
+                                                    {% if config.include_attendance %}Attendance: {{ config.attendance_weight }}% {% endif %}
+                                                </small>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if config.is_default %}
+                                                    <span class="badge badge-success">Default</span>
+                                                {% else %}
+                                                    <a href="{% url 'dashboard:admin_set_default_assessment_weight' config.id %}" class="btn btn-xs btn-outline-primary">
+                                                        Set as Default
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a href="{% url 'dashboard:admin_edit_assessment_weight' config.id %}" class="btn btn-sm btn-info">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </a>
+                                                    <a href="{% url 'dashboard:admin_delete_assessment_weight' config.id %}" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No assessment weight configurations found.
+                            <a href="{% url 'dashboard:admin_create_assessment_weight' %}" class="alert-link">Create your first configuration</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+{% endblock %}
+
+
+
+
+
+

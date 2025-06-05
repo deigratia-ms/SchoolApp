@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Edit Class Subject | Ricas School Management System{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Edit Class Subject</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'courses:class_subject_list' %}">Class Subjects</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Edit</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Class Subject Information</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Class</h6>
+                    <h5 class="card-title">
+                      {{ class_subject.classroom.name }}
+                      {% if class_subject.classroom.section %}
+                      ({{ class_subject.classroom.section }})
+                      {% endif %}
+                    </h5>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Subject</h6>
+                    <h5 class="card-title">{{ class_subject.subject.name }} ({{ class_subject.subject.code }})</h5>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label for="teacher" class="form-label">Teacher <span class="text-danger">*</span></label>
+              <select class="form-select" id="teacher" name="teacher" required>
+                <option value="">-- Select Teacher --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}" {% if teacher.id == class_subject.teacher.id %}selected{% endif %}>
+                  {{ teacher.user.get_full_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Assign a teacher who will teach this subject to this class.
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'courses:class_subject_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Instructions</h6>
+        </div>
+        <div class="card-body">
+          <p>You can update the teacher assigned to this class-subject combination.</p>
+          <p>Note that the class and subject cannot be changed. If you need to create a different class-subject combination, please delete this one and create a new one.</p>
+        </div>
+      </div>
+
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Other Actions</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="{% url 'courses:manage_class_students' class_subject.id %}" class="btn btn-outline-primary">
+              <i class="fas fa-users me-2"></i>Manage Students
+            </a>
+            <a href="{% url 'courses:delete_class_subject' class_subject.id %}" class="btn btn-outline-danger">
+              <i class="fas fa-trash me-2"></i>Delete Class Subject
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(document).ready(function() {
+    // Initialize select2 for teacher dropdown
+    if (typeof $.fn.select2 !== 'undefined') {
+      $("#teacher").select2({
+        placeholder: "-- Select Teacher --",
+        allowClear: true,
+        width: "100%"
+      });
+    }
+  });
+</script>
+{% endblock %}

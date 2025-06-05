@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Preferences | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Dashboard Preferences</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'dashboard:preferences' %}">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5>Appearance Settings</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group mb-3">
+                                            <label for="theme">Theme</label>
+                                            <select class="form-control" id="theme" name="theme">
+                                                <option value="default" {% if preferences.theme == 'default' %}selected{% endif %}>Default</option>
+                                                <option value="dark" {% if preferences.theme == 'dark' %}selected{% endif %}>Dark</option>
+                                                <option value="light" {% if preferences.theme == 'light' %}selected{% endif %}>Light</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label for="color_scheme">Color Scheme</label>
+                                            <select class="form-control" id="color_scheme" name="color_scheme">
+                                                <option value="navy" {% if preferences.color_scheme == 'navy' %}selected{% endif %}>Navy</option>
+                                                <option value="blue" {% if preferences.color_scheme == 'blue' %}selected{% endif %}>Blue</option>
+                                                <option value="green" {% if preferences.color_scheme == 'green' %}selected{% endif %}>Green</option>
+                                                <option value="purple" {% if preferences.color_scheme == 'purple' %}selected{% endif %}>Purple</option>
+                                                <option value="red" {% if preferences.color_scheme == 'red' %}selected{% endif %}>Red</option>
+                                                <option value="orange" {% if preferences.color_scheme == 'orange' %}selected{% endif %}>Orange</option>
+                                                <option value="teal" {% if preferences.color_scheme == 'teal' %}selected{% endif %}>Teal</option>
+                                                <option value="black" {% if preferences.color_scheme == 'black' %}selected{% endif %}>Black</option>
+                                                <option value="pink" {% if preferences.color_scheme == 'pink' %}selected{% endif %}>Pink</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sidebar_collapsed" name="sidebar_collapsed" {% if preferences.sidebar_collapsed %}checked{% endif %}>
+                                            <label class="form-check-label" for="sidebar_collapsed">
+                                                Collapse sidebar by default
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5>Notification Settings</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="email_notifications" name="email_notifications" {% if preferences.email_notifications %}checked{% endif %}>
+                                            <label class="form-check-label" for="email_notifications">
+                                                Receive email notifications
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="assignment_notifications" name="assignment_notifications" {% if preferences.assignment_notifications %}checked{% endif %}>
+                                            <label class="form-check-label" for="assignment_notifications">
+                                                Assignment notifications
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="message_notifications" name="message_notifications" {% if preferences.message_notifications %}checked{% endif %}>
+                                            <label class="form-check-label" for="message_notifications">
+                                                Message notifications
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="grade_notifications" name="grade_notifications" {% if preferences.grade_notifications %}checked{% endif %}>
+                                            <label class="form-check-label" for="grade_notifications">
+                                                Grade notifications
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="attendance_notifications" name="attendance_notifications" {% if preferences.attendance_notifications %}checked{% endif %}>
+                                            <label class="form-check-label" for="attendance_notifications">
+                                                Attendance notifications
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5>Widget Preferences</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>Manage which widgets appear on your dashboard and their positions.</p>
+                                        <a href="{% url 'dashboard:manage_widgets' %}" class="btn btn-primary">
+                                            Manage Dashboard Widgets
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save"></i> Save Preferences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Check if jQuery is loaded
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery is not loaded! Adding it dynamically.');
+        var script = document.createElement('script');
+        script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+        document.head.appendChild(script);
+    }
+
+    // Check if toastr is available, if not, create a fallback
+    if (typeof toastr === 'undefined') {
+        console.warn('Toastr is not loaded! Using alert fallback.');
+        // Create simple fallback for toastr
+        window.toastr = {
+            success: function(msg) {
+                alert('Success: ' + msg);
+                console.log('Success:', msg);
+            },
+            error: function(msg) {
+                alert('Error: ' + msg);
+                console.error('Error:', msg);
+            },
+            info: function(msg) {
+                alert('Info: ' + msg);
+                console.info('Info:', msg);
+            }
+        };
+    }
+
+    // Only proceed when jQuery is definitely available
+    function initPreferences() {
+        console.log('Initializing preferences page');
+
+        // Give the form an ID for easier selection
+        $('.card form').attr('id', 'preferences-form');
+
+        // Add ID to the submit button
+        $('.text-center button[type="submit"]').attr('id', 'submit-btn');
+
+        // Function to apply theme/color changes
+        function applyThemeChanges(theme, colorScheme, sidebarCollapsed) {
+            console.log('Applying theme changes:', theme, colorScheme, sidebarCollapsed);
+
+            // Remove existing theme/color classes
+            $('body').removeClass('theme-default theme-dark theme-light');
+            $('body').removeClass('color-navy color-blue color-green color-purple color-red color-orange color-teal color-black color-pink');
+
+            // Apply new theme class
+            $('body').addClass('theme-' + theme);
+
+            // Apply new color scheme class
+            $('body').addClass('color-' + colorScheme);
+
+            // Handle sidebar collapsed state
+            if (sidebarCollapsed) {
+                $('body').addClass('sidebar-collapsed');
+                $('.sidebar').addClass('collapsed');
+            } else {
+                $('body').removeClass('sidebar-collapsed');
+                $('.sidebar').removeClass('collapsed');
+            }
+
+            // Store preferences in localStorage for persistence
+            localStorage.setItem('theme', theme);
+            localStorage.setItem('colorScheme', colorScheme);
+            localStorage.setItem('sidebarCollapsed', sidebarCollapsed ? 'true' : 'false');
+
+            console.log('Theme changes applied and saved to localStorage');
+        }
+
+        // Preview theme/color changes dynamically
+        $('#theme, #color_scheme').change(function() {
+            const theme = $('#theme').val();
+            const colorScheme = $('#color_scheme').val();
+            const sidebarCollapsed = $('#sidebar_collapsed').is(':checked');
+
+            // Apply changes immediately for preview
+            applyThemeChanges(theme, colorScheme, sidebarCollapsed);
+        });
+
+        // Toggle sidebar collapsed state when checkbox is clicked
+        $('#sidebar_collapsed').change(function() {
+            const sidebarCollapsed = $(this).is(':checked');
+
+            if (sidebarCollapsed) {
+                $('body').addClass('sidebar-collapsed');
+                $('.sidebar').addClass('collapsed');
+            } else {
+                $('body').removeClass('sidebar-collapsed');
+                $('.sidebar').removeClass('collapsed');
+            }
+        });
+
+        // Function to submit form via AJAX
+        function submitPreferencesForm() {
+            console.log('Submitting preferences form via AJAX');
+
+            // Show status message at top of form
+            $('<div id="save-status" class="alert alert-info mb-3">Saving preferences...</div>')
+                .insertBefore('#preferences-form');
+
+            // Get the CSRF token
+            const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+            if (!csrftoken) {
+                console.error('CSRF token not found!');
+                $('#save-status').removeClass('alert-info').addClass('alert-danger')
+                    .text('Error: CSRF token not found. Please refresh the page and try again.');
+                return false;
+            }
+
+            // Show loading indication
+            $('#submit-btn').html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            $('#submit-btn').prop('disabled', true);
+
+            // Log the form data being sent
+            console.log('Form data:', $('#preferences-form').serialize());
+
+            // Create a direct form data object as backup
+            const formData = {
+                'csrfmiddlewaretoken': csrftoken,
+                'theme': $('#theme').val(),
+                'color_scheme': $('#color_scheme').val(),
+                'sidebar_collapsed': $('#sidebar_collapsed').is(':checked') ? 'on' : '',
+                'email_notifications': $('#email_notifications').is(':checked') ? 'on' : '',
+                'assignment_notifications': $('#assignment_notifications').is(':checked') ? 'on' : '',
+                'message_notifications': $('#message_notifications').is(':checked') ? 'on' : '',
+                'grade_notifications': $('#grade_notifications').is(':checked') ? 'on' : '',
+                'attendance_notifications': $('#attendance_notifications').is(':checked') ? 'on' : ''
+            };
+
+            console.log('Manual form data:', formData);
+
+            // Perform the AJAX request
+            $.ajax({
+                type: 'POST',
+                url: $('#preferences-form').attr('action'),
+                data: $('#preferences-form').serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrftoken
+                },
+                success: function(response) {
+                    console.log('AJAX success response:', response);
+
+                    // Re-enable button
+                    $('#submit-btn').html('<i class="fas fa-save"></i> Save Preferences');
+                    $('#submit-btn').prop('disabled', false);
+
+                    if (response && response.status === 'success') {
+                        // Update status message
+                        $('#save-status').removeClass('alert-info alert-danger')
+                            .addClass('alert-success')
+                            .text('Preferences saved successfully!');
+
+                        // Show success message with toastr
+                        toastr.success(response.message || 'Preferences saved successfully!');
+
+                        // Apply theme/color changes from the response
+                        if (response.preferences) {
+                            const prefs = response.preferences;
+                            applyThemeChanges(
+                                prefs.theme,
+                                prefs.color_scheme,
+                                prefs.sidebar_collapsed
+                            );
+
+                            // Update form values to match server response
+                            $('#theme').val(prefs.theme);
+                            $('#color_scheme').val(prefs.color_scheme);
+                            $('#sidebar_collapsed').prop('checked', prefs.sidebar_collapsed);
+                            $('#email_notifications').prop('checked', prefs.email_notifications);
+                            $('#assignment_notifications').prop('checked', prefs.assignment_notifications);
+                            $('#message_notifications').prop('checked', prefs.message_notifications);
+                            $('#grade_notifications').prop('checked', prefs.grade_notifications);
+                            $('#attendance_notifications').prop('checked', prefs.attendance_notifications);
+                        } else {
+                            console.warn('Response missing preferences data:', response);
+                        }
+
+                        // Remove status message after 3 seconds
+                        setTimeout(function() {
+                            $('#save-status').fadeOut('slow', function() {
+                                $(this).remove();
+                            });
+                        }, 3000);
+                    } else {
+                        // Handle error in success callback (non-success status)
+                        $('#save-status').removeClass('alert-info').addClass('alert-danger')
+                            .text('Error saving preferences: ' + (response.message || 'Unknown error'));
+                        toastr.error('Error saving preferences: ' + (response.message || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', status, error);
+                    console.log('Response text:', xhr.responseText);
+
+                    // Try to parse response JSON if available
+                    let responseData = null;
+                    try {
+                        if (xhr.responseText) {
+                            responseData = JSON.parse(xhr.responseText);
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse response JSON:', e);
+                    }
+
+                    // Re-enable button
+                    $('#submit-btn').html('<i class="fas fa-save"></i> Save Preferences');
+                    $('#submit-btn').prop('disabled', false);
+
+                    // Update status message
+                    $('#save-status').removeClass('alert-info').addClass('alert-danger')
+                        .html('Error saving preferences. <a href="#" id="retry-save">Retry</a> or <a href="#" id="fallback-save">use alternative method</a>.');
+
+                    // Show error message with details if available
+                    let errorMsg = 'An error occurred while saving preferences.';
+                    if (responseData && responseData.message) {
+                        errorMsg += ' ' + responseData.message;
+                    }
+                    toastr.error(errorMsg);
+
+                    // Add retry handler
+                    $('#retry-save').click(function(e) {
+                        e.preventDefault();
+                        $('#save-status').remove();
+                        submitPreferencesForm();
+                    });
+
+                    // Add fallback handler - directs the form to submit normally
+                    $('#fallback-save').click(function(e) {
+                        e.preventDefault();
+                        $('#save-status').removeClass('alert-danger').addClass('alert-info')
+                            .text('Submitting using alternative method...');
+
+                        // Create a hidden form and submit it
+                        var $form = $('<form>')
+                            .attr('method', 'POST')
+                            .attr('action', $('#preferences-form').attr('action'));
+
+                        // Add CSRF token
+                        $('<input>')
+                            .attr('type', 'hidden')
+                            .attr('name', 'csrfmiddlewaretoken')
+                            .attr('value', csrftoken)
+                            .appendTo($form);
+
+                        // Add all form values
+                        for (var key in formData) {
+                            if (key !== 'csrfmiddlewaretoken') { // Already added
+                                $('<input>')
+                                    .attr('type', 'hidden')
+                                    .attr('name', key)
+                                    .attr('value', formData[key])
+                                    .appendTo($form);
+                            }
+                        }
+
+                        // Append form to body, submit it, and remove it
+                        $form.appendTo('body').submit().remove();
+                    });
+                }
+            });
+
+            return false; // Prevent normal form submission
+        }
+
+        // Form submission with AJAX to avoid page reload
+        $('#preferences-form').submit(function(e) {
+            e.preventDefault();
+            submitPreferencesForm();
+        });
+
+        // Also add direct click handler for the submit button
+        $('#submit-btn').click(function(e) {
+            e.preventDefault();
+            submitPreferencesForm();
+        });
+
+        console.log('Preferences page initialization complete');
+    }
+
+    // Initialize when document is ready
+    $(document).ready(function() {
+        console.log('Document ready, initializing preferences');
+        initPreferences();
+    });
+
+    // Backup initialization in case jQuery's ready event already fired
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        console.log('Document already loaded, initializing preferences immediately');
+        setTimeout(initPreferences, 100);
+    }
+</script>
+{% endblock %}

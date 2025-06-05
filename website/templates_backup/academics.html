@@ -1,0 +1,229 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Academics | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up">Academic Excellence</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            Discover our comprehensive Montessori curriculum designed to nurture every child's potential
+        </p>
+    </div>
+</section>
+
+<!-- Programs Overview -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Our Programs</h2>
+        <div class="row gy-4">
+            <div class="col-md-4" data-aos="fade-up">
+                <div class="card h-100 border-0 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="Toddler Program">
+                    <div class="card-body">
+                        <h5 class="card-title">Toddler Program</h5>
+                        <h6 class="text-muted mb-3">Ages 18 months - 3 years</h6>
+                        <p class="card-text">Our toddler program provides a nurturing environment where young children begin their journey of discovery and independence.</p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-primary me-2"></i>Practical Life Skills</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Sensorial Development</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Language Development</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Motor Skills</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="Primary Program">
+                    <div class="card-body">
+                        <h5 class="card-title">Primary Program</h5>
+                        <h6 class="text-muted mb-3">Ages 3 - 6 years</h6>
+                        <p class="card-text">The primary program builds upon the foundation of early learning while introducing more complex concepts and materials.</p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-primary me-2"></i>Mathematics</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Language Arts</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Cultural Studies</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Science & Nature</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="Elementary Program">
+                    <div class="card-body">
+                        <h5 class="card-title">Elementary Program</h5>
+                        <h6 class="text-muted mb-3">Ages 6 - 12 years</h6>
+                        <p class="card-text">Our elementary program offers a rich curriculum that encourages critical thinking and deeper understanding.</p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-primary me-2"></i>Advanced Mathematics</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Literature & Writing</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>History & Geography</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Scientific Research</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Curriculum Approach -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Our Curriculum Approach</h2>
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-6" data-aos="fade-right">
+                <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="img-fluid rounded-3 shadow" alt="Montessori Materials">
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="accordion" id="curriculumAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading1">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                                Individualized Learning
+                            </button>
+                        </h2>
+                        <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#curriculumAccordion">
+                            <div class="accordion-body">
+                                Each child progresses at their own pace, following their natural curiosity and interests while being guided by trained Montessori teachers.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading2">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                                Hands-on Learning
+                            </button>
+                        </h2>
+                        <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#curriculumAccordion">
+                            <div class="accordion-body">
+                                Children learn through manipulation of specially designed Montessori materials that make abstract concepts concrete and understandable.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading3">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                                Integrated Curriculum
+                            </button>
+                        </h2>
+                        <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#curriculumAccordion">
+                            <div class="accordion-body">
+                                Subjects are not taught in isolation but are interconnected, helping children understand the relationships between different areas of study.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Special Programs -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Special Programs & Activities</h2>
+        <div class="row gy-4">
+            <div class="col-md-6 col-lg-3" data-aos="fade-up">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-music fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Music & Movement</h5>
+                        <p class="card-text">Weekly music classes introducing rhythm, singing, and basic instruments.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-palette fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Art & Creativity</h5>
+                        <p class="card-text">Regular art sessions exploring various mediums and techniques.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-seedling fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Garden & Nature</h5>
+                        <p class="card-text">Hands-on experience with plants and nature in our school garden.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-globe fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Cultural Studies</h5>
+                        <p class="card-text">Learning about different cultures, languages, and traditions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Assessment & Progress -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Assessment & Progress</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <p class="lead mb-4">We believe in assessing children's progress in a way that respects their individual development and maintains the joy of learning.</p>
+                        <div class="row gy-4">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-clipboard-check text-primary me-2"></i>Observation Based</h5>
+                                <p>Teachers maintain detailed records of each child's activities and progress through careful daily observation.</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-comments text-primary me-2"></i>Regular Communication</h5>
+                                <p>Parent-teacher conferences are held regularly to discuss your child's development and achievements.</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-book-reader text-primary me-2"></i>Portfolio Development</h5>
+                                <p>Each child maintains a portfolio of work that demonstrates their progress and achievements.</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-chart-line text-primary me-2"></i>Progress Reports</h5>
+                                <p>Detailed progress reports are provided twice a year, highlighting your child's growth in all areas.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <h2 class="mb-4">Ready to Begin Your Child's Journey?</h2>
+                <p class="lead mb-4">Experience the difference of a Montessori education at Deigratia Montessori School.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'admissions' %}" class="btn btn-primary btn-lg">Apply Now</a>
+                    <a href="{% url 'contact' %}" class="btn btn-outline-primary btn-lg">Schedule a Tour</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

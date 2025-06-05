@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+
+{% block title %}Adjust Payment - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Adjust Payment</h1>
+    <a href="{% url 'fees:payment_detail' payment.id %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+      <i class="fas fa-arrow-left fa-sm text-white-50 me-2"></i>Back to Payment
+    </a>
+  </div>
+
+  <!-- Content Row -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Payment Adjustment</h6>
+          {% if payment.receipt %}
+          <span class="badge bg-info">Receipt #{{ payment.receipt.receipt_number }}</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Warning:</strong> Adjusting a payment will affect the student's fee balance. This action cannot be undone.
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h5 class="text-gray-900">Original Payment Details</h5>
+              <p class="mb-1"><strong>Student:</strong> {{ payment.student_fee.student.user.get_full_name }}</p>
+              <p class="mb-1"><strong>Fee:</strong> {{ payment.student_fee.class_fee.fee_category.name }}</p>
+              <p class="mb-1"><strong>Amount:</strong> GHS {{ payment.amount|floatformat:2 }}</p>
+              <p class="mb-1"><strong>Date:</strong> {{ payment.payment_date|date:"F d, Y" }}</p>
+              <p class="mb-1"><strong>Method:</strong> {{ payment.get_payment_method_display }}</p>
+              <p class="mb-1"><strong>Received By:</strong> {{ payment.received_by.get_full_name }}</p>
+            </div>
+            <div class="col-md-6">
+              <h5 class="text-gray-900">Current Fee Status</h5>
+              <p class="mb-1"><strong>Total Fee:</strong> GHS {{ payment.student_fee.amount|floatformat:2 }}</p>
+              <p class="mb-1"><strong>Amount Paid:</strong> GHS {{ payment.student_fee.amount_paid|floatformat:2 }}</p>
+              <p class="mb-1"><strong>Balance:</strong> GHS {{ payment.student_fee.balance|floatformat:2 }}</p>
+              <p class="mb-1"><strong>Status:</strong> 
+                {% if payment.student_fee.status == 'PAID' %}
+                <span class="badge bg-success">Paid</span>
+                {% elif payment.student_fee.status == 'PARTIALLY_PAID' %}
+                <span class="badge bg-warning">Partially Paid</span>
+                {% elif payment.student_fee.status == 'OVERDUE' %}
+                <span class="badge bg-danger">Overdue</span>
+                {% elif payment.student_fee.status == 'WAIVED' %}
+                <span class="badge bg-info">Waived</span>
+                {% else %}
+                <span class="badge bg-secondary">Pending</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label for="adjustment_type" class="form-label">Adjustment Type <span class="text-danger">*</span></label>
+              <select class="form-select" id="adjustment_type" name="adjustment_type" required>
+                <option value="">Select Adjustment Type</option>
+                <option value="cancel">Cancel Payment (Remove Completely)</option>
+                <option value="adjust">Adjust Amount</option>
+              </select>
+            </div>
+            
+            <div id="adjust_amount_container" class="mb-3" style="display: none;">
+              <label for="new_amount" class="form-label">New Amount (GHS) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="new_amount" name="new_amount" step="0.01" min="0" max="{{ payment.amount }}">
+              <div class="form-text">Enter the correct payment amount. This must be less than or equal to the original amount.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="reason" class="form-label">Reason for Adjustment <span class="text-danger">*</span></label>
+              <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+              <div class="form-text">Provide a detailed explanation for this adjustment for audit purposes.</div>
+            </div>
+            
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="confirm" name="confirm" required>
+              <label class="form-check-label" for="confirm">I confirm that this adjustment is necessary and authorized.</label>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'fees:payment_detail' payment.id %}" class="btn btn-secondary me-md-2">Cancel</a>
+              <button type="submit" class="btn btn-danger">Process Adjustment</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Adjustment Guidelines</h6>
+        </div>
+        <div class="card-body">
+          <h5>When to Adjust Payments</h5>
+          <p>Payment adjustments should only be made in the following situations:</p>
+          
+          <ul>
+            <li><strong>Incorrect Amount:</strong> When the wrong amount was recorded</li>
+            <li><strong>Wrong Student/Fee:</strong> When payment was recorded against the wrong student or fee</li>
+            <li><strong>Duplicate Payment:</strong> When the same payment was recorded twice</li>
+            <li><strong>Fraudulent Payment:</strong> When a payment was recorded but funds were not actually received</li>
+          </ul>
+          
+          <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> All payment adjustments are logged for audit purposes. Include a detailed reason for the adjustment.
+          </div>
+          
+          <h5 class="mt-4">Alternative Options</h5>
+          <p>If a student overpaid, consider:</p>
+          <ul>
+            <li>Applying the excess to another fee</li>
+            <li>Recording a refund as a separate transaction</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide amount field based on adjustment type
+    document.getElementById('adjustment_type').addEventListener('change', function() {
+      const adjustAmountContainer = document.getElementById('adjust_amount_container');
+      if (this.value === 'adjust') {
+        adjustAmountContainer.style.display = 'block';
+        document.getElementById('new_amount').setAttribute('required', 'required');
+      } else {
+        adjustAmountContainer.style.display = 'none';
+        document.getElementById('new_amount').removeAttribute('required');
+      }
+    });
+  });
+</script>
+{% endblock %}

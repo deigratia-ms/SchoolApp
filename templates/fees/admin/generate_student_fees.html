@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}Generate Student Fees - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Generate Student Fees</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:class_fee_list' %}">Class Fees</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Generate Student Fees</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Generate Student Fees</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'fees:generate_student_fees' %}">
+            {% csrf_token %}
+
+            {% if class_fee %}
+              <input type="hidden" name="class_fee" value="{{ class_fee.id }}">
+
+              <div class="alert alert-info mb-4">
+                <h5 class="alert-heading">Fee Information</h5>
+                <p class="mb-0"><strong>Class:</strong> {{ class_fee.classroom.name }}</p>
+                <p class="mb-0"><strong>Fee Type:</strong> {{ class_fee.fee_category.name }}</p>
+                <p class="mb-0"><strong>Term:</strong> {{ class_fee.term.name }} ({{ class_fee.term.academic_year }})</p>
+                <p class="mb-0"><strong>Amount:</strong> GHS {{ class_fee.amount|floatformat:2 }}</p>
+                <p class="mb-0"><strong>Due Date:</strong> {{ class_fee.due_date|date:"F d, Y" }}</p>
+              </div>
+
+              <div class="mb-3">
+                <label for="students" class="form-label">Select Students <span class="text-danger">*</span></label>
+                <select class="form-select" id="students" name="students" multiple required size="10">
+                  {% for student in students %}
+                    <option value="{{ student.id }}" {% if student.id in selected_students %}selected{% endif %}>
+                      {{ student.user.first_name }} {{ student.user.last_name }} ({{ student.student_id }})
+                    </option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">
+                  Hold Ctrl/Cmd to select multiple students.
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="override_amount" name="override_amount">
+                  <label class="form-check-label" for="override_amount">
+                    Override fee amount for selected students
+                  </label>
+                </div>
+              </div>
+
+              <div class="mb-3" id="custom_amount_group" style="display: none;">
+                <label for="custom_amount" class="form-label">Custom Amount <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">GHS</span>
+                  <input type="number" class="form-control" id="custom_amount" name="custom_amount" step="0.01" min="0" value="{{ class_fee.amount }}">
+                </div>
+                <div class="form-text">Enter the custom fee amount for the selected students.</div>
+              </div>
+
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="override_due_date" name="override_due_date">
+                  <label class="form-check-label" for="override_due_date">
+                    Override due date for selected students
+                  </label>
+                </div>
+              </div>
+
+              <div class="mb-3" id="custom_due_date_group" style="display: none;">
+                <label for="custom_due_date" class="form-label">Custom Due Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="custom_due_date" name="custom_due_date" value="{{ class_fee.due_date|date:'Y-m-d' }}">
+                <div class="form-text">Enter the custom due date for the selected students.</div>
+              </div>
+
+            {% else %}
+              <div class="mb-3">
+                <label for="term" class="form-label">Term <span class="text-danger">*</span></label>
+                <select class="form-select" id="term" name="term" required>
+                  <option value="">Select Term</option>
+                  {% for term in terms %}
+                    <option value="{{ term.id }}" {% if term.is_current %}selected{% endif %}>
+                      {{ term.name }} ({{ term.academic_year }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="classroom" class="form-label">Class <span class="text-danger">*</span></label>
+                <select class="form-select" id="classroom" name="classroom" required>
+                  <option value="">Select Class</option>
+                  {% for classroom in classrooms %}
+                    <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="fee_categories" class="form-label">Fee Types <span class="text-danger">*</span></label>
+                <select class="form-select" id="fee_categories" name="fee_categories" multiple required size="5">
+                  {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">Hold Ctrl/Cmd to select multiple fee types.</div>
+              </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between mt-4">
+              <a href="{% url 'fees:class_fee_list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Generate Student Fees</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Information</h6>
+        </div>
+        <div class="card-body">
+          <p>This page allows you to generate fees for individual students based on class fees.</p>
+
+          <h6 class="font-weight-bold mt-4">How it works:</h6>
+          <ol>
+            <li>Select the students you want to assign fees to</li>
+            <li>The system will create individual fee records for each student</li>
+            <li>Students and parents will be able to see these fees in their dashboards</li>
+            <li>You can optionally override the default amount or due date for specific students</li>
+          </ol>
+
+          <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle me-2"></i>If a student already has this fee assigned, a new one will not be created to avoid duplicates.
+          </div>
+
+          <div class="alert alert-warning mt-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>Once student fees are generated, they can only be modified individually from the Student Fees page.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle custom amount field
+    $('#override_amount').on('change', function() {
+      $('#custom_amount_group').toggle(this.checked);
+      if (this.checked) {
+        $('#custom_amount').prop('required', true);
+      } else {
+        $('#custom_amount').prop('required', false);
+      }
+    });
+
+    // Toggle custom due date field
+    $('#override_due_date').on('change', function() {
+      $('#custom_due_date_group').toggle(this.checked);
+      if (this.checked) {
+        $('#custom_due_date').prop('required', true);
+      } else {
+        $('#custom_due_date').prop('required', false);
+      }
+    });
+
+    // Ensure at least one student is selected
+    $('form').on('submit', function() {
+      if ($('#students').prop('required') && $('#students option:selected').length === 0) {
+        alert('Please select at least one student.');
+        return false;
+      }
+      return true;
+    });
+
+    {% if not class_fee %}
+    // Load class fees when classroom and term are selected
+    $('#classroom, #term').on('change', function() {
+      const classroomId = $('#classroom').val();
+      const termId = $('#term').val();
+
+      if (!classroomId || !termId) {
+        return;
+      }
+
+      // Fetch class fees
+      fetch(`{% url 'fees:api_class_fees' %}?classroom=${classroomId}&term=${termId}`)
+        .then(response => response.json())
+        .then(data => {
+          const feeCategories = $('#fee_categories');
+
+          // Clear previous selections
+          feeCategories.find('option').prop('selected', false);
+
+          // Mark existing fees as selected
+          data.fees.forEach(fee => {
+            feeCategories.find(`option[value="${fee.category_id}"]`).prop('selected', true);
+          });
+        })
+        .catch(error => {
+          console.error('Error loading class fees:', error);
+        });
+    });
+    {% endif %}
+  });
+</script>
+{% endblock %}

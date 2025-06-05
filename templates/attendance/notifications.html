@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Attendance Notifications</h3>
+                    {% if is_admin or is_teacher %}
+                    <div class="card-tools">
+                        <a href="{% url 'attendance:create_notification' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Notification
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Message</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for notification in notifications %}
+                                <tr class="{% if notification.is_read %}text-muted{% endif %}">
+                                    <td>{{ notification.student.user.get_full_name }}</td>
+                                    <td>{{ notification.message|truncatechars:100 }}</td>
+                                    <td>{{ notification.created_at|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        {% if notification.sent_to_parent %}
+                                        <span class="badge badge-success">Sent</span>
+                                        {% else %}
+                                        <span class="badge badge-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'attendance:mark_notification_read' notification.id %}" 
+                                           class="btn btn-sm btn-info" 
+                                           title="Mark as read">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% if is_admin or is_teacher %}
+                                        <a href="{% url 'attendance:send_notification' notification.id %}" 
+                                           class="btn btn-sm btn-success" 
+                                           title="Send to parent">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No notifications found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if notifications.has_other_pages %}
+                <div class="card-footer">
+                    <nav aria-label="Notifications pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if notifications.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ notifications.previous_page_number }}">Previous</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in notifications.paginator.page_range %}
+                            {% if notifications.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            
+                            {% if notifications.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ notifications.next_page_number }}">Next</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

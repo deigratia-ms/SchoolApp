@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Attendance Details: {{ record.classroom.name }} - {{ record.date|date:"M d, Y" }} | Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .student-link:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+        border-radius: 0.25rem;
+    }
+    .student-link:hover .text-primary {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Attendance Details</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'attendance:home' %}">Attendance</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'attendance:records' %}">Records</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Details</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            {% if user.is_teacher or user.is_admin %}
+            <a href="{% url 'attendance:edit_record' record.id %}" class="btn btn-warning">
+                <i class="fas fa-edit me-2"></i>Edit Record
+            </a>
+            {% endif %}
+            <a href="{% url 'attendance:records' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Records
+            </a>
+        </div>
+    </div>
+
+    <!-- Record Summary Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Record Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-3">
+                            <i class="fas fa-calendar-day fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Date</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ record.date|date:"l, F d, Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-3">
+                            <i class="fas fa-chalkboard fa-2x text-success"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Class</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ record.classroom.name }} {% if record.classroom.section %}({{ record.classroom.section }}){% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-3">
+                            <i class="fas fa-user-tie fa-2x text-info"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Taken By</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ record.taken_by.user.get_full_name }}</div>
+                            <div class="small text-muted">{{ record.created_at|date:"M d, Y h:i A" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+            {% if is_teacher or is_admin %}
+            <!-- Full class statistics for teachers and admins -->
+            <div class="alert alert-info mb-4">
+                <h6 class="font-weight-bold mb-2">Full Class Statistics</h6>
+                <div class="row">
+                    <div class="col-md-3">Present: {{ stats.class_present }} students</div>
+                    <div class="col-md-3">Absent: {{ stats.class_absent }} students</div>
+                    <div class="col-md-3">Late: {{ stats.class_late }} students</div>
+                    <div class="col-md-3">Excused: {{ stats.class_excused }} students</div>
+                </div>
+                <div class="mt-2">Total Students: {{ stats.class_total }}</div>
+            </div>
+            {% endif %}
+
+           <!-- Filtered statistics -->
+           <div class="row g-4">
+               <div class="col-md-3">
+                   <div class="card bg-success text-white h-100">
+                       <div class="card-body">
+                           <div class="d-flex align-items-center justify-content-between">
+                               <div>
+                                   <div class="text-xs text-white-50 text-uppercase mb-1">
+                                       {% if is_parent %}Your Children Present{% else %}Present{% endif %}
+                                   </div>
+                                   <div class="h1 mb-0">{{ stats.present }}</div>
+                               </div>
+                               <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-xs text-white-50 text-uppercase mb-1">Absent</div>
+                                    <div class="h1 mb-0">{{ stats.absent }}</div>
+                                </div>
+                                <i class="fas fa-times-circle fa-2x text-white-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-xs text-dark-50 text-uppercase mb-1">Late</div>
+                                    <div class="h1 mb-0">{{ stats.late }}</div>
+                                </div>
+                                <i class="fas fa-clock fa-2x text-dark-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-xs text-white-50 text-uppercase mb-1">Excused</div>
+                                    <div class="h1 mb-0">{{ stats.excused }}</div>
+                                </div>
+                                <i class="fas fa-clipboard-check fa-2x text-white-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h6 class="font-weight-bold">Attendance Rate</h6>
+                {% with total=stats.total %}
+                {% if total > 0 %}
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.present|multiply:100|divide:total }}%;"
+                         aria-valuenow="{{ stats.present|multiply:100|divide:total }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        Present: {{ stats.present|multiply:100|divide:total|floatformat:1 }}%
+                    </div>
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ stats.late|multiply:100|divide:total }}%;"
+                         aria-valuenow="{{ stats.late|multiply:100|divide:total }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        Late: {{ stats.late|multiply:100|divide:total|floatformat:1 }}%
+                    </div>
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ stats.excused|multiply:100|divide:total }}%;"
+                         aria-valuenow="{{ stats.excused|multiply:100|divide:total }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        Excused: {{ stats.excused|multiply:100|divide:total|floatformat:1 }}%
+                    </div>
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.absent|multiply:100|divide:total }}%;"
+                         aria-valuenow="{{ stats.absent|multiply:100|divide:total }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        Absent: {{ stats.absent|multiply:100|divide:total|floatformat:1 }}%
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">No attendance data available.</div>
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            {% if record.notes %}
+            <div class="mt-4">
+                <h6 class="font-weight-bold">Notes</h6>
+                <div class="p-3 bg-light rounded">
+                    {{ record.notes|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Student Attendance List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+            <h6 class="m-0 font-weight-bold">
+                {% if is_parent %}Your Children's Attendance Details{% else %}Student Attendance Details{% endif %}
+            </h6>
+            {% if is_teacher or is_admin %}
+            <div class="input-group input-group-sm w-100 w-md-auto" style="max-width: 200px;">
+                <input type="text" id="studentSearch" class="form-control" placeholder="Search students...">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="table-responsive-sm">
+                <table class="table table-hover" id="studentAttendanceTable">
+                    <thead class="table-light">
+                        <tr>
+                            {% if is_teacher or is_admin %}
+                            <th class="d-none d-md-table-cell">ID</th>
+                            {% endif %}
+                            <th>Student</th>
+                            <th>Status</th>
+                            {% if is_teacher or is_admin %}
+                            <th class="d-none d-md-table-cell">Remarks</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in student_attendances %}
+                        <tr class="status-{{ attendance.status|lower }}">
+                            {% if is_teacher or is_admin %}
+                            <td class="d-none d-md-table-cell">{{ attendance.student.id_number }}</td>
+                            {% endif %}
+                            <td>
+                                <a href="{% url 'attendance:student_attendance' attendance.student.id %}" class="text-decoration-none student-link">
+                                    <div class="d-flex align-items-center">
+                                        {% if attendance.student.user.profile_picture %}
+                                        <img src="{{ attendance.student.user.profile_picture.url }}" class="rounded-circle me-2" width="40" height="40">
+                                        {% else %}
+                                        <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="font-weight-bold text-primary">{{ attendance.student.user.get_full_name }} <i class="fas fa-external-link-alt fa-xs ms-1"></i></div>
+                                            {% if is_teacher or is_admin %}
+                                            <div class="small text-muted">{{ attendance.student.user.email }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </a>
+                            </td>
+                            <td>
+                                {% if attendance.status == 'PRESENT' %}
+                                <span class="badge bg-success">Present</span>
+                                {% elif attendance.status == 'ABSENT' %}
+                                <span class="badge bg-danger">Absent</span>
+                                {% elif attendance.status == 'LATE' %}
+                                <span class="badge bg-warning text-dark">Late</span>
+                                {% elif attendance.status == 'EXCUSED' %}
+                                <span class="badge bg-info">Excused</span>
+                                {% endif %}
+                                {% if attendance.remarks %}
+                                <span class="text-muted d-md-none ms-2">
+                                    <i class="fas fa-comment-alt" data-bs-toggle="tooltip" title="{{ attendance.remarks }}"></i>
+                                </span>
+                                {% endif %}
+                            </td>
+                            {% if is_teacher or is_admin %}
+                            <td class="d-none d-md-table-cell">
+                                {% if attendance.remarks %}
+                                <button class="btn btn-sm btn-link" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ attendance.remarks }}">
+                                    <i class="fas fa-comment-alt"></i> View
+                                </button>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                           <td colspan="{% if is_teacher or is_admin %}4{% else %}2{% endif %}" class="text-center py-4">
+                               <div class="text-muted">
+                                   {% if is_parent %}
+                                   No attendance records found for your children.
+                                   {% else %}
+                                   No student attendance records found.
+                                   {% endif %}
+                               </div>
+                           </td>
+                       </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding/editing remarks -->
+<div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="remarksModalLabel">Add/Edit Remarks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="remarksForm" method="post" action="{% url 'attendance:edit_record' record.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="attendance_id" name="attendance_id">
+                    <div class="mb-3">
+                        <label for="remarks" class="form-label">Remarks</label>
+                        <textarea class="form-control" id="remarks" name="remarks" rows="4" placeholder="Enter remarks or reason for absence/lateness"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Remarks</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('studentSearch');
+        const table = document.getElementById('studentAttendanceTable');
+
+        if (searchInput && table) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+                for (let i = 0; i < rows.length; i++) {
+                    const cells = rows[i].getElementsByTagName('td');
+                    let found = false;
+
+                    for (let j = 0; j < 2; j++) { // Only search in ID and name columns
+                        if (cells[j].textContent.toLowerCase().indexOf(searchTerm) > -1) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    rows[i].style.display = found ? '' : 'none';
+                }
+            });
+        }
+
+        // Status update links
+        const statusUpdateLinks = document.querySelectorAll('.status-update');
+        statusUpdateLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const attendanceId = this.getAttribute('data-attendance-id');
+                const status = this.getAttribute('data-status');
+
+                if (confirm(`Are you sure you want to mark this student as ${status}?`)) {
+                    // Create and submit a form
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = "{% url 'attendance:edit_attendance_status' student_attendance_id=0 %}".replace('0', attendanceId);
+
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                    const attendanceInput = document.createElement('input');
+                    attendanceInput.type = 'hidden';
+                    attendanceInput.name = 'attendance_id';
+                    attendanceInput.value = attendanceId;
+
+                    const statusInput = document.createElement('input');
+                    statusInput.type = 'hidden';
+                    statusInput.name = 'status';
+                    statusInput.value = status;
+
+                    form.appendChild(csrfInput);
+                    form.appendChild(attendanceInput);
+                    form.appendChild(statusInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        });
+
+        // Add/Edit Remarks
+        const remarkLinks = document.querySelectorAll('.add-remarks');
+        const remarksModal = new bootstrap.Modal(document.getElementById('remarksModal'));
+
+        remarkLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const attendanceId = this.getAttribute('data-attendance-id');
+                const remarks = this.getAttribute('data-remarks');
+
+                document.getElementById('attendance_id').value = attendanceId;
+                document.getElementById('remarks').value = remarks;
+
+                remarksModal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}

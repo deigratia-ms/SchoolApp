@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Fee Categories - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Fee Categories</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Fee Categories</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mb-4">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+      <i class="fas fa-plus-circle me-2"></i>Add New Category
+    </button>
+  </div>
+
+  <!-- Fee Categories Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Fee Categories</h6>
+      <div class="dropdown no-arrow">
+        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+          <div class="dropdown-header">Actions:</div>
+          <a class="dropdown-item" href="{% url 'fees:class_fee_list' %}">Manage Class Fees</a>
+          <a class="dropdown-item" href="{% url 'fees:payment_list' %}">View Payments</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="#" id="exportCategoriesBtn">Export Categories</a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if fee_categories %}
+        <div class="table-responsive">
+          <table class="table table-bordered" id="categoriesTable" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Required</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for category in fee_categories %}
+                <tr>
+                  <td>{{ category.name }}</td>
+                  <td>{{ category.description|default:"-" }}</td>
+                  <td>
+                    {% if category.is_required %}
+                      <span class="badge bg-primary">Required</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Optional</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if category.is_active %}
+                      <span class="badge bg-success">Active</span>
+                    {% else %}
+                      <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ category.created_at|date:"M d, Y" }}</td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-info edit-category"
+                            data-id="{{ category.id }}"
+                            data-name="{{ category.name }}"
+                            data-description="{{ category.description|default:'' }}"
+                            data-required="{{ category.is_required|yesno:'true,false' }}"
+                            data-active="{{ category.is_active|yesno:'true,false' }}"
+                            data-bs-toggle="tooltip"
+                            title="Edit Category">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger delete-category"
+                            data-id="{{ category.id }}"
+                            data-name="{{ category.name }}"
+                            data-bs-toggle="tooltip"
+                            title="Delete Category">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No fee categories found. Click the "Add New Category" button to create one.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'fees:category_create' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addCategoryModalLabel">Add New Fee Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="is_required" name="is_required">
+            <label class="form-check-label" for="is_required">Required Fee</label>
+            <small class="form-text text-muted d-block">Check if this fee is mandatory for all students</small>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+            <label class="form-check-label" for="is_active">Active</label>
+            <small class="form-text text-muted d-block">Uncheck to disable this fee category</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="editCategoryForm" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editCategoryModalLabel">Edit Fee Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_name" class="form-label">Category Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="edit_name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_description" class="form-label">Description</label>
+            <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="edit_is_required" name="is_required">
+            <label class="form-check-label" for="edit_is_required">Required Fee</label>
+            <small class="form-text text-muted d-block">Check if this fee is mandatory for all students</small>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="edit_is_active" name="is_active">
+            <label class="form-check-label" for="edit_is_active">Active</label>
+            <small class="form-text text-muted d-block">Uncheck to disable this fee category</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Category Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="deleteCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="deleteCategoryForm" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteCategoryModalLabel">Delete Fee Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete the fee category "<span id="deleteCategoryName"></span>"?</p>
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone. Deleting a fee category will also delete all associated class fees and student fees.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Wait for document to be fully loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Document ready - using DOMContentLoaded');
+
+    // Log all action buttons to verify they exist
+    console.log('Edit buttons:', document.querySelectorAll('.edit-category').length);
+    console.log('Delete buttons:', document.querySelectorAll('.delete-category').length);
+
+    // Initialize DataTable if jQuery is available
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+      try {
+        $('#categoriesTable').DataTable({
+          order: [[0, 'asc']]
+        });
+        console.log('DataTable initialized');
+      } catch (error) {
+        console.error('Error initializing DataTable:', error);
+      }
+    } else {
+      console.warn('jQuery or DataTable not available');
+    }
+
+    // Edit Category - using direct event listeners for each button
+    document.querySelectorAll('.edit-category').forEach(button => {
+      button.addEventListener('click', function(e) {
+        console.log('Edit button clicked (direct)');
+        try {
+          const id = this.getAttribute('data-id');
+          const name = this.getAttribute('data-name');
+          const description = this.getAttribute('data-description');
+          const isRequired = this.getAttribute('data-required') === 'true';
+          const isActive = this.getAttribute('data-active') === 'true';
+
+          console.log('Edit data:', { id, name, description, isRequired, isActive });
+
+          document.getElementById('edit_name').value = name;
+          document.getElementById('edit_description').value = description;
+          document.getElementById('edit_is_required').checked = isRequired;
+          document.getElementById('edit_is_active').checked = isActive;
+
+          const form = document.getElementById('editCategoryForm');
+          form.action = "{% url 'fees:category_edit' 0 %}".replace('0', id);
+
+          // Show modal using Bootstrap 5 API
+          const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error handling edit button click:', error);
+        }
+      });
+    });
+
+    // Delete Category - using direct event listeners
+    document.querySelectorAll('.delete-category').forEach(button => {
+      button.addEventListener('click', function(e) {
+        console.log('Delete button clicked (direct)');
+        try {
+          const id = this.getAttribute('data-id');
+          const name = this.getAttribute('data-name');
+
+          console.log('Delete data:', { id, name });
+
+          document.getElementById('deleteCategoryName').textContent = name;
+
+          const form = document.getElementById('deleteCategoryForm');
+          form.action = "{% url 'fees:category_delete' 0 %}".replace('0', id);
+
+          // Show modal using Bootstrap 5 API
+          const modal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error handling delete button click:', error);
+        }
+      });
+    });
+
+    // Export Categories
+    const exportBtn = document.getElementById('exportCategoriesBtn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = "{% url 'fees:category_export' %}";
+      });
+    }
+
+    // Initialize tooltips
+    try {
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(tooltipTriggerEl => {
+        new bootstrap.Tooltip(tooltipTriggerEl, {
+          trigger: 'hover'
+        });
+      });
+      console.log('Tooltips initialized');
+    } catch (error) {
+      console.error('Error initializing tooltips:', error);
+    }
+  });
+
+  // Also add jQuery event handlers as a fallback
+  $(document).ready(function() {
+    console.log('jQuery document ready');
+
+    // Edit Category - using event delegation as fallback
+    $(document).on('click', '.edit-category', function() {
+      console.log('Edit button clicked (jQuery delegation)');
+    });
+
+    // Delete Category - using event delegation as fallback
+    $(document).on('click', '.delete-category', function() {
+      console.log('Delete button clicked (jQuery delegation)');
+    });
+  });
+</script>
+{% endblock %}

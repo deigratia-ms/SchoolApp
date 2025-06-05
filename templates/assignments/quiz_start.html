@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ quiz.title }} - Start Quiz - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quiz-card {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+
+    .quiz-header {
+        background-color: #4e73df;
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .quiz-body {
+        padding: 30px;
+    }
+
+    .quiz-info {
+        background-color: #f8f9fc;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .quiz-info-item {
+        margin-bottom: 10px;
+    }
+
+    .quiz-info-label {
+        font-weight: 600;
+        color: #5a5c69;
+    }
+
+    .quiz-instructions {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .start-button {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .attempt-info {
+        background-color: #e8f4f8;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 20px;
+    }
+
+    .attempt-badge {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Start Quiz</h1>
+        <div>
+            <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Assignments
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="quiz-card">
+                <div class="quiz-header">
+                    <h2>{{ quiz.title }}</h2>
+                    <p class="mb-0">{{ quiz.class_subject.classroom.name }} - {{ quiz.class_subject.subject.name }}</p>
+                </div>
+
+                <div class="quiz-body">
+                    <div class="quiz-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="quiz-info-item">
+                                    <span class="quiz-info-label">Questions:</span>
+                                    <span>{{ question_count }}</span>
+                                </div>
+                                <div class="quiz-info-item">
+                                    <span class="quiz-info-label">Time Limit:</span>
+                                    <span>{% if quiz.time_limit %}{{ quiz.time_limit }} minutes{% else %}No time limit{% endif %}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="quiz-info-item">
+                                    <span class="quiz-info-label">Due Date:</span>
+                                    <span>{{ quiz.due_date|date:"F j, Y g:i A" }}</span>
+                                </div>
+                                <div class="quiz-info-item">
+                                    <span class="quiz-info-label">Attempts:</span>
+                                    <span>
+                                        {% if quiz.attempt_limit == 0 %}
+                                            Unlimited
+                                        {% else %}
+                                            {{ attempt_count }} of {{ quiz.attempt_limit }} used
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if quiz.description %}
+                        <div class="quiz-instructions">
+                            <h5><i class="fas fa-info-circle"></i> Instructions</h5>
+                            <p>{{ quiz.description }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="alert alert-primary">
+                        <h5 class="alert-heading"><i class="fas fa-lightbulb"></i> Before You Begin</h5>
+                        <ul class="mb-0">
+                            <li>Make sure you have a stable internet connection.</li>
+                            <li>Once you start, the timer will begin counting down.</li>
+                            <li>Your answers are automatically saved as you progress.</li>
+                            <li>You can navigate between questions using the Next and Previous buttons.</li>
+                            {% if quiz.time_limit %}
+                                <li>The quiz will automatically submit when the time limit is reached.</li>
+                            {% endif %}
+                            {% if quiz.attempt_limit > 1 or quiz.attempt_limit == 0 %}
+                                <li><strong>Retakes:</strong> If you retake this quiz, your highest score will be kept.</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    {% if can_attempt %}
+                        <form method="post" action="{% url 'assignments:quiz_start' quiz.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success start-button">
+                                <i class="fas fa-play-circle"></i> Start Quiz Now
+                            </button>
+                        </form>
+
+                        {% if attempt_message %}
+                            <div class="attempt-info">
+                                <span class="attempt-badge bg-info text-white">
+                                    <i class="fas fa-info-circle"></i> {{ attempt_message }}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Cannot Start Quiz</h5>
+                            <p>{{ attempt_message }}</p>
+                        </div>
+
+                        {% if previous_attempts %}
+                            <h5 class="mt-4">Previous Attempts</h5>
+                            <p class="small text-muted mb-2">
+                                <i class="fas fa-info-circle"></i> The score shown is your highest score across all attempts.
+                            </p>
+                            <div class="list-group">
+                                {% for attempt in previous_attempts %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Attempt #{{ attempt.attempt_number }}</h6>
+                                            <small>{{ attempt.completed_at|date:"F j, Y g:i A" }}</small>
+                                        </div>
+                                        <p class="mb-1">
+                                            Score:
+                                            {% if attempt.submission and attempt.submission.is_graded %}
+                                                {{ attempt.submission.score|floatformat:1 }}%
+                                                <span class="badge
+                                                    {% if attempt.submission.score >= 90 %}bg-success
+                                                    {% elif attempt.submission.score >= 80 %}bg-primary
+                                                    {% elif attempt.submission.score >= 70 %}bg-info
+                                                    {% elif attempt.submission.score >= 60 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {% if attempt.submission.score >= 90 %}Excellent
+                                                    {% elif attempt.submission.score >= 80 %}Good
+                                                    {% elif attempt.submission.score >= 70 %}Satisfactory
+                                                    {% elif attempt.submission.score >= 60 %}Needs Improvement
+                                                    {% else %}Unsatisfactory{% endif %}
+                                                </span>
+                                            {% elif attempt.submission %}
+                                                <span class="badge bg-warning">Pending Grading</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No Submission</span>
+                                            {% endif %}
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small>Duration: {{ attempt.duration|default:"N/A" }}</small>
+                                            {% if attempt.submission and attempt.submission.is_graded %}
+                                                <a href="{% url 'assignments:view_quiz_result' attempt.quiz_version.id %}"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

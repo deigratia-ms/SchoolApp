@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Video - {{ video.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Edit Video: {{ video.title }}</h1>
+
+    {% if video.class_subject %}
+        <p>Current Class Subject: {{ video.class_subject.classroom.name }} - {{ video.class_subject.subject.name }}</p>
+    {% else %}
+        <p>Current Class Subject: None (General Video)</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'courses:edit_video' video.id %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{ video.title }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description">{{ video.description }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="youtube_url" class="form-label">YouTube URL</label>
+            <input type="url" class="form-control" id="youtube_url" name="youtube_url" value="{{ video.youtube_url }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="class_subject" class="form-label">Class Subject</label>
+            <select class="form-control" id="class_subject" name="class_subject">
+                <option value="">None (General Video)</option>
+                {% for class_subject in class_subjects %}
+                    <option value="{{ class_subject.id }}" {% if video.class_subject.id == class_subject.id %}selected{% endif %}>
+                        {{ class_subject.classroom.name }} - {{ class_subject.subject.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="is_general" name="is_general" {% if video.is_general %}checked{% endif %}>
+            <label class="form-check-label" for="is_general">General Video (Visible to all)</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+    <a href="{% url 'courses:video_detail' video.id %}" class="btn btn-secondary mt-2">Cancel</a>
+</div>
+{% endblock %}
+
+

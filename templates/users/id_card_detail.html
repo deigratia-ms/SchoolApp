@@ -1,0 +1,462 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}ID Card Details - School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* CR80 card preview styles - landscape orientation */
+    .id-card-container {
+        max-width: 450px;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    /* CR80 card dimensions (scaled for display) */
+    .id-card {
+        width: 380px; /* Scaled from full 1013px */
+        height: 240px; /* Scaled from full 638px */
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+        background-color: {{ id_card.template.background_color }};
+        color: {{ id_card.template.text_color }};
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Card Header */
+    .id-card-header {
+        background-color: rgba(0,0,0,0.15);
+        color: {{ id_card.template.text_color }};
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        font-size: 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    /* Card Body - Landscape layout */
+    .id-card-body {
+        flex: 1;
+        display: flex;
+        padding: 10px;
+        {% if id_card.template.background_image %}
+        background-image: url("{{ id_card.template.background_image.url }}");
+        background-size: cover;
+        background-position: center;
+        {% endif %}
+    }
+    
+    /* Left column for photo */
+    .id-card-photo-section {
+        width: 90px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-right: 10px;
+    }
+    
+    /* School Logo */
+    .id-card-logo {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+        margin-bottom: 8px;
+    }
+    
+    /* User Photo */
+    .id-card-photo {
+        width: 80px;
+        height: 100px;
+        border: 2px solid rgba(255,255,255,0.5);
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fc;
+    }
+    
+    /* Right column for info */
+    .id-card-info-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Role Badge */
+    .id-card-role-badge {
+        background-color: rgba(0,0,0,0.2);
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        margin-bottom: 5px;
+    }
+    
+    /* User Name */
+    .id-card-name {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    /* User Information */
+    .id-card-info {
+        margin-top: 5px;
+    }
+    
+    .id-card-info-item {
+        margin-bottom: 4px;
+        display: flex;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+    
+    .id-card-info-label {
+        font-weight: bold;
+        min-width: 60px;
+    }
+    
+    /* Barcode */
+    .id-card-barcode {
+        text-align: center;
+        margin-top: 10px;
+        padding: 5px;
+        background-color: rgba(255,255,255,0.8);
+        border-radius: 4px;
+    }
+    
+    /* Card Footer */
+    .id-card-footer {
+        text-align: center;
+        font-size: 10px;
+        padding: 6px;
+        background-color: rgba(0,0,0,0.1);
+        border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    /* CR80 indicator */
+    .cr80-indicator {
+        position: absolute;
+        top: -18px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 11px;
+        color: #666;
+    }
+    .field-group {
+        margin-bottom: 1.5rem;
+    }
+    .status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        transform: rotate(45deg);
+        transform-origin: 100% 0%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">ID Card Details</h1>
+        <div class="btn-group">
+            <a href="{% url 'users:id_card_print' card_id=id_card.id %}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-print me-2"></i>Print ID Card
+            </a>
+            <a href="{% url 'users:id_card_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- ID Card Preview -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">ID Card Preview</h6>
+                </div>
+                <div class="card-body">
+                    <div class="id-card-container">
+                        <div class="cr80-indicator">CR80 Standard (2.125" × 3.375") - Landscape</div>
+                        <div class="id-card" id="idCardPreview">
+                            {% if not id_card.is_active %}
+                                <div class="status-badge">
+                                    <span class="badge bg-danger">INACTIVE</span>
+                                </div>
+                            {% elif id_card.expiry_date < today %}
+                                <div class="status-badge">
+                                    <span class="badge bg-warning">EXPIRED</span>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Card Header with School Name -->
+                            <div class="id-card-header">
+                                <div>
+                                    {% if school_settings.logo %}
+                                        <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }}" style="height: 18px; margin-right: 5px;">
+                                    {% endif %}
+                                    {{ school_settings.school_name|default:"School Name" }}
+                                </div>
+                                <div>{{ id_card.template.header_text }}</div>
+                            </div>
+                            
+                            <!-- Card Body - Landscape layout -->
+                            <div class="id-card-body">
+                                <!-- Left Column - Photo Section -->
+                                <div class="id-card-photo-section">
+                                    {% if school_settings.logo %}
+                                        <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }}" class="id-card-logo">
+                                    {% endif %}
+                                    
+                                    <div class="id-card-photo">
+                                        {% if id_card.user.profile_picture %}
+                                            <img src="{{ id_card.user.profile_picture.url }}" alt="{{ id_card.user.get_full_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        {% else %}
+                                            <i class="fas fa-user fa-2x text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Column - Information Section -->
+                                <div class="id-card-info-section">
+                                    <!-- Role Badge -->
+                                    <div class="id-card-role-badge">{{ id_card.user.get_role_display }}</div>
+                                    
+                                    <!-- User Name -->
+                                    <div class="id-card-name">{{ id_card.user.get_full_name }}</div>
+                                    
+                                    <!-- User Information -->
+                                    <div class="id-card-info">
+                                        {% if id_card.user.is_student %}
+                                            <div class="id-card-info-item">
+                                                <div class="id-card-info-label">Student ID:</div>
+                                                <div>{{ id_card.user.student.student_id }}</div>
+                                            </div>
+                                            <div class="id-card-info-item">
+                                                <div class="id-card-info-label">Class:</div>
+                                                <div>{% if id_card.user.student.grade %}{{ id_card.user.student.grade }}{% endif %} {% if id_card.user.student.section %}{{ id_card.user.student.section }}{% endif %}</div>
+                                            </div>
+                                        {% elif id_card.user.is_teacher %}
+                                            <div class="id-card-info-item">
+                                                <div class="id-card-info-label">ID:</div>
+                                                <div>{{ id_card.user.teacher.employee_id }}</div>
+                                            </div>
+                                            <div class="id-card-info-item">
+                                                <div class="id-card-info-label">Dept:</div>
+                                                <div>{{ id_card.user.teacher.department|default:"Faculty" }}</div>
+                                            </div>
+                                        {% elif id_card.user.is_parent %}
+                                            <div class="id-card-info-item">
+                                                <div class="id-card-info-label">ID:</div>
+                                                <div>{{ id_card.user.id }}</div>
+                                            </div>
+                                            <div class="id-card-info-item">
+                                                <div class="id-card-info-label">Child:</div>
+                                                <div>
+                                                    {% with child=id_card.user.parent.children.first %}
+                                                        {% if child %}{{ child.user.first_name }} {{ child.user.last_name }}{% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Validity Date -->
+                                        <div class="id-card-info-item">
+                                            <div class="id-card-info-label">Valid:</div>
+                                            <div>{{ id_card.expiry_date|date:"M d, Y" }}</div>
+                                        </div>
+                                        
+                                        <!-- Additional Info (limited to the most important 1-2 fields) -->
+                                        {% if id_card.additional_info %}
+                                            {% with key=id_card.additional_info.keys|first %}
+                                                {% if key %}
+                                                    <div class="id-card-info-item">
+                                                        <div class="id-card-info-label">{{ key|title }}:</div>
+                                                        <div>{{ id_card.additional_info|get_item:key }}</div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Mini Barcode (if available) -->
+                                    {% if id_card.barcode_data %}
+                                        <div class="id-card-barcode">
+                                            <img src="data:image/png;base64,{{ barcode_image }}" alt="Barcode" style="max-height: 30px;">
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Footer with School Info -->
+                            <div class="id-card-footer">
+                                {{ school_settings.school_name|default:"School Name" }} | {{ school_settings.phone|default:"Contact" }} | Card #: {{ id_card.card_number }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ID Card Details -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">ID Card Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="field-group">
+                        <h6 class="font-weight-bold">Card Details</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Card Number:</strong></p>
+                                <p>{{ id_card.card_number }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Status:</strong></p>
+                                <p>
+                                    {% if id_card.is_active %}
+                                        {% if id_card.expiry_date < today %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Issue Date:</strong></p>
+                                <p>{{ id_card.issue_date|date:"F d, Y" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Expiry Date:</strong></p>
+                                <p>{{ id_card.expiry_date|date:"F d, Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="field-group">
+                        <h6 class="font-weight-bold">User Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Name:</strong></p>
+                                <p>{{ id_card.user.get_full_name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Role:</strong></p>
+                                <p>{{ id_card.user.get_role_display }}</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Email:</strong></p>
+                                <p>{{ id_card.user.email }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Phone:</strong></p>
+                                <p>{{ id_card.user.phone_number|default:"N/A" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="field-group">
+                        <h6 class="font-weight-bold">Template Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Template Name:</strong></p>
+                                <p>{{ id_card.template.name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Template Role:</strong></p>
+                                <p>{{ id_card.template.get_role_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex mt-4">
+                        <a href="{% url 'users:id_card_print' card_id=id_card.id %}" class="btn btn-primary me-2" target="_blank">
+                            <i class="fas fa-print me-2"></i>Print ID Card
+                        </a>
+                        <button type="button" class="btn btn-warning me-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#regenerateCardModal">
+                            <i class="fas fa-sync-alt me-2"></i>Regenerate Card
+                        </button>
+                        {% if id_card.is_active %}
+                            <form method="post" action="{% url 'users:id_card_deactivate' card_id=id_card.id %}" class="ms-auto">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate this ID card?')">
+                                    <i class="fas fa-ban me-2"></i>Deactivate Card
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'users:id_card_activate' card_id=id_card.id %}" class="ms-auto">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to activate this ID card?')">
+                                    <i class="fas fa-check-circle me-2"></i>Activate Card
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regenerate ID Card Modal -->
+<div class="modal fade" id="regenerateCardModal" tabindex="-1" aria-labelledby="regenerateCardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regenerateCardModalLabel">Regenerate ID Card</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'users:id_card_regenerate' card_id=id_card.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Are you sure you want to regenerate this ID card? This will create a new card number and set a new issue date.</p>
+                    
+                    <div class="mb-3">
+                        <label for="template_id" class="form-label">Template</label>
+                        <select class="form-select" id="template_id" name="template_id" required>
+                            <option value="{{ id_card.template.id }}" selected>Current: {{ id_card.template.name }}</option>
+                            {% for template in templates %}
+                                {% if template.id != id_card.template.id and template.is_active and template.role == id_card.user.role %}
+                                    <option value="{{ template.id }}">{{ template.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">You can keep the current template or choose a different one.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expiry_date" class="form-label">New Expiry Date</label>
+                        <input type="date" class="form-control" id="expiry_date" name="expiry_date" 
+                               value="{{ next_year|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Regenerate ID Card</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

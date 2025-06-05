@@ -1,0 +1,162 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Gallery | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up">School Gallery</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            Experience the vibrant life at Deigratia Montessori through our photo gallery
+        </p>
+    </div>
+</section>
+
+<!-- Gallery Categories -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8 text-center">
+                <div class="btn-group" role="group" aria-label="Gallery categories">
+                    <a href="{% url 'gallery' %}" class="btn {% if not request.GET.category %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        All
+                    </a>
+                    {% for category in categories %}
+                    <a href="?category={{ category }}" class="btn {% if request.GET.category == category %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        {{ category|title }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Grid -->
+        <div class="row g-4">
+            {% for image in galleries %}
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                <div class="card gallery-item border-0 shadow-sm h-100">
+                    <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ image.title }}</h5>
+                        {% if image.description %}
+                        <p class="card-text">{{ image.description }}</p>
+                        {% endif %}
+                        <small class="text-muted">{{ image.category|title }}</small>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                <h4>No Images Available</h4>
+                <p>Please check back later for updates to our gallery.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Gallery pagination" class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="galleryModal" tabindex="-1" aria-labelledby="galleryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <img src="" id="galleryModalImage" class="img-fluid" alt="Gallery Image">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.gallery-item {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.gallery-item:hover {
+    transform: translateY(-5px);
+}
+
+.gallery-item img {
+    height: 250px;
+    object-fit: cover;
+}
+
+.btn-group .btn {
+    border-radius: 30px !important;
+    margin: 0 5px;
+    padding: 8px 20px;
+}
+
+#galleryModal .modal-content {
+    background-color: transparent;
+    border: none;
+}
+
+#galleryModal .btn-close {
+    background-color: white;
+    opacity: 1;
+    padding: 0.5rem;
+    margin: 1rem;
+    border-radius: 50%;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gallery item click handler
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    const modalImage = document.getElementById('galleryModalImage');
+    
+    galleryItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const imgSrc = this.querySelector('img').getAttribute('src');
+            modalImage.setAttribute('src', imgSrc);
+            const modal = new bootstrap.Modal(document.getElementById('galleryModal'));
+            modal.show();
+        });
+    });
+});
+</script>
+{% endblock %}

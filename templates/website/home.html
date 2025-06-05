@@ -1,0 +1,365 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Home | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+{% if hero_slides %}
+<div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        {% for slide in hero_slides %}
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}"
+                {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                aria-label="Slide {{ forloop.counter }}">
+        </button>
+        {% endfor %}
+    </div>
+    <div class="carousel-inner">
+        {% for slide in hero_slides %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+            <div class="hero-slide" style="background-image: url('{{ slide.image.url }}');">
+                <div class="hero-content">
+                    <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ slide.title }}</h1>
+                    {% if slide.subtitle %}
+                    <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                        {{ slide.subtitle }}
+                    </p>
+                    {% endif %}
+                    <div class="d-flex flex-column flex-md-row justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                        <a href="{% url 'website:admissions' %}" class="btn btn-primary btn-lg mb-2 mb-md-0">Apply Now</a>
+                        <a href="{% url 'website:contact' %}" class="btn btn-secondary btn-lg">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
+{% else %}
+<section class="hero-banner" style="background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1709&q=80');">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">Welcome to Deigratia Montessori School</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            Nurturing Excellence Through Montessori Education
+        </p>
+        <div class="d-flex flex-column flex-md-row justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+            <a href="{% url 'website:admissions' %}" class="btn btn-primary btn-lg mb-2 mb-md-0">Apply Now</a>
+            <a href="{% url 'website:contact' %}" class="btn btn-secondary btn-lg">Contact Us</a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Announcement Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Latest Announcements</h2>
+        <div class="row gy-4">
+            {% for announcement in announcements %}
+            <div class="col-12 col-sm-6 col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                <div class="card h-100">
+                    {% if announcement.image %}
+                    <img src="{{ announcement.image.url }}" class="card-img-top" alt="{{ announcement.title }}">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="Placeholder">
+                    {% endif %}
+                    <div class="card-body">
+                        <div class="announcement-badge mb-2">Featured</div>
+                        <h5 class="card-title">{{ announcement.title }}</h5>
+                        <p class="card-text">{{ announcement.content|truncatewords:30 }}</p>
+                        <a href="{% url 'website:announcement-detail' announcement.slug %}" class="btn btn-outline-primary">Read More</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No announcements available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 order-2 order-lg-1 mt-4 mt-lg-0" data-aos="fade-right">
+                <h2 class="section-title text-center text-lg-start">{{ settings.about_section_title|default:"Why Choose Us?" }}</h2>
+                <p>{{ settings.about_section_content|default:"At Deigratia Montessori School, we believe in nurturing each child's unique potential through the time-tested Montessori method. Our approach combines traditional values with modern educational techniques to create an environment where children can thrive." }}</p>
+                <div class="row mt-4 gy-3">
+                    <div class="col-12 col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-graduation-cap fa-2x text-primary me-3"></i>
+                            <div>
+                                <h5>Certified Teachers</h5>
+                                <p>Experienced Montessori-certified educators dedicated to your child's growth</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-child fa-2x text-primary me-3"></i>
+                            <div>
+                                <h5>Child-Centered</h5>
+                                <p>Learning environments tailored to each child's unique development pace</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-book-open fa-2x text-primary me-3"></i>
+                            <div>
+                                <h5>Comprehensive Curriculum</h5>
+                                <p>Balanced academic program fostering intellectual and personal growth</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-users fa-2x text-primary me-3"></i>
+                            <div>
+                                <h5>Small Class Sizes</h5>
+                                <p>Individualized attention ensuring optimal learning outcomes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center text-lg-start">
+                    <a href="{% url 'website:about' %}" class="btn btn-primary mt-4">Learn More About Us</a>
+                </div>
+            </div>
+            <div class="col-lg-6 order-1 order-lg-2" data-aos="fade-left">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="img-fluid rounded-3 shadow" alt="About Us">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-primary rounded-3" style="opacity: 0.1;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Upcoming Events Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Upcoming Events</h2>
+        <div class="row gy-4">
+            {% for event in upcoming_events %}
+            <div class="col-12 col-sm-6 col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                <div class="card h-100">
+                    {% if event.image %}
+                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="Event Placeholder">
+                    {% endif %}
+                    <div class="card-body">
+                        <div class="event-date mb-3">
+                            <div class="day">{{ event.date|date:"d" }}</div>
+                            <div class="month">{{ event.date|date:"M" }}</div>
+                        </div>
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text">{{ event.description|truncatewords:20 }}</p>
+                        <p class="text-muted">
+                            <i class="fas fa-map-marker-alt me-2"></i>{{ event.location }}
+                        </p>
+                        <a href="{% url 'website:event-detail' event.pk %}" class="btn btn-outline-primary">Learn More</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No upcoming events at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'website:events' %}" class="btn btn-primary">View All Events</a>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">What Parents Say</h2>
+        <div class="row gy-4">
+            {% for testimonial in testimonials %}
+            <div class="col-12 col-sm-6 col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                <div class="testimonial-card">
+                    <p class="mb-4">{{ testimonial.content }}</p>
+                    <div class="d-flex align-items-center">
+                        {% if testimonial.image %}
+                        <img src="{{ testimonial.image.url }}" class="rounded-circle me-3" width="50" height="50" alt="{{ testimonial.name }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/50" class="rounded-circle me-3" alt="Profile Placeholder">
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ testimonial.name }}</h6>
+                            <small class="text-muted">{{ testimonial.role }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No testimonials available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Gallery Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">School Life</h2>
+        {% if show_gallery_carousel %}
+        <div id="galleryCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% for image in featured_gallery %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <a href="{% url 'website:gallery-detail' image.pk %}" class="text-decoration-none">
+                        <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}" style="height: 500px; object-fit: cover;">
+                        <div class="carousel-caption d-none d-md-block">
+                            <h5>{{ image.title }}</h5>
+                            <p>{{ image.description|truncatewords:20 }}</p>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+        {% else %}
+        <div class="row g-4">
+            {% for image in featured_gallery %}
+            <div class="col-12 col-sm-6 col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                <a href="{% url 'website:gallery-detail' image.pk %}" class="text-decoration-none">
+                    <div class="card h-100">
+                        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}" style="height: 250px; object-fit: cover;">
+                        <div class="card-img-overlay d-flex align-items-end" style="background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);">
+                            <h5 class="card-title text-white mb-0">{{ image.title }}</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No gallery images available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="text-center mt-4">
+            <a href="{% url 'website:gallery' %}" class="btn btn-primary">View Full Gallery</a>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <h2 class="mb-4">Ready to Join Our Community?</h2>
+                <p class="lead mb-4">Take the first step towards providing your child with an exceptional Montessori education.</p>
+                <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+                    <a href="{% url 'website:admissions' %}" class="btn btn-primary btn-lg mb-2 mb-md-0">Apply Now</a>
+                    <a href="{% url 'website:contact' %}" class="btn btn-outline-primary btn-lg">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.hero-slide {
+    height: 400px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.hero-slide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.carousel-item .hero-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+    color: white;
+    z-index: 1;
+    padding: 0 15px;
+}
+
+.hero-content h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    color: white !important;
+}
+
+.hero-content p {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive styles */
+@media (min-width: 768px) {
+    .hero-slide {
+        height: 500px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.5rem;
+    }
+
+    .hero-content p {
+        font-size: 1.1rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .hero-slide {
+        height: 600px;
+    }
+
+    .hero-content h1 {
+        font-size: 3.5rem;
+    }
+
+    .hero-content p {
+        font-size: 1.25rem;
+    }
+}
+</style>
+{% endblock %}

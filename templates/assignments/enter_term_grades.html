@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Enter Term Grades - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Enter Term Grades</h1>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="class_subject" class="form-label">Class & Subject</label>
+                    <select name="class_subject" id="class_subject" class="form-select" required>
+                        <option value="">Select Class & Subject</option>
+                        {% for subject in class_subjects %}
+                        <option value="{{ subject.id }}" {% if selected_subject.id == subject.id %}selected{% endif %}>
+                            {{ subject.classroom.name }} - {{ subject.subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="term" class="form-label">Term</label>
+                    <select name="term" id="term" class="form-select" required>
+                        <option value="">Select Term</option>
+                        <option value="First Term" {% if selected_term == "First Term" %}selected{% endif %}>First Term</option>
+                        <option value="Second Term" {% if selected_term == "Second Term" %}selected{% endif %}>Second Term</option>
+                        <option value="Third Term" {% if selected_term == "Third Term" %}selected{% endif %}>Third Term</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="academic_year" class="form-label">Academic Year</label>
+                    <select name="academic_year" id="academic_year" class="form-select" required>
+                        <option value="">Select Year</option>
+                        {% for year in academic_years %}
+                        <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Load Students</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if students %}
+    <!-- Grade Entry Form -->
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="class_subject" value="{{ selected_subject.id }}">
+        <input type="hidden" name="term" value="{{ selected_term }}">
+        <input type="hidden" name="academic_year" value="{{ selected_year }}">
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Enter Grades for {{ selected_subject.subject.name }}</h5>
+                <p class="text-muted mb-0">{{ selected_subject.classroom.name }} - {{ selected_term }} {{ selected_year }}</p>
+                
+                {% if assessment_config %}
+                <p class="text-muted mt-2">
+                    <small>
+                        Assessment weights: 
+                        {% for component in enabled_components %}
+                            {{ component.label }} ({{ component.weight }}%){% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </small>
+                </p>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Student</th>
+                                {% for component in enabled_components %}
+                                <th>{{ component.label }} ({{ component.weight }}%)</th>
+                                {% endfor %}
+                                <th>Total Score</th>
+                                <th>Grade</th>
+                                <th>Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td>
+                                    {{ student.user.get_full_name }}
+                                    <input type="hidden" name="student_ids[]" value="{{ student.id }}">
+                                </td>
+                                
+                                {% for component in enabled_components %}
+                                <td>
+                                    <input type="number" 
+                                           class="form-control score-input" 
+                                           name="{{ component.field_name }}[]" 
+                                           min="0" 
+                                           max="100" 
+                                           step="0.1"
+                                           value="{% if student.current_grade and student.current_grade.component_scores %}{{ student.current_grade.component_scores|get_item:component.name|default:'' }}{% endif %}"
+                                           data-row="{{ forloop.parentloop.counter }}"
+                                           data-weight="{{ component.weight }}"
+                                           data-component="{{ component.name }}"
+                                           required>
+                                </td>
+                                {% endfor %}
+                                
+                                <td>
+                                    <input type="number" 
+                                           class="form-control total-score" 
+                                           id="total_{{ forloop.counter }}" 
+                                           readonly>
+                                </td>
+                                <td>
+                                    <input type="text" 
+                                           class="form-control grade-letter" 
+                                           id="grade_{{ forloop.counter }}" 
+                                           readonly>
+                                </td>
+                                <td>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="comments[]" 
+                                           value="{{ student.current_grade.comments|default:'' }}">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Save Grades</button>
+            </div>
+        </div>
+    </form>
+    {% elif request.GET %}
+    <div class="alert alert-info">
+        No students found for the selected class and subject.
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function calculateGrade(total) {
+        if (total >= 90) return 'A';
+        if (total >= 80) return 'B';
+        if (total >= 70) return 'C';
+        if (total >= 60) return 'D';
+        return 'F';
+    }
+
+    function updateTotalAndGrade(row) {
+        // Get all score inputs for this row
+        const scoreInputs = document.querySelectorAll(`.score-input[data-row="${row}"]`);
+        const totalInput = document.getElementById(`total_${row}`);
+        const gradeInput = document.getElementById(`grade_${row}`);
+
+        if (scoreInputs.length > 0 && totalInput && gradeInput) {
+            let totalWeightedScore = 0;
+            
+            // Calculate weighted score
+            scoreInputs.forEach(input => {
+                const score = parseFloat(input.value) || 0;
+                const weight = parseFloat(input.getAttribute('data-weight')) || 0;
+                
+                // Apply the weight percentage
+                const weightedScore = score * (weight / 100);
+                totalWeightedScore += weightedScore;
+            });
+
+            // Display with one decimal place
+            totalInput.value = totalWeightedScore.toFixed(1);
+            gradeInput.value = calculateGrade(totalWeightedScore);
+        }
+    }
+
+    // Add event listeners to all score inputs
+    document.querySelectorAll('.score-input').forEach(input => {
+        input.addEventListener('input', function() {
+            updateTotalAndGrade(this.dataset.row);
+        });
+
+        // Calculate initial values
+        if (input.value) {
+            updateTotalAndGrade(input.dataset.row);
+        }
+    });
+    
+    // Initialize all rows
+    const maxRows = document.querySelectorAll('.score-input[data-row]').length > 0 ? 
+        Math.max(...Array.from(document.querySelectorAll('.score-input[data-row]')).map(el => parseInt(el.dataset.row))) : 0;
+    
+    for (let i = 1; i <= maxRows; i++) {
+        updateTotalAndGrade(i);
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

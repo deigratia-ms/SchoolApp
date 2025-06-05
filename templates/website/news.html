@@ -1,0 +1,682 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}News & Announcements | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="news-hero" style="background-image: url('{% if news_hero and news_hero.image %}{{ news_hero.image.url }}{% elif first_announcement_image %}{{ first_announcement_image.url }}{% else %}{% static "img/news-hero.jpg" %}{% endif %}');">
+    <div class="news-hero-content">
+        <h1 class="news-hero-title" data-aos="fade-up">{% if news_hero and news_hero.title %}{{ news_hero.title }}{% else %}News & Announcements{% endif %}</h1>
+        <p class="news-hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+            {% if news_hero and news_hero.content %}{{ news_hero.content }}{% else %}Stay informed about the latest updates and achievements at Deigratia Montessori{% endif %}
+        </p>
+        <div class="filter-badges">
+            {% if search_query %}
+                <div class="filter-badge">Search: "{{ search_query }}" ({{ search_results_count }} result{% if search_results_count != 1 %}s{% endif %})</div>
+            {% endif %}
+            {% if current_category %}
+                <div class="filter-badge">Category: {{ current_category.name }}</div>
+            {% endif %}
+            {% if current_archive %}
+                <div class="filter-badge">Archive: {{ current_archive|date:"F Y" }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- News Content -->
+<section class="py-4">
+    <div class="container">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Featured News -->
+                {% if announcements %}
+                    <div class="news-grid">
+                    {% for announcement in announcements %}
+                        <article class="news-card" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:50 }}">
+                            {% if announcement.image %}
+                                <img src="{{ announcement.image.url }}" class="news-card-image" alt="{{ announcement.title }}" loading="lazy">
+                            {% endif %}
+                            <div class="news-card-content">
+                                {% if announcement.is_featured %}
+                                    <div class="news-card-badge">Featured</div>
+                                {% endif %}
+                                <h2 class="news-card-title">{{ announcement.title }}</h2>
+                                <div class="news-card-meta">
+                                    <div class="news-card-meta-item">
+                                        <i class="far fa-calendar-alt"></i> {{ announcement.date_posted|date:"F d, Y" }}
+                                    </div>
+                                    {% if announcement.category %}
+                                    <div class="news-card-meta-item">
+                                        <i class="fas fa-tag"></i> {{ announcement.category.name }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <p class="news-card-description">{{ announcement.content|truncatewords:30 }}</p>
+                                <a href="{% url 'website:announcement-detail' announcement.slug %}" class="btn btn-primary news-card-button">Read More</a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                        <nav aria-label="News pagination">
+                            <div class="pagination-container">
+                                {% if page_obj.has_previous %}
+                                <a class="pagination-btn prev" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if current_archive %}&year={{ current_archive.year }}&month={{ current_archive.month }}{% endif %}" aria-label="Previous">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                                {% else %}
+                                <span class="pagination-btn prev disabled">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </span>
+                                {% endif %}
+
+                                <div class="pagination-numbers">
+                                    {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                    <span class="pagination-number active">{{ num }}</span>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <a class="pagination-number" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if current_archive %}&year={{ current_archive.year }}&month={{ current_archive.month }}{% endif %}">{{ num }}</a>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+
+                                {% if page_obj.has_next %}
+                                <a class="pagination-btn next" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if current_archive %}&year={{ current_archive.year }}&month={{ current_archive.month }}{% endif %}" aria-label="Next">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                                {% else %}
+                                <span class="pagination-btn next disabled">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-newspaper"></i>
+                        <h4>No Announcements</h4>
+                        <p>Check back soon for updates!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4 mb-4"> <!-- Added mb-4 for better spacing -->
+                <div class="sticky-sidebar">
+                    <!-- Search -->
+                    <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                        <div class="card-body p-4">
+                            <h3 class="card-title h5">Search News</h3>
+                            <form action="{% url 'website:news' %}" method="get">
+                                <div class="input-group">
+                                    <input type="text" name="search" class="form-control" placeholder="Search news..." aria-label="Search news" value="{{ search_query|default:'' }}">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Newsletter Signup -->
+                    <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                        <div class="card-body p-4">
+                            <h3 class="card-title h5">Newsletter Signup</h3>
+                            <p class="card-text">Stay updated with our latest news and announcements.</p>
+                            <form class="newsletter-form" action="{% url 'website:newsletter-subscribe' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <div class="mb-3">
+                                    <input type="email" name="email" class="form-control" placeholder="Your email address" required>
+                                </div>
+                                <div class="mb-3">
+                                    <input type="text" name="name" class="form-control" placeholder="Your name (optional)">
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Subscribe</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                        <div class="card-body p-4">
+                            <h3 class="card-title h5">Categories</h3>
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'website:news' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if not current_category %}active{% endif %}">
+                                    All Categories
+                                    <span class="badge {% if not current_category %}bg-light text-dark{% else %}bg-primary{% endif %} rounded-pill">{{ announcements.paginator.count }}</span>
+                                </a>
+                                {% for category in categories %}
+                                    <a href="{% url 'website:news-category' category.slug %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if current_category.slug == category.slug %}active{% endif %}">
+                                        {{ category.name }}
+                                        <span class="badge {% if current_category.slug == category.slug %}bg-light text-dark{% else %}bg-primary{% endif %} rounded-pill">{{ category.post_count }}</span>
+                                    </a>
+                                {% empty %}
+                                    <div class="list-group-item text-muted">No categories available</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Archives -->
+                    <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                        <div class="card-body p-4">
+                            <h3 class="card-title h5">Archives</h3>
+                            <div class="list-group list-group-flush">
+                                {% for date in archive_dates %}
+                                    <a href="{% url 'website:news-archive' date.month.year date.month.month %}"
+                                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center
+                                              {% if current_archive and current_archive.year == date.month.year and current_archive.month == date.month.month %}active{% endif %}">
+                                        {{ date.month|date:"F Y" }}
+                                        <span class="badge {% if current_archive and current_archive.year == date.month.year and current_archive.month == date.month.month %}bg-light text-dark{% else %}bg-primary{% endif %} rounded-pill">{{ date.count }}</span>
+                                    </a>
+                                {% empty %}
+                                    <div class="list-group-item text-muted">No archives available</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Media -->
+                    <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                        <div class="card-body p-4">
+                            <h3 class="card-title h5">Follow Us</h3>
+                            <p class="card-text mb-3">Stay connected on social media for daily updates and highlights.</p>
+                            <div class="d-grid gap-2">
+                                {% if site_settings.facebook_url %}
+                                    <a href="{{ site_settings.facebook_url }}" target="_blank" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
+                                        <i class="fab fa-facebook-f"></i>
+                                        <span>Facebook</span>
+                                    </a>
+                                {% endif %}
+                                {% if site_settings.twitter_url %}
+                                    <a href="{{ site_settings.twitter_url }}" target="_blank" class="btn btn-outline-info d-flex align-items-center justify-content-center gap-2">
+                                        <i class="fab fa-twitter"></i>
+                                        <span>Twitter</span>
+                                    </a>
+                                {% endif %}
+                                {% if site_settings.instagram_url %}
+                                    <a href="{{ site_settings.instagram_url }}" target="_blank" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2">
+                                        <i class="fab fa-instagram"></i>
+                                        <span>Instagram</span>
+                                    </a>
+                                {% endif %}
+                                {% if site_settings.linkedin_url %}
+                                    <a href="{{ site_settings.linkedin_url }}" target="_blank" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
+                                        <i class="fab fa-linkedin-in"></i>
+                                        <span>LinkedIn</span>
+                                    </a>
+                                {% endif %}
+                                {% if not site_settings.facebook_url and not site_settings.twitter_url and not site_settings.instagram_url and not site_settings.linkedin_url %}
+                                    <p class="text-muted">No social media links available</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-light mb-0" style="clear: both;"> <!-- Added mb-0 to ensure no extra margin at bottom and clear any floats -->
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <h2>Want to Share Your Story?</h2>
+                <p class="lead mb-4">We love hearing from our community! Share your Deigratia Montessori experience or submit news for our website.</p>
+                <a href="{% url 'website:contact' %}" class="btn btn-primary btn-lg">Contact Us</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Mobile-first News Page Styles */
+    :root {
+        --primary-color: var(--bs-primary, #004d4d);
+        --primary-rgb: var(--bs-primary-rgb, 0, 77, 77);
+        --light-color: #f8f9fa;
+        --dark-color: #212529;
+        --border-radius: 12px;
+        --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --card-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Main container styles */
+    .container {
+        overflow: visible;
+        padding-bottom: 1.5rem;
+    }
+
+    /* Hero section styles */
+    .news-hero {
+        position: relative;
+        height: 250px;
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+    }
+
+    .news-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .news-hero-content {
+        position: relative;
+        z-index: 1;
+        padding: 0 1rem;
+        width: 100%;
+        max-width: 800px;
+    }
+
+    .news-hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .news-hero-subtitle {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .filter-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        margin: 0.25rem;
+        font-weight: 500;
+    }
+
+    /* News article styles */
+    .news-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .news-card {
+        background-color: white;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .news-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--card-shadow-hover);
+    }
+
+    .news-card-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .news-card-content {
+        padding: 1.25rem;
+    }
+
+    .news-card-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        background-color: #ffc107;
+        color: #000;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .news-card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--dark-color);
+        line-height: 1.3;
+    }
+
+    .news-card-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+    .news-card-meta-item {
+        display: flex;
+        align-items: center;
+    }
+
+    .news-card-meta-item i {
+        margin-right: 0.35rem;
+        color: var(--primary-color);
+    }
+
+    .news-card-description {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 1.25rem;
+        line-height: 1.5;
+    }
+
+    .news-card-button {
+        width: 100%;
+        padding: 0.6rem 1rem;
+        border-radius: 50px;
+    }
+
+    /* Sidebar styles */
+    .news-sidebar {
+        margin-top: 2rem;
+    }
+
+    .sidebar-card {
+        background-color: white;
+        margin-bottom: 1.25rem;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    .sidebar-card-header {
+        padding: 1rem 1.25rem;
+        background-color: var(--light-color);
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .sidebar-card-body {
+        padding: 1.25rem;
+    }
+
+    /* Search form */
+    .search-form .input-group {
+        border-radius: 50px;
+        overflow: hidden;
+    }
+
+    .search-form .form-control {
+        border-top-left-radius: 50px;
+        border-bottom-left-radius: 50px;
+        padding-left: 1.25rem;
+    }
+
+    .search-form .btn {
+        border-top-right-radius: 50px;
+        border-bottom-right-radius: 50px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Newsletter form */
+    .newsletter-form .form-control {
+        border-radius: 50px;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .newsletter-form .btn {
+        border-radius: 50px;
+        padding: 0.6rem 1.5rem;
+    }
+
+    /* Category list */
+    .category-list {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+
+    .category-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-left: 3px solid transparent;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: #495057;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .category-item:last-child {
+        border-bottom: none;
+    }
+
+    .category-item:hover {
+        background-color: rgba(var(--primary-rgb), 0.05);
+        border-left-color: var(--primary-color);
+    }
+
+    .category-item.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-left-color: var(--primary-color);
+    }
+
+    .category-item.active .category-count {
+        background-color: rgba(255,255,255,0.3);
+        color: white;
+    }
+
+    .category-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 12px;
+        background-color: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* Social media buttons */
+    .social-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .social-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .social-button:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Pagination */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 1.5rem;
+    }
+
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background-color: #f5f5f5;
+        border-radius: 50px;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+    .pagination-btn.prev i {
+        margin-right: 8px;
+    }
+
+    .pagination-btn.next i {
+        margin-left: 8px;
+    }
+
+    .pagination-btn:hover {
+        background-color: #e0e0e0;
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination-numbers {
+        display: flex;
+        gap: 8px;
+    }
+
+    .pagination-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #f5f5f5;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .pagination-number:hover {
+        background-color: #e0e0e0;
+    }
+
+    .pagination-number.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #adb5bd;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h4 {
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+    }
+
+    /* Call to action section */
+    .cta-section {
+        background-color: var(--light-color);
+        padding: 3rem 0;
+        text-align: center;
+        border-radius: var(--border-radius);
+    }
+
+    .cta-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--dark-color);
+    }
+
+    .cta-subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+        color: #6c757d;
+    }
+
+    .cta-button {
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    /* Responsive Adjustments - Tablet and up */
+    @media (min-width: 576px) {
+        .news-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .social-buttons {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    /* Desktop */
+    @media (min-width: 992px) {
+        .news-hero {
+            height: 350px;
+        }
+
+        .news-hero-title {
+            font-size: 2.5rem;
+        }
+
+        .news-hero-subtitle {
+            font-size: 1.2rem;
+        }
+
+        .news-sidebar {
+            position: sticky;
+            top: 100px;
+            margin-top: 0;
+        }
+
+        .social-buttons {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}

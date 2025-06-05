@@ -1,0 +1,1 @@
+"""Ricas School Manager - Integrated School Website and Management System"""

@@ -1,0 +1,1300 @@
+{% extends 'base.html' %} {% block title %}School Settings - School Management
+System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">School Settings</h1>
+    <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+  </div>
+
+  <div class="row">
+    <!-- Settings Form -->
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Configuration</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data" id="settingsForm" action="{% url 'users:school_settings' %}">
+            {% csrf_token %}
+
+            <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link active"
+                  id="school-info-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#school-info-tab-pane"
+                  type="button"
+                  role="tab"
+                  aria-controls="school-info-tab-pane"
+                  aria-selected="true"
+                >
+                  <i class="fas fa-school me-2"></i>School Information
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="email-settings-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#email-settings-tab-pane"
+                  type="button"
+                  role="tab"
+                  aria-controls="email-settings-tab-pane"
+                  aria-selected="false"
+                >
+                  <i class="fas fa-envelope me-2"></i>Email Settings
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="appearance-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#appearance-tab-pane"
+                  type="button"
+                  role="tab"
+                  aria-controls="appearance-tab-pane"
+                  aria-selected="false"
+                >
+                  <i class="fas fa-palette me-2"></i>Appearance
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="settingsTabContent">
+              <!-- School Information Tab -->
+              <div
+                class="tab-pane fade show active"
+                id="school-info-tab-pane"
+                role="tabpanel"
+                aria-labelledby="school-info-tab"
+                tabindex="0"
+              >
+                <div class="mb-4">
+                  <h5 class="border-bottom pb-2">Basic Information</h5>
+
+                  <div class="mb-3">
+                    <label for="school_name" class="form-label"
+                      >School Name <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="school_name"
+                      name="school_name"
+                      value="{{ settings.school_name }}"
+                      required
+                    />
+                    <div class="form-text">
+                      The official name of your institution
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea
+                      class="form-control"
+                      id="address"
+                      name="address"
+                      rows="3"
+                    >
+{{ settings.address }}</textarea
+                    >
+                    <div class="form-text">
+                      The physical address of your school
+                    </div>
+                  </div>
+
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="phone" class="form-label">Phone Number</label>
+                      <input
+                        type="tel"
+                        class="form-control"
+                        id="phone"
+                        name="phone"
+                        value="{{ settings.phone }}"
+                      />
+                      <div class="form-text">Main contact number</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="email" class="form-label"
+                        >Contact Email</label
+                      >
+                      <input
+                        type="email"
+                        class="form-control"
+                        id="email"
+                        name="email"
+                        value="{{ settings.email }}"
+                      />
+                      <div class="form-text">
+                        Primary email for public contact
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="website" class="form-label">Website</label>
+                    <input
+                      type="url"
+                      class="form-control"
+                      id="website"
+                      name="website"
+                      value="{{ settings.website }}"
+                    />
+                    <div class="form-text">URL of your school's website</div>
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <h5 class="border-bottom pb-2">Academic Information</h5>
+
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="academic_year" class="form-label"
+                        >Current Academic Year</label
+                      >
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="academic_year"
+                        name="academic_year"
+                        value="{{ settings.academic_year|default:'' }}"
+                      />
+                      <div class="form-text">E.g., 2024-2025</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="principal_name" class="form-label"
+                        >Principal/Head Name</label
+                      >
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="principal_name"
+                        name="principal_name"
+                        value="{{ settings.principal_name|default:'' }}"
+                      />
+                      <div class="form-text">
+                        Name of the school principal or head
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email Settings Tab -->
+              <div
+                class="tab-pane fade"
+                id="email-settings-tab-pane"
+                role="tabpanel"
+                aria-labelledby="email-settings-tab"
+                tabindex="0"
+              >
+                <div class="mb-4">
+                  <h5 class="border-bottom pb-2">SMTP Configuration</h5>
+                  <p class="text-muted mb-3">
+                    Configure SMTP settings to enable email notifications for
+                    assignments, events, report cards, and other communications.
+                  </p>
+
+                  <div class="mb-3">
+                    <label for="smtp_host" class="form-label">SMTP Host</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="smtp_host"
+                      name="smtp_host"
+                      value="{{ settings.smtp_host|default:'' }}"
+                    />
+                    <div class="form-text">
+                      E.g., smtp.gmail.com, smtp.office365.com
+                    </div>
+                  </div>
+
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="smtp_port" class="form-label"
+                        >SMTP Port</label
+                      >
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="smtp_port"
+                        name="smtp_port"
+                        value="{{ settings.smtp_port|default:'' }}"
+                        placeholder="587"
+                      />
+                      <div class="form-text">
+                        Common ports: 25, 465, 587, 2525
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="smtp_use_tls" class="form-label"
+                        >Security</label
+                      >
+                      <div class="form-check">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="smtp_use_tls"
+                          name="smtp_use_tls"
+                          {% if settings.smtp_use_tls %}checked{% endif %}
+                        />
+                        <input type="hidden" name="smtp_use_tls" value="off">
+                        <label class="form-check-label" for="smtp_use_tls">
+                          Use TLS encryption
+                        </label>
+                      </div>
+                      <div class="form-text">
+                        Recommended for secure email delivery
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="smtp_username" class="form-label"
+                      >SMTP Username</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="smtp_username"
+                      name="smtp_username"
+                      value="{{ settings.smtp_username|default:'' }}"
+                    />
+                    <div class="form-text">Usually your email address</div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="smtp_password" class="form-label"
+                      >SMTP Password</label
+                    >
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="smtp_password"
+                      name="smtp_password"
+                      value="{{ settings.smtp_password|default:'' }}"
+                    />
+                    <div class="form-text">
+                      For Gmail, you may need to use an app password
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info">
+                    <div class="d-flex">
+                      <div class="me-3">
+                        <i class="fas fa-info-circle fa-2x"></i>
+                      </div>
+                      <div>
+                        <h6>SMTP Security Note</h6>
+                        <p class="mb-0">
+                          Email passwords are stored in the database. For
+                          increased security, consider using app-specific
+                          passwords or environment variables in production
+                          environments.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-4">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary"
+                      id="testEmailBtn"
+                    >
+                      <i class="fas fa-paper-plane me-2"></i>Test Email
+                      Configuration
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <h5 class="border-bottom pb-2">Communication Settings</h5>
+                  
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="enable_messaging"
+                      name="enable_messaging"
+                      {% if settings.enable_messaging %}checked{% endif %}
+                    />
+                    <input type="hidden" name="enable_messaging" value="off">
+                    <label class="form-check-label" for="enable_messaging">
+                      <strong>Enable messaging system</strong>
+                      <span class="text-muted d-block small">If unchecked, messaging will be disabled for all users</span>
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="enable_student_to_student_chat"
+                      name="enable_student_to_student_chat"
+                      {% if settings.enable_student_to_student_chat %}checked{% endif %}
+                    />
+                    <input type="hidden" name="enable_student_to_student_chat" value="off">
+                    <label class="form-check-label" for="enable_student_to_student_chat">
+                      <strong>Allow students to message other students</strong>
+                      <span class="text-muted d-block small">If unchecked, students can only message teachers and parents</span>
+                    </label>
+                  </div>
+                  
+                  <div class="alert alert-info small mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span>Parents can individually restrict chat for their children in the parent dashboard, regardless of these settings.</span>
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <h5 class="border-bottom pb-2">Notification Settings</h5>
+
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="notify_assignments"
+                      name="notify_assignments"
+                      {% if settings.notify_assignments %}checked{% endif %}
+                    />
+                    <label class="form-check-label" for="notify_assignments">
+                      Send notifications for new assignments
+                    </label>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="notify_grades"
+                      name="notify_grades"
+                      {% if settings.notify_grades %}checked{% endif %}
+                    />
+    <label class="form-check-label" for="notify_grades">
+      Send notifications for new grades
+    </label>
+  </div>
+
+  <div class="form-check mb-2">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      id="notify_attendance"
+      name="notify_attendance"
+      {% if settings.notify_attendance %}checked{% endif %}
+                    />
+    <label class="form-check-label" for="notify_attendance">
+      Send notifications for attendance updates
+    </label>
+  </div>
+
+  <div class="form-check mb-2">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      id="notify_events"
+      name="notify_events"
+      {% if settings.notify_events %}checked{% endif %}
+                    />
+                    <label class="form-check-label" for="notify_events">
+                      Send notifications for new events
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Appearance Tab -->
+              <div
+                class="tab-pane fade"
+                id="appearance-tab-pane"
+                role="tabpanel"
+                aria-labelledby="appearance-tab"
+                tabindex="0"
+              >
+                <div class="mb-4">
+                  <h5 class="border-bottom pb-2">School Logo</h5>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="logo" class="form-label">Upload Logo</label>
+                        <input
+                          class="form-control"
+                          type="file"
+                          id="logo"
+                          name="logo"
+                          accept="image/*"
+                        />
+                        <div class="form-text">
+                          Recommended size: 200x200 pixels. Max size: 2MB.
+                        </div>
+                      </div>
+
+                      <div class="form-check mb-3">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="remove_logo"
+                          name="remove_logo"
+                        />
+                        <label class="form-check-label" for="remove_logo">
+                          Remove current logo
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-6 text-center">
+                      <div class="mb-2">Current Logo</div>
+                      <div class="p-3 bg-light rounded">
+                        {% if settings.logo %}
+                        <img
+                          src="{{ settings.logo.url }}"
+                          alt="{{ settings.school_name }} Logo"
+                          class="img-fluid"
+                          style="max-height: 150px"
+                        />
+                        {% else %}
+                        <div class="text-muted py-5">
+                          <i class="fas fa-image fa-3x mb-3"></i>
+                          <div>No logo uploaded</div>
+                        </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <h5 class="border-bottom pb-2">System Theme</h5>
+
+                  <div class="mb-3">
+                    <label class="form-label">Primary Color</label>
+                    <div class="row g-3">
+                      <div class="col-auto">
+                        <input
+                          type="color"
+                          class="form-control form-control-color"
+                          id="primary_color"
+                          name="primary_color"
+                          value="{{ settings.primary_color|default:'#4e73df' }}"
+                          title="Choose primary color"
+                        />
+                      </div>
+                      <div class="col-auto">
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="primary_color_hex"
+                          value="{{ settings.primary_color|default:'#4e73df' }}"
+                          readonly
+                        />
+                      </div>
+                      <div class="col-auto">
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          onclick="document.getElementById('primary_color').value='#4e73df'; document.getElementById('primary_color_hex').value='#4e73df';"
+                        >
+                          Reset to Default
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="dark_mode"
+                      name="dark_mode"
+                      {%
+                      if
+                      settings.dark_mode
+                      %}checked{%
+                      endif
+                      %}
+                    />
+                    <label class="form-check-label" for="dark_mode">
+                      Enable dark mode (where supported)
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-top pt-3 mt-4">
+              <div class="row g-2">
+                <div class="col-6">
+                  <button type="reset" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-undo me-2"></i>Reset
+                  </button>
+                </div>
+                <div class="col-6">
+                  <button type="submit" class="btn btn-primary w-100" id="saveSettingsBtn">
+                    <i class="fas fa-save me-2"></i>Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Sidebar -->
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Settings Information
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <h6>
+              <i class="fas fa-info-circle text-info me-2"></i>About School
+              Settings
+            </h6>
+            <p class="small">
+              These settings control how your school management system appears
+              to users and how it communicates with them. Changes will take
+              effect immediately.
+            </p>
+          </div>
+
+          <div class="mb-4">
+            <h6><i class="fas fa-lightbulb text-warning me-2"></i>Tips</h6>
+            <ul class="small">
+              <li>
+                Your school name appears in emails, reports, and the system
+                header
+              </li>
+              <li>Configure SMTP to enable email notifications to users</li>
+              <li>
+                The logo is displayed on ID cards, admission letters, and report
+                cards
+              </li>
+              <li>
+                Testing your email configuration is recommended after making
+                changes
+              </li>
+            </ul>
+          </div>
+
+          <div class="alert alert-success small">
+            <h6 class="alert-heading">
+              <i class="fas fa-question-circle me-2"></i>Need Help?
+            </h6>
+            <p class="mb-0">
+              For help configuring your SMTP settings or other school
+              configurations, consult the
+              <a href="#" class="alert-link">documentation</a> or contact
+              support.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Backup & Restore</h6>
+        </div>
+        <div class="card-body">
+          <p class="small">
+            Create backups of your settings or restore from previous backups.
+          </p>
+
+          <div class="d-grid gap-2">
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              id="backupBtn"
+            >
+              <i class="fas fa-download me-2"></i>Backup Settings
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="restoreBtn"
+              data-bs-toggle="modal"
+              data-bs-target="#restoreModal"
+            >
+              <i class="fas fa-upload me-2"></i>Restore Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Settings Modal -->
+<div
+  class="modal fade"
+  id="restoreModal"
+  tabindex="-1"
+  aria-labelledby="restoreModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="restoreModalLabel">Restore Settings</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form
+          action="{% url 'users:restore_settings' %}"
+          method="post"
+          enctype="multipart/form-data"
+          id="restoreForm"
+        >
+          {% csrf_token %}
+
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Restoring settings will overwrite your current configuration. Make
+            sure to back up your current settings first.
+          </div>
+
+          <div class="mb-3">
+            <label for="settingsFile" class="form-label"
+              >Select Backup File</label
+            >
+            <input
+              class="form-control"
+              type="file"
+              id="settingsFile"
+              name="settings_file"
+              accept=".json"
+            />
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="submit" form="restoreForm" class="btn btn-primary">
+            Restore
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Test Email Modal -->
+<div
+  class="modal fade"
+  id="testEmailModal"
+  tabindex="-1"
+  aria-labelledby="testEmailModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="testEmailModalLabel">
+          Test Email Configuration
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form
+          action="{% url 'users:test_email' %}"
+          method="post"
+          id="testEmailForm"
+        >
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label for="testEmailAddress" class="form-label"
+              >Send Test Email To</label
+            >
+            <input
+              type="email"
+              class="form-control"
+              id="testEmailAddress"
+              name="test_email"
+              value="{{ request.user.email }}"
+              required
+            />
+            <div class="form-text">
+              A test email will be sent to this address using your SMTP
+              configuration.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="testEmailSubject" class="form-label">Subject</label>
+            <input
+              type="text"
+              class="form-control"
+              id="testEmailSubject"
+              name="test_subject"
+              value="Test Email from {{ settings.school_name }}"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="testEmailContent" class="form-label">Message</label>
+            <textarea
+              class="form-control"
+              id="testEmailContent"
+              name="test_content"
+              rows="3"
+              required
+            >
+This is a test email from your School Management System. If you received this, your email configuration is working correctly.</textarea
+            >
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="submit" form="testEmailForm" class="btn btn-primary">
+          Send Test Email
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  $(document).ready(function () {
+    console.log("Settings page initialized");
+
+    // Add ID to the form if not already present
+    if (!$("#settingsForm").attr("id")) {
+      $("form").attr("id", "settingsForm");
+      console.log("Added ID to settings form");
+    }
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Update color hex value when color input changes
+    const primaryColorInput = document.getElementById("primary_color");
+    const primaryColorHex = document.getElementById("primary_color_hex");
+
+    if (primaryColorInput && primaryColorHex) {
+      primaryColorInput.addEventListener("input", function () {
+        primaryColorHex.value = this.value;
+      });
+    }
+
+    // Handle logo removal checkbox
+    const removeLogoCheckbox = document.getElementById("remove_logo");
+    const logoInput = document.getElementById("logo");
+
+    if (removeLogoCheckbox && logoInput) {
+      removeLogoCheckbox.addEventListener("change", function () {
+        if (this.checked) {
+          logoInput.disabled = true;
+        } else {
+          logoInput.disabled = false;
+        }
+      });
+
+      logoInput.addEventListener("change", function () {
+        if (this.files.length > 0) {
+          removeLogoCheckbox.checked = false;
+        }
+      });
+    }
+
+    // Handle test email button with more robust error handling
+    const testEmailBtn = document.getElementById("testEmailBtn");
+    if (testEmailBtn) {
+      testEmailBtn.addEventListener("click", function () {
+        try {
+          const testEmailModal = new bootstrap.Modal(
+            document.getElementById("testEmailModal")
+          );
+          testEmailModal.show();
+        } catch (e) {
+          console.error("Error showing test email modal:", e);
+          alert(
+            "There was an error opening the test email dialog. Please try again."
+          );
+        }
+      });
+    }
+
+    // Handle test email form submission with AJAX
+    const testEmailForm = document.getElementById("testEmailForm");
+    if (testEmailForm) {
+      testEmailForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        // Create loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalBtnText = submitBtn.html();
+        submitBtn.html(
+          '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...'
+        );
+        submitBtn.prop("disabled", true);
+
+        // Clear any existing alerts
+        $(this).find(".alert").remove();
+
+        // Get form data
+        const formData = new FormData(this);
+
+        // Add AJAX header
+        const headers = {
+          "X-Requested-With": "XMLHttpRequest",
+        };
+
+        // Send AJAX request
+        fetch(this.action, {
+          method: "POST",
+          body: formData,
+          headers: headers,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Add result message to modal
+            const alertClass = data.success ? "alert-success" : "alert-danger";
+            const alertDiv = $("<div>")
+              .addClass(`alert ${alertClass} mt-3`)
+              .html(
+                `<i class="fas fa-${
+                  data.success ? "check-circle" : "exclamation-circle"
+                } me-2"></i> ${data.message}`
+              );
+
+            $(this).prepend(alertDiv);
+
+            // Reset button state
+            submitBtn.html(originalBtnText);
+            submitBtn.prop("disabled", false);
+
+            // If successful, close the modal after 3 seconds
+            if (data.success) {
+              setTimeout(() => {
+                bootstrap.Modal.getInstance(
+                  document.getElementById("testEmailModal")
+                ).hide();
+              }, 3000);
+            }
+          })
+          .catch((error) => {
+            console.error("Error sending test email:", error);
+
+            // Show error message
+            const errorDiv = $("<div>")
+              .addClass("alert alert-danger mt-3")
+              .html(
+                `<i class="fas fa-exclamation-circle me-2"></i> An error occurred while sending the test email. Please try again.`
+              );
+
+            $(this).prepend(errorDiv);
+
+            // Reset button state
+            submitBtn.html(originalBtnText);
+            submitBtn.prop("disabled", false);
+          });
+      });
+    }
+
+    // Handle backup button with AJAX for direct download
+    const backupBtn = document.getElementById("backupBtn");
+    if (backupBtn) {
+      backupBtn.addEventListener("click", function () {
+        try {
+          // Show loading state
+          const originalBtnText = $(this).html();
+          $(this).html(
+            '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating backup...'
+          );
+          $(this).prop("disabled", true);
+
+          // Create a hidden status message area if it doesn't exist
+          let statusArea = $("#backupStatusArea");
+          if (statusArea.length === 0) {
+            statusArea = $("<div id='backupStatusArea' class='mt-2'></div>");
+            $(this).parent().append(statusArea);
+          }
+
+          // Clear any existing messages
+          statusArea.empty();
+
+          // Use fetch with AJAX header
+          fetch("{% url 'users:backup_settings' %}", {
+            method: "GET",
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(
+                  `Server returned ${response.status} ${response.statusText}`
+                );
+              }
+
+              // Get the filename from the Content-Disposition header if available
+              let filename = "school_settings_backup.json";
+              const disposition = response.headers.get("Content-Disposition");
+              if (disposition && disposition.includes("filename=")) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) {
+                  filename = matches[1].replace(/['"]/g, "");
+                }
+              }
+
+              // Get the blob from the response
+              return response.blob().then((blob) => {
+                // Create a URL for the blob
+                const url = window.URL.createObjectURL(blob);
+
+                // Create a temporary link element
+                const a = document.createElement("a");
+                a.style.display = "none";
+                a.href = url;
+                a.download = filename;
+
+                // Add to document, click it, and remove it
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Show success message
+                statusArea.html(
+                  "<div class='alert alert-success'><i class='fas fa-check-circle me-2'></i> Backup created successfully</div>"
+                );
+
+                // Reset button
+                $(backupBtn).html(originalBtnText);
+                $(backupBtn).prop("disabled", false);
+
+                // Hide status message after 3 seconds
+                setTimeout(() => {
+                  statusArea.empty();
+                }, 3000);
+              });
+            })
+            .catch((error) => {
+              console.error("Error creating backup:", error);
+
+              // Show error message
+              statusArea.html(
+                `<div class='alert alert-danger'><i class='fas fa-exclamation-circle me-2'></i> Error creating backup: ${error.message}</div>`
+              );
+
+              // Reset button
+              $(backupBtn).html(originalBtnText);
+              $(backupBtn).prop("disabled", false);
+            });
+        } catch (e) {
+          console.error("Error starting backup process:", e);
+          alert(
+            "There was an error starting the backup process. Please try again."
+          );
+          $(backupBtn).html(originalBtnText);
+          $(backupBtn).prop("disabled", false);
+        }
+      });
+    }
+
+    // Enhanced form validation with better UX
+    const settingsForm = document.getElementById("settingsForm");
+
+    if (settingsForm) {
+      console.log("Setting up form validation for #settingsForm");
+
+      // Show feedback when any form field changes
+      $(settingsForm)
+        .find("input, select, textarea")
+        .on("change", function () {
+          $(this).removeClass("is-invalid");
+
+          // If there's a feedback element, update it
+          const feedbackEl = $(this).next(".invalid-feedback");
+          if (feedbackEl.length) {
+            feedbackEl.hide();
+          }
+        });
+
+    // Fix checkbox handling
+    $(settingsForm).on("submit", function (event) {
+        // Fix checkbox handling by removing duplicate hidden fields before submit
+        $('input[type="checkbox"]').each(function() {
+          const name = $(this).attr('name');
+          if (name) {
+            // Find hidden fields with the same name and remove them
+            $(`input[type="hidden"][name="${name}"]`).remove();
+          }
+        });
+        console.log("Form submission started");
+        let isValid = true;
+        let errorMessages = [];
+
+        // Get active tab for error display
+        const activeTabId = $(".tab-pane.active").attr("id");
+        console.log("Active tab:", activeTabId);
+
+        // Store active tab in hidden field
+        if (!$(this).find("input[name='active_tab']").length) {
+          $(this).append(
+            `<input type="hidden" name="active_tab" value="${activeTabId}">`
+          );
+        } else {
+          $(this).find("input[name='active_tab']").val(activeTabId);
+        }
+
+        // Basic validation - school name is required
+        const schoolName = $("#school_name");
+        if (!schoolName.val().trim()) {
+          schoolName.addClass("is-invalid");
+
+          // Add feedback element if not exists
+          if (!schoolName.next(".invalid-feedback").length) {
+            schoolName.after(
+              '<div class="invalid-feedback">School name is required</div>'
+            );
+          } else {
+            schoolName.next(".invalid-feedback").show();
+          }
+
+          isValid = false;
+          errorMessages.push("School name is required");
+        }
+
+        // SMTP validation - if any field is filled, all required fields must be present
+        const smtpFields = {
+          smtp_host: $("#smtp_host"),
+          smtp_port: $("#smtp_port"),
+          smtp_username: $("#smtp_username"),
+        };
+
+        // Check if any SMTP field is filled
+        let anySmtpFieldFilled = false;
+        $.each(smtpFields, function (id, field) {
+          if (field.val().trim()) {
+            anySmtpFieldFilled = true;
+            return false; // break the loop
+          }
+        });
+
+        // If any field is filled, all are required
+        if (anySmtpFieldFilled) {
+          $.each(smtpFields, function (id, field) {
+            if (!field.val().trim()) {
+              field.addClass("is-invalid");
+
+              // Add feedback element if not exists
+              if (!field.next(".invalid-feedback").length) {
+                field.after(
+                  `<div class="invalid-feedback">${id
+                    .replace("_", " ")
+                    .toUpperCase()} is required when configuring email</div>`
+                );
+              } else {
+                field.next(".invalid-feedback").show();
+              }
+
+              isValid = false;
+              errorMessages.push(
+                `${id
+                  .replace("_", " ")
+                  .toUpperCase()} is required when configuring email`
+              );
+            }
+          });
+        }
+
+        if (!isValid) {
+          event.preventDefault();
+          console.log("Form validation failed:", errorMessages);
+
+          // Show error message in a more user-friendly way
+          const errorDiv = $("<div>").addClass(
+            "alert alert-danger alert-dismissible fade show mt-3"
+          ).html(`
+              <strong>Please fix the following errors:</strong>
+              <ul class="mb-0 mt-2">
+                ${errorMessages.map((msg) => `<li>${msg}</li>`).join("")}
+              </ul>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `);
+
+          // Remove any existing error messages
+          $(".alert-danger").remove();
+
+          // Find the active tab pane and insert the error at the top
+          const activePane = $("#" + activeTabId);
+          if (activePane.length) {
+            activePane.prepend(errorDiv);
+          } else {
+            $(this).prepend(errorDiv);
+          }
+
+          // Switch to the tab with the error if needed
+          if (
+            activeTabId === "school-info-tab-pane" &&
+            errorMessages[0].includes("School name")
+          ) {
+            $("#school-info-tab").click();
+          } else if (
+            activeTabId === "email-settings-tab-pane" &&
+            errorMessages[0].includes("SMTP")
+          ) {
+            $("#email-settings-tab").click();
+          }
+
+          // Scroll to the error message
+          $("html, body").animate(
+            {
+              scrollTop: $(".alert-danger").offset().top - 100,
+            },
+            200
+          );
+
+          return false;
+        } else {
+          console.log("Form validation passed, submitting form");
+
+          // Show success message before submission
+          const successDiv = $("<div>")
+            .addClass("alert alert-info mb-3")
+            .html(
+              "<strong>Saving settings...</strong> Please wait while your changes are processed."
+            );
+
+          // Remove any existing messages first
+          $(".alert").remove();
+          $(this).prepend(successDiv);
+
+          // Show loading state
+          const submitBtn = $(this).find('button[type="submit"]');
+          submitBtn.html(
+            '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...'
+          );
+          submitBtn.prop("disabled", true);
+
+          // Add a timestamp to prevent caching issues
+          $(this).append(
+            `<input type="hidden" name="timestamp" value="${Date.now()}">`
+          );
+
+          // Add success feedback
+          const saveSuccessDiv = $("<div>")
+            .addClass("alert alert-info mb-3")
+            .html('<i class="fas fa-spinner fa-spin me-2"></i><strong>Saving settings...</strong> Please wait while your changes are processed.');
+          
+          // Remove any existing alerts except errors
+          $(".alert").not(".alert-danger").remove();
+          $(this).prepend(successDiv);
+          
+          // Submit the form normally - not using AJAX to ensure proper Django messaging
+          return true;
+        }
+      });
+    } else {
+      console.error("Settings form not found!");
+    }
+
+    // Handle tab state persistence
+    const hash = window.location.hash;
+    if (hash) {
+      try {
+        const tab = document.querySelector(`[data-bs-target="${hash}"]`);
+        if (tab) {
+          const bsTab = new bootstrap.Tab(tab);
+          bsTab.show();
+        }
+      } catch (e) {
+        console.error("Error showing tab:", e);
+      }
+    }
+
+    // Add confirm dialog to the reset button
+    $("button[type=reset]").on("click", function (e) {
+      if (
+        !confirm(
+          "Are you sure you want to reset all changes? This will revert to the last saved values."
+        )
+      ) {
+        e.preventDefault();
+        return false;
+      }
+      return true;
+    });
+  });
+</script>
+
+<script>
+  // Display Django messages on page load if they exist
+  $(document).ready(function() {
+    // Check for Django success messages
+    {% if messages %}
+      {% for message in messages %}
+        {% if message.tags == 'success' %}
+          // Create a success alert for Django messages
+          const messageAlert = $('<div class="alert alert-success alert-dismissible fade show mb-3">')
+            .html('<i class="fas fa-check-circle me-2"></i>{{ message }}')
+            .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+          
+          // Insert at the top of the form
+          $("#settingsForm").prepend(messageAlert);
+          
+          // Auto-dismiss after 5 seconds
+          setTimeout(function() {
+            messageAlert.alert('close');
+          }, 5000);
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    
+    // Let the checkboxes reflect their actual database values
+    
+    // Set up a submit handler to capture form submission
+    $("#settingsForm").submit(function() {
+      // Show loading indicator
+      const saveBtn = $("#saveSettingsBtn");
+      saveBtn.prop("disabled", true);
+      saveBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...');
+      
+      // Add a form-level message
+      const formMsg = $("<div>")
+        .addClass("alert alert-info")
+        .html('<i class="fas fa-spinner fa-spin me-2"></i>Saving settings...');
+      
+      $(this).find(".alert").not(".alert-danger").remove();
+      $(this).prepend(formMsg);
+      
+      // Return true to allow the form to submit normally
+      return true;
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}Outstanding Fees Report - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Outstanding Fees Report</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:fee_reports' %}">Reports</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Outstanding Fees</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label for="term" class="form-label">Term</label>
+          <select name="term" id="term" class="form-select">
+            <option value="">All Terms</option>
+            {% for term_option in terms %}
+              <option value="{{ term_option.id }}" {% if selected_term == term_option.id|stringformat:"i" %}selected{% endif %}>
+                {{ term_option.name }} ({{ term_option.academic_year }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="classroom" class="form-label">Class</label>
+          <select name="classroom" id="classroom" class="form-select">
+            <option value="">All Classes</option>
+            {% for classroom in classrooms %}
+              <option value="{{ classroom.id }}" {% if selected_classroom == classroom.id|stringformat:"i" %}selected{% endif %}>
+                {{ classroom.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="overdue" class="form-label">Status</label>
+          <select name="overdue" id="overdue" class="form-select">
+            <option value="">All Outstanding</option>
+            <option value="overdue" {% if overdue_only %}selected{% endif %}>Overdue Only</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-2"></i>Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                Total Outstanding
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_outstanding|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Overdue Amount
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ overdue_amount|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar-times fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                Students with Balance
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ student_count|default:"0" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-users fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Average Outstanding
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ average_outstanding|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calculator fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outstanding Fees Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Outstanding Fees</h6>
+      <div class="dropdown no-arrow">
+        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+          <div class="dropdown-header">Actions:</div>
+          <a class="dropdown-item" href="{% url 'fees:student_fee_list' %}">View All Student Fees</a>
+          <a class="dropdown-item" href="{% url 'fees:payment_list' %}">View Payments</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="#" id="exportReportBtn">Export Report</a>
+          <a class="dropdown-item" href="#" id="printReportBtn">Print Report</a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if outstanding_fees %}
+        <div class="table-responsive">
+          <table class="table table-bordered" id="outstandingFeesTable" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Fee Type</th>
+                <th>Term</th>
+                <th>Amount</th>
+                <th>Paid</th>
+                <th>Balance</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fee in outstanding_fees %}
+                <tr>
+                  <td>
+                    <div>{{ fee.student.user.get_full_name }}</div>
+                    <small class="text-muted">ID: {{ fee.student.student_id }}</small>
+                  </td>
+                  <td>{{ fee.class_fee.classroom.name }}</td>
+                  <td>{{ fee.class_fee.fee_category.name }}</td>
+                  <td>{{ fee.class_fee.term.name }} ({{ fee.class_fee.term.academic_year }})</td>
+                  <td>GHS {{ fee.amount|floatformat:2 }}</td>
+                  <td>GHS {{ fee.amount_paid|floatformat:2 }}</td>
+                  <td>GHS {{ fee.balance|floatformat:2 }}</td>
+                  <td>
+                    {{ fee.due_date|date:"M d, Y" }}
+                    {% if fee.due_date < today %}
+                      <span class="badge bg-danger">Overdue</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if fee.status == 'PARTIALLY_PAID' %}
+                      <span class="badge bg-warning text-dark">Partially Paid</span>
+                    {% elif fee.status == 'OVERDUE' %}
+                      <span class="badge bg-danger">Overdue</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group">
+                      <a href="{% url 'fees:create_payment' %}?student_fee={{ fee.id }}" class="btn btn-sm btn-success" title="Record Payment">
+                        <i class="fas fa-cash-register"></i>
+                      </a>
+                      <a href="{% url 'fees:student_fee_invoice' fee.student.id fee.id %}" class="btn btn-sm btn-primary" title="View Invoice">
+                        <i class="fas fa-file-invoice"></i>
+                      </a>
+                      <a href="{% url 'fees:student_payment_history' fee.student.id %}?fee={{ fee.id }}" class="btn btn-sm btn-secondary" title="Payment History">
+                        <i class="fas fa-history"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if outstanding_fees.has_other_pages %}
+          <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+              {% if outstanding_fees.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page=1{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if overdue_only %}&overdue=overdue{% endif %}" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ outstanding_fees.previous_page_number }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if overdue_only %}&overdue=overdue{% endif %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+
+              {% for i in paginator.page_range %}
+                {% if outstanding_fees.number == i %}
+                  <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                {% elif i > outstanding_fees.number|add:'-3' and i < outstanding_fees.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if overdue_only %}&overdue=overdue{% endif %}">{{ i }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if outstanding_fees.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ outstanding_fees.next_page_number }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if overdue_only %}&overdue=overdue{% endif %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ paginator.num_pages }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if overdue_only %}&overdue=overdue{% endif %}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No outstanding fees found matching your criteria.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#outstandingFeesTable').DataTable({
+      order: [[7, 'asc'], [8, 'desc']],
+      pageLength: 25,
+      dom: 'Bfrtip',
+      buttons: [
+        'copy', 'excel', 'pdf'
+      ]
+    });
+    
+    // Export Report
+    $('#exportReportBtn').on('click', function(e) {
+      e.preventDefault();
+      
+      // Get current filter parameters
+      const term = $('#term').val();
+      const classroom = $('#classroom').val();
+      const overdue = $('#overdue').val();
+      
+      // Build export URL with filters
+      let exportUrl = "{% url 'fees:outstanding_fees_report' %}?export=true";
+      if (term) exportUrl += `&term=${term}`;
+      if (classroom) exportUrl += `&classroom=${classroom}`;
+      if (overdue) exportUrl += `&overdue=${overdue}`;
+      
+      window.location.href = exportUrl;
+    });
+    
+    // Print Report
+    $('#printReportBtn').on('click', function(e) {
+      e.preventDefault();
+      window.print();
+    });
+  });
+</script>
+{% endblock %}

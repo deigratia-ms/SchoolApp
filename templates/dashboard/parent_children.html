@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}My Children - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">My Children</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard:parent_dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">My Children</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row">
+    {% for child in children %}
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="text-center mb-3">
+            {% if child.user.profile_picture %}
+            <img src="{{ child.user.profile_picture.url }}" 
+                 alt="{{ child.user.get_full_name }}" 
+                 class="rounded-circle mb-3"
+                 width="100" height="100">
+            {% else %}
+            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white mx-auto mb-3"
+                 style="width: 100px; height: 100px">
+              <span class="display-6">{{ child.user.first_name.0 }}{{ child.user.last_name.0 }}</span>
+            </div>
+            {% endif %}
+            <h5 class="card-title">{{ child.user.get_full_name }}</h5>
+            <p class="text-muted mb-0">Student ID: {{ child.student_id }}</p>
+            <p class="text-muted">Class: {{ child.grade }}{% if child.section %} {{ child.section }}{% endif %}</p>
+          </div>
+
+          <div class="row text-center">
+            <div class="col-4">
+              <h5 class="text-primary mb-0">{{ child.enrolled_subjects.count }}</h5>
+              <small class="text-muted">Subjects</small>
+            </div>
+            <div class="col-4">
+              <h5 class="text-success mb-0">{{ child.attendance_rate|default:"N/A" }}%</h5>
+              <small class="text-muted">Attendance</small>
+            </div>
+            <div class="col-4">
+              <h5 class="text-info mb-0">{{ child.overall_grade|default:"N/A" }}</h5>
+              <small class="text-muted">Grade</small>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="d-grid gap-2">
+            <a href="{% url 'dashboard:parent_dashboard' %}?child_id={{ child.id }}" 
+               class="btn btn-primary">
+              <i class="fas fa-eye me-2"></i>View Details
+            </a>
+            <div class="btn-group">
+              <a href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}" 
+                 class="btn btn-outline-primary">
+                <i class="fas fa-tasks me-2"></i>Assignments
+              </a>
+              <a href="{% url 'assignments:parent_grades' %}?child_id={{ child.id }}" 
+                 class="btn btn-outline-success">
+                <i class="fas fa-chart-line me-2"></i>Grades
+              </a>
+              <a href="{% url 'attendance:parent_attendance' %}?child_id={{ child.id }}" 
+                 class="btn btn-outline-info">
+                <i class="fas fa-calendar-check me-2"></i>Attendance
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>You don't have any children linked to your account yet. 
+        Please contact the school administrator.
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

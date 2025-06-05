@@ -1,0 +1,462 @@
+{% extends 'base.html' %}
+{% block title %}Classes & Subjects | Ricas School Management System{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Classes & Subjects</h1>
+    <div>
+      {% if user.role == 'ADMIN' %}
+      <a href="{% url 'courses:create_class_subject' %}" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-2"></i>Assign Subject to Class
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Classes
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ classes_count|default:"0" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-school fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Subjects
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ subjects_count|default:"0" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-book fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                Total Teachers
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ teachers_count|default:"0" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Class-Subject Links
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ class_subjects|length }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-link fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label for="gradeFilter" class="form-label">Grade Level</label>
+          <select class="form-select" id="gradeFilter">
+            <option value="all">All Grades</option>
+            {% for grade in grade_levels %}
+            <option value="{{ grade }}">Grade {{ grade }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="teacherFilter" class="form-label">Class Teacher</label>
+          <select class="form-select" id="teacherFilter">
+            <option value="all">All Teachers</option>
+            {% for teacher in teachers %}
+            <option value="{{ teacher.id }}">{{ teacher.user.get_full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="searchInput" class="form-label">Search</label>
+          <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search..." />
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classes Grid View -->
+  <div class="row" id="classesContainer">
+    {% if class_subjects %}
+      {% regroup class_subjects by classroom as classroom_list %}
+      
+      {% for classroom_group in classroom_list %}
+        {% with classroom=classroom_group.grouper subjects=classroom_group.list %}
+        <div class="col-lg-4 col-md-6 mb-4 class-card" 
+             data-grade="{{ classroom.grade_level }}" 
+             data-teacher="{{ classroom.class_teacher.id|default:'none' }}">
+          <div class="card shadow h-100">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0 font-weight-bold">
+                {{ classroom.name }}
+                {% if classroom.section %}
+                  <span class="badge bg-secondary ms-2">{{ classroom.section }}</span>
+                {% endif %}
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <p class="mb-0">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
+                    <strong>Teacher:</strong> 
+                    {% if classroom.class_teacher %}
+                      {{ classroom.class_teacher.user.get_full_name }}
+                    {% else %}
+                      <span class="text-muted">Not Assigned</span>
+                    {% endif %}
+                  </p>
+                </div>
+                <div>
+                  <span class="badge bg-info text-white">
+                    <i class="fas fa-book me-1"></i> {{ subjects|length }} Subjects
+                  </span>
+                </div>
+              </div>
+              
+              {% if classroom.grade_level %}
+              <p class="mb-2">
+                <i class="fas fa-graduation-cap me-2"></i>
+                <strong>Grade:</strong> {{ classroom.grade_level }}
+              </p>
+              {% endif %}
+              
+              <p class="mb-2">
+                <i class="fas fa-users me-2"></i>
+                <strong>Capacity:</strong> {{ classroom.capacity }} students
+              </p>
+              
+              <hr>
+              
+              <div class="d-grid">
+                <button class="btn btn-outline-primary view-subjects-btn" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#subjectsModal"
+                        data-class-id="{{ classroom.id }}"
+                        data-class-name="{{ classroom.name }} {% if classroom.section %}{{ classroom.section }}{% endif %}">
+                  <i class="fas fa-list me-2"></i>View Subjects
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endwith %}
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="card shadow mb-4">
+          <div class="card-body">
+            <div class="text-center py-4">
+              <i class="fas fa-book fa-3x mb-3 text-muted"></i>
+              <p class="text-muted">
+                No classes or subjects found. {% if user.role == 'ADMIN' %}Click the button above to assign a subject to a class.{% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Subjects Modal -->
+<div class="modal fade" id="subjectsModal" tabindex="-1" aria-labelledby="subjectsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="subjectsModalLabel">Subjects for <span id="modalClassTitle"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="subjectsLoading" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading subjects...</p>
+        </div>
+        <div id="subjectsContainer" class="d-none">
+          <!-- Will be populated by JavaScript -->
+        </div>
+        
+        <div id="noSubjectsMessage" class="alert alert-info d-none">
+          <i class="fas fa-info-circle me-2"></i>
+          This class doesn't have any subjects assigned yet.
+        </div>
+      </div>
+      <div class="modal-footer">
+        {% if user.role == 'ADMIN' %}
+        <a href="#" id="addSubjectBtn" class="btn btn-success">
+          <i class="fas fa-plus-circle me-2"></i>Add Subject to this Class
+        </a>
+        {% endif %}
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Search and filter functionality
+    const searchInput = document.getElementById('searchInput');
+    const gradeFilter = document.getElementById('gradeFilter');
+    const teacherFilter = document.getElementById('teacherFilter');
+    const classCards = document.querySelectorAll('.class-card');
+    
+    // Combined filter function
+    function filterClasses() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const gradeValue = gradeFilter.value;
+      const teacherValue = teacherFilter.value;
+      
+      let visibleCount = 0;
+      
+      classCards.forEach(card => {
+        const cardText = card.textContent.toLowerCase();
+        const grade = card.getAttribute('data-grade');
+        const teacher = card.getAttribute('data-teacher');
+        
+        // Check all filter conditions
+        const matchesSearch = cardText.includes(searchTerm);
+        const matchesGrade = gradeValue === 'all' || grade === gradeValue;
+        const matchesTeacher = teacherValue === 'all' || teacher === teacherValue;
+        
+        // Show/hide based on all conditions
+        if (matchesSearch && matchesGrade && matchesTeacher) {
+          card.style.display = '';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Show empty state if no results
+      if (visibleCount === 0) {
+        let emptyState = document.getElementById('emptySearchState');
+        if (!emptyState) {
+          emptyState = document.createElement('div');
+          emptyState.id = 'emptySearchState';
+          emptyState.className = 'col-12 mb-4';
+          emptyState.innerHTML = `
+            <div class="card shadow">
+              <div class="card-body text-center py-4">
+                <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                <p class="text-muted">No classes found matching your search filters.</p>
+              </div>
+            </div>
+          `;
+          document.getElementById('classesContainer').appendChild(emptyState);
+        }
+        emptyState.style.display = '';
+      } else {
+        const emptyState = document.getElementById('emptySearchState');
+        if (emptyState) {
+          emptyState.style.display = 'none';
+        }
+      }
+    }
+    
+    // Add event listeners to form controls
+    if (searchInput) searchInput.addEventListener('keyup', filterClasses);
+    if (gradeFilter) gradeFilter.addEventListener('change', filterClasses);
+    if (teacherFilter) teacherFilter.addEventListener('change', filterClasses);
+    
+    // Subjects Modal functionality
+    const subjectsModal = document.getElementById('subjectsModal');
+    if (subjectsModal) {
+      subjectsModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const classId = button.getAttribute('data-class-id');
+        const className = button.getAttribute('data-class-name');
+        
+        // Update modal title
+        document.getElementById('modalClassTitle').textContent = className;
+        
+        // Add class-specific URL to the Add Subject button if admin
+        const addSubjectBtn = document.getElementById('addSubjectBtn');
+        if (addSubjectBtn) {
+          addSubjectBtn.href = `/courses/class-subjects/create/?class=${classId}`;
+        }
+        
+        // Show loading state
+        document.getElementById('subjectsLoading').classList.remove('d-none');
+        document.getElementById('subjectsContainer').classList.add('d-none');
+        document.getElementById('noSubjectsMessage').classList.add('d-none');
+        
+        // Fetch subjects for this class
+        fetch(`/courses/api/classes/${classId}/subjects/`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Hide loading state
+            document.getElementById('subjectsLoading').classList.add('d-none');
+            
+            if (data.subjects && data.subjects.length > 0) {
+              // Generate the subjects table
+              let tableHtml = `
+                <table class="table table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th>Subject</th>
+                      <th>Code</th>
+                      <th>Teacher</th>
+                      <th>Students</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              `;
+              
+              data.subjects.forEach(subject => {
+                tableHtml += `
+                  <tr>
+                    <td>${subject.name}</td>
+                    <td><span class="badge bg-secondary">${subject.code}</span></td>
+                    <td>${subject.teacher_name}</td>
+                    <td><span class="badge bg-info">${subject.students_count}</span></td>
+                    <td>
+                      <div class="btn-group btn-group-sm">
+                        <a href="/courses/class-subjects/${subject.id}/" class="btn btn-info" title="View Details">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        {% if user.role == 'ADMIN' %}
+                        <a href="/courses/class-subjects/${subject.id}/edit/" class="btn btn-warning" title="Edit">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="/courses/class-subjects/${subject.id}/students/" class="btn btn-success" title="Manage Students">
+                          <i class="fas fa-users"></i>
+                        </a>
+                        <a href="/courses/class-subjects/${subject.id}/delete/" class="btn btn-danger" title="Delete">
+                          <i class="fas fa-trash"></i>
+                        </a>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              });
+              
+              tableHtml += `
+                  </tbody>
+                </table>
+              `;
+              
+              document.getElementById('subjectsContainer').innerHTML = tableHtml;
+              document.getElementById('subjectsContainer').classList.remove('d-none');
+            } else {
+              // Show no subjects message
+              document.getElementById('noSubjectsMessage').classList.remove('d-none');
+            }
+          })
+          .catch(error => {
+            // Handle error
+            document.getElementById('subjectsLoading').classList.add('d-none');
+            document.getElementById('subjectsContainer').innerHTML = `
+              <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error loading subjects: ${error.message}
+              </div>
+            `;
+            document.getElementById('subjectsContainer').classList.remove('d-none');
+            console.error('Error:', error);
+          });
+      });
+    }
+  });
+</script>
+
+<style>
+  /* Custom styles for classes and subjects page */
+  .card-header {
+    padding: 0.75rem 1.25rem;
+  }
+  
+  .card-header h5 {
+    font-size: 1.1rem;
+  }
+  
+  .view-subjects-btn:hover {
+    background-color: #4e73df;
+    color: white;
+  }
+  
+  .modal-header .btn-close-white {
+    filter: brightness(0) invert(1);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .btn-group {
+      flex-direction: row;
+    }
+    
+    .btn-group .btn {
+      margin-right: 2px;
+      margin-bottom: 2px;
+    }
+  }
+</style>
+{% endblock %}

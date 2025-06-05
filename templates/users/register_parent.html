@@ -1,0 +1,321 @@
+{% extends 'base.html' %} {% block title %}Register New Parent | Ricas School
+Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Register New Parent</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'dashboard:index' %}">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{% url 'users:user_management' %}">User Management</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">
+            Register Parent
+          </li>
+        </ol>
+      </nav>
+    </div>
+    <a href="{% url 'users:user_management' %}" class="btn btn-primary">
+      <i class="fas fa-arrow-left me-2"></i>Back to User Management
+    </a>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        Parent Registration Form
+      </h6>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="row mb-4">
+          <div class="col-lg-6">
+            <h5 class="text-dark">Basic Information</h5>
+            <hr />
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password *</label>
+              <div class="input-group">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  name="password"
+                  required
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="showPassword"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="generatePassword"
+                >
+                  <i class="fas fa-key"></i>
+                </button>
+              </div>
+              <div class="form-text">
+                A password will be automatically generated and sent to the
+                parent's email. Click the key icon to generate a new password.
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="first_name" class="form-label">First Name *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="first_name"
+                  name="first_name"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label for="last_name" class="form-label">Last Name *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="last_name"
+                  name="last_name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address *</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="phone_number" class="form-label"
+                >Phone Number *</label
+              >
+              <input
+                type="tel"
+                class="form-control"
+                id="phone_number"
+                name="phone_number"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="profile_picture" class="form-label"
+                >Profile Picture</label
+              >
+              <input
+                type="file"
+                class="form-control"
+                id="profile_picture"
+                name="profile_picture"
+                accept="image/*"
+              />
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <h5 class="text-dark">Parent Information</h5>
+            <hr />
+
+            <div class="mb-3">
+              <label for="occupation" class="form-label">Occupation *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="occupation"
+                name="occupation"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="relationship" class="form-label"
+                >Relationship *</label
+              >
+              <select
+                class="form-select"
+                id="relationship"
+                name="relationship"
+                required
+              >
+                <option value="Parent">Parent</option>
+                <option value="Father">Father</option>
+                <option value="Mother">Mother</option>
+                <option value="Guardian">Guardian</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="address" class="form-label">Address</label>
+              <textarea
+                class="form-control"
+                id="address"
+                name="address"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Link to Children</label>
+              <div class="form-text text-muted mb-2">
+                Select students to associate with this parent. You can link more
+                children later.
+              </div>
+              <div class="card">
+                <div class="card-body p-2">
+                  <div class="input-group mb-2">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="studentSearch"
+                      placeholder="Search students..."
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="clearSearch"
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div style="max-height: 200px; overflow-y: auto">
+                    {% if students %}
+                    <div class="list-group" id="studentList">
+                      {% for student in students %}
+                      <div class="list-group-item py-2 px-3">
+                        <div class="form-check">
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
+                            name="children"
+                            value="{{ student.id }}"
+                            id="student-{{ student.id }}"
+                          />
+                          <label
+                            class="form-check-label w-100"
+                            for="student-{{ student.id }}"
+                          >
+                            {{ student.user.get_full_name }}
+                            <small class="text-muted d-block">
+                              ID: {{ student.student_id }} | Grade: {{
+                              student.grade }}{% if student.section %}-{{
+                              student.section }}{% endif %}
+                            </small>
+                          </label>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                      <p class="text-muted mb-0">
+                        No students available to link.
+                      </p>
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-end">
+          <button type="reset" class="btn btn-secondary me-2">Reset</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Register Parent
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Show/hide password
+    const passwordField = document.getElementById("password");
+    const showPasswordBtn = document.getElementById("showPassword");
+
+    showPasswordBtn.addEventListener("click", function () {
+      const type =
+        passwordField.getAttribute("type") === "password" ? "text" : "password";
+      passwordField.setAttribute("type", type);
+      this.innerHTML =
+        type === "password"
+          ? '<i class="fas fa-eye"></i>'
+          : '<i class="fas fa-eye-slash"></i>';
+    });
+
+    // Student search functionality
+    const studentSearch = document.getElementById("studentSearch");
+    const clearSearchBtn = document.getElementById("clearSearch");
+    const studentItems = document.querySelectorAll(
+      "#studentList .list-group-item"
+    );
+
+    if (studentSearch) {
+      studentSearch.addEventListener("input", function () {
+        const searchTerm = this.value.toLowerCase();
+
+        studentItems.forEach((item) => {
+          const text = item.textContent.toLowerCase();
+          if (text.includes(searchTerm)) {
+            item.style.display = "";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      });
+
+      clearSearchBtn.addEventListener("click", function () {
+        studentSearch.value = "";
+        studentItems.forEach((item) => {
+          item.style.display = "";
+        });
+      });
+    }
+
+    // Generate random password
+    const generatePasswordBtn = document.getElementById("generatePassword");
+    if (generatePasswordBtn) {
+      generatePasswordBtn.addEventListener("click", function () {
+        const chars =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&";
+        let password = "";
+        for (let i = 0; i < 8; i++) {
+          password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        passwordField.value = password;
+        passwordField.setAttribute("type", "text");
+        showPasswordBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      });
+    }
+
+    // Initialize Select2 for dropdowns if available
+    if (typeof $.fn.select2 !== "undefined") {
+      $("#relationship").select2({
+        minimumResultsForSearch: 7,
+      });
+    }
+  });
+</script>
+{% endblock %}

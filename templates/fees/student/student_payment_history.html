@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment History - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Payment History</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:student_fees' student.id %}">My Fees</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Payment History</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label for="term" class="form-label">Term</label>
+          <select name="term" id="term" class="form-select">
+            <option value="">All Terms</option>
+            {% for term_option in terms %}
+              <option value="{{ term_option.id }}" {% if selected_term == term_option.id|stringformat:"i" %}selected{% endif %}>
+                {{ term_option.name }} ({{ term_option.academic_year }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="fee_category" class="form-label">Fee Type</label>
+          <select name="fee_category" id="fee_category" class="form-select">
+            <option value="">All Fee Types</option>
+            {% for category in fee_categories %}
+              <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="payment_method" class="form-label">Payment Method</label>
+          <select name="payment_method" id="payment_method" class="form-select">
+            <option value="">All Methods</option>
+            <option value="CASH" {% if selected_method == "CASH" %}selected{% endif %}>Cash</option>
+            <option value="MOBILE_MONEY" {% if selected_method == "MOBILE_MONEY" %}selected{% endif %}>Mobile Money</option>
+            <option value="BANK_TRANSFER" {% if selected_method == "BANK_TRANSFER" %}selected{% endif %}>Bank Transfer</option>
+            <option value="CHEQUE" {% if selected_method == "CHEQUE" %}selected{% endif %}>Cheque</option>
+            <option value="CARD" {% if selected_method == "CARD" %}selected{% endif %}>Card Payment</option>
+            <option value="OTHER" {% if selected_method == "OTHER" %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-2"></i>Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Payment Summary Card -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Payment Summary</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4 mb-3 mb-md-0">
+          <div class="card bg-light h-100">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-2">Total Payments</h6>
+              <h3 class="mb-0">{{ payments.count }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-3 mb-md-0">
+          <div class="card bg-light h-100">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-2">Total Amount Paid</h6>
+              <h3 class="mb-0 text-success">GHS {{ total_paid|floatformat:2 }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-3 mb-md-0">
+          <div class="card bg-light h-100">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-2">Last Payment</h6>
+              <h3 class="mb-0">
+                {% if last_payment %}
+                  {{ last_payment.payment_date|date:"M d, Y" }}
+                {% else %}
+                  N/A
+                {% endif %}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment History Table -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Payment Records</h5>
+    </div>
+    <div class="card-body">
+      {% if payments %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Term</th>
+                <th>Fee Type</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Transaction ID</th>
+                <th>Receipt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments %}
+                <tr>
+                  <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                  <td>{{ payment.student_fee.class_fee.term.name }} ({{ payment.student_fee.class_fee.term.academic_year }})</td>
+                  <td>{{ payment.student_fee.class_fee.fee_category.name }}</td>
+                  <td>GHS {{ payment.amount|floatformat:2 }}</td>
+                  <td>{{ payment.get_payment_method_display }}</td>
+                  <td>{{ payment.transaction_id|default:"-" }}</td>
+                  <td>
+                    {% if payment.receipt %}
+                      <a href="{% url 'fees:receipt_detail' payment.receipt.id %}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-receipt me-1"></i>{{ payment.receipt.receipt_number }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">No receipt</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if payments.has_other_pages %}
+          <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+              {% if payments.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page=1{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_method %}&payment_method={{ selected_method }}{% endif %}" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ payments.previous_page_number }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_method %}&payment_method={{ selected_method }}{% endif %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+
+              {% for i in paginator.page_range %}
+                {% if payments.number == i %}
+                  <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                {% elif i > payments.number|add:'-3' and i < payments.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_method %}&payment_method={{ selected_method }}{% endif %}">{{ i }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if payments.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ payments.next_page_number }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_method %}&payment_method={{ selected_method }}{% endif %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ paginator.num_pages }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_method %}&payment_method={{ selected_method }}{% endif %}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No payment records found.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

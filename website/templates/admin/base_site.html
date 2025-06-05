@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Deigratia Administration{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --primary: #008080 !important;    /* dark teal */
+        --secondary: #008080 !important;
+    }
+    
+    #header {
+        background: var(--primary);
+    }
+    
+    #site-name {
+        font-weight: bold;
+        color: white !important;
+    }
+    
+    .app-website.module caption {
+        background: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">Deigratia Administration</a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

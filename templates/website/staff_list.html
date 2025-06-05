@@ -1,0 +1,182 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Our Staff | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+{% if staff_hero and staff_hero.image %}
+<section class="hero-banner" style="background-image: url('{{ staff_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">Our Staff</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            Our staff is comprised of highly qualified and experienced educators and professionals dedicated to providing a nurturing and stimulating learning environment.
+        </p>
+    </div>
+</section>
+{% else %}
+<section class="py-5 bg-primary-teal text-white text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-4" data-aos="fade-up">Our Staff</h1>
+                <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                    Our staff is comprised of highly qualified and experienced educators and professionals dedicated to providing a nurturing and stimulating learning environment.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Staff List -->
+<section class="py-5 bg-light">
+    <div class="container">
+        {% for staff_type, staff_type_display in staff_types.items %}
+        <div class="mb-5">
+            <h2 class="section-title text-center" data-aos="fade-up">{{ staff_type_display }}</h2>
+            <div class="row g-4 justify-content-center">
+                {% for member in staff_members %}
+                {% if member.staff_type == staff_type %}
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:"50" }}">
+                    <div class="card staff-card h-100 border-0 shadow-sm">
+                        {% if member.image %}
+                        <img src="{{ member.image.url }}" class="card-img-top staff-img" alt="{{ member.name }}" style="height: 250px; object-fit: cover;">
+                        {% else %}
+                        <img src="{% static 'website/images/placeholder-staff.jpg' %}" class="card-img-top staff-img" alt="Staff Placeholder" style="height: 250px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ member.name }}</h5>
+                            <p class="card-subtitle text-primary mb-3">{{ member.position }}</p>
+                            <p class="card-text mb-3">{{ member.bio|truncatechars:100 }}</p>
+                            <button class="btn btn-primary view-staff-details" data-staff-id="{{ member.id }}">
+                                <i class="fas fa-user-circle me-2"></i>View Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Staff Modal -->
+<div class="modal fade" id="staffModal" tabindex="-1" aria-labelledby="staffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-teal text-white">
+                <h5 class="modal-title" id="staffModalLabel">Staff Profile</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-4 staff-modal-image">
+                        <img src="" alt="" class="img-fluid rounded shadow-sm" style="width: 100%; height: 300px; object-fit: cover;">
+                        <div class="staff-contact mt-4 p-3 bg-light rounded">
+                            <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-address-card me-2"></i>Contact</h5>
+                            <p class="staff-email mb-2"><i class="fas fa-envelope me-2 text-primary"></i><span></span></p>
+                            <p class="staff-phone mb-0"><i class="fas fa-phone me-2 text-primary"></i><span></span></p>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <h3 class="staff-name mb-2 border-bottom pb-2"></h3>
+                        <p class="staff-position text-primary fw-bold"></p>
+                        <div class="staff-bio mt-3 mb-4 p-3 bg-light rounded">
+                            <h5 class="mb-3"><i class="fas fa-user me-2"></i>Biography</h5>
+                            <p class="mb-0"></p>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="staff-qualifications p-3 bg-light rounded h-100">
+                                    <h5 class="mb-3"><i class="fas fa-graduation-cap me-2"></i>Qualifications</h5>
+                                    <div class="qualification-content"></div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="staff-achievements p-3 bg-light rounded h-100">
+                                    <h5 class="mb-3"><i class="fas fa-trophy me-2"></i>Achievements</h5>
+                                    <div class="achievement-content"></div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="staff-interests p-3 bg-light rounded">
+                                    <h5 class="mb-3"><i class="fas fa-star me-2"></i>Interests & Specializations</h5>
+                                    <div class="interest-content"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const staffModal = new bootstrap.Modal(document.getElementById('staffModal'));
+
+    document.querySelectorAll('.view-staff-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const staffId = this.dataset.staffId;
+            fetch(`/api/staff/${staffId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update modal content
+                    const modalImg = document.querySelector('.staff-modal-image img');
+                    modalImg.src = data.image_url;
+                    modalImg.alt = data.name;
+
+                    document.querySelector('.staff-name').textContent = data.name;
+                    document.querySelector('.staff-position').textContent = data.position;
+                    document.querySelector('.staff-bio p').textContent = data.bio || 'No biography provided.';
+
+                    document.querySelector('.qualification-content').innerHTML = data.qualification ?
+                        formatContentWithBullets(data.qualification) :
+                        '<p class="text-muted">Not provided</p>';
+
+                    document.querySelector('.achievement-content').innerHTML = data.achievements ?
+                        formatContentWithBullets(data.achievements) :
+                        '<p class="text-muted">Not provided</p>';
+
+                    document.querySelector('.interest-content').innerHTML = data.interests ?
+                        formatContentWithBullets(data.interests) :
+                        '<p class="text-muted">Not provided</p>';
+
+                    document.querySelector('.staff-email span').textContent = data.email || 'Not provided';
+                    document.querySelector('.staff-phone span').textContent = data.phone || 'Not provided';
+
+                    // Show modal
+                    staffModal.show();
+                })
+                .catch(error => {
+                    console.error('Error fetching staff details:', error);
+                    alert('Unable to load staff details. Please try again later.');
+                });
+        });
+    });
+
+    // Helper function to format content with bullet points if it contains line breaks
+    function formatContentWithBullets(content) {
+        if (content.includes('\n')) {
+            const lines = content.split('\n').filter(line => line.trim() !== '');
+            return '<ul class="mb-0">' +
+                lines.map(line => `<li>${line.trim()}</li>`).join('') +
+                '</ul>';
+        }
+        return `<p class="mb-0">${content}</p>`;
+    }
+});
+</script>
+{% endblock %}

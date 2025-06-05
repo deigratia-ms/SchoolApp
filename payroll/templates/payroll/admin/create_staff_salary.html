@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Staff Salary - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Create Staff Salary</h1>
+    <div>
+      <a href="{% url 'payroll:staff_salary_list' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Salaries
+      </a>
+    </div>
+  </div>
+
+  <!-- Create Salary Form -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Salary Information</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'payroll:create_staff_salary' %}">
+            {% csrf_token %}
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="user" class="form-label">Staff Member <span class="text-danger">*</span></label>
+                <select class="form-select" id="user" name="user" required>
+                  <option value="">Select Staff Member</option>
+                  {% for staff in staff_without_salary %}
+                    <option value="{{ staff.id }}">{{ staff.get_full_name }} ({{ staff.email }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
+                <select class="form-select" id="role" name="role" required>
+                  <option value="">Select Role</option>
+                  {% for role in roles %}
+                    <option value="{{ role.id }}">{{ role.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="base_salary" class="form-label">Base Salary <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">GH₵</span>
+                  <input type="number" class="form-control" id="base_salary" name="base_salary" step="0.01" min="0" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="effective_date" class="form-label">Effective Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="effective_date" name="effective_date" value="{{ today|date:'Y-m-d' }}" required>
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="transport_allowance" class="form-label">Transport Allowance</label>
+                <div class="input-group">
+                  <span class="input-group-text">GH₵</span>
+                  <input type="number" class="form-control" id="transport_allowance" name="transport_allowance" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label for="housing_allowance" class="form-label">Housing Allowance</label>
+                <div class="input-group">
+                  <span class="input-group-text">GH₵</span>
+                  <input type="number" class="form-control" id="housing_allowance" name="housing_allowance" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label for="other_allowances" class="form-label">Other Allowances</label>
+                <div class="input-group">
+                  <span class="input-group-text">GH₵</span>
+                  <input type="number" class="form-control" id="other_allowances" name="other_allowances" step="0.01" min="0" value="0">
+                </div>
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="ssnit_contribution" class="form-label">SSNIT Contribution</label>
+                <div class="input-group">
+                  <span class="input-group-text">GH₵</span>
+                  <input type="number" class="form-control" id="ssnit_contribution" name="ssnit_contribution" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="tax_rate" class="form-label">Tax Rate (%)</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="tax_rate" name="tax_rate" step="0.01" min="0" max="100" value="0">
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notes</label>
+              <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'payroll:staff_salary_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+              <button type="submit" class="btn btn-primary">Create Salary</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

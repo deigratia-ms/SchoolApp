@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+
+{% block title %}Parent Management - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Parent Management</h1>
+        <a href="{% url 'users:register_parent' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Add New Parent
+        </a>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Parents</h6>
+            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="true" aria-controls="filterCollapse">
+                <i class="fas fa-sliders-h me-1"></i> Toggle Filters
+            </button>
+        </div>
+        <div class="collapse show" id="filterCollapse">
+            <div class="card-body bg-light py-3">
+                <form method="get" class="mb-0">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <label for="searchQuery" class="form-label small fw-bold">Search Parents</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fas fa-search text-primary"></i></span>
+                                <input type="text" class="form-control" id="searchQuery" name="search" 
+                                       placeholder="Name, email, phone..." 
+                                       value="{{ search_query|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="relationshipFilter" class="form-label small fw-bold">Relationship</label>
+                            <select class="form-select" id="relationshipFilter" name="relationship">
+                                <option value="" {% if not relationship_filter %}selected{% endif %}>All Relationships</option>
+                                <option value="Parent" {% if relationship_filter == 'Parent' %}selected{% endif %}>Parent</option>
+                                <option value="Guardian" {% if relationship_filter == 'Guardian' %}selected{% endif %}>Guardian</option>
+                                <option value="Other" {% if relationship_filter == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="statusFilter" class="form-label small fw-bold">Status</label>
+                            <select class="form-select" id="statusFilter" name="status">
+                                <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
+                                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i>Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parents Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Parent Directory</h6>
+            <span class="badge bg-primary">{{ parents|length }} Parents</span>
+        </div>
+        <div class="card-body">
+            {% if parents %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="parentsTable">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th style="width: 250px;">Name</th>
+                                <th style="width: 120px;">Relationship</th>
+                                <th>Children</th>
+                                <th>Email</th>
+                                <th style="width: 100px;">Status</th>
+                                <th style="width: 150px;" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parent in parents %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if parent.user.profile_picture %}
+                                                <img src="{{ parent.user.profile_picture.url }}" alt="{{ parent.user.get_full_name }}" 
+                                                     class="rounded-circle me-3 border shadow-sm" width="45" height="45">
+                                            {% else %}
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm"
+                                                     style="width: 45px; height: 45px;">
+                                                    <span class="fw-bold">{{ parent.user.first_name|first }}{{ parent.user.last_name|first }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold text-primary">
+                                                    <a href="#" class="text-primary text-decoration-none" data-bs-toggle="modal" data-bs-target="#userDetailModal{{ parent.user.id }}">
+                                                        {{ parent.user.get_full_name }}
+                                                    </a>
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <i class="fas fa-phone-alt me-1 text-secondary"></i>{{ parent.user.phone_number|default:"No phone" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-info text-white">{{ parent.relationship }}</span></td>
+                                    <td>
+                                        {% if parent.children.all %}
+                                            <div class="d-flex flex-column">
+                                                {% for child in parent.children.all|slice:":2" %}
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <span class="badge bg-primary rounded-circle me-1 d-flex align-items-center justify-content-center" style="width: 25px; height: 25px;">
+                                                            {{ child.user.first_name|first }}
+                                                        </span>
+                                                        <span>{{ child.user.get_full_name }}</span>
+                                                    </div>
+                                                {% endfor %}
+                                                {% if parent.children.count > 2 %}
+                                                    <div class="small text-primary mt-1">
+                                                        <i class="fas fa-plus-circle me-1"></i>{{ parent.children.count|add:"-2" }} more children
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <div class="text-center">
+                                                <span class="badge bg-secondary py-2 px-3">No children linked</span>
+                                                <div class="small mt-1">
+                                                    <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="text-primary">
+                                                        <i class="fas fa-link me-1"></i>Link now
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-envelope text-muted me-2"></i>
+                                            <a href="mailto:{{ parent.user.email }}" class="text-decoration-none text-truncate">{{ parent.user.email }}</a>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if parent.user.is_active and parent.user.is_verified %}
+                                            <span class="badge bg-success px-3 py-2">Active</span>
+                                        {% elif parent.user.is_active and not parent.user.is_verified %}
+                                            <span class="badge bg-warning px-3 py-2">Unverified</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary px-3 py-2">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center">
+                                            <a href="{% url 'users:edit_user' parent.user.id %}" class="btn btn-sm btn-primary me-1" title="Edit Parent">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-success me-1" title="View Details"
+                                                    data-bs-toggle="modal" data-bs-target="#userDetailModal{{ parent.user.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-sm btn-info me-1" title="Link to Child">
+                                                <i class="fas fa-child"></i>
+                                            </a>
+                                            {% if parent.user.id != request.user.id %}
+                                                <a href="{% url 'users:delete_user' parent.user.id %}" class="btn btn-sm btn-danger" title="Delete Parent">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Parent Detail Modal -->
+                                <div class="modal fade" id="userDetailModal{{ parent.user.id }}" tabindex="-1" aria-labelledby="userDetailModalLabel{{ parent.user.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="userDetailModalLabel{{ parent.user.id }}">Parent Details: {{ parent.user.get_full_name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-4 text-center mb-4">
+                                                        {% if parent.user.profile_picture %}
+                                                            <img src="{{ parent.user.profile_picture.url }}" alt="{{ parent.user.get_full_name }}" 
+                                                                class="rounded-circle mb-3" width="150" height="150">
+                                                        {% else %}
+                                                            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                                                style="width: 150px; height: 150px;">
+                                                                <span style="font-size: 48px;">{{ parent.user.first_name|first }}{{ parent.user.last_name|first }}</span>
+                                                            </div>
+                                                        {% endif %}
+                                                        <h5>{{ parent.user.get_full_name }}</h5>
+                                                        <span class="badge bg-info">{{ parent.relationship }}</span>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Username:</div>
+                                                            <div class="col-sm-8">{{ parent.user.username }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Email:</div>
+                                                            <div class="col-sm-8">{{ parent.user.email }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Phone:</div>
+                                                            <div class="col-sm-8">{{ parent.user.phone_number|default:"Not provided" }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Date Joined:</div>
+                                                            <div class="col-sm-8">{{ parent.user.date_joined|date:"F j, Y" }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Last Login:</div>
+                                                            <div class="col-sm-8">
+                                                                {% if parent.user.last_login %}
+                                                                    {{ parent.user.last_login|date:"F j, Y, g:i a" }}
+                                                                {% else %}
+                                                                    Never
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <h6 class="border-bottom pb-2 mb-3 mt-4">Parent Information</h6>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Relationship:</div>
+                                                            <div class="col-sm-8">{{ parent.relationship }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Occupation:</div>
+                                                            <div class="col-sm-8">{{ parent.occupation|default:"Not provided" }}</div>
+                                                        </div>
+                                                        
+                                                        <h6 class="border-bottom pb-2 mb-3 mt-4">Children</h6>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-12">
+                                                                {% if parent.children.all %}
+                                                                    <div class="d-flex flex-column">
+                                                                        {% for child in parent.children.all %}
+                                                                            <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                                                <span class="badge bg-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                                                                    {{ child.user.first_name|first }}
+                                                                                </span>
+                                                                                <div>
+                                                                                    <div class="fw-bold">{{ child.user.get_full_name }}</div>
+                                                                                    <div class="small text-muted">
+                                                                                        <span class="me-2">ID: {{ child.student_id }}</span>
+                                                                                        <span>Grade {{ child.grade }}{% if child.section %} - {{ child.section }}{% endif %}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                {% else %}
+                                                                    <div class="alert alert-light">
+                                                                        <p class="text-muted mb-2">No children linked to this parent.</p>
+                                                                        <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-sm btn-primary">
+                                                                            <i class="fas fa-link me-2"></i>Link to Children
+                                                                        </a>
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <div class="btn-group">
+                                                    <a href="{% url 'users:edit_user' parent.user.id %}" class="btn btn-primary">
+                                                        <i class="fas fa-edit me-2"></i>Edit Parent
+                                                    </a>
+                                                    <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-info">
+                                                        <i class="fas fa-link me-2"></i>Link to Children
+                                                    </a>
+                                                </div>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-users fa-3x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No parents found</h5>
+                    <p class="text-muted">
+                        {% if relationship_filter or search_query %}
+                            No parents match your current filters. Try adjusting your search criteria.
+                        {% else %}
+                            There are no parents in the system yet. Start by adding a new parent.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'users:register_parent' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-user-plus me-2"></i>Add New Parent
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Parent Management Actions</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'users:register_parent' %}" class="card h-100 border-left-primary text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary"><i class="fas fa-user-plus me-2"></i>Register Parent</h5>
+                            <p class="card-text text-muted">Add a new parent to the system with all necessary information.</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'users:link_parent_to_child' %}" class="card h-100 border-left-success text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-success"><i class="fas fa-link me-2"></i>Link Children</h5>
+                            <p class="card-text text-muted">Associate parents with their children for proper access and notifications.</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'users:student_management' %}" class="card h-100 border-left-info text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-info"><i class="fas fa-user-graduate me-2"></i>Manage Students</h5>
+                            <p class="card-text text-muted">View and manage students and assign them to parents.</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'communications:compose_message' %}" class="card h-100 border-left-warning text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning"><i class="fas fa-envelope me-2"></i>Message Parents</h5>
+                            <p class="card-text text-muted">Send communications to parents about school events or their children.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        if ($.fn.DataTable && document.getElementById('parentsTable')) {
+            $('#parentsTable').DataTable({
+                "pageLength": 25,
+                "columnDefs": [
+                    { "orderable": false, "targets": 5 } // Disable sorting on actions column
+                ],
+                "language": {
+                    "search": "Quick search:",
+                    "zeroRecords": "No matching parents found",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ parents",
+                    "infoEmpty": "No parents available",
+                    "infoFiltered": "(filtered from _MAX_ total parents)"
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

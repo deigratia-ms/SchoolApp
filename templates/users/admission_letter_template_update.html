@@ -1,0 +1,90 @@
+{% extends "base.html" %} {% load static %} {% load crispy_forms_tags %} {%
+block title %}Update Admission Letter Template - {{ template.name }}{% endblock
+%} {% block content %}
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Update Admission Letter Template</h1>
+    <div>
+      <a
+        href="{% url 'users:admission_letter_template_detail' template.id %}"
+        class="btn btn-secondary btn-sm"
+      >
+        <i class="fas fa-times mr-2"></i>Cancel
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Template Details</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %} {{ form|crispy }}
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save mr-2"></i>Save Changes
+              </button>
+              <a
+                href="{% url 'users:admission_letter_template_detail' template.id %}"
+                class="btn btn-secondary"
+              >
+                <i class="fas fa-times mr-2"></i>Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Available Placeholders
+          </h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li><code>{student_name}</code> - Student's full name</li>
+            <li><code>{student_id}</code> - Student ID number</li>
+            <li><code>{grade}</code> - Admitted grade</li>
+            <li><code>{section}</code> - Class section</li>
+            <li><code>{academic_year}</code> - Academic year</li>
+            <li><code>{admission_date}</code> - Date of admission</li>
+            <li><code>{additional_info}</code> - Additional information</li>
+            <li><code>{signatory_name}</code> - Name of signatory</li>
+            <li><code>{signatory_position}</code> - Position of signatory</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Template Preview</h6>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle mr-2"></i>
+            Changes will be reflected in the preview after saving.
+          </div>
+          <div class="border p-3 bg-light">
+            <h5 class="text-center">{{ template.name }}</h5>
+            <p class="text-center">{{ template.header_text }}</p>
+            <pre class="mb-0">{{ template.body_template }}</pre>
+            <p class="text-center">{{ template.footer_text }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  $(document).ready(function () {
+    // Add any JavaScript functionality here
+  });
+</script>
+{% endblock %}

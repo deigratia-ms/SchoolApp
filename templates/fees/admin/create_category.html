@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Fee Category - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Fee Category</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:category_list' %}">Categories</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Create</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Create New Fee Category</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'fees:create_category' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+              <label for="category_type" class="form-label">Category Type <span class="text-danger">*</span></label>
+              <select class="form-select" id="category_type" name="category_type" required>
+                <option value="TUITION">Tuition</option>
+                <option value="UNIFORM">Uniform</option>
+                <option value="BOOKS">Books</option>
+                <option value="PTA">PTA Dues</option>
+                <option value="SPORTS">Sports</option>
+                <option value="TECHNOLOGY">Technology</option>
+                <option value="TRANSPORTATION">Transportation</option>
+                <option value="FEEDING">Feeding</option>
+                <option value="EXAMINATION">Examination</option>
+                <option value="OTHER">Other</option>
+              </select>
+              <div class="form-text">Select the type of fee this category represents.</div>
+            </div>
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+              <div class="form-text">Provide a brief description of this fee category.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_required" name="is_required">
+              <label class="form-check-label" for="is_required">Required for all students</label>
+              <div class="form-text">If checked, this fee will be mandatory for all students.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_recurring" name="is_recurring" checked>
+              <label class="form-check-label" for="is_recurring">Recurring every term</label>
+              <div class="form-text">If checked, this fee will be charged every term.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+              <label class="form-check-label" for="is_active">Active</label>
+              <div class="form-text">If unchecked, this category will not be available for new fees.</div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'fees:category_list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Create Category</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">About Fee Categories</h6>
+        </div>
+        <div class="card-body">
+          <p>Fee categories help you organize different types of fees charged to students.</p>
+          <p>Examples of fee categories include:</p>
+          <ul>
+            <li>Tuition Fees</li>
+            <li>Examination Fees</li>
+            <li>Library Fees</li>
+            <li>Sports Fees</li>
+            <li>Technology Fees</li>
+          </ul>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>After creating categories, you can assign them to classes with specific amounts.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

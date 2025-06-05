@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}ID Card | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">ID Card Preview</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'users:id_card_list' %}">ID Cards</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">ID Card Preview</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            {% if id_card and id_card.id %}
+                <a href="{% url 'users:id_card_print' id_card.id %}" class="btn btn-primary me-2" target="_blank">
+                    <i class="fas fa-print me-2"></i>Print ID Card
+                </a>
+            {% endif %}
+            <a href="{% url 'users:id_card_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to ID Cards
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">ID Card for {{ user_obj.get_full_name }}</h6>
+                </div>
+                <div class="card-body">
+                    {% if id_card %}
+                        <div class="id-card-preview">
+                            <div class="id-card-container border rounded p-4 mb-4" 
+                                 style="background-color: {{ id_card.template.background_color }}; color: {{ id_card.template.text_color }};">
+                                <!-- School Header -->
+                                <div class="text-center mb-4" style="border-bottom: 2px solid {{ id_card.template.text_color }}; padding-bottom: 10px;">
+                                    {% if id_card.template.school_logo %}
+                                        <img src="{{ id_card.template.school_logo.url }}" alt="School Logo" style="max-height: 60px; margin-bottom: 10px" />
+                                    {% endif %}
+                                    <h4 class="font-weight-bold mb-0" style="color: {{ id_card.template.text_color }};">
+                                        {{ id_card.template.school_name }}
+                                    </h4>
+                                    <p class="small mb-0">{{ id_card.template.school_address }}</p>
+                                    <p class="small mb-0">{{ id_card.template.school_contact }}</p>
+                                </div>
+
+                                <!-- ID Card Content -->
+                                <div class="row">
+                                    <!-- Photo Section -->
+                                    <div class="col-4 text-center">
+                                        {% if student_obj.photo %}
+                                            <img src="{{ student_obj.photo.url }}" alt="Student Photo" class="img-thumbnail mb-2" style="width: 120px; height: 150px; object-fit: cover" />
+                                        {% elif teacher_obj.photo %}
+                                            <img src="{{ teacher_obj.photo.url }}" alt="Teacher Photo" class="img-thumbnail mb-2" style="width: 120px; height: 150px; object-fit: cover" />
+                                        {% elif parent_obj.photo %}
+                                            <img src="{{ parent_obj.photo.url }}" alt="Parent Photo" class="img-thumbnail mb-2" style="width: 120px; height: 150px; object-fit: cover" />
+                                        {% else %}
+                                            <div class="photo-placeholder bg-light d-flex align-items-center justify-content-center" style="width: 120px; height: 150px; margin: 0 auto">
+                                                <i class="fas fa-user fa-4x text-secondary"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Details Section -->
+                                    <div class="col-8">
+                                        <div class="id-card-details">
+                                            <h5 class="font-weight-bold" style="color: {{ id_card.template.text_color }};">
+                                                {{ user_obj.get_full_name }}
+                                            </h5>
+
+                                            {% if user_obj.role == 'STUDENT' %}
+                                                <div class="mb-1"><strong>Student ID:</strong> {{ student_obj.student_id }}</div>
+                                                <div class="mb-1"><strong>Class:</strong> {{ student_obj.grade }} {% if student_obj.section %}{{ student_obj.section }}{% endif %}</div>
+                                                <div class="mb-1"><strong>Date of Birth:</strong> {{ student_obj.date_of_birth|date:"d/m/Y" }}</div>
+                                                <div class="mb-1"><strong>Blood Group:</strong> {{ student_obj.blood_group|default:"Not Specified" }}</div>
+                                            {% endif %}
+
+                                            {% if user_obj.role == 'TEACHER' %}
+                                                <div class="mb-1"><strong>Staff ID:</strong> {{ teacher_obj.employee_id }}</div>
+                                                <div class="mb-1"><strong>Department:</strong> {{ teacher_obj.department|default:"Not Specified" }}</div>
+                                                <div class="mb-1"><strong>Position:</strong> {{ teacher_obj.designation|default:"Teacher" }}</div>
+                                                <div class="mb-1"><strong>Contact:</strong> {{ teacher_obj.phone|default:user_obj.email }}</div>
+                                            {% endif %}
+
+                                            {% if user_obj.role == 'PARENT' %}
+                                                <div class="mb-1"><strong>Parent ID:</strong> {{ parent_obj.id }}</div>
+                                                <div class="mb-1"><strong>Relationship:</strong> {{ parent_obj.relationship|default:"Parent/Guardian" }}</div>
+                                                <div class="mb-1"><strong>Contact:</strong> {{ parent_obj.phone|default:user_obj.email }}</div>
+                                                <div class="mb-1">
+                                                    <strong>Children:</strong>
+                                                    {% for child in parent_obj.children.all %}
+                                                        {{ child.user.first_name }}{% if not forloop.last %}, {% endif %}
+                                                    {% empty %}
+                                                        None associated
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-actions text-center">
+                                <p class="small text-muted mb-2">
+                                    This is a preview of how the ID card will look when printed. Use
+                                    the print button above to get a printable version.
+                                </p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            ID Card generation in progress. Please check back later.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

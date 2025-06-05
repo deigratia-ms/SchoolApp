@@ -1,0 +1,294 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}About Us | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('{% if sections.about_hero.image %}{{ sections.about_hero.image.url }}{% else %}https://images.unsplash.com/photo-1599687266725-61d31a2a2b75?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80{% endif %}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ sections.about_hero.title|default:"About Our School" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ sections.about_hero.content|default:"Discover the Deigratia Montessori difference and our commitment to excellence in education" }}
+        </p>
+    </div>
+</section>
+
+<!-- Mission & Vision -->
+<section class="py-5">
+    <div class="container">
+        <div class="row gy-4">
+            <div class="col-md-6" data-aos="fade-up">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-4">
+                            <i class="fas fa-bullseye fa-2x text-primary me-3"></i>
+                            <h2 class="mb-0">{{ sections.mission.title|default:"Our Mission" }}</h2>
+                        </div>
+                        <p class="card-text">{{ sections.mission.content|default:"To provide an enriching Montessori education that nurtures each child's unique potential, fostering independence, creativity, and a lifelong love for learning while maintaining the highest standards of academic excellence." }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-4">
+                            <i class="fas fa-eye fa-2x text-primary me-3"></i>
+                            <h2 class="mb-0">{{ sections.vision.title|default:"Our Vision" }}</h2>
+                        </div>
+                        <p class="card-text">{{ sections.vision.content|default:"To be a leading Montessori institution that empowers children to become confident, responsible, and globally conscious individuals who contribute positively to society through their unique gifts and talents." }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Story -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6" data-aos="fade-right">
+                {% if sections.story.image %}
+                    <img src="{{ sections.story.image.url }}" class="img-fluid rounded-3 shadow" alt="Our Story Image">
+                {% else %}
+                    <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" class="img-fluid rounded-3 shadow" alt="Default School History Image">
+                {% endif %}
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <h2 class="section-title text-start">{{ sections.story.title|default:"Our Story" }}</h2>
+                <p class="lead mb-4">{{ sections.story.subtitle|default:"Founded with a vision to provide exceptional Montessori education" }}</p>
+                <div class="story-content">
+                    {{ sections.story.content|default:"<p>Deigratia Montessori School was established with a clear vision: to create an educational environment where children can thrive and develop their full potential. Our journey began with a deep commitment to the Montessori method and its proven approach to child development.</p><p>Today, we continue to build upon this foundation, combining traditional Montessori principles with innovative educational practices to prepare our students for success in the modern world.</p>"|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Team -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="section-title mb-0" data-aos="fade-up">Our Leadership Team</h2>
+            <a href="{% url 'website:staff-list' %}" class="btn btn-primary" data-aos="fade-up">View All Staff</a>
+        </div>
+        <div class="row gy-4">
+            {% for member in staff_members %}
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                <div class="card h-100 border-0 shadow-sm staff-card">
+                    {% if member.image %}
+                    <img src="{{ member.image.url }}" class="card-img-top" alt="{{ member.name }}">
+                    {% else %}
+                    <img src="{% static 'website/images/placeholder-staff.jpg' %}" class="card-img-top" alt="Staff Placeholder">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ member.name }}</h5>
+                        <p class="card-subtitle mb-2 text-primary">{{ member.position }}</p>
+                        <p class="card-text">{{ member.bio|truncatewords:30 }}</p>
+                        <button class="btn btn-primary view-staff-details" data-staff-id="{{ member.id }}">
+                            View Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No featured staff members available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Staff Modal -->
+<div class="modal fade" id="staffModal" tabindex="-1" aria-labelledby="staffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staffModalLabel">Staff Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 staff-modal-image">
+                        <img src="" alt="" class="img-fluid rounded">
+                    </div>
+                    <div class="col-md-8">
+                        <h3 class="staff-name mb-2"></h3>
+                        <p class="staff-position text-primary"></p>
+                        <div class="staff-bio mt-3"></div>
+
+                        <div class="staff-qualifications mt-4">
+                            <h5>Qualifications</h5>
+                            <div class="qualification-content"></div>
+                        </div>
+
+                        <div class="staff-achievements mt-4">
+                            <h5>Achievements</h5>
+                            <div class="achievement-content"></div>
+                        </div>
+
+                        <div class="staff-interests mt-4">
+                            <h5>Interests & Specializations</h5>
+                            <div class="interest-content"></div>
+                        </div>
+
+                        <div class="staff-contact mt-4">
+                            <h5>Contact Information</h5>
+                            <p class="staff-email"></p>
+                            <p class="staff-phone"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Montessori Method -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">The Montessori Method</h2>
+        <div class="row gy-4">
+            {% for item in montessori_items %}
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-primary mb-3">
+                                <i class="fas fa-{{ item.icon }} fa-3x"></i>
+                            </div>
+                            <h5 class="card-title">{{ item.title }}</h5>
+                            <p class="card-text">{{ item.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-md-6 col-lg-3" data-aos="fade-up">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-primary mb-3">
+                                <i class="fas fa-child fa-3x"></i>
+                            </div>
+                            <h5 class="card-title">Child-Centered Learning</h5>
+                            <p class="card-text">Our approach respects each child's individual development pace and learning style.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-primary mb-3">
+                                <i class="fas fa-hands-helping fa-3x"></i>
+                            </div>
+                            <h5 class="card-title">Prepared Environment</h5>
+                            <p class="card-text">Carefully designed classrooms that promote independence and discovery.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-primary mb-3">
+                                <i class="fas fa-brain fa-3x"></i>
+                            </div>
+                            <h5 class="card-title">Hands-on Learning</h5>
+                            <p class="card-text">Educational materials that engage the senses and promote concrete understanding.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-primary mb-3">
+                                <i class="fas fa-users fa-3x"></i>
+                            </div>
+                            <h5 class="card-title">Mixed-Age Groups</h5>
+                            <p class="card-text">Children learn from and teach each other in multi-age classroom environments.</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Parent Testimonials</h2>
+        <div class="row gy-4">
+            {% for testimonial in testimonials %}
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+                <div class="testimonial-card">
+                    <p class="mb-4">{{ testimonial.content }}</p>
+                    <div class="d-flex align-items-center">
+                        {% if testimonial.image %}
+                        <img src="{{ testimonial.image.url }}" class="rounded-circle me-3" width="50" height="50" alt="{{ testimonial.name }}">
+                        {% else %}
+                        <img src="{% static 'website/images/placeholder-profile.jpg' %}" class="rounded-circle me-3" alt="Profile Placeholder">
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ testimonial.name }}</h6>
+                            <small class="text-muted">{{ testimonial.role }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No testimonials available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <h2 class="mb-4">Join Our School Community</h2>
+                <p class="lead mb-4">Experience the difference of a Montessori education at Deigratia Montessori School.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'website:admissions' %}" class="btn btn-light btn-lg">Apply Now</a>
+                    <a href="{% url 'website:contact' %}" class="btn btn-outline-light btn-lg">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const staffModal = new bootstrap.Modal(document.getElementById('staffModal'));
+
+    document.querySelectorAll('.view-staff-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const staffId = this.dataset.staffId;
+            fetch(`/api/staff/${staffId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update modal content
+                    document.querySelector('.staff-modal-image img').src = data.image_url;
+                    document.querySelector('.staff-name').textContent = data.name;
+                    document.querySelector('.staff-position').textContent = data.position;
+                    document.querySelector('.staff-bio').textContent = data.bio;
+                    document.querySelector('.qualification-content').textContent = data.qualification || 'Not provided';
+                    document.querySelector('.achievement-content').textContent = data.achievements || 'Not provided';
+                    document.querySelector('.interest-content').textContent = data.interests || 'Not provided';
+                    document.querySelector('.staff-email').textContent = `Email: ${data.email}`;
+                    document.querySelector('.staff-phone').textContent = data.phone ? `Phone: ${data.phone}` : '';
+
+                    // Show modal
+                    staffModal.show();
+                });
+        });
+    });
+});
+</script>
+{% endblock %}

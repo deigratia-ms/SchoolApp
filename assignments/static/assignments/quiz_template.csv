@@ -1,0 +1,11 @@
+Question,Option A,Option B,Option C,Option D,Correct Answer,Type,Tags,Image URL
+"What is 2 + 2?",3,4,5,6,B,MCQ,"Math,Addition",
+"The capital of Ghana is:",Kumasi,Tamale,Accra,Cape Coast,C,MCQ,"Geography,Capitals",
+"Which of these is a mammal?",Fish,Bird,Lizard,Dog,D,MCQ,"Science,Animals",
+"True or False: The Earth is flat.",True,False,,,B,TF,"Science,Geography",
+"What is the chemical symbol for water?",H2O,CO2,O2,N2,A,MCQ,"Science,Chemistry",
+"Who wrote 'Things Fall Apart'?",William Shakespeare,Chinua Achebe,Wole Soyinka,Chimamanda Adichie,B,MCQ,"Literature,African Literature",
+"What is the largest planet in our solar system?",Earth,Mars,Jupiter,Venus,C,MCQ,"Science,Astronomy",
+"What is the square root of 16?",2,4,8,16,B,MCQ,"Math,Square Roots",
+"Which of these is a primary color?",Green,Orange,Purple,Blue,D,MCQ,"Art,Colors",
+"What is the main language spoken in Brazil?",Spanish,English,Portuguese,French,C,MCQ,"Languages,Geography",

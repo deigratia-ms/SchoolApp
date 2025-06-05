@@ -1,0 +1,755 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Academic Performance Overview - School Management System{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet" />
+<style>
+    .performance-stats-card {
+        transition: all 0.3s;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .performance-stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 24px;
+    }
+    .class-performance-row {
+        transition: all 0.2s;
+    }
+    .class-performance-row:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    .chart-container {
+        height: 300px;
+    }
+    .table-grades th, .table-grades td {
+        text-align: center;
+    }
+    .top-student-card {
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    .top-student-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .student-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 15px;
+    }
+    .student-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Academic Performance Overview</h1>
+            <p class="mb-0 text-muted">Comprehensive view of academic performance across the school</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-sm btn-outline-primary me-2">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog me-2"></i>Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="{% url 'dashboard:admin_performance_comparison' %}">
+                        <i class="fas fa-chart-bar me-2"></i>Compare Performance
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'dashboard:admin_performance_trends' %}">
+                        <i class="fas fa-chart-line me-2"></i>Performance Trends
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'dashboard:admin_grading_scales' %}">
+                        <i class="fas fa-sliders-h me-2"></i>Manage Grading Scales
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'assignments:report_card_list' %}">
+                        <i class="fas fa-file-alt me-2"></i>Report Cards
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Performance Data</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="term" class="form-label">Term</label>
+                    <select class="form-select" id="term" name="term">
+                        <option value="">All Terms</option>
+                        {% for term_value in all_terms %}
+                            <option value="{{ term_value }}" {% if selected_term == term_value %}selected{% endif %}>{{ term_value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="grade_level" class="form-label">Grade Level</label>
+                    <select class="form-select" id="grade_level" name="grade_level">
+                        <option value="">All Grades</option>
+                        {% for level in all_grade_levels %}
+                            <option value="{{ level }}" {% if selected_grade_level == level %}selected{% endif %}>Grade {{ level }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Apply Filters
+                    </button>
+                    <a href="{% url 'dashboard:admin_performance_overview' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-redo me-2"></i>Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Performance Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card performance-stats-card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Average Score</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ average_score }}%</div>
+                            <div class="text-xs text-muted mt-2">School-wide average</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-primary-light text-primary">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card performance-stats-card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Pass Rate</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">
+                                {% with pass_count=grade_distribution.A|add:grade_distribution.B|add:grade_distribution.C|add:grade_distribution.D %}
+                                    {% if total_grades > 0 %}
+                                        {{ pass_count|floatformat:1|default:0 }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="text-xs text-muted mt-2">Students scoring >= 60%</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-success-light text-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card performance-stats-card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Excellence Rate</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">
+                                {% if total_grades > 0 %}
+                                    {{ grade_distribution.A|floatformat:1|default:0 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-muted mt-2">Students scoring >= 90%</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-warning-light text-warning">
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card performance-stats-card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Grades</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ total_grades }}</div>
+                            <div class="text-xs text-muted mt-2">Across all classes</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-info-light text-info">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Grade Distribution Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Grade Distribution</h6>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary active" id="pieChartBtn">Pie</button>
+                        <button class="btn btn-sm btn-outline-primary" id="barChartBtn">Bar</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="gradeDistributionChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <div class="row">
+                            <div class="col">
+                                <span class="badge bg-success">A: {{ grade_distribution.A }}</span>
+                            </div>
+                            <div class="col">
+                                <span class="badge bg-primary">B: {{ grade_distribution.B }}</span>
+                            </div>
+                            <div class="col">
+                                <span class="badge bg-info">C: {{ grade_distribution.C }}</span>
+                            </div>
+                            <div class="col">
+                                <span class="badge bg-warning">D: {{ grade_distribution.D }}</span>
+                            </div>
+                            <div class="col">
+                                <span class="badge bg-danger">F: {{ grade_distribution.F }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance by Subject -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance by Subject</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="subjectPerformanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer small text-muted">
+                    Hover over bars to see detailed statistics
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Top 10 Students -->
+        <div class="col-xl-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Performing Students</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for student in top_students %}
+                            <div class="col-lg-6">
+                                <div class="card top-student-card mb-3" onclick="window.location.href='{% url 'dashboard:admin_student_performance' student_id=student.student.id %}'">
+                                    <div class="card-body py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="student-avatar">
+                                                {% if student.student.user.profile_picture %}
+                                                    <img src="{{ student.student.user.profile_picture.url }}" alt="{{ student.student.user.get_full_name }}">
+                                                {% else %}
+                                                    <div class="avatar-placeholder">
+                                                        {{ student.student.user.first_name|first }}{{ student.student.user.last_name|first }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ student.student.user.get_full_name }}</h6>
+                                                <div class="small text-muted">{{ student.student.roll_number }}</div>
+                                            </div>
+                                            <div class="ms-auto text-end">
+                                                <div class="h5 mb-0">{{ student.avg_score }}%</div>
+                                                <div class="small text-success">
+                                                    {% if student.distribution.A > 0 %}
+                                                        <span class="badge bg-success">{{ student.distribution.A }} A's</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12 text-center py-5">
+                                <div class="mb-3">
+                                    <i class="fas fa-user-graduate fa-3x text-muted"></i>
+                                </div>
+                                <h5 class="text-muted">No student data available</h5>
+                                <p class="text-muted small">Try adjusting your filters or check if grades have been recorded.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'dashboard:admin_performance_comparison' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-chart-bar me-1"></i> Student Comparisons
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance by Class -->
+        <div class="col-xl-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance by Class</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Avg Score</th>
+                                    <th>Pass Rate</th>
+                                    <th>Students</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for class_data in class_performance %}
+                                    <tr class="class-performance-row">
+                                        <td>{{ class_data.classroom.name }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                    {% with score=class_data.avg_score|floatformat:0 %}
+                                                        {% if score|less_than:60 %}
+                                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ class_data.avg_score }}%"></div>
+                                                        {% elif score|less_than:70 %}
+                                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ class_data.avg_score }}%"></div>
+                                                        {% elif score|less_than:80 %}
+                                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ class_data.avg_score }}%"></div>
+                                                        {% else %}
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ class_data.avg_score }}%"></div>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                                <span>{{ class_data.avg_score }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ class_data.pass_rate }}%</td>
+                                        <td>{{ class_data.student_count }}</td>
+                                        <td>
+                                            <a href="{% url 'dashboard:admin_class_performance' class_id=class_data.classroom.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <div class="mb-3">
+                                                <i class="fas fa-school fa-3x text-muted"></i>
+                                            </div>
+                                            <h5 class="text-muted">No class performance data available</h5>
+                                            <p class="text-muted small">Try adjusting your filters or check if grades have been recorded.</p>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'dashboard:admin_performance_comparison' %}?comparison_type=classes" class="btn btn-sm btn-primary">
+                        <i class="fas fa-chart-bar me-1"></i> Class Comparisons
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Subject Performance -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Detailed Subject Performance</h6>
+            <a href="{% url 'dashboard:admin_performance_comparison' %}?comparison_type=subjects" class="btn btn-sm btn-primary">
+                <i class="fas fa-chart-bar me-1"></i> Subject Comparisons
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-grades">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Avg Score</th>
+                            <th>A</th>
+                            <th>B</th>
+                            <th>C</th>
+                            <th>D</th>
+                            <th>F</th>
+                            <th>Pass Rate</th>
+                            <th>Grades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subject_data in subject_performance %}
+                            <tr>
+                                <td>{{ subject_data.subject.name }}</td>
+                                <td class="fw-bold">{{ subject_data.avg_score }}%</td>
+                                <td class="bg-success-light">{{ subject_data.distribution.A }}</td>
+                                <td class="bg-primary-light">{{ subject_data.distribution.B }}</td>
+                                <td class="bg-info-light">{{ subject_data.distribution.C }}</td>
+                                <td class="bg-warning-light">{{ subject_data.distribution.D }}</td>
+                                <td class="bg-danger-light">{{ subject_data.distribution.F }}</td>
+                                <td>{{ subject_data.pass_rate }}%</td>
+                                <td>{{ subject_data.grade_count }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="mb-3">
+                                        <i class="fas fa-book fa-3x text-muted"></i>
+                                    </div>
+                                    <h5 class="text-muted">No subject performance data available</h5>
+                                    <p class="text-muted small">Try adjusting your filters or check if grades have been recorded for subjects.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance vs Attendance Correlation -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Performance & Attendance Correlation</h6>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <div class="chart-container">
+                        <canvas id="correlationChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <h5 class="mb-3">Key Insights</h5>
+                    <div class="card bg-light mb-3">
+                        <div class="card-body py-3">
+                            <h6 class="card-title">Attendance & Performance Analysis</h6>
+                            <p class="card-text">
+                                This chart displays the correlation between student attendance rates and their academic performance.
+                                Each point represents a class, with attendance rate on the x-axis and average score on the y-axis.
+                            </p>
+                            <p class="card-text mb-0">
+                                <strong>Recommendation:</strong>
+                                Classes with low attendance and performance may need targeted intervention strategies.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <a href="{% url 'dashboard:admin_attendance_overview' %}" class="btn btn-outline-primary mt-2">
+                            <i class="fas fa-user-check me-2"></i>View Attendance Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Grade Distribution Chart
+    const gradeCtx = document.getElementById('gradeDistributionChart').getContext('2d');
+    const gradeLabels = {{ grade_labels|safe }};
+    const gradeCounts = {{ grade_counts|safe }};
+
+    let distributionChart;
+
+    function createPieChart() {
+        if (distributionChart) {
+            distributionChart.destroy();
+        }
+
+        distributionChart = new Chart(gradeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: gradeLabels,
+                datasets: [{
+                    data: gradeCounts,
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',  // A - success
+                        'rgba(0, 123, 255, 0.8)',  // B - primary
+                        'rgba(23, 162, 184, 0.8)',  // C - info
+                        'rgba(255, 193, 7, 0.8)',  // D - warning
+                        'rgba(220, 53, 69, 0.8)'   // F - danger
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(0, 123, 255, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let dataset = context.dataset;
+                                let total = dataset.data.reduce((acc, data) => acc + data, 0);
+                                let currentValue = dataset.data[context.dataIndex];
+                                let percentage = Math.round((currentValue / total) * 100);
+                                return gradeLabels[context.dataIndex] + ': ' + currentValue + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    function createBarChart() {
+        if (distributionChart) {
+            distributionChart.destroy();
+        }
+
+        distributionChart = new Chart(gradeCtx, {
+            type: 'bar',
+            data: {
+                labels: gradeLabels,
+                datasets: [{
+                    label: 'Grade Distribution',
+                    data: gradeCounts,
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',  // A - success
+                        'rgba(0, 123, 255, 0.8)',  // B - primary
+                        'rgba(23, 162, 184, 0.8)',  // C - info
+                        'rgba(255, 193, 7, 0.8)',  // D - warning
+                        'rgba(220, 53, 69, 0.8)'   // F - danger
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(0, 123, 255, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let dataset = context.dataset;
+                                let total = dataset.data.reduce((acc, data) => acc + data, 0);
+                                let currentValue = dataset.data[context.dataIndex];
+                                let percentage = Math.round((currentValue / total) * 100);
+                                return 'Grade ' + gradeLabels[context.dataIndex] + ': ' + currentValue + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Create initial pie chart
+    createPieChart();
+
+    // Toggle chart type
+    document.getElementById('pieChartBtn').addEventListener('click', function() {
+        document.getElementById('pieChartBtn').classList.add('active');
+        document.getElementById('barChartBtn').classList.remove('active');
+        createPieChart();
+    });
+
+    document.getElementById('barChartBtn').addEventListener('click', function() {
+        document.getElementById('barChartBtn').classList.add('active');
+        document.getElementById('pieChartBtn').classList.remove('active');
+        createBarChart();
+    });
+
+    // Subject Performance Chart
+    const subjectCtx = document.getElementById('subjectPerformanceChart').getContext('2d');
+    const subjectLabels = {{ subject_labels|safe }};
+    const subjectScores = {{ subject_scores|safe }};
+
+    new Chart(subjectCtx, {
+        type: 'bar',
+        data: {
+            labels: subjectLabels,
+            datasets: [{
+                label: 'Average Score (%)',
+                data: subjectScores,
+                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    suggestedMax: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Average: ' + context.raw + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Correlation Chart (simulated data)
+    const correlationCtx = document.getElementById('correlationChart').getContext('2d');
+
+    // Sample data - in production this would come from the backend
+    const classNames = {{ class_labels|safe }};
+    const attendanceRates = classNames.map(() => Math.floor(Math.random() * 30) + 70); // 70-100%
+    const avgScores = {{ class_scores|safe }};
+
+    new Chart(correlationCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Classes',
+                data: classNames.map((className, index) => ({
+                    x: attendanceRates[index],
+                    y: avgScores[index]
+                })),
+                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointRadius: 8,
+                pointHoverRadius: 12
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Attendance Rate (%)'
+                    },
+                    min: 50,
+                    max: 100
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Average Score (%)'
+                    },
+                    min: 50,
+                    max: 100
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            return classNames[index] + ' - Attendance: ' +
+                                   attendanceRates[index] + '%, Avg Score: ' +
+                                   avgScores[index] + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Note: We're using a custom Django template filter called 'less_than' for comparing values
+</script>
+{% endblock %}

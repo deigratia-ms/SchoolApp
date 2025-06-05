@@ -1,0 +1,223 @@
+{% if user.is_parent %}
+{% load custom_filters %}
+<div class="sidebar-section">
+  <div class="sidebar-heading px-3 py-2 d-flex align-items-center">
+    <i class="fas fa-child me-2"></i>
+    <span>MY CHILDREN</span>
+  </div>
+  
+  {% with parent=user.parent_profile %}
+    {% if parent.children.all %}
+      {% for child in parent.children.all %}
+        {% with child_id_str=child.id|stringformat:'s' %}
+        <!-- Define active state variables without using "with" syntax -->
+        {% if request.resolver_match.url_name == 'parent_child_detail' and request.resolver_match.kwargs.child_id == child.id or request.GET.child_id == child_id_str or request.GET.student_id == child_id_str or child_id_str in request.path %}
+          <div class="child-menu-container">
+            <!-- Child main menu item with toggle -->
+            <a href="{% url 'dashboard:parent_child_detail' child.id %}" 
+               class="menu-item active child-menu-header"
+               data-child-id="{{ child.id }}">
+              <div class="d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center">
+                  {% if child.user.profile_picture %}
+                    <img src="{{ child.user.profile_picture.url }}" 
+                         alt="{{ child.user.get_full_name }}" 
+                         class="rounded-circle me-2"
+                         width="24" height="24">
+                  {% else %}
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white me-2"
+                         style="width: 24px; height: 24px; font-size: 0.6rem;">
+                      {{ child.user.first_name.0 }}{{ child.user.last_name.0 }}
+                    </div>
+                  {% endif %}
+                  <span>{{ child.user.get_full_name }}</span>
+                </div>
+                <i class="fas fa-chevron-up child-toggle-icon"></i>
+              </div>
+            </a>
+            
+            <!-- Child submenu items (expanded for active child) -->
+            <div class="collapse show child-submenu" id="child-submenu-{{ child.id }}">
+              <!-- Dashboard -->
+              <a href="{% url 'dashboard:parent_child_detail' child.id %}" 
+                 class="menu-item menu-subitem {% if request.resolver_match.url_name == 'parent_child_detail' and request.resolver_match.kwargs.child_id == child.id %}active{% endif %}">
+                <i class="fas fa-tachometer-alt ms-3 me-2"></i>
+                <span>Dashboard</span>
+              </a>
+              
+              <!-- Subjects -->
+              <a href="{% url 'courses:subject_list' %}?student_id={{ child.id }}" 
+                 class="menu-item menu-subitem {% if '/courses/subjects/' in request.path and request.GET.student_id == child_id_str %}active{% endif %}">
+                <i class="fas fa-book ms-3 me-2"></i>
+                <span>Subjects</span>
+              </a>
+              
+              <!-- Assignments -->
+              <a href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}" 
+                 class="menu-item menu-subitem {% if '/assignments/parent-assignments/' in request.path and request.GET.child_id == child_id_str %}active{% endif %}">
+                <i class="fas fa-tasks ms-3 me-2"></i>
+                <span>Assignments</span>
+              </a>
+              
+              <!-- Grades -->
+              <a href="{% url 'assignments:parent_grades' %}?child_id={{ child.id }}" 
+                 class="menu-item menu-subitem {% if '/assignments/parent-grades/' in request.path and request.GET.child_id == child_id_str %}active{% endif %}">
+                <i class="fas fa-chart-line ms-3 me-2"></i>
+                <span>Grades</span>
+              </a>
+              
+              <!-- Attendance -->
+              <a href="{% url 'attendance:parent_child_attendance' child.id %}" 
+                 class="menu-item menu-subitem {% if '/attendance/parent/child/' in request.path and child.id == request.resolver_match.kwargs.student_id|default:0 %}active{% endif %}">
+                <i class="fas fa-calendar-check ms-3 me-2"></i>
+                <span>Attendance</span>
+              </a>
+              
+              <!-- Materials -->
+              <a href="{% url 'courses:material_list' %}?student_id={{ child.id }}" 
+                 class="menu-item menu-subitem {% if '/courses/materials/' in request.path and request.GET.student_id == child_id_str %}active{% endif %}">
+                <i class="fas fa-file-alt ms-3 me-2"></i>
+                <span>Materials</span>
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <div class="child-menu-container">
+            <!-- Child main menu item with toggle -->
+            <a href="{% url 'dashboard:parent_child_detail' child.id %}" 
+               class="menu-item child-menu-header"
+               data-child-id="{{ child.id }}">
+              <div class="d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center">
+                  {% if child.user.profile_picture %}
+                    <img src="{{ child.user.profile_picture.url }}" 
+                         alt="{{ child.user.get_full_name }}" 
+                         class="rounded-circle me-2"
+                         width="24" height="24">
+                  {% else %}
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white me-2"
+                         style="width: 24px; height: 24px; font-size: 0.6rem;">
+                      {{ child.user.first_name.0 }}{{ child.user.last_name.0 }}
+                    </div>
+                  {% endif %}
+                  <span>{{ child.user.get_full_name }}</span>
+                </div>
+                <i class="fas fa-chevron-down child-toggle-icon"></i>
+              </div>
+            </a>
+            
+            <!-- Child submenu items (collapsed for inactive children) -->
+            <div class="collapse child-submenu" id="child-submenu-{{ child.id }}">
+              <!-- Dashboard -->
+              <a href="{% url 'dashboard:parent_child_detail' child.id %}" 
+                 class="menu-item menu-subitem">
+                <i class="fas fa-tachometer-alt ms-3 me-2"></i>
+                <span>Dashboard</span>
+              </a>
+              
+              <!-- Subjects -->
+              <a href="{% url 'courses:subject_list' %}?student_id={{ child.id }}" 
+                 class="menu-item menu-subitem">
+                <i class="fas fa-book ms-3 me-2"></i>
+                <span>Subjects</span>
+              </a>
+              
+              <!-- Assignments -->
+              <a href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}" 
+                 class="menu-item menu-subitem">
+                <i class="fas fa-tasks ms-3 me-2"></i>
+                <span>Assignments</span>
+              </a>
+              
+              <!-- Grades -->
+              <a href="{% url 'assignments:parent_grades' %}?child_id={{ child.id }}" 
+                 class="menu-item menu-subitem">
+                <i class="fas fa-chart-line ms-3 me-2"></i>
+                <span>Grades</span>
+              </a>
+              
+              <!-- Attendance -->
+              <a href="{% url 'attendance:parent_child_attendance' child.id %}" 
+                 class="menu-item menu-subitem">
+                <i class="fas fa-calendar-check ms-3 me-2"></i>
+                <span>Attendance</span>
+              </a>
+              
+              <!-- Materials -->
+              <a href="{% url 'courses:material_list' %}?student_id={{ child.id }}" 
+                 class="menu-item menu-subitem">
+                <i class="fas fa-file-alt ms-3 me-2"></i>
+                <span>Materials</span>
+              </a>
+            </div>
+          </div>
+        {% endif %}
+        {% endwith %}
+      {% endfor %}
+    {% else %}
+      <div class="menu-item menu-subitem text-muted">
+        <i class="fas fa-info-circle me-2"></i>
+        <span>No children linked</span>
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+
+<!-- Add JavaScript to handle collapsing/expanding -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle child menu toggle clicks
+    const childMenuHeaders = document.querySelectorAll('.child-menu-header');
+    
+    childMenuHeaders.forEach(header => {
+      const childId = header.getAttribute('data-child-id');
+      const submenu = document.getElementById(`child-submenu-${childId}`);
+      const toggleIcon = header.querySelector('.child-toggle-icon');
+      
+      // Add click event to toggle submenu
+      header.addEventListener('click', function(e) {
+        // Only handle the toggle icon click to prevent navigation conflicts
+        if (e.target === toggleIcon || toggleIcon.contains(e.target)) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Toggle the submenu
+          if (submenu.classList.contains('show')) {
+            submenu.classList.remove('show');
+            toggleIcon.classList.remove('fa-chevron-up');
+            toggleIcon.classList.add('fa-chevron-down');
+          } else {
+            submenu.classList.add('show');
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-up');
+          }
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .child-menu-container {
+    margin-bottom: 2px;
+  }
+  
+  .child-menu-header {
+    font-weight: 500;
+  }
+  
+  .child-submenu {
+    border-left: 2px solid rgba(var(--bs-primary-rgb), 0.3);
+    margin-left: 12px;
+  }
+  
+  .child-submenu .menu-subitem {
+    padding-left: 0.5rem;
+  }
+  
+  .child-toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 0.75rem;
+  }
+</style>
+{% endif %}

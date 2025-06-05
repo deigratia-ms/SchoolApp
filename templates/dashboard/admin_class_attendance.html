@@ -1,0 +1,666 @@
+{% extends 'base.html' %}
+{% block title %}Class Attendance - {{ classroom.name }} - School Management System{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" rel="stylesheet" />
+<style>
+    .student-row {
+        transition: all 0.2s;
+    }
+    .student-row:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .chart-container {
+        height: 300px;
+    }
+    .attendance-summary-card {
+        transition: all 0.3s;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .attendance-summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .status-count {
+        font-size: 1.75rem;
+        font-weight: bold;
+    }
+    .attendance-calendar td.present {
+        background-color: rgba(40, 167, 69, 0.2);
+    }
+    .attendance-calendar td.absent {
+        background-color: rgba(220, 53, 69, 0.2);
+    }
+    .attendance-calendar td.late {
+        background-color: rgba(255, 193, 7, 0.2);
+    }
+    .attendance-calendar td.excused {
+        background-color: rgba(23, 162, 184, 0.2);
+    }
+    .highlight-student {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">{{ classroom.name }} Attendance</h1>
+            <p class="mb-0 text-muted">Class Teacher: {{ classroom.class_teacher.user.get_full_name }}</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:admin_attendance_overview' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Overview
+            </a>
+            <a href="{% url 'attendance:mark_attendance' %}?classroom={{ classroom.id }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-user-check mr-2"></i>Mark Attendance
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Data</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="dateRange" class="form-label">Date Range</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="dateRange" name="date_range" 
+                               value="{{ start_date|date:'Y-m-d' }} - {{ end_date|date:'Y-m-d' }}" />
+                        <input type="hidden" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" />
+                        <input type="hidden" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" />
+                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
+                    </button>
+                    <a href="{% url 'dashboard:admin_class_attendance' class_id=classroom.id %}" class="btn btn-outline-secondary ml-2">
+                        <i class="fas fa-redo mr-2"></i>Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Overall Attendance Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-summary-card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Class Attendance Rate</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ class_attendance_rate }}%</div>
+                            <div class="text-xs text-muted mt-2">For selected period</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-summary-card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Present</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">
+                                {% with total_present=0 %}
+                                    {% for stats in student_stats.values %}
+                                        {% with total_present=total_present|add:stats.present %}{% endwith %}
+                                    {% endfor %}
+                                    {{ total_present }}
+                                {% endwith %}
+                            </div>
+                            <div class="text-xs text-muted mt-2">Total present records</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-summary-card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Absent</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">
+                                {% with total_absent=0 %}
+                                    {% for stats in student_stats.values %}
+                                        {% with total_absent=total_absent|add:stats.absent %}{% endwith %}
+                                    {% endfor %}
+                                    {{ total_absent }}
+                                {% endwith %}
+                            </div>
+                            <div class="text-xs text-muted mt-2">Total absent records</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-summary-card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Students</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ students|length }}</div>
+                            <div class="text-xs text-muted mt-2">In this class</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Daily Attendance Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Daily Attendance</h6>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary active" id="attendanceRateBtn">Rate</button>
+                        <button class="btn btn-sm btn-outline-primary" id="attendanceCountBtn">Count</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="dailyAttendanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer small text-muted">
+                    Showing data from {{ start_date|date:"M d, Y" }} to {{ end_date|date:"M d, Y" }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Status Distribution -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusDistributionChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Present
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> Absent
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-warning"></i> Late
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-info"></i> Excused
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Attendance -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Student Attendance</h6>
+            <div>
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="studentSearch" placeholder="Search student...">
+                    <div class="input-group-append">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="studentAttendanceTable">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll #</th>
+                            <th>Attendance Rate</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Late</th>
+                            <th>Excused</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student_data in sorted_students %}
+                        <tr class="student-row">
+                            <td>{{ student_data.student.user.get_full_name }}</td>
+                            <td>{{ student_data.student.roll_number }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 mr-2" style="height: 8px;">
+                                        <div class="progress-bar bg-{{ student_data.attendance_rate|floatformat:0|less_than:75|yesno:'danger,warning,success' }}" role="progressbar" style="width: {{ student_data.attendance_rate }}%"></div>
+                                    </div>
+                                    <span>{{ student_data.attendance_rate }}%</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-success text-white">{{ student_data.present }}</span></td>
+                            <td><span class="badge bg-danger text-white">{{ student_data.absent }}</span></td>
+                            <td><span class="badge bg-warning text-white">{{ student_data.late }}</span></td>
+                            <td><span class="badge bg-info text-white">{{ student_data.excused }}</span></td>
+                            <td>
+                                <a href="{% url 'dashboard:admin_student_attendance' student_id=student_data.student.id %}" class="btn btn-sm btn-outline-primary">Details</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Calendar -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Attendance Calendar</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered attendance-calendar">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Late</th>
+                            <th>Excused</th>
+                            <th>Attendance Rate</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for date, data in daily_data.items %}
+                        <tr>
+                            <td>{{ data.date }}</td>
+                            <td>{{ date|date:"l" }}</td>
+                            <td class="text-success">{{ data.present }}</td>
+                            <td class="text-danger">{{ data.absent }}</td>
+                            <td class="text-warning">{{ data.late }}</td>
+                            <td class="text-info">{{ data.excused }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 mr-2" style="height: 8px;">
+                                        <div class="progress-bar bg-{{ data.rate|floatformat:0|less_than:75|yesno:'danger,warning,success' }}" role="progressbar" style="width: {{ data.rate }}%"></div>
+                                    </div>
+                                    <span>{{ data.rate }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'attendance:record_detail' %}?classroom={{ classroom.id }}&date={{ date }}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="fas fa-calendar-times fa-3x text-muted"></i>
+                                </div>
+                                <h5 class="text-muted">No attendance records found</h5>
+                                <p class="text-muted small">Try adjusting your date range or check if attendance has been recorded.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script>
+    // Date range picker initialization
+    $(function() {
+        $('#dateRange').daterangepicker({
+            opens: 'left',
+            startDate: moment('{{ start_date|date:"Y-m-d" }}'),
+            endDate: moment('{{ end_date|date:"Y-m-d" }}'),
+            locale: {
+                format: 'YYYY-MM-DD'
+            },
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+               'This Academic Year': [moment().month() < 7 ? moment().subtract(1, 'year').month(7).startOf('month') : moment().month(7).startOf('month'), moment().month() < 6 ? moment().month(6).endOf('month') : moment().add(1, 'year').month(6).endOf('month')]
+            }
+        }, function(start, end) {
+            $('#start_date').val(start.format('YYYY-MM-DD'));
+            $('#end_date').val(end.format('YYYY-MM-DD'));
+        });
+    });
+
+    // Daily Attendance Chart
+    const dailyLabels = {{ daily_labels|safe }};
+    const dailyRates = {{ daily_rates|safe }};
+    
+    // Create datasets for counts
+    const dailyPresent = [];
+    const dailyAbsent = [];
+    const dailyLate = [];
+    const dailyExcused = [];
+    
+    {% for date, data in daily_data.items %}
+        dailyPresent.push({{ data.present }});
+        dailyAbsent.push({{ data.absent }});
+        dailyLate.push({{ data.late }});
+        dailyExcused.push({{ data.excused }});
+    {% endfor %}
+    
+    // Chart configurations
+    const dailyCtx = document.getElementById('dailyAttendanceChart').getContext('2d');
+    let dailyChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: dailyLabels,
+            datasets: [{
+                label: 'Attendance Rate (%)',
+                data: dailyRates,
+                tension: 0.3,
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        maxTicksLimit: 5,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    suggestedMax: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.raw + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Toggle between rate and count views
+    document.getElementById('attendanceRateBtn').addEventListener('click', function() {
+        document.getElementById('attendanceRateBtn').classList.add('active');
+        document.getElementById('attendanceCountBtn').classList.remove('active');
+        
+        dailyChart.destroy();
+        
+        dailyChart = new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Attendance Rate (%)',
+                    data: dailyRates,
+                    tension: 0.3,
+                    backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    pointRadius: 3,
+                    pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointBorderColor: 'rgba(78, 115, 223, 1)',
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                    pointHitRadius: 10,
+                    pointBorderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            maxTicksLimit: 5,
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    document.getElementById('attendanceCountBtn').addEventListener('click', function() {
+        document.getElementById('attendanceCountBtn').classList.add('active');
+        document.getElementById('attendanceRateBtn').classList.remove('active');
+        
+        dailyChart.destroy();
+        
+        dailyChart = new Chart(dailyCtx, {
+            type: 'bar',
+            data: {
+                labels: dailyLabels,
+                datasets: [
+                    {
+                        label: 'Present',
+                        data: dailyPresent,
+                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Absent',
+                        data: dailyAbsent,
+                        backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Late',
+                        data: dailyLate,
+                        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Excused',
+                        data: dailyExcused,
+                        backgroundColor: 'rgba(23, 162, 184, 0.8)',
+                        borderColor: 'rgba(23, 162, 184, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    });
+
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('statusDistributionChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Present', 'Absent', 'Late', 'Excused'],
+            datasets: [{
+                data: [
+                    {% with total_present=0 %}
+                        {% for stats in student_stats.values %}
+                            {% with total_present=total_present|add:stats.present %}{% endwith %}
+                        {% endfor %}
+                        {{ total_present }},
+                    {% endwith %}
+                    {% with total_absent=0 %}
+                        {% for stats in student_stats.values %}
+                            {% with total_absent=total_absent|add:stats.absent %}{% endwith %}
+                        {% endfor %}
+                        {{ total_absent }},
+                    {% endwith %}
+                    {% with total_late=0 %}
+                        {% for stats in student_stats.values %}
+                            {% with total_late=total_late|add:stats.late %}{% endwith %}
+                        {% endfor %}
+                        {{ total_late }},
+                    {% endwith %}
+                    {% with total_excused=0 %}
+                        {% for stats in student_stats.values %}
+                            {% with total_excused=total_excused|add:stats.excused %}{% endwith %}
+                        {% endfor %}
+                        {{ total_excused }}
+                    {% endwith %}
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',   // Present - success
+                    'rgba(220, 53, 69, 0.8)',   // Absent - danger
+                    'rgba(255, 193, 7, 0.8)',   // Late - warning
+                    'rgba(23, 162, 184, 0.8)'   // Excused - info
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(23, 162, 184, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let dataset = context.dataset;
+                            let total = dataset.data.reduce((acc, data) => acc + data, 0);
+                            let currentValue = dataset.data[context.dataIndex];
+                            let percentage = Math.round((currentValue / total) * 100);
+                            return context.label + ': ' + currentValue + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+
+    // Student search functionality
+    document.getElementById('studentSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#studentAttendanceTable tbody tr');
+        
+        rows.forEach(row => {
+            const studentName = row.cells[0].textContent.toLowerCase();
+            const rollNumber = row.cells[1].textContent.toLowerCase();
+            
+            if (studentName.includes(searchTerm) || rollNumber.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Create a filter function for the template (hacky but works)
+    Object.defineProperties(Number.prototype, {
+        'less_than': { value: function(n) { return this < n; } }
+    });
+</script>
+{% endblock %}

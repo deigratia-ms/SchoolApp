@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Appointment System Inactive - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card mt-5">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-power-off fa-5x text-danger mb-4"></i>
+                    <h2 class="mb-3">Appointment System Currently Inactive</h2>
+                    <p class="lead mb-4">The appointment booking system is currently disabled. Please check back later or contact the school administration for more information.</p>
+                    <a href="{% url 'dashboard:index' %}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i> Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

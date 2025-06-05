@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ child.user.first_name }}'s Assignments - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">{{ section_title|default:child.user.first_name|add:"'s Assignments" }}</h1>
+    <div>
+      <div class="btn-group">
+        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fas fa-filter me-2"></i>Filter
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item {% if filter_type == 'all' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}">All Assignments</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item {% if filter_type == 'HOMEWORK' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&type=HOMEWORK">Homework</a></li>
+          <li><a class="dropdown-item {% if filter_type == 'QUIZ' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&type=QUIZ">Quizzes</a></li>
+          <li><a class="dropdown-item {% if filter_type == 'TEST' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&type=TEST">Tests</a></li>
+          <li><a class="dropdown-item {% if filter_type == 'PROJECT' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&type=PROJECT">Projects</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item {% if status_filter == 'pending' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&status=pending">Pending</a></li>
+          <li><a class="dropdown-item {% if status_filter == 'submitted' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&status=submitted">Submitted</a></li>
+          <li><a class="dropdown-item {% if status_filter == 'graded' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&status=graded">Graded</a></li>
+          <li><a class="dropdown-item {% if status_filter == 'overdue' %}active{% endif %}" href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}&status=overdue">Overdue</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Information -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="d-flex align-items-center">
+        <div class="flex-shrink-0">
+          <img src="{{ child.user.profile_pic.url|default:'/static/img/default-profile.png' }}" alt="{{ child.user.get_full_name }}" class="rounded-circle" width="60">
+        </div>
+        <div class="flex-grow-1 ms-3">
+          <h5 class="card-title mb-0">{{ child.user.get_full_name }}</h5>
+          <p class="card-text text-muted">
+            Student ID: {{ child.student_id }}<br>
+            Class: {{ child.classroom.name }} {{ child.classroom.section }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignment Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-primary text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Total Assignments</div>
+              <div class="display-6">{{ total_count }}</div>
+            </div>
+            <i class="fas fa-clipboard-list fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-success text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Completed</div>
+              <div class="display-6">{{ submitted_count }}</div>
+            </div>
+            <i class="fas fa-clipboard-check fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-warning text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Pending</div>
+              <div class="display-6">{{ pending_count }}</div>
+            </div>
+            <i class="fas fa-hourglass-half fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-danger text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Overdue</div>
+              <div class="display-6">{{ overdue_count }}</div>
+            </div>
+            <i class="fas fa-exclamation-triangle fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignments Section -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">{{ section_title|default:"Assignments" }}</h5>
+    </div>
+    <div class="card-body">
+      {% if assignments %}
+        <div class="table-responsive">
+          <table class="table table-hover table-striped">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for assignment in assignments %}
+                <tr>
+                  <td>
+                    <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="text-decoration-none">
+                      {{ assignment.title }}
+                    </a>
+                  </td>
+                  <td>{{ assignment.class_subject.subject.name }}</td>
+                  <td>
+                    <span class="badge bg-{% if assignment.assignment_type == 'HOMEWORK' %}info{% elif assignment.assignment_type == 'QUIZ' %}success{% elif assignment.assignment_type == 'TEST' %}warning{% else %}danger{% endif %}">
+                      {{ assignment.get_assignment_type_display }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="{% if assignment.due_date < now and not assignment.submission %}text-danger fw-bold{% endif %}">
+                      {{ assignment.due_date|date:"M d, Y H:i" }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if assignment.submission %}
+                      {% if assignment.submission.is_graded %}
+                        <span class="badge bg-success">Graded</span>
+                      {% else %}
+                        <span class="badge bg-primary">Submitted</span>
+                      {% endif %}
+                    {% else %}
+                      {% if assignment.due_date < now %}
+                        <span class="badge bg-danger">Overdue</span>
+                      {% else %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                      {% endif %}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if assignment.submission and assignment.submission.is_graded %}
+                      <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-sm btn-info">View Grade</a>
+                    {% else %}
+                      <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-sm btn-primary">View Details</a>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          {% if filter_type != 'all' or status_filter %}
+            No assignments found with the selected filters. <a href="{% url 'assignments:parent_assignments' %}?child_id={{ child.id }}" class="alert-link">View all assignments</a>
+          {% else %}
+            Your child doesn't have any assignments yet.
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,702 @@
+{% extends 'base.html' %}
+
+{% block title %}Assignments - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3">
+    <!-- Mobile-first header -->
+    <div class="row mb-3 mb-md-4">
+        <div class="col-12">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <h1 class="h4 h3-md mb-0 text-gray-800">Assignments</h1>
+                {% if user.is_teacher or user.is_admin %}
+                <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto">
+                    <a href="{% url 'assignments:create_assignment' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">Create Assignment</span><span class="d-sm-none">Assignment</span>
+                    </a>
+                    <a href="{% url 'assignments:create_quiz' %}" class="btn btn-info btn-sm">
+                        <i class="fas fa-question-circle"></i> <span class="d-none d-sm-inline">Create Quiz</span><span class="d-sm-none">Quiz</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm mb-4">
+                <!-- Mobile-optimized card header -->
+                <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <h6 class="m-0 font-weight-bold text-white">Assignment List</h6>
+                    <div class="w-100 w-md-auto">
+                        <div class="btn-group w-100 w-md-auto">
+                            <button type="button" class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-filter"></i> Filter by Type
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="?type=all"><i class="fas fa-list"></i> All Types</a></li>
+                                <li><a class="dropdown-item" href="?type=HOMEWORK"><i class="fas fa-home"></i> Homework</a></li>
+                                <li><a class="dropdown-item" href="?type=QUIZ"><i class="fas fa-question-circle"></i> Quiz</a></li>
+                                <li><a class="dropdown-item" href="?type=TEST"><i class="fas fa-clipboard-check"></i> Test</a></li>
+                                <li><a class="dropdown-item" href="?type=EXAM"><i class="fas fa-graduation-cap"></i> Exam</a></li>
+                                <li><a class="dropdown-item" href="?type=PROJECT"><i class="fas fa-project-diagram"></i> Project</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0 p-md-3">
+                    {% if assignments %}
+                    <!-- Desktop table view -->
+                    <div class="d-none d-md-block">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="dataTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-white">Title</th>
+                                        <th class="text-white">Subject</th>
+                                        <th class="text-white">Type</th>
+                                        <th class="text-white">Due Date</th>
+                                        <th class="text-white">Max Score</th>
+                                        {% if user.is_student %}
+                                        <th class="text-white">Completion Status</th>
+                                        {% else %}
+                                        <th class="text-white">Status</th>
+                                        {% endif %}
+                                        <th class="text-white">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in assignments %}
+                                    <tr>
+                                        <td class="fw-bold">{{ assignment.title }}</td>
+                                        <td>{{ assignment.class_subject.subject.name }}</td>
+                                        <td>
+                                            {% if assignment.assignment_type == 'HOMEWORK' %}
+                                                <span class="badge bg-primary">Homework</span>
+                                            {% elif assignment.assignment_type == 'QUIZ' %}
+                                                <span class="badge bg-info">Quiz</span>
+                                            {% elif assignment.assignment_type == 'TEST' %}
+                                                <span class="badge bg-warning">Test</span>
+                                            {% elif assignment.assignment_type == 'EXAM' %}
+                                                <span class="badge bg-danger">Exam</span>
+                                            {% elif assignment.assignment_type == 'PROJECT' %}
+                                                <span class="badge bg-success">Project</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ assignment.due_date|date:"M d, Y - h:i A" }}</td>
+                                        <td>{{ assignment.max_score }}</td>
+                                        <td>
+                                            {% if user.is_student %}
+                                                {% if assignment.submission %}
+                                                    {% if assignment.submission.is_graded %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check-circle"></i> Completed & Graded
+                                                        </span>
+                                                        <small class="d-block text-muted mt-1">
+                                                            Score: {{ assignment.submission.score }}/{{ assignment.max_score }}
+                                                        </small>
+                                                    {% else %}
+                                                        <span class="badge bg-info">
+                                                            <i class="fas fa-clock"></i> Submitted - Pending Grade
+                                                        </span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% now "Y-m-d H:i:s" as current_time %}
+                                                    {% if assignment.due_date|date:"Y-m-d H:i:s" < current_time %}
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-exclamation-triangle"></i> Overdue
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning">
+                                                            <i class="fas fa-hourglass-half"></i> Pending
+                                                        </span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                {% if assignment.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-info btn-sm" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if user.is_teacher and assignment.created_by == user or user.is_admin %}
+                                                    {% if assignment.assignment_type == 'QUIZ' %}
+                                                    <a href="{% url 'assignments:quiz_settings' assignment.id %}" class="btn btn-warning btn-sm" title="Edit Quiz">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    {% else %}
+                                                    <a href="{% url 'assignments:edit_assignment' assignment.id %}" class="btn btn-warning btn-sm" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                    <a href="#" class="btn btn-danger btn-sm delete-assignment-btn" data-assignment-id="{{ assignment.id }}" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                {% endif %}
+                                                {% if user.is_student %}
+                                                    {% if assignment.submission %}
+                                                        {% if assignment.submission.is_graded %}
+                                                            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-success btn-sm" title="View Results">
+                                                                <i class="fas fa-check-circle"></i>
+                                                            </a>
+                                                        {% else %}
+                                                            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-info btn-sm" title="View Submission">
+                                                                <i class="fas fa-clock"></i>
+                                                            </a>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        {% if assignment.assignment_type == 'QUIZ' %}
+                                                        <a href="{% url 'assignments:quiz_start' assignment.id %}" class="btn btn-primary btn-sm" title="Take Quiz">
+                                                            <i class="fas fa-pencil-alt"></i>
+                                                        </a>
+                                                        {% else %}
+                                                        <a href="{% url 'assignments:submit_assignment' assignment.id %}" class="btn btn-primary btn-sm" title="Submit">
+                                                            <i class="fas fa-file-upload"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Mobile card view -->
+                    <div class="d-md-none">
+                        {% for assignment in assignments %}
+                        <div class="assignment-card border-bottom p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-1 fw-bold text-primary">{{ assignment.title }}</h6>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    {% if assignment.assignment_type == 'HOMEWORK' %}
+                                        <span class="badge bg-primary">Homework</span>
+                                    {% elif assignment.assignment_type == 'QUIZ' %}
+                                        <span class="badge bg-info">Quiz</span>
+                                    {% elif assignment.assignment_type == 'TEST' %}
+                                        <span class="badge bg-warning">Test</span>
+                                    {% elif assignment.assignment_type == 'EXAM' %}
+                                        <span class="badge bg-danger">Exam</span>
+                                    {% elif assignment.assignment_type == 'PROJECT' %}
+                                        <span class="badge bg-success">Project</span>
+                                    {% endif %}
+
+                                    {% if user.is_student %}
+                                        {% if assignment.submission %}
+                                            {% if assignment.submission.is_graded %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle"></i> Completed
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-clock"></i> Submitted
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            {% now "Y-m-d H:i:s" as current_time %}
+                                            {% if assignment.due_date|date:"Y-m-d H:i:s" < current_time %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-exclamation-triangle"></i> Overdue
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-hourglass-half"></i> Pending
+                                                </span>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        {% if assignment.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Subject</small>
+                                    <span class="fw-medium">{{ assignment.class_subject.subject.name }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">
+                                        {% if user.is_student and assignment.submission and assignment.submission.is_graded %}
+                                            Your Score
+                                        {% else %}
+                                            Max Score
+                                        {% endif %}
+                                    </small>
+                                    <span class="fw-medium">
+                                        {% if user.is_student and assignment.submission and assignment.submission.is_graded %}
+                                            <span class="text-success">{{ assignment.submission.score }}/{{ assignment.max_score }}</span>
+                                        {% else %}
+                                            {{ assignment.max_score }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="col-12">
+                                    <small class="text-muted d-block">Due Date</small>
+                                    <span class="fw-medium">{{ assignment.due_date|date:"M d, Y - h:i A" }}</span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if user.is_teacher and assignment.created_by == user or user.is_admin %}
+                                    {% if assignment.assignment_type == 'QUIZ' %}
+                                    <a href="{% url 'assignments:quiz_settings' assignment.id %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'assignments:edit_assignment' assignment.id %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    {% endif %}
+                                    <a href="#" class="btn btn-danger btn-sm delete-assignment-btn" data-assignment-id="{{ assignment.id }}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                {% endif %}
+                                {% if user.is_student %}
+                                    {% if assignment.submission %}
+                                        {% if assignment.submission.is_graded %}
+                                            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check-circle"></i> View Results
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-info btn-sm">
+                                                <i class="fas fa-clock"></i> View Submission
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if assignment.assignment_type == 'QUIZ' %}
+                                        <a href="{% url 'assignments:quiz_start' assignment.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-pencil-alt"></i> Take Quiz
+                                        </a>
+                                        {% else %}
+                                        <a href="{% url 'assignments:submit_assignment' assignment.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-file-upload"></i> Submit
+                                        </a>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-clipboard-list fa-4x text-gray-300"></i>
+                        </div>
+                        <p class="text-muted">No assignments found.</p>
+                        {% if user.is_teacher or user.is_admin %}
+                            <a href="{% url 'assignments:create_assignment' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create Assignment
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for delete confirmation -->
+<div class="modal fade" id="deleteAssignmentModal" tabindex="-1" role="dialog" aria-labelledby="deleteAssignmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAssignmentModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this assignment? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteAssignmentForm" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    /* Modal styles */
+    .modal {
+        display: none;
+    }
+
+    .modal.show {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-dialog {
+        margin: 0;
+    }
+
+    /* Global card header styling */
+    .card-header {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+        color: white !important;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .card-header h6,
+    .card-header .text-primary {
+        color: white !important;
+    }
+
+    .card-header .btn-outline-primary {
+        border-color: rgba(255,255,255,0.5);
+        color: white;
+        background: transparent;
+    }
+
+    .card-header .btn-outline-primary:hover,
+    .card-header .btn-outline-light:hover {
+        background-color: rgba(255,255,255,0.1);
+        border-color: white;
+        color: white;
+    }
+
+    .card-header .btn-outline-light {
+        border-color: rgba(255,255,255,0.5);
+        color: white;
+        background: transparent;
+    }
+
+    /* Mobile-first assignment card styles */
+    .assignment-card {
+        transition: all 0.2s ease;
+        border-radius: 0;
+    }
+
+    .assignment-card:hover {
+        background-color: #f8f9fa;
+    }
+
+    .assignment-card:last-child {
+        border-bottom: none !important;
+    }
+
+    /* Status badge animations and styling */
+    .badge {
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+    .badge.bg-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    }
+
+    .badge.bg-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%) !important;
+        box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+    }
+
+    .badge.bg-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
+        color: #212529 !important;
+        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    }
+
+    .badge.bg-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        animation: pulse-danger 2s infinite;
+    }
+
+    @keyframes pulse-danger {
+        0% { box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3); }
+        50% { box-shadow: 0 2px 8px rgba(220, 53, 69, 0.6); }
+        100% { box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3); }
+    }
+
+    /* Score display styling */
+    .text-success {
+        font-weight: 600;
+        color: #28a745 !important;
+    }
+
+    /* Action button improvements */
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+    }
+
+    /* Fix table header visibility - Force white text on dark background */
+    .table thead th,
+    .table-dark thead th,
+    .table-dark th,
+    .dataTables_wrapper .dataTables_scrollHead .table thead th,
+    .dataTables_wrapper .dataTables_scrollHead .table-dark thead th {
+        background-color: #212529 !important;
+        color: #ffffff !important;
+        border-color: #32383e !important;
+        font-weight: 600;
+    }
+
+    /* Ensure table headers are completely hidden on mobile/tablet */
+    @media (max-width: 767.98px) {
+        .table,
+        .table-responsive,
+        .dataTables_wrapper {
+            display: none !important;
+        }
+
+        /* Force card view on mobile */
+        .d-md-none {
+            display: block !important;
+        }
+    }
+
+    /* Desktop table improvements */
+    @media (min-width: 768px) {
+        .table thead th,
+        .table-dark thead th {
+            background-color: #212529 !important;
+            color: #ffffff !important;
+            border-color: #32383e !important;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+            padding: 1rem 0.75rem;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        /* Hide card view on desktop */
+        .d-md-none {
+            display: none !important;
+        }
+    }
+
+    /* Mobile responsive improvements */
+    @media (max-width: 575.98px) {
+        .container-fluid {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+            color: white !important;
+            border-bottom: none;
+        }
+
+        .card-header h6 {
+            color: white !important;
+            font-weight: 600;
+        }
+
+        .card-header .btn-outline-light {
+            border-color: rgba(255,255,255,0.5);
+            color: white;
+        }
+
+        .card-header .btn-outline-light:hover {
+            background-color: rgba(255,255,255,0.1);
+            border-color: white;
+            color: white;
+        }
+
+        .btn-group .btn {
+            border-radius: 6px;
+            margin: 0 2px;
+        }
+
+        .assignment-card {
+            padding: 1rem !important;
+            margin: 0 -15px;
+            border-left: none;
+            border-right: none;
+            border-radius: 0;
+        }
+
+        .assignment-card:first-child {
+            border-top: none;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+        }
+    }
+
+    /* Tablet responsive improvements */
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .assignment-card {
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .assignment-card:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    /* Button improvements for mobile */
+    @media (max-width: 767.98px) {
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .d-flex.gap-2 {
+            gap: 0.5rem !important;
+        }
+
+        .btn-group .btn {
+            margin-right: 0.25rem;
+        }
+    }
+
+    /* Loading state for better UX */
+    .assignment-card {
+        position: relative;
+    }
+
+    .assignment-card.loading::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable only for desktop view (768px and above)
+        if (window.innerWidth >= 768) {
+            $('#dataTable').DataTable({
+                "order": [[3, "asc"]], // Order by due date by default
+                "responsive": true,
+                "pageLength": 25,
+                "language": {
+                    "search": "Search assignments:",
+                    "lengthMenu": "Show _MENU_ assignments per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ assignments",
+                    "paginate": {
+                        "first": "First",
+                        "last": "Last",
+                        "next": "Next",
+                        "previous": "Previous"
+                    }
+                }
+            });
+        }
+
+        // Handle window resize
+        $(window).resize(function() {
+            if ($.fn.DataTable.isDataTable('#dataTable')) {
+                if (window.innerWidth < 768) {
+                    $('#dataTable').DataTable().destroy();
+                }
+            } else if (window.innerWidth >= 768) {
+                $('#dataTable').DataTable({
+                    "order": [[3, "asc"]],
+                    "responsive": true,
+                    "pageLength": 25
+                });
+            }
+        });
+    });
+
+    function confirmDelete(assignmentId) {
+        // Set up the form action URL
+        const form = document.getElementById('deleteAssignmentForm');
+        form.action = `/assignments/${assignmentId}/delete/`;
+
+        // Show the modal
+        $('#deleteAssignmentModal').modal('show');
+    }
+
+    // Handle delete button clicks
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteButtons = document.querySelectorAll('.delete-assignment-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                confirmDelete(this.dataset.assignmentId);
+            });
+        });
+
+        // Add loading states to action buttons
+        const actionButtons = document.querySelectorAll('.assignment-card .btn');
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                if (!this.classList.contains('delete-assignment-btn')) {
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                }
+            });
+        });
+
+        // Smooth scroll for mobile navigation
+        if (window.innerWidth < 768) {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+    });
+
+    // Add touch feedback for mobile
+    if ('ontouchstart' in window) {
+        document.addEventListener('touchstart', function() {}, {passive: true});
+    }
+</script>
+{% endblock %}

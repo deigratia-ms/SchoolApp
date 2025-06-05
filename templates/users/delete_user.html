@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete User | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Delete User Confirmation</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'users:user_management' %}">User Management</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Delete User</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4 border-left-danger">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Warning: Permanent Deletion
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <p><strong>You are about to permanently delete a user account.</strong></p>
+                        <p>This action cannot be undone. All data associated with this user will be permanently removed from the system.</p>
+                    </div>
+                    
+                    <div class="user-details p-4 bg-light rounded mb-4">
+                        <h5 class="font-weight-bold mb-3">User Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Name:</strong> {{ user_to_delete.get_full_name }}</p>
+                                <p><strong>Username:</strong> {{ user_to_delete.username }}</p>
+                                <p><strong>Email:</strong> {{ user_to_delete.email }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>User Type:</strong> 
+                                    {% if user_to_delete.role == 'ADMIN' %}
+                                        Administrator
+                                    {% elif user_to_delete.role == 'TEACHER' %}
+                                        Teacher
+                                    {% elif user_to_delete.role == 'STUDENT' %}
+                                        Student
+                                    {% elif user_to_delete.role == 'PARENT' %}
+                                        Parent
+                                    {% else %}
+                                        {{ user_to_delete.role }}
+                                    {% endif %}
+                                </p>
+                                
+                                {% if user_to_delete.role == 'STUDENT' %}
+                                <p><strong>Student ID:</strong> {{ user_to_delete.student.student_id }}</p>
+                                <p><strong>Grade/Class:</strong> {{ user_to_delete.student.grade }} {% if user_to_delete.student.section %}{{ user_to_delete.student.section }}{% endif %}</p>
+                                {% endif %}
+                                
+                                {% if user_to_delete.role == 'TEACHER' %}
+                                <p><strong>Employee ID:</strong> {{ user_to_delete.teacher.employee_id }}</p>
+                                <p><strong>Department:</strong> {{ user_to_delete.teacher.department }}</p>
+                                {% endif %}
+                                
+                                {% if user_to_delete.role == 'PARENT' %}
+                                <p><strong>Children:</strong> 
+                                    {% for child in user_to_delete.parent.children.all %}
+                                        {{ child.user.get_full_name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        No children linked
+                                    {% endfor %}
+                                </p>
+                                <p><strong>Relationship:</strong> {{ user_to_delete.parent.relationship }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="additional-warnings mb-4">
+                        <h6 class="font-weight-bold text-danger">This will delete:</h6>
+                        <ul class="text-danger">
+                            {% if user_to_delete.role == 'STUDENT' %}
+                            <li>All grade records, assignments, and quiz submissions</li>
+                            <li>All attendance records</li>
+                            <li>All user activity logs</li>
+                            <li>ID cards and admission letters</li>
+                            <li>Parent-child relationships</li>
+                            {% elif user_to_delete.role == 'TEACHER' %}
+                            <li>All course and class assignments</li>
+                            <li>All created materials and assignments</li>
+                            <li>All grading records</li>
+                            <li>All user activity logs</li>
+                            {% elif user_to_delete.role == 'PARENT' %}
+                            <li>All parent-child relationships</li>
+                            <li>All communications and message history</li>
+                            <li>All user activity logs</li>
+                            {% else %}
+                            <li>All user data including profile information</li>
+                            <li>All user activity logs</li>
+                            <li>All system preferences</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <form method="post" id="deleteUserForm">
+                        {% csrf_token %}
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" value="confirmed" id="confirmDelete" name="confirm_delete" required>
+                            <label class="form-check-label" for="confirmDelete">
+                                I understand that this action is permanent and cannot be undone.
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'users:user_management' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                                <i class="fas fa-trash-alt me-2"></i>Delete User Permanently
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        const deleteButton = document.getElementById('deleteButton');
+        const deleteForm = document.getElementById('deleteUserForm');
+        
+        // Enable/disable delete button based on checkbox
+        confirmCheckbox.addEventListener('change', function() {
+            deleteButton.disabled = !this.checked;
+        });
+        
+        // Add confirmation dialog
+        deleteForm.addEventListener('submit', function(e) {
+            if (!confirm('Are you absolutely sure you want to delete this user? This action CANNOT be undone.')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Show loading state
+            deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+            deleteButton.disabled = true;
+            return true;
+        });
+    });
+</script>
+{% endblock %}

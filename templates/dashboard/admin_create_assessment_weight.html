@@ -1,0 +1,556 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Assessment Weight Configuration | {{ block.super }}{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}" class="text-primary"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'dashboard:admin_assessment_weights' %}" class="text-primary"><i class="fas fa-balance-scale mr-1"></i>Assessment Weight Configurations</a></li>
+<li class="breadcrumb-item active"><i class="fas fa-plus-circle mr-1"></i>Create Configuration</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-11">
+            <div class="card card-primary shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-gradient-primary text-white p-3">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-cog fa-spin mr-2"></i>Create Assessment Weight Configuration
+                    </h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body p-4">
+                        <div class="alert alert-info shadow-sm border-left border-info" style="border-left-width: 5px !important;">
+                            <div class="d-flex">
+                                <div class="mr-3">
+                                    <i class="fas fa-lightbulb text-info fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h5 class="alert-heading">About Assessment Weight Configurations</h5>
+                                    <p>
+                                        Assessment weight configurations determine how different types of assessments are weighted when calculating final grades for report cards.
+                                        You can create multiple configurations for different terms or grade levels.
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-check-circle text-success mr-1"></i> The total of all enabled component weights should equal 100%. If not, weights will be automatically normalized.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="bg-light p-3 rounded-lg mb-4 shadow-sm border">
+                            <h4 class="text-primary mb-3"><i class="fas fa-info-circle mr-2"></i>Basic Information</h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="name" class="font-weight-bold"><i class="fas fa-tag mr-1 text-primary"></i> Configuration Name</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-primary text-white"><i class="fas fa-font"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control form-control-lg border-primary" id="name" name="name" required placeholder="e.g., Term 1 High School Weights">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="term" class="font-weight-bold"><i class="far fa-calendar-alt mr-1 text-primary"></i> Apply to Term</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-primary text-white"><i class="fas fa-calendar"></i></span>
+                                            </div>
+                                            <select class="form-control form-control-lg border-primary" id="term" name="term">
+                                                <option value="">All Terms</option>
+                                                {% for term_choice in term_choices %}
+                                                    <option value="{{ term_choice.0 }}">{{ term_choice.1 }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <small class="text-muted ml-4"><i class="fas fa-info-circle mr-1"></i>If left blank, this configuration can be used for any term.</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="description" class="font-weight-bold"><i class="far fa-file-alt mr-1 text-primary"></i> Description</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-primary text-white"><i class="fas fa-align-left"></i></span>
+                                    </div>
+                                    <textarea class="form-control border-primary" id="description" name="description" rows="2" placeholder="Optional description"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm p-3 bg-white rounded border-primary border-left mt-4">
+                                <div class="form-check">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" id="is_default" name="is_default">
+                                        <label class="custom-control-label font-weight-bold" for="is_default">
+                                            Set as Default Configuration <span class="badge badge-primary">Recommended</span>
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted ml-5"><i class="fas fa-info-circle mr-1"></i>The default configuration will be used when no specific configuration is selected.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="divider d-flex align-items-center my-4">
+                            <div class="divider-line flex-grow-1"></div>
+                            <span class="mx-3 badge badge-pill badge-primary px-4 py-2">
+                                <i class="fas fa-sliders-h mr-1"></i> Components Setup
+                            </span>
+                            <div class="divider-line flex-grow-1"></div>
+                        </div>
+
+                        <!-- Component Weights -->
+                        <div class="card shadow-lg rounded-lg mb-4 border-0">
+                            <div class="card-header bg-gradient-info text-white p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0"><i class="fas fa-balance-scale mr-2"></i>Assessment Components</h4>
+                                    <span class="badge badge-pill badge-light text-primary px-3 py-2 font-weight-bold">
+                                        <i class="fas fa-percentage mr-1"></i> Weights must total 100%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body bg-light p-4">
+                                <p class="text-muted mb-4">
+                                    <i class="fas fa-info-circle mr-1"></i> Select which assessment components to include and assign their respective weights.
+                                </p>
+                        
+                                <div class="table-responsive mb-4">
+                                    <table class="table table-hover table-bordered shadow-sm bg-white">
+                                        <thead class="thead-dark text-white">
+                                            <tr>
+                                                <th style="width: 10%;" class="text-center">Include</th>
+                                                <th style="width: 40%;">Assessment Component</th>
+                                                <th style="width: 25%;">Weight (%)</th>
+                                                <th style="width: 25%;">Visual Weight</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Classwork -->
+                                            <tr class="component-row" data-component="classwork">
+                                                <td class="text-center align-middle">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="include_classwork" name="include_classwork" checked>
+                                                        <label class="custom-control-label" for="include_classwork"></label>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="component-icon bg-primary text-white rounded-circle p-3 mr-3 shadow-sm">
+                                                            <i class="fas fa-pencil-alt"></i>
+                                                        </div>
+                                                        <span class="font-weight-bold h5 mb-0">Classwork</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-weight-container">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control weight-input border-primary" id="classwork_weight" name="classwork_weight" value="20" min="0" max="100" step="1">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-primary text-white">%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-bar-container">
+                                                    <div class="progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+                                                        <div id="classwork-progress" class="progress-bar bg-primary" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">
+                                                            <span class="font-weight-bold component-badge">20%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Quizzes -->
+                                            <tr class="component-row" data-component="quizzes">
+                                                <td class="text-center align-middle">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="include_quizzes" name="include_quizzes" checked>
+                                                        <label class="custom-control-label" for="include_quizzes"></label>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="component-icon bg-success text-white rounded-circle p-3 mr-3 shadow-sm">
+                                                            <i class="fas fa-clipboard-list"></i>
+                                                        </div>
+                                                        <span class="font-weight-bold h5 mb-0">Quizzes</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-weight-container">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control weight-input border-success" id="quiz_weight" name="quiz_weight" value="10" min="0" max="100" step="1">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-success text-white">%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-bar-container">
+                                                    <div class="progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+                                                        <div id="quizzes-progress" class="progress-bar bg-success" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
+                                                            <span class="font-weight-bold component-badge">10%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Tests -->
+                                            <tr class="component-row" data-component="tests">
+                                                <td class="text-center align-middle">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="include_tests" name="include_tests" checked>
+                                                        <label class="custom-control-label" for="include_tests"></label>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="component-icon bg-info text-white rounded-circle p-3 mr-3 shadow-sm">
+                                                            <i class="fas fa-tasks"></i>
+                                                        </div>
+                                                        <span class="font-weight-bold h5 mb-0">Tests</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-weight-container">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control weight-input border-info" id="test_weight" name="test_weight" value="15" min="0" max="100" step="1">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-info text-white">%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-bar-container">
+                                                    <div class="progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+                                                        <div id="tests-progress" class="progress-bar bg-info" role="progressbar" style="width: 15%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100">
+                                                            <span class="font-weight-bold component-badge">15%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Midterms -->
+                                            <tr class="component-row" data-component="midterms">
+                                                <td class="text-center align-middle">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="include_midterms" name="include_midterms" checked>
+                                                        <label class="custom-control-label" for="include_midterms"></label>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="component-icon bg-warning text-white rounded-circle p-3 mr-3 shadow-sm">
+                                                            <i class="fas fa-file-alt"></i>
+                                                        </div>
+                                                        <span class="font-weight-bold h5 mb-0">Midterms</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-weight-container">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control weight-input border-warning" id="midterm_weight" name="midterm_weight" value="15" min="0" max="100" step="1">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-warning text-white">%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-bar-container">
+                                                    <div class="progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+                                                        <div id="midterms-progress" class="progress-bar bg-warning" role="progressbar" style="width: 15%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100">
+                                                            <span class="font-weight-bold component-badge">15%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Projects -->
+                                            <tr class="component-row" data-component="projects">
+                                                <td class="text-center align-middle">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="include_projects" name="include_projects" checked>
+                                                        <label class="custom-control-label" for="include_projects"></label>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="component-icon bg-secondary text-white rounded-circle p-3 mr-3 shadow-sm">
+                                                            <i class="fas fa-project-diagram"></i>
+                                                        </div>
+                                                        <span class="font-weight-bold h5 mb-0">Projects</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-weight-container">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control weight-input border-secondary" id="project_weight" name="project_weight" value="10" min="0" max="100" step="1">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-secondary text-white">%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-bar-container">
+                                                    <div class="progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+                                                        <div id="projects-progress" class="progress-bar bg-secondary" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
+                                                            <span class="font-weight-bold component-badge">10%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Exams -->
+                                            <tr class="component-row" data-component="exams">
+                                                <td class="text-center align-middle">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="include_exams" name="include_exams" checked>
+                                                        <label class="custom-control-label" for="include_exams"></label>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="component-icon bg-danger text-white rounded-circle p-3 mr-3 shadow-sm">
+                                                            <i class="fas fa-file-signature"></i>
+                                                        </div>
+                                                        <span class="font-weight-bold h5 mb-0">Exams</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-weight-container">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control weight-input border-danger" id="exam_weight" name="exam_weight" value="25" min="0" max="100" step="1">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-danger text-white">%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-bar-container">
+                                                    <div class="progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+                                                        <div id="exams-progress" class="progress-bar bg-danger" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                                            <span class="font-weight-bold component-badge">25%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Attendance -->
+                                            <tr class="component-row" data-component="attendance">
+                                                <td class="text-center align-middle">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="include_attendance" name="include_attendance" checked>
+                                                        <label class="custom-control-label" for="include_attendance"></label>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="component-icon bg-dark text-white rounded-circle p-3 mr-3 shadow-sm">
+                                                            <i class="fas fa-user-check"></i>
+                                                        </div>
+                                                        <span class="font-weight-bold h5 mb-0">Attendance</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-weight-container">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control weight-input border-dark" id="attendance_weight" name="attendance_weight" value="5" min="0" max="100" step="1">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-dark text-white">%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle component-bar-container">
+                                                    <div class="progress" style="height: 30px; border-radius: 15px; overflow: hidden;">
+                                                        <div id="attendance-progress" class="progress-bar bg-dark" role="progressbar" style="width: 5%" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100">
+                                                            <span class="font-weight-bold component-badge">5%</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Total Row -->
+                                            <tr class="bg-light">
+                                                <td colspan="2" class="text-right align-middle border-top-2">
+                                                    <h5 class="font-weight-bold mb-0">
+                                                        <i class="fas fa-calculator mr-2"></i>Total Weight:
+                                                    </h5>
+                                                </td>
+                                                <td class="align-middle border-top-2">
+                                                    <h5 class="font-weight-bold mb-0 text-primary">
+                                                        <span id="total-weight" class="badge badge-pill badge-primary px-3 py-2">100</span>%
+                                                    </h5>
+                                                </td>
+                                                <td class="align-middle border-top-2">
+                                                    <span id="weight-status" class="badge badge-pill badge-success px-3 py-2">
+                                                        <i class="fas fa-check-circle mr-1"></i>Balanced
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="alert alert-secondary text-center mb-4 shadow-sm border-left border-info" style="border-left-width: 5px !important;">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-balance-scale fa-2x text-info mr-3"></i>
+                                        <div class="text-left">
+                                            <h6 class="mb-0">Weights will be automatically normalized if they don't sum to 100%.</h6>
+                                            <small class="text-muted">The system will adjust the weights proportionally to ensure they total exactly 100%.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card shadow-sm mb-4 d-none">
+                                    <div class="card-body">
+                                        <div class="progress d-none" style="height: 25px; border-radius: 10px; overflow: hidden;">
+                                            <div id="component-progress-sum" class="progress-bar bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between bg-light p-3">
+                        <a href="{% url 'dashboard:admin_assessment_weights' %}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                            <i class="fas fa-save mr-2"></i>Create Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .divider-line {
+        height: 2px;
+        background-color: #e9ecef;
+    }
+    .component-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .border-top-2 {
+        border-top: 2px solid #dee2e6 !important;
+    }
+    
+    /* Cute animations */
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+    }
+    .component-row:hover .component-icon {
+        transform: scale(1.1);
+        transition: transform 0.2s ease;
+    }
+    .btn {
+        transition: all 0.3s ease;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .custom-control-input:checked ~ .custom-control-label::before {
+        animation: pulse 1s;
+    }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.5); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+    }
+</style>
+
+<script>
+    $(function() {
+        // Toggle component weights based on checkbox status
+        $('.custom-control-input').change(function() {
+            var component = $(this).attr('id').replace('include_', '');
+            var row = $('tr[data-component="' + component + '"]');
+            var container = row.find('.component-weight-container');
+            var barContainer = row.find('.component-bar-container');
+            
+            if ($(this).is(':checked')) {
+                container.find('input').prop('disabled', false);
+                row.removeClass('table-light text-muted');
+                $('#' + component + '-progress').show();
+                // Add a small animation when enabling
+                row.find('.component-icon').addClass('animated bounce').delay(1000).queue(function(){
+                    $(this).removeClass('animated bounce').dequeue();
+                });
+            } else {
+                container.find('input').prop('disabled', true);
+                row.addClass('table-light text-muted');
+                $('#' + component + '-progress').hide();
+            }
+            
+            updateTotalWeight();
+        });
+        
+        // Update weight display when inputs change
+        $('.weight-input').on('input', function() {
+            var component = $(this).attr('id').replace('_weight', '');
+            var value = $(this).val() || 0;
+            updateComponentBadge(component, value);
+            updateTotalWeight();
+        });
+        
+        // Initialize
+        updateTotalWeight();
+                
+        function updateComponentBadge(component, value) {
+            var progressBar = $('#' + component + '-progress');
+            var badge = progressBar.find('.component-badge');
+            
+            if (progressBar.length) {
+                progressBar.css('width', value + '%');
+                progressBar.attr('aria-valuenow', value);
+                badge.text(value + '%');
+            }
+        }
+        
+        function updateTotalWeight() {
+            var total = 0;
+            
+            // Add up all enabled component weights
+            $('.custom-control-input').each(function() {
+                var component = $(this).attr('id').replace('include_', '');
+                var weightInput = $('#' + component + '_weight');
+                
+                if ($(this).is(':checked')) {
+                    var weight = parseInt(weightInput.val()) || 0;
+                    total += weight;
+                    
+                    // Update progress bar
+                    $('#' + component + '-progress').css('width', weight + '%');
+                    $('#' + component + '-progress').attr('aria-valuenow', weight);
+                } else {
+                    // Hide progress bar for disabled components
+                    $('#' + component + '-progress').css('width', '0%');
+                    $('#' + component + '-progress').attr('aria-valuenow', 0);
+                }
+            });
+            
+            // Update total display
+            $('#total-weight').text(total);
+            
+            // Update status badge
+            var statusBadge = $('#weight-status');
+            if (total == 100) {
+                statusBadge.removeClass('badge-warning badge-danger').addClass('badge-success');
+                statusBadge.html('<i class="fas fa-check-circle mr-1"></i>Balanced');
+            } else if (total < 100) {
+                statusBadge.removeClass('badge-success badge-danger').addClass('badge-warning');
+                statusBadge.html('<i class="fas fa-exclamation-circle mr-1"></i>Underweight: ' + (100 - total) + '% remaining');
+            } else {
+                statusBadge.removeClass('badge-success badge-warning').addClass('badge-danger');
+                statusBadge.html('<i class="fas fa-exclamation-triangle mr-1"></i>Overweight: ' + (total - 100) + '% excess');
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,819 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Parent Dashboard - Ricas School
+Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 mb-0">Parent Dashboard</h1>
+      <div>
+        <a href="{% url 'communications:compose_message' %}?target_role=TEACHER" class="btn btn-primary">
+          <i class="fas fa-envelope me-2"></i>Message Teachers
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee Summary for All Children -->
+  <div class="container-fluid mt-5">
+    <div class="row mb-4">
+      <div class="col-md-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Fee Summary for All Children</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% if children|length > 0 %}
+              <div class="col-md-3 mb-3 mb-md-0">
+                <div class="card bg-light h-100">
+                  <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Total Fees</h6>
+                    <h3 class="mb-0">GHS {{ total_fees.amount|floatformat:2 }}</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3 mb-md-0">
+                <div class="card bg-light h-100">
+                  <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Amount Paid</h6>
+                    <h3 class="mb-0 text-success">GHS {{ total_fees.paid|floatformat:2 }}</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3 mb-md-0">
+                <div class="card bg-light h-100">
+                  <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Outstanding Balance</h6>
+                    <h3 class="mb-0 {% if total_fees.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                      GHS {{ total_fees.balance|floatformat:2 }}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3 mb-md-0">
+                <div class="card bg-light h-100">
+                  <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Payment Progress</h6>
+                    <div class="progress mt-2" style="height: 20px;">
+                      <div class="progress-bar bg-success" role="progressbar" style="width: {{ total_fees.payment_percentage }}%;"
+                          aria-valuenow="{{ total_fees.payment_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ total_fees.payment_percentage|floatformat:1 }}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <div class="col-12">
+                <div class="alert alert-info mb-0">
+                  <i class="fas fa-info-circle me-2"></i>No children registered.
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Parent Info -->
+  <div class="container-fluid mt-4">
+    <div class="row mb-4">
+      <div class="col-md-4">
+      <div class="card">
+        <div class="card-body d-flex">
+          <div class="me-3">
+            {% if user.profile_picture %}
+            <img
+              src="{{ user.profile_picture.url }}"
+              alt="{{ user.get_full_name }}"
+              class="rounded-circle"
+              width="80"
+              height="80"
+            />
+            {% else %}
+            <div
+              class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white"
+              style="width: 80px; height: 80px"
+            >
+              <span class="display-6">{{ user.first_name.0 }}{{ user.last_name.0 }}</span>
+            </div>
+            {% endif %}
+          </div>
+          <div>
+            <h5 class="card-title">{{ user.get_full_name }}</h5>
+            <p class="card-text text-muted">
+              {{ parent.occupation|default:"Parent" }}
+            </p>
+            <p class="card-text">
+              <small class="text-muted">{{ parent.relationship }}</small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">My Children</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for child in children %}
+            <div class="col-md-4 col-sm-6 mb-3">
+              <div
+                class="card child-card {% if selected_child.id == child.id %}active{% endif %}"
+                onclick="location.href='{% url 'dashboard:parent_dashboard' %}?child_id={{ child.id }}'"
+              >
+                <div class="card-body text-center">
+                  {% if child.user.profile_picture %}
+                  <img
+                    src="{{ child.user.profile_picture.url }}"
+                    alt="{{ child.user.get_full_name }}"
+                    class="rounded-circle mb-3"
+                    width="64"
+                    height="64"
+                  />
+                  {% else %}
+                  <div
+                    class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white mx-auto mb-3"
+                    style="width: 64px; height: 64px"
+                  >
+                    <span class="h4 mb-0">{{ child.user.first_name.0 }}{{ child.user.last_name.0 }}</span>
+                  </div>
+                  {% endif %}
+                  <h6 class="mb-1">{{ child.user.get_full_name }}</h6>
+                  <small class="text-muted d-block"
+                    >ID: {{ child.student_id }}</small
+                  >
+                  <small class="text-muted d-block"
+                    >Class: {% if child.grade %}{{ child.grade }}{% if child.section %} {{ child.section }}{% endif %}{% else %}Not Assigned{% endif %}</small
+                  >
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>You don't have any
+                children linked to your account yet. Please contact the
+                administrator.
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  {% if selected_child %}
+  <!-- Selected Child Information -->
+  <div class="container-fluid mt-4">
+    <div class="row mb-4">
+      <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">
+            <i class="fas fa-user-graduate me-2"></i>
+            {{ selected_child.user.get_full_name }}'s Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-4">
+              <div class="card h-100">
+                <div class="card-body text-center">
+                  <div class="display-4 text-primary mb-2">
+                    {{ child_data.enrolled_subjects|length }}
+                  </div>
+                  <div class="text-muted">Subjects</div>
+                </div>
+                <div class="card-footer bg-transparent text-center">
+                  <a href="{% url 'courses:subject_list' %}?student_id={{ selected_child.id }}" class="text-decoration-none">
+                    <i class="fas fa-book me-1"></i>View Subjects
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+              <div class="card h-100">
+                <div class="card-body text-center">
+                  <div class="display-4 text-success mb-2">
+                    {{ child_data.upcoming_assignments|length }}
+                  </div>
+                  <div class="text-muted">Upcoming Assignments</div>
+                </div>
+                <div class="card-footer bg-transparent text-center">
+                  <a href="{% url 'assignments:student_assignments' %}?student_id={{ selected_child.id }}" class="text-decoration-none">
+                    <i class="fas fa-clipboard-list me-1"></i>View Assignments
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+              <div class="card h-100">
+                <div class="card-body text-center">
+                  {% with attendance_records=child_data.attendance_summary %}
+                    {% if attendance_records %}
+                      {% with total_count=attendance_records.present|add:attendance_records.absent|add:attendance_records.late %}
+                        {% if total_count > 0 %}
+                          {% with attendance_rate=attendance_records.present|multiply:100|divide:total_count|floatformat:0 %}
+                            <div class="display-4 text-{% if attendance_rate >= 90 %}success{% elif attendance_rate >= 70 %}warning{% else %}danger{% endif %} mb-2">
+                              {{ attendance_rate }}%
+                            </div>
+                          {% endwith %}
+                        {% else %}
+                          <div class="display-4 text-muted mb-2">N/A</div>
+                        {% endif %}
+                      {% endwith %}
+                    {% else %}
+                      <div class="display-4 text-muted mb-2">N/A</div>
+                    {% endif %}
+                  {% endwith %}
+                  <div class="text-muted">Attendance Rate</div>
+                </div>
+                <div class="card-footer bg-transparent text-center">
+                  <a href="{% url 'attendance:student_attendance' selected_child.id %}" class="text-decoration-none">
+                    <i class="fas fa-user-check me-1"></i>View Attendance
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Enrolled Subjects -->
+    <div class="col-md-6 mb-4" id="subjects">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">{{ selected_child.user.first_name }}'s Subjects</h5>
+          <a
+            href="{% url 'courses:subject_list' %}?student_id={{ selected_child.id }}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>Teacher</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for subject in child_data.enrolled_subjects %}
+                <tr>
+                  <td>{{ subject.subject.name }}</td>
+                  <td>{{ subject.teacher.user.get_full_name }}</td>
+                  <td>
+                    <a
+                      href="{% url 'courses:material_list' %}?subject={{ subject.subject.id }}"
+                      class="btn btn-sm btn-outline-primary"
+                      title="View Materials"
+                    >
+                      <i class="fas fa-book"></i>
+                    </a>
+                    <a
+                      href="{% url 'assignments:report_card_detail' selected_child.id %}?subject={{ subject.subject.id }}"
+                      class="btn btn-sm btn-outline-success"
+                      title="View Grades"
+                    >
+                      <i class="fas fa-chart-line"></i>
+                    </a>
+                    <a
+                      href="{% url 'communications:compose_message' %}?recipient={{ subject.teacher.user.id }}"
+                      class="btn btn-sm btn-outline-info"
+                      title="Message Teacher"
+                    >
+                      <i class="fas fa-envelope"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="3" class="text-center">No subjects enrolled</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Assignments -->
+    <div class="col-md-6 mb-4" id="assignments">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            {{ selected_child.user.first_name }}'s Upcoming Assignments
+          </h5>
+          <a
+            href="{% url 'assignments:assignment_list' %}?student_id={{ selected_child.id }}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for assignment in child_data.upcoming_assignments %}
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ assignment.title }}</h6>
+                <small
+                  class="text-{% if assignment.due_date|date:'Y-m-d' < now|date:'Y-m-d' %}danger{% else %}muted{% endif %}"
+                  >Due: {{ assignment.due_date|date:"M d, Y" }}</small
+                >
+              </div>
+              <p class="mb-1">{{ assignment.description|truncatechars:100 }}</p>
+              <small>
+                <span class="badge bg-primary"
+                  >{{ assignment.class_subject.subject.name }}</span
+                >
+                <span
+                  class="badge bg-{% if assignment.assignment_type == 'HOMEWORK' %}info{% elif assignment.assignment_type == 'QUIZ' %}success{% elif assignment.assignment_type == 'TEST' %}warning{% else %}danger{% endif %}"
+                >
+                  {{ assignment.get_assignment_type_display }}
+                </span>
+              </small>
+            </div>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No upcoming assignments</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Fees Section -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">{{ selected_child.user.first_name }}'s Fees</h5>
+          <a href="{% url 'fees:student_fees' selected_child.id %}" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+          {% if child_fees %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Fee Type</th>
+                  <th>Amount</th>
+                  <th>Paid</th>
+                  <th>Balance</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for fee in child_fees %}
+                <tr>
+                  <td>{{ fee.class_fee.fee_category.name }}</td>
+                  <td>GHS {{ fee.amount|floatformat:2 }}</td>
+                  <td>GHS {{ fee.amount_paid|floatformat:2 }}</td>
+                  <td>GHS {{ fee.balance|floatformat:2 }}</td>
+                  <td>
+                    {% if fee.status == 'PAID' %}
+                    <span class="badge bg-success">Paid</span>
+                    {% elif fee.status == 'PARTIALLY_PAID' %}
+                    <span class="badge bg-warning text-dark">Partially Paid</span>
+                    {% elif fee.status == 'OVERDUE' %}
+                    <span class="badge bg-danger">Overdue</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-2"></i>No fee records found for this term.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Grades -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            {{ selected_child.user.first_name }}'s Recent Grades
+          </h5>
+          <a
+            href="{% url 'assignments:report_card_detail' selected_child.id %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>Assignment</th>
+                  <th>Score</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for grade in child_data.recent_grades %}
+                <tr>
+                  <td>{{ grade.class_subject.subject.name }}</td>
+                  <td>
+                    {% if grade.submission %} {{
+                    grade.submission.assignment.title }} {% else %} {{
+                    grade.grade_type }} {% endif %}
+                  </td>
+                  <td>
+                    <span
+                      class="badge {% if grade.score >= 90 %}bg-success{% elif grade.score >= 70 %}bg-primary{% elif grade.score >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                    >
+                      {{ grade.score }}{% if grade.letter_grade %} ({{
+                      grade.letter_grade }}){% endif %}
+                    </span>
+                  </td>
+                  <td>{{ grade.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center">No grades yet</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Child's Upcoming Events -->
+    <div class="col-md-6 mb-4" id="child-events">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            {{ selected_child.user.first_name }}'s Upcoming Events
+          </h5>
+          <a
+            href="{% url 'communications:event_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for event in child_data.upcoming_events %}
+            <a
+              href="{% url 'communications:event_detail' event_id=event.id %}"
+              class="list-group-item list-group-item-action"
+            >
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ event.title }}</h6>
+                <small>{{ event.start_date|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">
+                {% if event.end_date %}
+                  {{ event.start_date|date:"g:i A" }} - {{ event.end_date|date:"g:i A" }}
+                {% else %}
+                  {{ event.start_date|date:"g:i A" }}
+                {% endif %}
+              </p>
+              <small>
+                {% if event.is_school_wide %}
+                  <span class="badge bg-primary">School-wide</span>
+                {% endif %}
+                {% if event.specific_class and event.specific_class == selected_child.classroom %}
+                  <span class="badge bg-success">Class Event</span>
+                {% endif %}
+                {% if event.location %}
+                  <span class="badge bg-info">{{ event.location }}</span>
+                {% endif %}
+                {% if event.is_virtual %}
+                  <span class="badge bg-warning">Virtual</span>
+                {% endif %}
+              </small>
+            </a>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No upcoming events</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Records -->
+    <div class="col-md-6 mb-4" id="attendance">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            {{ selected_child.user.first_name }}'s Attendance
+          </h5>
+          <a
+            href="{% url 'attendance:student_attendance' selected_child.id %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Class</th>
+                  <th>Status</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in child_data.attendance_records %}
+                <tr>
+                  <td>{{ record.attendance_record.date|date:"M d, Y" }}</td>
+                  <td>
+                    {{ record.attendance_record.classroom.name }}{% if record.attendance_record.classroom.section %} {{ record.attendance_record.classroom.section }}{% endif %}
+                  </td>
+                  <td>
+                    <span
+                      class="badge {% if record.status == 'PRESENT' %}bg-success{% elif record.status == 'ABSENT' %}bg-danger{% elif record.status == 'LATE' %}bg-warning{% else %}bg-info{% endif %}"
+                    >
+                      {{ record.get_status_display }}
+                    </span>
+                  </td>
+                  <td>{{ record.remarks|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center">No attendance records</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Recent Announcements and Events -->
+  <div class="row">
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Recent Announcements</h5>
+          <a
+            href="{% url 'communications:announcement_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for announcement in recent_announcements %}
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ announcement.title }}</h6>
+                <small>{{ announcement.created_at|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">{{ announcement.content|truncatechars:200 }}</p>
+              <small>
+                <span class="badge bg-secondary"
+                  >{{ announcement.get_target_type_display }}</span
+                >
+                <span class="badge bg-primary"
+                  >From: {{ announcement.created_by.get_full_name }}</span
+                >
+              </small>
+            </div>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No announcements yet</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6 mb-4" id="events">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Upcoming Events</h5>
+          <a
+            href="{% url 'communications:event_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for event in upcoming_events %}
+            <a
+              href="{% url 'communications:event_detail' event_id=event.id %}"
+              class="list-group-item list-group-item-action"
+            >
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ event.title }}</h6>
+                <small>{{ event.start_date|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">
+                {% if event.end_date %}
+                  {{ event.start_date|date:"g:i A" }} - {{ event.end_date|date:"g:i A" }}
+                {% else %}
+                  {{ event.start_date|date:"g:i A" }}
+                {% endif %}
+              </p>
+              <small>
+                {% if event.is_school_wide %}
+                  <span class="badge bg-primary">School-wide</span>
+                {% endif %}
+                {% if event.location %}
+                  <span class="badge bg-info">{{ event.location }}</span>
+                {% endif %}
+                {% if event.is_virtual %}
+                  <span class="badge bg-success">Virtual</span>
+                {% endif %}
+              </small>
+            </a>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No upcoming events</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if comparative_data and children|length > 1 %}
+  <!-- Comparative Data -->
+  <div class="row mb-4">
+    <div class="col-md-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Grade Comparison</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="gradeComparisonChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Attendance Comparison</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="attendanceComparisonChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Fee Balance Comparison</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="feesComparisonChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% block extra_js %}
+{% if comparative_data and children|length > 1 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Grade comparison chart
+    const gradeCtx = document.getElementById('gradeComparisonChart').getContext('2d');
+    const gradeChart = new Chart(gradeCtx, {
+      type: 'bar',
+      data: {
+        labels: [{% for item in comparative_data.grades %}'{{ item.name }}',{% endfor %}],
+        datasets: [{
+          label: 'Average Grade',
+          data: [{% for item in comparative_data.grades %}{{ item.grade }},{% endfor %}],
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+
+    // Attendance comparison chart
+    const attendanceCtx = document.getElementById('attendanceComparisonChart').getContext('2d');
+    const attendanceChart = new Chart(attendanceCtx, {
+      type: 'bar',
+      data: {
+        labels: [{% for item in comparative_data.attendance %}'{{ item.name }}',{% endfor %}],
+        datasets: [{
+          label: 'Attendance Rate (%)',
+          data: [{% for item in comparative_data.attendance %}{{ item.rate }},{% endfor %}],
+          backgroundColor: 'rgba(75, 192, 192, 0.5)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+
+    // Fees comparison chart
+    const feesCtx = document.getElementById('feesComparisonChart').getContext('2d');
+    const feesChart = new Chart(feesCtx, {
+      type: 'bar',
+      data: {
+        labels: [{% for item in comparative_data.fees %}'{{ item.name }}',{% endfor %}],
+        datasets: [{
+          label: 'Fee Balance (GHS)',
+          data: [{% for item in comparative_data.fees %}{{ item.balance }},{% endfor %}],
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  });
+</script>
+</div>
+{% endif %}
+{% endblock %}
+{% endblock %}

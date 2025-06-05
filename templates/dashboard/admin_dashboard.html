@@ -1,0 +1,1189 @@
+{% extends 'base.html' %} {% block title %}Admin Dashboard - Ricas School
+Management System{% endblock %} {% block extra_css %}
+<link
+  href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css"
+  rel="stylesheet"
+/>
+{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">School Administration Dashboard</h1>
+    <div>
+      <a
+        href="{% url 'dashboard:manage_widgets' %}"
+        class="btn btn-outline-primary me-2"
+      >
+        <i class="fas fa-th-large me-2"></i>Manage Widgets
+      </a>
+      <div class="btn-group">
+        <button
+          type="button"
+          class="btn btn-primary dropdown-toggle"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <i class="fas fa-plus me-2"></i>Quick Actions
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <a class="dropdown-item" href="{% url 'courses:create_class' %}"
+              ><i class="fas fa-school me-2"></i>Add New Class</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'courses:create_subject' %}"
+              ><i class="fas fa-book me-2"></i>Add New Subject</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'users:id_card_generate' %}"
+              ><i class="fas fa-id-card me-2"></i>Generate ID Card</a
+            >
+          </li>
+          <li>
+            <a
+              class="dropdown-item"
+              href="{% url 'users:admission_letter_generate' %}"
+              ><i class="fas fa-file-alt me-2"></i>Generate Admission Letter</a
+            >
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <a class="dropdown-item" href="{% url 'fees:category_list' %}"
+              ><i class="fas fa-tags me-2"></i>Manage Fee Categories</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'fees:class_fee_list' %}"
+              ><i class="fas fa-money-bill-wave me-2"></i>Manage Class Fees</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'fees:payment_list' %}"
+              ><i class="fas fa-cash-register me-2"></i>Record Payments</a
+            >
+          </li>
+          <li>
+            <a
+              class="dropdown-item"
+              href="{% url 'communications:create_announcement' %}"
+              ><i class="fas fa-bullhorn me-2"></i>Make Announcement</a
+            >
+          </li>
+          <li>
+            <a
+              class="dropdown-item"
+              href="{% url 'communications:create_event' %}"
+              ><i class="fas fa-calendar-plus me-2"></i>Create Event</a
+            >
+          </li>
+          <li>
+            <a
+              class="dropdown-item"
+              href="{% url 'appointments:appointment_list' %}"
+              ><i class="fas fa-calendar-check me-2"></i>Manage Appointments</a
+            >
+          </li>
+          <li>
+            <a
+              class="dropdown-item"
+              href="{% url 'appointments:generate_time_slots' %}"
+              ><i class="fas fa-clock me-2"></i>Generate Time Slots</a
+            >
+          </li>
+          <li><hr class="dropdown-divider" /></li>
+          <li>
+            <a class="dropdown-item" href="{% url 'users:school_settings' %}"
+              ><i class="fas fa-envelope me-2"></i>Email & School Settings</a
+            >
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'admin:index' %}"
+              ><i class="fas fa-cogs me-2"></i>Django Admin</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Overview Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+              >
+                Students
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_students }}
+              </div>
+              <div class="small text-muted mt-2">
+                {{ total_classes }} Classes
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a
+            href="{% url 'users:user_management' %}?role=STUDENT"
+            class="text-decoration-none small text-primary"
+          >
+            View All <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Teachers
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_teachers }}
+              </div>
+              <div class="small text-muted mt-2">Faculty & Staff</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a
+            href="{% url 'users:user_management' %}?role=TEACHER"
+            class="text-decoration-none small text-success"
+          >
+            View All <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Parents
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_parents }}
+              </div>
+              <div class="small text-muted mt-2">Registered Guardians</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-users fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a
+            href="{% url 'users:user_management' %}?role=PARENT"
+            class="text-decoration-none small text-info"
+          >
+            View All <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Active Courses
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_classes }}
+              </div>
+              <div class="small text-muted mt-2">Academic Term</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-book-open fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a
+            href="{% url 'courses:class_list' %}"
+            class="text-decoration-none small text-warning"
+          >
+            View All <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Fees (Current Term)
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_fees|default:"0.00"|floatformat:2 }}
+              </div>
+              <div class="small text-muted mt-2">Expected Revenue</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a href="{% url 'fees:class_fee_list' %}" class="text-decoration-none small text-primary">
+            View Details <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Collected
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_collected|default:"0.00"|floatformat:2 }}
+              </div>
+              <div class="small text-muted mt-2">{{ collection_percentage|default:"0"|floatformat:1 }}% Collection Rate</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-cash-register fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a href="{% url 'fees:payment_list' %}" class="text-decoration-none small text-success">
+            View Payments <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                Outstanding Balance
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_outstanding|default:"0.00"|floatformat:2 }}
+              </div>
+              <div class="small text-muted mt-2">{{ outstanding_percentage|default:"0"|floatformat:1 }}% of Total Fees</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a href="{% url 'fees:student_fee_list' %}?status=OVERDUE" class="text-decoration-none small text-danger">
+            View Overdue <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                Recent Payments
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ recent_payments_count|default:"0" }}
+              </div>
+              <div class="small text-muted mt-2">Last 7 Days</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+          <a href="{% url 'fees:payment_list' %}" class="text-decoration-none small text-info">
+            View All <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Fee Collection Chart -->
+    <div class="col-xl-4 col-lg-5 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">Fee Collection Status</h6>
+          <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="feeDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="feeDropdown">
+              <div class="dropdown-header">Fee Actions:</div>
+              <a class="dropdown-item" href="{% url 'fees:category_list' %}">Manage Categories</a>
+              <a class="dropdown-item" href="{% url 'fees:class_fee_list' %}">Manage Class Fees</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="{% url 'fees:payment_list' %}">View All Payments</a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-pie pt-4 pb-2">
+            <canvas id="feeCollectionChart"></canvas>
+          </div>
+          <div class="mt-4 text-center small">
+            <span class="me-2">
+              <i class="fas fa-circle text-success"></i> Collected
+            </span>
+            <span class="me-2">
+              <i class="fas fa-circle text-danger"></i> Outstanding
+            </span>
+          </div>
+          {% if current_term %}
+          <div class="text-center mt-3">
+            <p class="mb-0 text-muted">Current Term: {{ current_term.name }} ({{ current_term.academic_year }})</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Enrollment Trends Chart -->
+    <div class="col-xl-8 col-lg-7 mb-4">
+      <div class="card shadow">
+        <div
+          class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+        >
+          <h6 class="m-0 font-weight-bold text-primary">
+            Student Enrollment Trends
+          </h6>
+          <div class="dropdown no-arrow">
+            <a
+              class="dropdown-toggle"
+              href="#"
+              role="button"
+              id="enrollmentDropdown"
+              data-bs-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div
+              class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+              aria-labelledby="enrollmentDropdown"
+            >
+              <div class="dropdown-header">View Options:</div>
+              <a class="dropdown-item active" href="#" data-period="year"
+                >Annual View</a
+              >
+              <a class="dropdown-item" href="#" data-period="month"
+                >Monthly View</a
+              >
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="#">Export Data</a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-area">
+            <canvas id="enrollmentTrendsChart"></canvas>
+          </div>
+        </div>
+        <div class="card-footer small text-muted">
+          Updated {% now "F j, Y" %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Grade Distribution Chart -->
+    <div class="col-xl-4 col-lg-5 mb-4">
+      <div class="card shadow">
+        <div
+          class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+        >
+          <h6 class="m-0 font-weight-bold text-primary">Grade Distribution</h6>
+          <div class="dropdown no-arrow">
+            <a
+              class="dropdown-toggle"
+              href="#"
+              role="button"
+              id="gradeDropdown"
+              data-bs-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div
+              class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+              aria-labelledby="gradeDropdown"
+            >
+              <div class="dropdown-header">View Options:</div>
+              <a class="dropdown-item active" href="#" data-period="all"
+                >All Grades</a
+              >
+              <a class="dropdown-item" href="#" data-period="term"
+                >Current Term</a
+              >
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="#">Export Data</a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-pie pt-4 pb-2">
+            <canvas id="gradeDistributionChart"></canvas>
+          </div>
+          <div class="mt-4 text-center small">
+            <span class="mr-2">
+              <i class="fas fa-circle text-success"></i> A (90-100%)
+            </span>
+            <span class="mr-2">
+              <i class="fas fa-circle text-primary"></i> B (80-89%)
+            </span>
+            <span class="mr-2">
+              <i class="fas fa-circle text-info"></i> C (70-79%)
+            </span>
+            <span class="mr-2">
+              <i class="fas fa-circle text-warning"></i> D (60-69%)
+            </span>
+            <span class="mr-2">
+              <i class="fas fa-circle text-danger"></i> F (Below 60%)
+            </span>
+          </div>
+        </div>
+        <div class="card-footer small text-muted">
+          Based on {{ total_grades }} total grades
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Overview -->
+  <div class="row mb-4">
+    <div class="col-xl-12 col-lg-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Attendance Overview</h6>
+        </div>
+        <div class="card-body">
+          {% with today_total=attendance_overview.today.present|add:attendance_overview.today.absent|add:attendance_overview.today.late|add:attendance_overview.today.excused %}
+            {% if today_total > 0 %}
+              <h4 class="small font-weight-bold">
+                Today's Attendance
+                <span class="float-right">
+                  {% with present_pct=attendance_overview.today.present|default:0|floatformat:0 %}
+                    {{ present_pct }}%
+                  {% endwith %}
+                </span>
+              </h4>
+              <div class="progress mb-4">
+                {% with present_pct=attendance_overview.today.present|default:0|floatformat:0 %}
+                  <div
+                    class="progress-bar bg-success"
+                    role="progressbar"
+                    style="width: {{ present_pct }}%"
+                    aria-valuenow="{{ present_pct }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                {% endwith %}
+              </div>
+            {% endif %}
+          {% endwith %}
+        </div>
+        <div class="card-footer text-center">
+          <a
+            href="{% url 'attendance:records' %}"
+            class="btn btn-sm btn-primary"
+          >
+            View Detailed Records
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Upcoming Events -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Upcoming Events</h6>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for event in upcoming_events %}
+            <div class="list-group-item border-0 pb-3">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ event.title }}</h6>
+                <small
+                  class="text-{% if event.start_date|date:'Y-m-d' == today|date:'Y-m-d' %}success{% elif event.start_date|date:'Y-m-d' < today|date:'Y-m-d' %}danger{% else %}muted{% endif %}"
+                >
+                  {% if event.start_date|date:'Y-m-d' == today|date:'Y-m-d' %}
+                  Today {% else %} {{ event.start_date|date:"M d" }} {% endif %}
+                </small>
+              </div>
+              <p class="mb-1 small">
+                {{ event.description|truncatechars:100 }}
+              </p>
+              <small>
+                <span class="badge bg-secondary"
+                  >{{ event.get_target_type_display }}</span
+                >
+                <span
+                  class="badge bg-{% if event.event_type == 'ACADEMIC' %}primary{% elif event.event_type == 'SPORTS' %}success{% elif event.event_type == 'CULTURAL' %}warning{% elif event.event_type == 'HOLIDAY' %}danger{% else %}info{% endif %}"
+                >
+                  {{ event.get_event_type_display }}
+                </span>
+              </small>
+            </div>
+            {% empty %}
+            <div class="text-center py-4">
+              <div class="mb-3">
+                <i class="far fa-calendar-alt fa-3x text-muted"></i>
+              </div>
+              <p class="text-muted">No upcoming events</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card-footer text-center">
+          <a
+            href="{% url 'communications:event_list' %}"
+            class="btn btn-sm btn-primary"
+          >
+            View All Events
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Announcements -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Recent Announcements
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for announcement in recent_announcements %}
+            <div class="list-group-item border-0 pb-3">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ announcement.title }}</h6>
+                <small>{{ announcement.created_at|date:"M d" }}</small>
+              </div>
+              <p class="mb-1 small">
+                {{ announcement.content|truncatechars:100 }}
+              </p>
+              <small>
+                <span class="badge bg-secondary"
+                  >{{ announcement.get_target_type_display }}</span
+                >
+                <span class="badge bg-primary"
+                  >From: {{ announcement.created_by.get_full_name }}</span
+                >
+              </small>
+            </div>
+            {% empty %}
+            <div class="text-center py-4">
+              <div class="mb-3">
+                <i class="fas fa-bullhorn fa-3x text-muted"></i>
+              </div>
+              <p class="text-muted">No recent announcements</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card-footer text-center">
+          <a
+            href="{% url 'communications:announcement_list' %}"
+            class="btn btn-sm btn-primary"
+          >
+            View All Announcements
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Card Generation Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow border-left-danger">
+        <div class="card-header py-3 bg-danger text-white">
+          <h6 class="m-0 font-weight-bold">
+            <i class="fas fa-file-alt me-2"></i> Student Report Cards & Grading
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <h5 class="mb-3">End of Term Reports</h5>
+              <p>Generate and manage student report cards for the current academic term. You can view existing report cards, generate new ones, or analyze performance across classes.</p>
+
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> Only administrators can finalize grades and generate the final reports. Teachers enter grades which are then reviewed before report generation.
+              </div>
+
+              <div class="mt-4">
+                <a href="{% url 'assignments:report_card_list' %}" class="btn btn-primary me-2 mb-2">
+                  <i class="fas fa-file-alt me-2"></i> View Report Cards
+                </a>
+                <a href="{% url 'assignments:generate_report_cards' %}" class="btn btn-success me-2 mb-2">
+                  <i class="fas fa-file-medical me-2"></i> Generate Report Cards
+                </a>
+                <a href="{% url 'dashboard:admin_report_insights' %}" class="btn btn-info mb-2">
+                  <i class="fas fa-chart-pie me-2"></i> Report Insights
+                </a>
+              </div>
+            </div>
+            <div class="col-md-4 text-center">
+              <div class="p-3">
+                <div class="icon-circle bg-danger text-white mx-auto mb-4" style="height: 6rem; width: 6rem;">
+                  <i class="fas fa-file-alt" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5>Assessment Configuration</h5>
+                <div class="mt-3">
+                  <a href="{% url 'dashboard:admin_grading_scales' %}" class="btn btn-outline-secondary btn-sm me-2 mb-2">
+                    <i class="fas fa-sliders-h me-1"></i> Grading Scales
+                  </a>
+                  <a href="{% url 'dashboard:admin_assessment_weights' %}" class="btn btn-outline-secondary btn-sm mb-2">
+                    <i class="fas fa-balance-scale me-1"></i> Assessment Weights
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Quick Administrative Links
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'courses:class_list' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-primary text-white mx-auto mb-3">
+                      <i class="fas fa-school"></i>
+                    </div>
+                    <h6>Classes</h6>
+                    <div class="small text-muted">Manage & assign teachers</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'dashboard:admin_attendance_overview' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-primary text-white mx-auto mb-3">
+                      <i class="fas fa-user-check"></i>
+                    </div>
+                    <h6>Attendance Tracking</h6>
+                    <div class="small text-muted">
+                      Monitor student attendance
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'dashboard:admin_performance_overview' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-warning text-white mx-auto mb-3">
+                      <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h6>Academic Performance</h6>
+                    <div class="small text-muted">Track student progress</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'courses:subject_list' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-success text-white mx-auto mb-3">
+                      <i class="fas fa-book"></i>
+                    </div>
+                    <h6>Subjects</h6>
+                    <div class="small text-muted">Apply to classes</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'courses:material_list' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div
+                      class="icon-circle bg-secondary text-white mx-auto mb-3"
+                    >
+                      <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <h6>Materials</h6>
+                    <div class="small text-muted">Manage course content</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'communications:message_list' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div
+                      class="icon-circle bg-secondary text-white mx-auto mb-3"
+                    >
+                      <i class="fas fa-envelope"></i>
+                    </div>
+                    <h6>Messages</h6>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <!-- ID Card Management -->
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'users:id_card_list' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-primary text-white mx-auto mb-3">
+                      <i class="fas fa-id-card"></i>
+                    </div>
+                    <h6>ID Cards</h6>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <!-- Student Promotion Management -->
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'dashboard:admin_student_promotion' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-success text-white mx-auto mb-3">
+                      <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h6>Student Promotion</h6>
+                    <div class="small text-muted">Manage grade transitions</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <!-- Admission Letter Management -->
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <a
+                href="{% url 'users:admission_letter_list' %}"
+                class="text-decoration-none"
+              >
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="icon-circle bg-dark text-white mx-auto mb-3">
+                      <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h6>Admission Letters</h6>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+  // Enrollment Trends Chart
+  var enrollmentCtx = document.getElementById('enrollmentTrendsChart').getContext('2d');
+  var enrollmentChart = new Chart(enrollmentCtx, {
+      type: 'line',
+      data: {
+          labels: {{ enrollment_labels_json|safe }},
+          datasets: [{
+              label: 'Student Enrollments',
+              data: {{ enrollment_trends_json|safe }},
+              lineTension: 0.3,
+              backgroundColor: "rgba(78, 115, 223, 0.05)",
+              borderColor: "rgba(78, 115, 223, 1)",
+              pointRadius: 3,
+              pointBackgroundColor: "rgba(78, 115, 223, 1)",
+              pointBorderColor: "rgba(78, 115, 223, 1)",
+              pointHoverRadius: 5,
+              pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+              pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+              pointHitRadius: 10,
+              pointBorderWidth: 2,
+              fill: true
+          }]
+      },
+      options: {
+          maintainAspectRatio: false,
+          responsive: true,
+          plugins: {
+              legend: {
+                  display: false
+              },
+              tooltip: {
+                  backgroundColor: "rgb(255, 255, 255)",
+                  bodyColor: "#858796",
+                  titleColor: "#6e707e",
+                  titleMarginBottom: 10,
+                  titleFont: {
+                      size: 14,
+                      weight: 'bold'
+                  },
+                  borderColor: '#dddfeb',
+                  borderWidth: 1,
+                  xPadding: 15,
+                  yPadding: 15,
+                  displayColors: false,
+                  caretPadding: 10,
+                  callbacks: {
+                      label: function(context) {
+                          return context.dataset.label + ": " + context.parsed.y + " students";
+                      }
+                  }
+              }
+          },
+          scales: {
+              x: {
+                  grid: {
+                      display: false,
+                      drawBorder: false
+                  },
+                  ticks: {
+                      maxTicksLimit: 12
+                  }
+              },
+              y: {
+                  ticks: {
+                      maxTicksLimit: 5,
+                      padding: 10,
+                      callback: function(value) {
+                          return value;
+                      }
+                  },
+                  grid: {
+                      color: "rgb(234, 236, 244)",
+                      zeroLineColor: "rgb(234, 236, 244)",
+                      drawBorder: false,
+                      borderDash: [2],
+                      zeroLineBorderDash: [2]
+                  }
+              }
+          }
+      }
+  });
+
+  // Grade Distribution Chart
+  var gradeCtx = document.getElementById('gradeDistributionChart').getContext('2d');
+  var gradeChart = new Chart(gradeCtx, {
+      type: 'doughnut',
+      data: {
+          labels: ['A', 'B', 'C', 'D', 'F'],
+          datasets: [{
+              data: {{ grade_distribution_json|safe }},
+              backgroundColor: [
+                  '#1cc88a', // success
+                  '#4e73df', // primary
+                  '#36b9cc', // info
+                  '#f6c23e', // warning
+                  '#e74a3b', // danger
+              ],
+              hoverBackgroundColor: [
+                  '#17a673',
+                  '#2e59d9',
+                  '#2c9faf',
+                  '#dda20a',
+                  '#be2617',
+              ],
+              hoverBorderColor: "rgba(234, 236, 244, 1)",
+          }]
+      },
+      options: {
+          maintainAspectRatio: false,
+          responsive: true,
+          plugins: {
+              legend: {
+                  display: false
+              },
+              tooltip: {
+                  backgroundColor: "rgb(255, 255, 255)",
+                  bodyColor: "#858796",
+                  titleColor: "#6e707e",
+                  titleMarginBottom: 10,
+                  titleFont: {
+                      size: 14,
+                      weight: 'bold'
+                  },
+                  borderColor: '#dddfeb',
+                  borderWidth: 1,
+                  xPadding: 15,
+                  yPadding: 15,
+                  displayColors: false,
+                  caretPadding: 10,
+                  callbacks: {
+                      label: function(context) {
+                          return context.label + ": " + context.parsed + " (" +
+                                 Math.round(context.parsed * 100 / context.dataset.data.reduce((a, b) => a + b, 0)) + "%)";
+                      }
+                  }
+              }
+          },
+          cutout: '70%'
+      }
+  });
+
+  // Fee Collection Chart
+  var feeCtx = document.getElementById('feeCollectionChart').getContext('2d');
+  var feeChart = new Chart(feeCtx, {
+      type: 'doughnut',
+      data: {
+          labels: ['Collected', 'Outstanding'],
+          datasets: [{
+              data: [{{ total_collected|default:0 }}, {{ total_outstanding|default:0 }}],
+              backgroundColor: [
+                  '#1cc88a', // success
+                  '#e74a3b', // danger
+              ],
+              hoverBackgroundColor: [
+                  '#17a673',
+                  '#be2617',
+              ],
+              hoverBorderColor: "rgba(234, 236, 244, 1)",
+          }]
+      },
+      options: {
+          maintainAspectRatio: false,
+          tooltips: {
+              backgroundColor: "rgb(255,255,255)",
+              bodyFontColor: "#858796",
+              borderColor: '#dddfeb',
+              borderWidth: 1,
+              xPadding: 15,
+              yPadding: 15,
+              displayColors: false,
+              caretPadding: 10,
+              callbacks: {
+                  label: function(tooltipItem, data) {
+                      var dataset = data.datasets[tooltipItem.datasetIndex];
+                      var total = dataset.data.reduce(function(previousValue, currentValue) {
+                          return previousValue + currentValue;
+                      });
+                      var currentValue = dataset.data[tooltipItem.index];
+                      var percentage = Math.floor(((currentValue/total) * 100)+0.5);
+                      return data.labels[tooltipItem.index] + ': GHS ' + currentValue.toFixed(2) + ' (' + percentage + '%)';
+                  }
+              }
+          },
+          legend: {
+              display: false
+          },
+          cutoutPercentage: 80,
+      },
+  });
+
+  // Weekly Attendance Chart - only initialize if element exists
+  var weeklyAttendanceCtx = document.getElementById('weeklyAttendanceChart');
+  if (weeklyAttendanceCtx) {
+    var attendanceData = {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Present',
+            data: [
+                {% for day, stats in attendance_overview.this_week.items %}
+                    {{ stats.present|default:0 }},
+                {% endfor %}
+            ],
+            backgroundColor: '#1cc88a',
+            borderColor: '#1cc88a',
+        }, {
+            label: 'Absent',
+            data: [
+                {% for day, stats in attendance_overview.this_week.items %}
+                    {{ stats.absent|default:0 }},
+                {% endfor %}
+            ],
+            backgroundColor: '#e74a3b',
+            borderColor: '#e74a3b',
+        }, {
+            label: 'Late',
+            data: [
+                {% for day, stats in attendance_overview.this_week.items %}
+                    {{ stats.late|default:0 }},
+                {% endfor %}
+            ],
+            backgroundColor: '#f6c23e',
+            borderColor: '#f6c23e',
+        }, {
+            label: 'Excused',
+            data: [
+                {% for day, stats in attendance_overview.this_week.items %}
+                    {{ stats.excused|default:0 }},
+                {% endfor %}
+            ],
+            backgroundColor: '#36b9cc',
+            borderColor: '#36b9cc',
+        }]
+    };
+
+    var weeklyAttendanceChart = new Chart(weeklyAttendanceCtx.getContext('2d'), {
+        type: 'bar',
+        data: attendanceData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+  }
+
+  // Custom styles
+  document.addEventListener('DOMContentLoaded', function() {
+      // Add icon-circle class styling
+      let style = document.createElement('style');
+      style.textContent = `
+          .icon-circle {
+              height: 4rem;
+              width: 4rem;
+              border-radius: 100%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+          }
+
+          .icon-circle i {
+              font-size: 1.75rem;
+          }
+
+          .activity-feed .activity-icon {
+              width: 40px;
+              height: 40px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+          }
+
+          .border-left-primary {
+              border-left: .25rem solid #4e73df !important;
+          }
+
+          .border-left-success {
+              border-left: .25rem solid #1cc88a !important;
+          }
+
+          .border-left-info {
+              border-left: .25rem solid #36b9cc !important;
+          }
+
+          .border-left-warning {
+              border-left: .25rem solid #f6c23e !important;
+          }
+
+          .bg-primary-light {
+              background-color: rgba(78, 115, 223, 0.15) !important;
+          }
+
+          .bg-success-light {
+              background-color: rgba(28, 200, 138, 0.15) !important;
+          }
+
+          .bg-info-light {
+              background-color: rgba(54, 185, 204, 0.15) !important;
+          }
+
+          .bg-warning-light {
+              background-color: rgba(246, 194, 62, 0.15) !important;
+          }
+
+          .bg-danger-light {
+              background-color: rgba(231, 74, 59, 0.15) !important;
+          }
+      `;
+      document.head.appendChild(style);
+  });
+</script>
+{% endblock %}

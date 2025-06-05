@@ -1,0 +1,569 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ material.title }} | Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Kid-friendly styling for students and parents */
+    .kid-friendly-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .kid-friendly-card .card-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        font-size: 1.2rem;
+    }
+
+    .kid-friendly-card .card-body {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    /* Professional styling for teachers and admins */
+    .professional-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .professional-card .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        color: #4e73df;
+        font-weight: 700;
+    }
+
+    .professional-card .card-body {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .metadata-item {
+        display: inline-block;
+        margin-right: 1.5rem;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .material-actions .btn {
+        font-size: 1.1rem;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+    }
+
+    .fun-badge {
+        border-radius: 20px;
+        padding: 8px 15px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .material-preview {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    /* Fun emoji icons for kids */
+    .emoji-icon {
+        font-size: 1.4rem;
+        margin-right: 8px;
+    }
+
+    /* Rich content styling */
+    .rich-content {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .rich-content h1, .rich-content h2, .rich-content h3, .rich-content h4, .rich-content h5, .rich-content h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .rich-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .rich-content ul, .rich-content ol {
+        margin-bottom: 1rem;
+        padding-left: 2rem;
+    }
+
+    .rich-content table {
+        width: 100%;
+        margin-bottom: 1rem;
+        border-collapse: collapse;
+    }
+
+    .rich-content table th, .rich-content table td {
+        padding: 0.5rem;
+        border: 1px solid #dee2e6;
+    }
+
+    .rich-content blockquote {
+        border-left: 4px solid #6c757d;
+        padding-left: 1rem;
+        margin-left: 0;
+        color: #6c757d;
+    }
+
+    /* Navigation buttons styling */
+    .nav-btn {
+        transition: all 0.3s ease;
+        min-width: 120px;
+        text-align: center;
+    }
+
+    .nav-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .nav-btn-prev {
+        border-radius: 20px 5px 5px 20px;
+    }
+
+    .nav-btn-next {
+        border-radius: 5px 20px 20px 5px;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        .mobile-first-card {
+            margin-bottom: 1rem;
+        }
+
+        .compact-info {
+            padding: 0.5rem;
+        }
+
+        .compact-info .form-label {
+            margin-bottom: 0.2rem;
+            font-size: 0.9rem;
+        }
+
+        .compact-info p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Mobile navigation buttons */
+        .nav-btn {
+            min-width: 0;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .nav-btn-prev .nav-text, .nav-btn-next .nav-text {
+            display: none; /* Hide text on mobile, show only icons */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container pb-4">
+    <!-- Top Action Bar - Always Visible -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <span class="emoji-icon">📚</span>{{ material.title }}
+                {% if material.is_draft %}
+                <span class="badge bg-warning ms-2">Draft</span>
+                <small class="text-muted d-block">This material is not visible to students</small>
+                {% endif %}
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'courses:material_list' %}">Learning Materials</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ material.title }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="material-actions">
+            {% if material.file %}
+            <a href="{{ material.file.url }}" class="btn btn-success me-2" target="_blank">
+                <i class="fas fa-download me-1"></i>Download
+            </a>
+            {% endif %}
+
+            {% if is_creator or is_admin %}
+            <a href="{% url 'courses:edit_material' material.id %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit me-1"></i>Edit
+            </a>
+            <a href="{% url 'courses:delete_material' material.id %}" class="btn btn-danger">
+                <i class="fas fa-trash me-1"></i>Delete
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Description Card and Image Preview side by side at the top -->
+    <div class="row mb-4">
+        <!-- Description Card -->
+        <div class="{% if material.file and material.file.name and material.file.name|lower|slice:"-3:" == 'jpg' or material.file.name|lower|slice:"-3:" == 'png' or material.file.name|lower|slice:"-3:" == 'gif' or material.file.name|lower|slice:"-4:" == 'jpeg' %}col-md-6{% else %}col-12{% endif %}">
+            {% if material.description %}
+                {% if user.role == 'STUDENT' or user.role == 'PARENT' %}
+                <!-- KID-FRIENDLY VERSION FOR STUDENTS AND PARENTS -->
+                <div class="card kid-friendly-card shadow h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">
+                            <span class="emoji-icon">📝</span>What's This About?
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ material.description|linebreaks }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <!-- PROFESSIONAL VERSION FOR TEACHERS AND ADMINS -->
+                <div class="card professional-card h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">Description</h6>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ material.description|linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Image Preview beside description if it's an image -->
+        {% if material.file and material.file.name and material.file.name|lower|slice:"-3:" == 'jpg' or material.file.name|lower|slice:"-3:" == 'png' or material.file.name|lower|slice:"-3:" == 'gif' or material.file.name|lower|slice:"-4:" == 'jpeg' %}
+        <div class="col-md-6 mt-3 mt-md-0">
+            {% if user.role == 'STUDENT' or user.role == 'PARENT' %}
+            <div class="card kid-friendly-card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">
+                        <span class="emoji-icon">📷</span>Image Preview
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <a href="{{ material.file.url }}" data-bs-toggle="modal" data-bs-target="#imageModal" class="image-link">
+                        <img src="{{ material.file.url }}" alt="{{ material.title }}" class="img-fluid rounded" style="max-height: 300px;">
+                        <div class="mt-2 text-primary">
+                            <i class="fas fa-search-plus me-1"></i> Click to enlarge
+                        </div>
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="card professional-card h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Image Preview</h6>
+                </div>
+                <div class="card-body text-center">
+                    <a href="{{ material.file.url }}" data-bs-toggle="modal" data-bs-target="#imageModal" class="image-link">
+                        <img src="{{ material.file.url }}" alt="{{ material.title }}" class="img-fluid rounded" style="max-height: 300px;">
+                        <div class="mt-2 text-primary">
+                            <i class="fas fa-search-plus me-1"></i> Click to enlarge
+                        </div>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Image Modal for full-size view -->
+    {% if material.file %}
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">{{ material.title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-0">
+                    <img src="{{ material.file.url }}" class="img-fluid" alt="{{ material.title }}">
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ material.file.url }}" download class="btn btn-primary"><i class="fas fa-download me-1"></i> Download</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- For teachers and admins, keep Material Details at the top -->
+    {% if user.role != 'STUDENT' and user.role != 'PARENT' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <!-- PROFESSIONAL VERSION FOR TEACHERS AND ADMINS -->
+            <div class="card professional-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Material Details</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%">Subject</th>
+                                <td>{{ material.class_subject.subject.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Class</th>
+                                <td>{{ material.class_subject.classroom.name }} {% if material.class_subject.classroom.section %}({{ material.class_subject.classroom.section }}){% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th>Created By</th>
+                                <td>{{ material.created_by.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Date Created</th>
+                                <td>{{ material.created_at|date:"F j, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Last Updated</th>
+                                <td>{{ material.updated_at|date:"F j, Y" }}</td>
+                            </tr>
+                            {% if material.file %}
+                            <tr>
+                                <th>File Type</th>
+                                <td>
+                                    {% if material.file.name|lower|slice:"-3:" == 'pdf' %}
+                                        PDF Document
+                                    {% elif material.file.name|lower|slice:"-3:" == 'doc' or material.file.name|lower|slice:"-4:" == 'docx' %}
+                                        Word Document
+                                    {% elif material.file.name|lower|slice:"-3:" == 'ppt' or material.file.name|lower|slice:"-4:" == 'pptx' %}
+                                        PowerPoint Presentation
+                                    {% elif material.file.name|lower|slice:"-3:" == 'xls' or material.file.name|lower|slice:"-4:" == 'xlsx' %}
+                                        Excel Spreadsheet
+                                    {% elif material.file.name|lower|slice:"-3:" == 'jpg' or material.file.name|lower|slice:"-3:" == 'png' or material.file.name|lower|slice:"-3:" == 'gif' %}
+                                        Image
+                                    {% else %}
+                                        {{ material.file.name|slice:"-3:" }} File
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <th>Status</th>
+                                <td>
+                                    {% if material.is_draft %}
+                                    <span class="badge bg-warning">Draft</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Published</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {% if material.file %}
+                    <div class="d-grid mt-3">
+                        <a href="{{ material.file.url }}" class="btn btn-primary" download>
+                            <i class="fas fa-download me-1"></i>Download File
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Second row with Content and File Preview spanning full width -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            {% if user.role == 'STUDENT' or user.role == 'PARENT' %}
+            <!-- KID-FRIENDLY VERSION FOR STUDENTS AND PARENTS -->
+
+            <!-- Content Card (FIRST) -->
+            {% if material.has_content %}
+            <div class="card kid-friendly-card shadow mobile-first-card mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">
+                        <span class="emoji-icon">📚</span>Learning Notes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="rich-content">
+                        {{ material.content|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- File Preview Card (SECOND - only for non-image files since images are shown at the top) -->
+            {% if material.has_file and not material.file.name|lower|slice:"-3:" == 'jpg' and not material.file.name|lower|slice:"-3:" == 'png' and not material.file.name|lower|slice:"-3:" == 'gif' and not material.file.name|lower|slice:"-4:" == 'jpeg' %}
+            <div class="card kid-friendly-card shadow mobile-first-card mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">
+                        <span class="emoji-icon">👀</span>Take a Look!
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if material.file.name|lower|slice:"-3:" == 'pdf' %}
+                        <div class="ratio ratio-16x9 material-preview">
+                            <iframe src="{{ material.file.url }}" title="{{ material.title }}" allowfullscreen></iframe>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas {% if material.file.name|lower|slice:"-3:" == 'doc' or material.file.name|lower|slice:"-4:" == 'docx' %}fa-file-word{% elif material.file.name|lower|slice:"-3:" == 'ppt' or material.file.name|lower|slice:"-4:" == 'pptx' %}fa-file-powerpoint{% elif material.file.name|lower|slice:"-3:" == 'xls' or material.file.name|lower|slice:"-4:" == 'xlsx' %}fa-file-excel{% else %}fa-file-alt{% endif %} fa-5x mb-3 text-primary"></i>
+                            <h5>Ready to learn something new?</h5>
+                            <p class="mb-3">This file needs to be downloaded to view.</p>
+                            <a href="{{ material.file.url }}" class="btn btn-lg btn-primary" target="_blank">
+                                <i class="fas fa-download me-2"></i>Get File
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Navigation buttons for students to move between materials -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                {% if prev_material %}
+                <a href="{% url 'courses:material_detail' prev_material.id %}" class="btn btn-primary nav-btn nav-btn-prev">
+                    <i class="fas fa-chevron-left me-2"></i><span class="nav-text">Previous Topic</span>
+                </a>
+                {% else %}
+                <div class="invisible nav-btn">Placeholder</div> <!-- Invisible placeholder to maintain spacing -->
+                {% endif %}
+
+                <a href="{% url 'courses:material_list' %}?class={{ material.class_subject.classroom.id }}&subject={{ material.class_subject.subject.id }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-1"></i>All Materials
+                </a>
+
+                {% if next_material %}
+                <a href="{% url 'courses:material_detail' next_material.id %}" class="btn btn-primary nav-btn nav-btn-next">
+                    <span class="nav-text">Next Topic</span><i class="fas fa-chevron-right ms-2"></i>
+                </a>
+                {% else %}
+                <div class="invisible nav-btn">Placeholder</div> <!-- Invisible placeholder to maintain spacing -->
+                {% endif %}
+            </div>
+
+            <!-- Material Details Card (LAST - moved to bottom) -->
+            <div class="card kid-friendly-card shadow mobile-first-card mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">
+                        <span class="emoji-icon">ℹ️</span>Quick Info
+                    </h6>
+                    <button class="btn btn-sm btn-link text-white d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#materialInfoCollapse" aria-expanded="false" aria-controls="materialInfoCollapse">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+
+                <div class="collapse show" id="materialInfoCollapse">
+                    <div class="card-body compact-info">
+                        <!-- Subject Badge - Colorful and Prominent -->
+                        <div class="text-center mb-3">
+                            <span class="badge bg-primary fun-badge">
+                                {{ material.class_subject.subject.name }}
+                            </span>
+                            <span class="badge bg-info fun-badge">
+                                {{ material.class_subject.classroom.name }}
+                            </span>
+                        </div>
+
+                        <!-- Compact Info Table -->
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" width="40%">
+                                            <i class="fas fa-user text-primary me-2"></i>From:
+                                        </th>
+                                        <td>{{ material.created_by.get_full_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <i class="fas fa-calendar-alt text-success me-2"></i>When:
+                                        </th>
+                                        <td>{{ material.created_at|date:"M d, Y" }}</td>
+                                    </tr>
+                                    {% if material.file %}
+                                    <tr>
+                                        <th scope="row">
+                                            <i class="fas fa-file text-warning me-2"></i>Type:
+                                        </th>
+                                        <td>
+                                            <span class="badge {% if material.file.name|lower|slice:"-3:" == 'pdf' %}bg-danger{% elif material.file.name|lower|slice:"-3:" == 'doc' or material.file.name|lower|slice:"-4:" == 'docx' %}bg-primary{% elif material.file.name|lower|slice:"-3:" == 'ppt' or material.file.name|lower|slice:"-4:" == 'pptx' %}bg-warning{% elif material.file.name|lower|slice:"-3:" == 'jpg' or material.file.name|lower|slice:"-3:" == 'png' or material.file.name|lower|slice:"-3:" == 'gif' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ material.file.name|lower|slice:"-3:" }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <i class="fas fa-weight-hanging text-info me-2"></i>Size:
+                                        </th>
+                                        <td>{{ material.file.size|filesizeformat }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {% if material.file %}
+                        <div class="d-grid mt-3">
+                            <a href="{{ material.file.url }}" class="btn btn-primary" download>
+                                <i class="fas fa-download me-1"></i>Download File
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- PROFESSIONAL VERSION FOR TEACHERS AND ADMINS -->
+
+            <!-- Navigation buttons for teachers/admins to move between materials -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                {% if prev_material %}
+                <a href="{% url 'courses:material_detail' prev_material.id %}" class="btn btn-primary nav-btn nav-btn-prev">
+                    <i class="fas fa-chevron-left me-2"></i><span class="nav-text">Previous Material</span>
+                </a>
+                {% else %}
+                <div class="invisible nav-btn">Placeholder</div> <!-- Invisible placeholder to maintain spacing -->
+                {% endif %}
+
+                <a href="{% url 'courses:material_list' %}?class={{ material.class_subject.classroom.id }}&subject={{ material.class_subject.subject.id }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-1"></i>All Materials
+                </a>
+
+                {% if next_material %}
+                <a href="{% url 'courses:material_detail' next_material.id %}" class="btn btn-primary nav-btn nav-btn-next">
+                    <span class="nav-text">Next Material</span><i class="fas fa-chevron-right ms-2"></i>
+                </a>
+                {% else %}
+                <div class="invisible nav-btn">Placeholder</div> <!-- Invisible placeholder to maintain spacing -->
+                {% endif %}
+            </div>
+
+            <!-- Content Card -->
+            {% if material.has_content %}
+            <div class="card professional-card mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Content</h6>
+                </div>
+                <div class="card-body">
+                    <div class="rich-content">
+                        {{ material.content|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

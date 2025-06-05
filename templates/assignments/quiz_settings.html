@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Quiz - Step 1: Settings - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-step {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .step {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        position: relative;
+    }
+
+    .step.active {
+        font-weight: bold;
+        color: #4e73df;
+    }
+
+    .step.active .step-number {
+        background-color: #4e73df;
+        color: white;
+    }
+
+    .step.completed .step-number {
+        background-color: #1cc88a;
+        color: white;
+    }
+
+    .step-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 50%;
+        background-color: #e2e3e5;
+        margin-bottom: 5px;
+    }
+
+    .step:not(:last-child):after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        right: -50%;
+        width: 100%;
+        height: 2px;
+        background-color: #e2e3e5;
+        z-index: -1;
+    }
+
+    .step.active:not(:last-child):after,
+    .step.completed:not(:last-child):after {
+        background-color: #4e73df;
+    }
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        margin-top: 0.25rem;
+    }
+
+    .form-check-label {
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create Quiz</h1>
+        <div>
+            <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Assignments
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+        <div class="step active">
+            <div class="step-number">1</div>
+            <div>Quiz Settings</div>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <div>Question Bank</div>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div>Review & Publish</div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Step 1: Quiz Settings</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="quiz-settings-form">
+                {% csrf_token %}
+
+                <div class="form-step">
+                    <h5 class="mb-3">Basic Information</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">Quiz Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   placeholder="e.g., Math Quiz - Week 3" value="{{ quiz.title|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="class_subject" class="form-label">Class & Subject <span class="text-danger">*</span></label>
+                            <select class="form-select" id="class_subject" name="class_subject_id" required>
+                                <option value="">Select Class & Subject</option>
+                                {% for class_subject in class_subjects %}
+                                    <option value="{{ class_subject.id }}" {% if quiz.class_subject_id == class_subject.id %}selected{% endif %}>
+                                        {{ class_subject.classroom.name }} - {{ class_subject.subject.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Instructions for Students</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Instructions shown to students before the quiz starts">{{ quiz.description|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="form-step">
+                    <h5 class="mb-3">Quiz Configuration</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="time_limit" class="form-label">Time Limit (minutes)</label>
+                            <input type="number" class="form-control" id="time_limit" name="time_limit" min="1"
+                                   value="{{ quiz.time_limit|default:30 }}" placeholder="e.g., 30">
+                            <div class="form-text">Leave blank for no time limit</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" required
+                                   value="{{ quiz.due_date|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="due_time" class="form-label">Due Time <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="due_time" name="due_time" required
+                                   value="{{ quiz.due_date|time:'H:i'|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="questions_to_display" class="form-label">Number of Questions to Present</label>
+                            <input type="number" class="form-control" id="questions_to_display" name="questions_to_display" min="1"
+                                   value="{{ quiz.questions_to_display|default:'' }}" placeholder="e.g., 30">
+                            <div class="form-text">Leave blank to show all questions</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="attempt_limit" class="form-label">Attempt Limit</label>
+                            <input type="number" class="form-control" id="attempt_limit" name="attempt_limit" min="0"
+                                   value="{{ quiz.attempt_limit|default:1 }}" placeholder="e.g., 1">
+                            <div class="form-text">Set to 0 for unlimited attempts</div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="randomize_questions" name="randomize_questions"
+                                       {% if quiz.randomize_questions|default:True %}checked{% endif %}>
+                                <label class="form-check-label" for="randomize_questions">
+                                    Shuffle questions
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="randomize_choices" name="randomize_choices"
+                                       {% if quiz.randomize_choices|default:True %}checked{% endif %}>
+                                <label class="form-check-label" for="randomize_choices">
+                                    Shuffle answer options
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> Next: Add Questions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Set default due date (tomorrow)
+        if (!$('#due_date').val()) {
+            let tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            let year = tomorrow.getFullYear();
+            let month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            let day = String(tomorrow.getDate()).padStart(2, '0');
+            $('#due_date').val(`${year}-${month}-${day}`);
+        }
+
+        // Set default due time (noon)
+        if (!$('#due_time').val()) {
+            $('#due_time').val('12:00');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Receipt #{{ receipt.receipt_number }} - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+  .receipt-container {
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    padding: 30px;
+    position: relative;
+  }
+  
+  .receipt-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .receipt-header img {
+    max-height: 80px;
+    margin-bottom: 10px;
+  }
+  
+  .receipt-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .receipt-subtitle {
+    font-size: 16px;
+    color: #666;
+  }
+  
+  .receipt-number {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
+  .receipt-date {
+    position: absolute;
+    top: 55px;
+    right: 30px;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .receipt-body {
+    margin-bottom: 30px;
+  }
+  
+  .receipt-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .receipt-info-group {
+    flex: 1;
+  }
+  
+  .receipt-info-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .receipt-info-value {
+    margin-bottom: 10px;
+  }
+  
+  .receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+  }
+  
+  .receipt-table th,
+  .receipt-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+  }
+  
+  .receipt-table th {
+    background-color: #f8f9fc;
+    text-align: left;
+  }
+  
+  .receipt-total {
+    text-align: right;
+    margin-bottom: 30px;
+  }
+  
+  .receipt-total-row {
+    margin-bottom: 5px;
+  }
+  
+  .receipt-total-label {
+    font-weight: bold;
+    margin-right: 20px;
+  }
+  
+  .receipt-total-value {
+    font-weight: bold;
+    font-size: 18px;
+  }
+  
+  .receipt-footer {
+    margin-top: 50px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .receipt-signature {
+    text-align: center;
+    flex: 1;
+  }
+  
+  .receipt-signature-line {
+    width: 80%;
+    margin: 50px auto 10px;
+    border-top: 1px solid #000;
+  }
+  
+  .receipt-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 100px;
+    color: rgba(0, 0, 0, 0.05);
+    z-index: -1;
+    white-space: nowrap;
+  }
+  
+  @media print {
+    .no-print {
+      display: none;
+    }
+    
+    body {
+      background-color: white;
+    }
+    
+    .receipt-container {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h1 class="h3 mb-0 text-gray-800">Receipt Details</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:payment_list' %}">Payments</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Receipt #{{ receipt.receipt_number }}</li>
+      </ol>
+    </nav>
+  </div>
+  
+  <div class="row mb-4 no-print">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="btn-group">
+            <a href="{% url 'fees:print_receipt' receipt.id %}" class="btn btn-primary">
+              <i class="fas fa-print me-2"></i>Print Receipt
+            </a>
+            <a href="{% url 'fees:download_receipt' receipt.id %}" class="btn btn-success">
+              <i class="fas fa-download me-2"></i>Download PDF
+            </a>
+            <a href="{% url 'fees:email_receipt' receipt.id %}" class="btn btn-info">
+              <i class="fas fa-envelope me-2"></i>Email Receipt
+            </a>
+            <a href="{% url 'fees:student_fees' receipt.payment.student_fee.student.id %}" class="btn btn-secondary">
+              <i class="fas fa-user me-2"></i>View Student Fees
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="receipt-container">
+    <!-- Watermark -->
+    <div class="receipt-watermark">RECEIPT</div>
+    
+    <!-- Receipt Header -->
+    <div class="receipt-header">
+      {% if school_settings.logo %}
+        <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.name }} Logo">
+      {% endif %}
+      <div class="receipt-title">{{ school_settings.name|default:"Ricas School" }}</div>
+      <div class="receipt-subtitle">{{ school_settings.address|default:"" }}</div>
+      <div class="receipt-subtitle">{{ school_settings.phone|default:"" }} | {{ school_settings.email|default:"" }}</div>
+    </div>
+    
+    <!-- Receipt Number and Date -->
+    <div class="receipt-number">Receipt #: {{ receipt.receipt_number }}</div>
+    <div class="receipt-date">Date: {{ receipt.generated_at|date:"F d, Y" }}</div>
+    
+    <!-- Receipt Body -->
+    <div class="receipt-body">
+      <div class="receipt-info">
+        <div class="receipt-info-group">
+          <div class="receipt-info-label">Student Information:</div>
+          <div class="receipt-info-value">{{ receipt.payment.student_fee.student.user.get_full_name }}</div>
+          <div class="receipt-info-value">ID: {{ receipt.payment.student_fee.student.student_id }}</div>
+          <div class="receipt-info-value">Class: {{ receipt.payment.student_fee.class_fee.classroom.name }}</div>
+        </div>
+        <div class="receipt-info-group">
+          <div class="receipt-info-label">Payment Information:</div>
+          <div class="receipt-info-value">Method: {{ receipt.payment.get_payment_method_display }}</div>
+          <div class="receipt-info-value">Date: {{ receipt.payment.payment_date|date:"F d, Y" }}</div>
+          {% if receipt.payment.transaction_id %}
+            <div class="receipt-info-value">Transaction ID: {{ receipt.payment.transaction_id }}</div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Term</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ receipt.payment.student_fee.class_fee.fee_category.name }}</td>
+            <td>{{ receipt.payment.student_fee.class_fee.term.name }} ({{ receipt.payment.student_fee.class_fee.term.academic_year }})</td>
+            <td>GHS {{ receipt.payment.amount|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div class="receipt-total">
+        <div class="receipt-total-row">
+          <span class="receipt-total-label">Total Amount:</span>
+          <span class="receipt-total-value">GHS {{ receipt.payment.amount|floatformat:2 }}</span>
+        </div>
+        <div class="receipt-total-row">
+          <span class="receipt-total-label">Amount in Words:</span>
+          <span>{{ amount_in_words }}</span>
+        </div>
+      </div>
+      
+      {% if receipt.payment.notes %}
+        <div class="mt-4">
+          <strong>Notes:</strong>
+          <p>{{ receipt.payment.notes }}</p>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Receipt Footer -->
+    <div class="receipt-footer">
+      <div class="receipt-signature">
+        <div class="receipt-signature-line"></div>
+        <div>{{ receipt.payment.received_by.get_full_name }}</div>
+        <div>Received By</div>
+      </div>
+      <div class="receipt-signature">
+        <div class="receipt-signature-line"></div>
+        <div>Parent/Guardian</div>
+        <div>Signature</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Auto-print when using the print view
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('print') === 'true') {
+      window.print();
+    }
+  });
+</script>
+{% endblock %}

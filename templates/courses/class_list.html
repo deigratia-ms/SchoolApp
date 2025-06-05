@@ -1,0 +1,852 @@
+{% extends 'base.html' %} {% block title %}Classes | Ricas School Management
+System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Classes</h1>
+    <div>
+      {% if user.is_admin %}
+      <button
+        type="button"
+        class="btn btn-outline-primary me-2"
+        data-bs-toggle="modal"
+        data-bs-target="#bulkActionsModal"
+      >
+        <i class="fas fa-cogs me-2"></i>Bulk Actions
+      </button>
+      <a href="{% url 'courses:create_class' %}" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-2"></i>Add New Class
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" id="all-classes-tab"
+            >All Classes</a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" id="without-teacher-tab"
+            >Without Class Teacher</a
+          >
+        </li>
+      </ul>
+    </div>
+    <div class="card-body">
+      <div class="d-flex justify-content-between mb-3">
+        <div class="d-flex">
+          <select
+            class="form-select me-2"
+            id="filterByGrade"
+            style="width: auto"
+          >
+            <option value="all">All Grades</option>
+          </select>
+        </div>
+        <div class="input-group" style="width: 250px">
+          <input
+            type="text"
+            id="classSearch"
+            class="form-control"
+            placeholder="Search..."
+          />
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if classes %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover" id="classTable">
+            <thead class="table-light">
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    id="selectAllClasses"
+                    class="form-check-input"
+                  />
+                </th>
+                <th>Name</th>
+                <th>Section</th>
+                <th>Class Teacher</th>
+                <th>No. of Students</th>
+                <th>Subjects</th>
+                <th width="180">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for class in classes %}
+              <tr>
+                <td>
+                  {% if user.is_admin %}
+                  <input
+                    type="checkbox"
+                    class="form-check-input class-checkbox"
+                    value="{{ class.id }}"
+                  />
+                  {% endif %}
+                </td>
+                <td><a href="{% url 'courses:class_detail' class.id %}">{{ class.name }}</a></td>
+                <td>{{ class.section|default:"-" }}</td>
+                <td>
+                  {% if class.class_teacher %}
+                    {{ class.class_teacher.user.get_full_name }}
+                    {% if user.is_admin %}
+                      <a
+                        href="#"
+                        class="ms-2 text-warning small"
+                        data-bs-toggle="modal"
+                        data-bs-target="#changeTeacherModal"
+                        data-class-id="{{ class.id }}"
+                        data-class-name="{{ class.name }} {{ class.section|default:'' }}"
+                        data-teacher-id="{{ class.class_teacher.id }}"
+                      >
+                        <i class="fas fa-exchange-alt"></i>
+                      </a>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">Not assigned</span>
+                    {% if user.is_admin %}
+                      <a
+                        href="#"
+                        class="ms-2 text-primary small"
+                        data-bs-toggle="modal"
+                        data-bs-target="#changeTeacherModal"
+                        data-class-id="{{ class.id }}"
+                        data-class-name="{{ class.name }} {{ class.section|default:'' }}"
+                      >
+                        <i class="fas fa-plus-circle"></i> Assign
+                      </a>
+                    {% endif %}
+                  {% endif %}
+                </td>
+                <td>{{ class.students.count }}</td>
+                <td>
+                  <span class="badge bg-primary"
+                    >{{ class.subjects.count }}</span
+                  >
+                  {% if user.is_admin %}
+                  <a
+                    href="#"
+                    class="ms-2 text-primary small"
+                    data-bs-toggle="modal"
+                    data-bs-target="#manageSubjectsModal"
+                    data-class-id="{{ class.id }}"
+                    data-class-name="{{ class.name }} {{ class.section|default:'' }}"
+                  >
+                    <i class="fas fa-cog"></i>
+                  </a>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="btn-group">
+                    <a
+                      href="{% url 'courses:class_detail' class.id %}"
+                      class="btn btn-sm btn-info"
+                      title="View Class"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    {% if user.is_admin %}
+                    <a
+                      href="{% url 'courses:edit_class' class.id %}"
+                      class="btn btn-sm btn-warning"
+                      title="Edit Class"
+                    >
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-success"
+                      title="Add Subject"
+                      data-bs-toggle="modal"
+                      data-bs-target="#addSubjectModal"
+                      data-class-id="{{ class.id }}"
+                      data-class-name="{{ class.name }} {{ class.section|default:'' }}"
+                    >
+                      <i class="fas fa-book"></i>
+                    </button>
+                    <a
+                      href="{% url 'courses:delete_class' class.id %}"
+                      class="btn btn-sm btn-danger"
+                      title="Delete Class"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+          <i class="fas fa-school fa-3x mb-3 text-muted"></i>
+          <p class="text-muted">
+            No classes found. {% if user.is_admin %}Click the button above to
+            add a new class.{% endif %}
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if user.is_admin %}
+  <!-- Change Teacher Modal -->
+  <div
+    class="modal fade"
+    id="changeTeacherModal"
+    tabindex="-1"
+    aria-labelledby="changeTeacherModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="changeTeacherModalLabel">
+            Assign Class Teacher
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <form
+          id="changeTeacherForm"
+          method="post"
+          action="{% url 'courses:assign_class_teacher' 0 %}"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>Assign a class teacher for <strong id="className"></strong>.</p>
+
+            <div class="mb-3">
+              <label for="teacher_id" class="form-label">Class Teacher</label>
+              <select class="form-select" id="teacher_id" name="class_teacher">
+                <option value="">-- No Class Teacher --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">
+                  {{ teacher.user.get_full_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <input type="hidden" id="classId" name="class_id" value="" />
+            <input type="hidden" name="next" value="class_list" />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Subjects Modal -->
+  <div
+    class="modal fade"
+    id="manageSubjectsModal"
+    tabindex="-1"
+    aria-labelledby="manageSubjectsModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="manageSubjectsModalLabel">
+            Manage Subjects
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p>Manage subjects for <strong id="classNameSubjects"></strong>.</p>
+
+          <div class="mt-3">
+            <h6>Assigned Subjects</h6>
+            <div id="loadingSubjects" class="text-center py-3">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-2">Loading subjects...</p>
+            </div>
+            <div id="subjectsList" class="d-none">
+              <!-- Will be populated via AJAX -->
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <a href="#" id="addNewSubjectBtn" class="btn btn-sm btn-primary">
+              <i class="fas fa-plus-circle me-2"></i>Add New Subject
+            </a>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Subject Modal -->
+  <div
+    class="modal fade"
+    id="addSubjectModal"
+    tabindex="-1"
+    aria-labelledby="addSubjectModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addSubjectModalLabel">Add Subject</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <form
+          id="addSubjectForm"
+          method="post"
+          action="{% url 'courses:create_class_subject' %}"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>Add a subject to <strong id="classNameForSubject"></strong>.</p>
+
+            <div class="mb-3">
+              <label for="subject_id" class="form-label">Subject</label>
+              <select
+                class="form-select"
+                id="subject_id"
+                name="subject"
+                required
+              >
+                <option value="">-- Select Subject --</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">
+                  {{ subject.name }} ({{ subject.code }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="subject_teacher" class="form-label"
+                >Subject Teacher</label
+              >
+              <select
+                class="form-select"
+                id="subject_teacher"
+                name="teacher"
+                required
+              >
+                <option value="">-- Select Teacher --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">
+                  {{ teacher.user.get_full_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <input
+              type="hidden"
+              id="subjectClassId"
+              name="classroom"
+              value=""
+            />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Add Subject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Actions Modal -->
+  <div
+    class="modal fade"
+    id="bulkActionsModal"
+    tabindex="-1"
+    aria-labelledby="bulkActionsModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="bulkActionsModalLabel">
+            Bulk Actions for Classes
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Select the classes from the list before performing bulk actions.
+          </div>
+
+          <div class="list-group">
+            <button
+              type="button"
+              id="bulkAssignTeacher"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              disabled
+            >
+              <div>
+                <i class="fas fa-user-tie me-2"></i>
+                <strong>Assign Class Teacher</strong>
+                <div class="small text-muted">
+                  Assign the same teacher to multiple classes
+                </div>
+              </div>
+              <span class="badge bg-primary rounded-pill">0</span>
+            </button>
+
+            <button
+              type="button"
+              id="bulkAddSubject"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              disabled
+            >
+              <div>
+                <i class="fas fa-book me-2"></i>
+                <strong>Add Subject</strong>
+                <div class="small text-muted">
+                  Add the same subject to multiple classes
+                </div>
+              </div>
+              <span class="badge bg-primary rounded-pill">0</span>
+            </button>
+
+            <button
+              type="button"
+              id="bulkDeleteClasses"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center list-group-item-danger"
+              disabled
+            >
+              <div>
+                <i class="fas fa-trash me-2"></i>
+                <strong>Delete Classes</strong>
+                <div class="small text-muted">
+                  Permanently delete selected classes
+                </div>
+              </div>
+              <span class="badge bg-danger rounded-pill">0</span>
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %} {% endblock %} {% block extra_js %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Search functionality
+      const searchInput = document.getElementById("classSearch");
+      const table = document.getElementById("classTable");
+
+      if (searchInput && table) {
+        searchInput.addEventListener("keyup", function () {
+          const searchTerm = searchInput.value.toLowerCase();
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+
+          for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName("td");
+            let found = false;
+
+            for (let j = 1; j < cells.length - 1; j++) {
+              // Skip checkbox and actions cells
+              if (cells[j].textContent.toLowerCase().indexOf(searchTerm) > -1) {
+                found = true;
+                break;
+              }
+            }
+
+            rows[i].style.display = found ? "" : "none";
+          }
+        });
+      }
+
+      // Manage Subjects Modal
+      const manageSubjectsModal = document.getElementById(
+        "manageSubjectsModal"
+      );
+      if (manageSubjectsModal) {
+        manageSubjectsModal.addEventListener("show.bs.modal", function (event) {
+          const button = event.relatedTarget;
+          const classId = button.getAttribute("data-class-id");
+          const className = button.getAttribute("data-class-name");
+
+          // Set class name in the modal
+          document.getElementById("classNameSubjects").textContent = className;
+
+          // Show loading spinner
+          document.getElementById("loadingSubjects").classList.remove("d-none");
+          document.getElementById("subjectsList").classList.add("d-none");
+
+          // Fetch subjects for this class
+          fetch(`/courses/api/classes/${classId}/subjects/`)
+            .then((response) => response.json())
+            .then((data) => {
+              // Hide loading spinner
+              document
+                .getElementById("loadingSubjects")
+                .classList.add("d-none");
+
+              // Get subjects list container
+              const subjectsList = document.getElementById("subjectsList");
+              subjectsList.classList.remove("d-none");
+
+              if (data.subjects && data.subjects.length > 0) {
+                // Create table to display subjects
+                let tableHTML = `
+                  <table class="table table-striped table-hover">
+                    <thead>
+                      <tr>
+                        <th>Subject</th>
+                        <th>Code</th>
+                        <th>Teacher</th>
+                        <th>Students</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                `;
+
+                // Add each subject to the table
+                data.subjects.forEach((subject) => {
+                  tableHTML += `
+                    <tr>
+                      <td>${subject.name}</td>
+                      <td>${subject.code}</td>
+                      <td>${subject.teacher_name}</td>
+                      <td>${subject.students_count}</td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/courses/class-subjects/${subject.id}/" class="btn btn-info" title="View Subject">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          <a href="/courses/class-subjects/${subject.id}/students/" class="btn btn-primary" title="Manage Students">
+                            <i class="fas fa-users"></i>
+                          </a>
+                          <a href="/courses/class-subjects/${subject.id}/edit/" class="btn btn-warning" title="Edit Subject">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/courses/class-subjects/${subject.id}/delete/" class="btn btn-danger" title="Delete Subject">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                });
+
+                tableHTML += `
+                    </tbody>
+                  </table>
+                `;
+
+                // Set the HTML content
+                subjectsList.innerHTML = tableHTML;
+              } else {
+                // No subjects found
+                subjectsList.innerHTML = `
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No subjects have been assigned to this class yet. 
+                    Click the "Add New Subject" button below to assign subjects.
+                  </div>
+                `;
+              }
+
+              // Update the Add New Subject button with the class ID
+              const addNewSubjectBtn =
+                document.getElementById("addNewSubjectBtn");
+              if (addNewSubjectBtn) {
+                addNewSubjectBtn.onclick = function () {
+                  // Hide this modal
+                  const modal =
+                    bootstrap.Modal.getInstance(manageSubjectsModal);
+                  modal.hide();
+
+                  // Show the Add Subject modal
+                  const addSubjectModal = new bootstrap.Modal(
+                    document.getElementById("addSubjectModal")
+                  );
+                  // Set the class ID
+                  document.getElementById("subjectClassId").value = classId;
+                  // Set the class name
+                  document.getElementById("classNameForSubject").textContent =
+                    className;
+
+                  addSubjectModal.show();
+                };
+              }
+            })
+            .catch((error) => {
+              console.error("Error fetching subjects:", error);
+              // Hide loading spinner
+              document
+                .getElementById("loadingSubjects")
+                .classList.add("d-none");
+              // Show error message
+              document
+                .getElementById("subjectsList")
+                .classList.remove("d-none");
+              document.getElementById("subjectsList").innerHTML = `
+                <div class="alert alert-danger">
+                  <i class="fas fa-exclamation-circle me-2"></i>
+                  An error occurred while loading subjects. Please try again.
+                </div>
+              `;
+            });
+        });
+      }
+
+      // Filter by grade
+      const filterByGrade = document.getElementById("filterByGrade");
+      if (filterByGrade && table) {
+        // Extract grade names from class names and populate filter dropdown
+        const rows = table
+          .getElementsByTagName("tbody")[0]
+          .getElementsByTagName("tr");
+        const grades = new Set();
+
+        for (let i = 0; i < rows.length; i++) {
+          const className = rows[i].getElementsByTagName("td")[1].textContent;
+          const gradeMatch = className.match(/^([a-zA-Z]+\s*\d+)/); // Match "Grade 1", "Year 2", etc.
+          if (gradeMatch && gradeMatch[1]) {
+            grades.add(gradeMatch[1]);
+          }
+        }
+
+        // Sort and add options
+        Array.from(grades)
+          .sort()
+          .forEach((grade) => {
+            const option = document.createElement("option");
+            option.value = grade;
+            option.textContent = grade;
+            filterByGrade.appendChild(option);
+          });
+
+        // Add filter functionality
+        filterByGrade.addEventListener("change", function () {
+          const selectedGrade = this.value;
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+
+          for (let i = 0; i < rows.length; i++) {
+            const className = rows[i].getElementsByTagName("td")[1].textContent;
+
+            if (
+              selectedGrade === "all" ||
+              className.startsWith(selectedGrade)
+            ) {
+              rows[i].style.display = "";
+            } else {
+              rows[i].style.display = "none";
+            }
+          }
+        });
+      }
+
+      // Tab functionality
+      const allClassesTab = document.getElementById("all-classes-tab");
+      const withoutTeacherTab = document.getElementById("without-teacher-tab");
+
+      if (allClassesTab && withoutTeacherTab && table) {
+        withoutTeacherTab.addEventListener("click", function (e) {
+          e.preventDefault();
+          allClassesTab.classList.remove("active");
+          withoutTeacherTab.classList.add("active");
+
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+          for (let i = 0; i < rows.length; i++) {
+            const teacherCell = rows[i].getElementsByTagName("td")[3]; // Class teacher cell
+            if (teacherCell.textContent.includes("Not assigned")) {
+              rows[i].style.display = "";
+            } else {
+              rows[i].style.display = "none";
+            }
+          }
+        });
+
+        allClassesTab.addEventListener("click", function (e) {
+          e.preventDefault();
+          withoutTeacherTab.classList.remove("active");
+          allClassesTab.classList.add("active");
+
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+          for (let i = 0; i < rows.length; i++) {
+            rows[i].style.display = "";
+          }
+        });
+      }
+
+      // Change Teacher Modal
+      const changeTeacherModal = document.getElementById("changeTeacherModal");
+      if (changeTeacherModal) {
+        changeTeacherModal.addEventListener("show.bs.modal", function (event) {
+          const button = event.relatedTarget;
+          const classId = button.getAttribute("data-class-id");
+          const className = button.getAttribute("data-class-name");
+          const teacherId = button.getAttribute("data-teacher-id") || "";
+
+          document.getElementById("className").textContent = className;
+          document.getElementById("classId").value = classId;
+          document.getElementById("teacher_id").value = teacherId;
+
+          // Update form action with the correct class ID
+          const form = document.getElementById("changeTeacherForm");
+          form.action = form.action.replace(
+            /\/\d+\/assign-teacher\//,
+            `/${classId}/assign-teacher/`
+          );
+        });
+      }
+
+      // Add Subject Modal
+      const addSubjectModal = document.getElementById("addSubjectModal");
+      if (addSubjectModal) {
+        addSubjectModal.addEventListener("show.bs.modal", function (event) {
+          const button = event.relatedTarget;
+          const classId = button.getAttribute("data-class-id");
+          const className = button.getAttribute("data-class-name");
+
+          document.getElementById("classNameForSubject").textContent =
+            className;
+          document.getElementById("subjectClassId").value = classId;
+        });
+      }
+
+      // Checkbox selection for bulk actions
+      const selectAllCheckbox = document.getElementById("selectAllClasses");
+      const classCheckboxes = document.getElementsByClassName("class-checkbox");
+      const bulkAssignTeacher = document.getElementById("bulkAssignTeacher");
+      const bulkAddSubject = document.getElementById("bulkAddSubject");
+      const bulkDeleteClasses = document.getElementById("bulkDeleteClasses");
+
+      if (selectAllCheckbox && classCheckboxes.length > 0) {
+        selectAllCheckbox.addEventListener("change", function () {
+          const isChecked = this.checked;
+          let selectedCount = 0;
+
+          for (let i = 0; i < classCheckboxes.length; i++) {
+            classCheckboxes[i].checked = isChecked;
+            if (isChecked) selectedCount++;
+          }
+
+          // Update badge counts and disabled state
+          if (bulkAssignTeacher) {
+            bulkAssignTeacher.disabled = selectedCount === 0;
+            bulkAssignTeacher.querySelector(".badge").textContent =
+              selectedCount;
+          }
+          if (bulkAddSubject) {
+            bulkAddSubject.disabled = selectedCount === 0;
+            bulkAddSubject.querySelector(".badge").textContent = selectedCount;
+          }
+          if (bulkDeleteClasses) {
+            bulkDeleteClasses.disabled = selectedCount === 0;
+            bulkDeleteClasses.querySelector(".badge").textContent =
+              selectedCount;
+          }
+        });
+
+        // Individual checkbox change
+        for (let i = 0; i < classCheckboxes.length; i++) {
+          classCheckboxes[i].addEventListener("change", function () {
+            let selectedCount = 0;
+            for (let j = 0; j < classCheckboxes.length; j++) {
+              if (classCheckboxes[j].checked) selectedCount++;
+            }
+
+            // Update "select all" checkbox
+            selectAllCheckbox.checked =
+              selectedCount === classCheckboxes.length;
+            selectAllCheckbox.indeterminate =
+              selectedCount > 0 && selectedCount < classCheckboxes.length;
+
+            // Update badge counts and disabled state
+            if (bulkAssignTeacher) {
+              bulkAssignTeacher.disabled = selectedCount === 0;
+              bulkAssignTeacher.querySelector(".badge").textContent =
+                selectedCount;
+            }
+            if (bulkAddSubject) {
+              bulkAddSubject.disabled = selectedCount === 0;
+              bulkAddSubject.querySelector(".badge").textContent =
+                selectedCount;
+            }
+            if (bulkDeleteClasses) {
+              bulkDeleteClasses.disabled = selectedCount === 0;
+              bulkDeleteClasses.querySelector(".badge").textContent =
+                selectedCount;
+            }
+          });
+        }
+      }
+    });
+  </script>
+  {% endblock %}
+</div>
+

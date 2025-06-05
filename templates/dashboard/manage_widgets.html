@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Dashboard Widgets | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Manage Dashboard Widgets</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Manage Widgets</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{% url 'dashboard:index' %}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Current Widgets -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Your Current Widgets</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="widgetOptionsDropdown"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="widgetOptionsDropdown">
+                            <div class="dropdown-header">Widget Actions:</div>
+                            <a class="dropdown-item" href="#" id="btnSaveOrder">
+                                <i class="fas fa-save fa-sm fa-fw me-2 text-gray-400"></i>
+                                Save Widget Order
+                            </a>
+                            <a class="dropdown-item" href="#" id="btnResetOrder">
+                                <i class="fas fa-undo fa-sm fa-fw me-2 text-gray-400"></i>
+                                Reset to Default
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if user_widgets %}
+                    <p class="mb-4">Drag and drop widgets to reorder them on your dashboard. Toggle widgets to show or hide them.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="widgetsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Widget</th>
+                                    <th>Description</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="widgetSortable">
+                                {% for user_widget in user_widgets %}
+                                <tr data-widget-id="{{ user_widget.id }}" class="widget-item">
+                                    <td>
+                                        <i class="fas fa-grip-lines me-2 text-gray-400 handle" title="Drag to reorder"></i>
+                                        <span class="font-weight-bold">{{ user_widget.widget.name }}</span>
+                                    </td>
+                                    <td>{{ user_widget.widget.description }}</td>
+                                    <td>
+                                        <select class="form-select form-select-sm widget-size-select" 
+                                                data-widget-id="{{ user_widget.id }}">
+                                            <option value="small" {% if user_widget.size == 'small' %}selected{% endif %}>Small</option>
+                                            <option value="medium" {% if user_widget.size == 'medium' %}selected{% endif %}>Medium</option>
+                                            <option value="large" {% if user_widget.size == 'large' %}selected{% endif %}>Large</option>
+                                            <option value="full" {% if user_widget.size == 'full' %}selected{% endif %}>Full Width</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'dashboard:toggle_widget' widget_id=user_widget.id %}" 
+                                               class="btn btn-sm {% if user_widget.is_visible %}btn-success{% else %}btn-secondary{% endif %}" 
+                                               title="{% if user_widget.is_visible %}Widget is visible - click to hide{% else %}Widget is hidden - click to show{% endif %}">
+                                                <i class="fas {% if user_widget.is_visible %}fa-eye{% else %}fa-eye-slash{% endif %}"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-danger btn-remove-widget" 
+                                                    data-widget-id="{{ user_widget.id }}" 
+                                                    data-widget-name="{{ user_widget.widget.name }}"
+                                                    title="Remove widget">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-0">You don't have any widgets on your dashboard yet.</p>
+                        <p class="text-muted">Add widgets from the section on the right.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Widgets -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Available Widgets</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-4">Select widgets to add to your dashboard.</p>
+
+                    {% if available_widgets %}
+                        <div class="list-group">
+                            {% for widget in available_widgets %}
+                                {% with widget_exists=False %}
+                                    {% for user_widget in user_widgets %}
+                                        {% if user_widget.widget.id == widget.id %}
+                                            {% with widget_exists=True %}{% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if not widget_exists %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">{{ widget.name }}</h6>
+                                                    <p class="mb-1 small text-muted">{{ widget.description }}</p>
+                                                </div>
+                                                <form method="post">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="widget_id" value="{{ widget.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-primary" name="add_widget" value="1">
+                                                        <i class="fas fa-plus me-1"></i> Add
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">No additional widgets available.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Widget Help</h6>
+                </div>
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle text-info me-2"></i>About Widgets</h6>
+                    <p class="small">Widgets are components that display information on your dashboard. You can:</p>
+                    <ul class="small">
+                        <li>Add new widgets from the Available Widgets section</li>
+                        <li>Reorder widgets by dragging and dropping</li>
+                        <li>Show or hide widgets using the eye icon</li>
+                        <li>Remove widgets using the trash icon</li>
+                        <li>Change widget size using the dropdown</li>
+                    </ul>
+                    <p class="small mb-0">Your widget configuration is saved automatically.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Widget Confirmation Modal -->
+<div class="modal fade" id="confirmRemoveModal" tabindex="-1" aria-labelledby="confirmRemoveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmRemoveModalLabel">Remove Widget</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove the <strong id="widgetNameSpan"></strong> widget from your dashboard?</p>
+                <p class="mb-0 text-muted">You can add it back later if needed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="removeWidgetForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="widget_id" id="removeWidgetId">
+                    <input type="hidden" name="remove_widget" value="1">
+                    <button type="submit" class="btn btn-danger">Remove Widget</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Make widgets sortable
+        const widgetTable = document.getElementById('widgetSortable');
+        if (widgetTable) {
+            new Sortable(widgetTable, {
+                handle: '.handle',
+                animation: 150,
+                onEnd: function(evt) {
+                    // We could auto-save order here, but we'll let user click the save button
+                    $('#btnSaveOrder').addClass('btn-pulse').removeClass('btn-light').addClass('btn-warning');
+                }
+            });
+        }
+
+        // Save widget order
+        $('#btnSaveOrder').on('click', function(e) {
+            e.preventDefault();
+            
+            const widgetOrder = [];
+            $('.widget-item').each(function() {
+                widgetOrder.push($(this).data('widget-id'));
+            });
+            
+            $.ajax({
+                url: '{% url "dashboard:reorder_widgets" %}',
+                type: 'POST',
+                data: {
+                    'widget_order': widgetOrder,
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(data) {
+                    if (data.status === 'success') {
+                        // Show success message
+                        toastr.success('Widget order saved successfully');
+                        $('#btnSaveOrder').removeClass('btn-pulse btn-warning').addClass('btn-light');
+                    } else {
+                        toastr.error('An error occurred while saving widget order');
+                    }
+                },
+                error: function() {
+                    toastr.error('An error occurred while saving widget order');
+                }
+            });
+        });
+
+        // Reset to default
+        $('#btnResetOrder').on('click', function(e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to reset your dashboard widgets to default settings? This cannot be undone.')) {
+                window.location.href = '{% url "dashboard:reset_widgets" %}';
+            }
+        });
+
+        // Handle widget size change
+        $('.widget-size-select').on('change', function() {
+            const widgetId = $(this).data('widget-id');
+            const newSize = $(this).val();
+            
+            $.ajax({
+                url: '{% url "dashboard:update_widget_size" %}',
+                type: 'POST',
+                data: {
+                    'widget_id': widgetId,
+                    'size': newSize,
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(data) {
+                    if (data.status === 'success') {
+                        toastr.success('Widget size updated');
+                    } else {
+                        toastr.error('An error occurred while updating widget size');
+                    }
+                },
+                error: function() {
+                    toastr.error('An error occurred while updating widget size');
+                }
+            });
+        });
+
+        // Handle widget removal
+        $('.btn-remove-widget').on('click', function() {
+            const widgetId = $(this).data('widget-id');
+            const widgetName = $(this).data('widget-name');
+            
+            $('#widgetNameSpan').text(widgetName);
+            $('#removeWidgetId').val(widgetId);
+            
+            new bootstrap.Modal(document.getElementById('confirmRemoveModal')).show();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status Update - {{ application.position.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #006064;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        h1 {
+            color: #006064;
+            margin-top: 0;
+        }
+        .details {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status {
+            font-weight: bold;
+            font-size: 18px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .status-interview {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+        }
+        .status-rejected {
+            background-color: #ffebee;
+            color: #b71c1c;
+        }
+        .status-hired {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+        }
+        .status-reviewing {
+            background-color: #fff8e1;
+            color: #ff6f00;
+        }
+        .button {
+            display: inline-block;
+            background-color: #006064;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .feedback {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-left: 4px solid #006064;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h3 style="color:rgb(124, 13, 55); margin-top: 0;">Deigratia Montessori School</h3>
+            <h2>Application Status Update</h2>
+        </div>
+
+        <div class="content">
+            <h1>Your Application Status Has Been Updated</h1>
+
+            <p>Dear {{ application.first_name }} {{ application.last_name }},</p>
+
+            <p>We are writing to inform you that the status of your application for the <strong>{{ application.position.title }}</strong> position at Deigratia Montessori School has been updated.</p>
+
+            <div class="details">
+                <h3>Application Details:</h3>
+                <p><strong>Position:</strong> {{ application.position.title }}</p>
+                <p><strong>Department:</strong> {{ application.position.get_department_display }}</p>
+                <p><strong>Date Applied:</strong> {{ application.date_applied|date:"F j, Y" }}</p>
+                <p><strong>Application ID:</strong> #{{ application.id }}</p>
+            </div>
+
+            <div class="status {% if application.status == 'interview' %}status-interview{% elif application.status == 'rejected' %}status-rejected{% elif application.status == 'hired' %}status-hired{% else %}status-reviewing{% endif %}">
+                Current Status: {{ status_display }}
+            </div>
+
+            {% if application.admin_feedback %}
+            <div class="feedback">
+                <h3>Feedback from our HR Team:</h3>
+                {{ application.admin_feedback|safe }}
+            </div>
+            {% endif %}
+
+            {% if application.status == 'interview' %}
+            <h3>Next Steps:</h3>
+            <p>Congratulations! We would like to invite you for an interview. Our HR team will contact you shortly to schedule a convenient time.</p>
+            <p>Please ensure your contact information is up to date and that you are available to receive calls or emails from our HR department.</p>
+            {% elif application.status == 'hired' %}
+            <h3>Congratulations!</h3>
+            <p>We are pleased to inform you that you have been selected for the position. Our HR team will contact you shortly with details about the next steps in the onboarding process.</p>
+            {% elif application.status == 'rejected' %}
+            <h3>Thank You for Your Interest</h3>
+            <p>After careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs. We appreciate your interest in Deigratia Montessori School and wish you the best in your job search.</p>
+            <p>We encourage you to apply for future positions that match your skills and experience.</p>
+            {% else %}
+            <h3>Application Under Review</h3>
+            <p>Your application is currently under review by our HR team. We will update you on any changes to your application status.</p>
+            {% endif %}
+
+            <p>If you have any questions about your application or the hiring process, please contact our HR department at <a href="mailto:hr@deigratia.edu">hr@deigratia.edu</a> or call us at (123) 456-7890.</p>
+
+            <p>Thank you for your interest in joining our team at Deigratia Montessori School.</p>
+
+            <p>Best regards,</p>
+            <p>Human Resources<br>Deigratia Montessori School</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated email. Please do not reply to this message.</p>
+            <p>&copy; {% now "Y" %} Deigratia Montessori School. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

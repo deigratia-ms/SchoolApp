@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Academic Term - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Edit Academic Term</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:term_list' %}">Terms</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Edit Academic Term: {{ term.name }} ({{ term.academic_year }})</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'fees:edit_term' term.id %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="name" class="form-label">Term Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="name" name="name" value="{{ term.name }}" required>
+              <div class="form-text">E.g., First Term, Second Term, etc.</div>
+            </div>
+            <div class="mb-3">
+              <label for="academic_year" class="form-label">Academic Year <span class="text-danger">*</span></label>
+              {% if academic_years %}
+                <select class="form-select" id="academic_year" name="academic_year" required>
+                  {% for year in academic_years %}
+                    <option value="{{ year }}" {% if year == term.academic_year %}selected{% endif %}>{{ year }}</option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                <input type="text" class="form-control" id="academic_year" name="academic_year" value="{{ term.academic_year }}" required>
+              {% endif %}
+              <div class="form-text">The academic year this term belongs to.</div>
+            </div>
+            <div class="mb-3">
+              <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="start_date" name="start_date" value="{{ term.start_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="mb-3">
+              <label for="end_date" class="form-label">End Date</label>
+              <input type="date" class="form-control" id="end_date" name="end_date" value="{{ term.end_date|date:'Y-m-d' }}">
+              <div class="form-text">Optional. Leave blank if the term is ongoing.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_current" name="is_current" {% if term.is_current %}checked{% endif %}>
+              <label class="form-check-label" for="is_current">Set as current term</label>
+              <div class="form-text">If checked, this will become the active term for new fees.</div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'fees:term_list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Term Information</h6>
+        </div>
+        <div class="card-body">
+          <p><strong>Created:</strong> {{ term.created_at|date:"M d, Y" }}</p>
+          <p><strong>Last Updated:</strong> {{ term.updated_at|date:"M d, Y" }}</p>
+          
+          {% if term_stats %}
+          <hr>
+          <h6 class="font-weight-bold">Usage Statistics</h6>
+          <p><strong>Class Fees:</strong> {{ term_stats.class_fee_count }}</p>
+          <p><strong>Student Fees:</strong> {{ term_stats.student_fee_count }}</p>
+          <p><strong>Total Amount:</strong> GHS {{ term_stats.total_amount|floatformat:2 }}</p>
+          <p><strong>Total Collected:</strong> GHS {{ term_stats.total_collected|floatformat:2 }}</p>
+          {% endif %}
+          
+          <div class="alert alert-warning mt-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>Changing the term dates may affect due dates for associated fees.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

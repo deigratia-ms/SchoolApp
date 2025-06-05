@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Add YouTube Video | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Add YouTube Video</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'courses:video_list' %}">Videos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Video Information</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="is_general" name="is_general">
+                                <label class="form-check-label" for="is_general">General Video (available to all users)</label>
+                            </div>
+                            <div class="form-text">Toggle on for school-wide videos, off for class-specific videos.</div>
+                        </div>
+                        
+                        <div class="mb-3" id="class_subject_container">
+                            <label for="class_subject" class="form-label">Class & Subject <span class="text-danger">*</span></label>
+                            <select class="form-select" id="class_subject" name="class_subject">
+                                <option value="">-- Select Class & Subject --</option>
+                                {% for class_subject in class_subjects %}
+                                <option value="{{ class_subject.id }}">{{ class_subject.classroom.name }} {% if class_subject.classroom.section %}({{ class_subject.classroom.section }}){% endif %} - {{ class_subject.subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the class and subject for which this video is intended.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                            <div class="form-text">A descriptive title for the video (e.g., "Introduction to Fractions", "Cell Biology Lecture").</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="youtube_url" class="form-label">YouTube URL <span class="text-danger">*</span></label>
+                            <input type="url" class="form-control" id="youtube_url" name="youtube_url" 
+                                   placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX or https://youtu.be/XXXXXXXXXXX" required>
+                            <div class="form-text" id="url_validation">Enter the full YouTube URL.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                            <div class="form-text">A brief description of what this video covers and how students should use it.</div>
+                        </div>
+
+                        <div class="mb-3" id="video_preview_container" style="display: none;">
+                            <label class="form-label">Video Preview</label>
+                            <div class="ratio ratio-16x9">
+                                <iframe id="video_preview" src="" title="YouTube video preview" frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen></iframe>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'courses:video_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Add Video</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <p>Please fill in the form to add a YouTube video:</p>
+                    <ul>
+                        <li>Choose whether this is a <strong>General Video</strong> (available to all users) or specific to a class.</li>
+                        <li>If not general, select the <strong>Class & Subject</strong> for which this video is intended.</li>
+                        <li>Enter a descriptive <strong>Title</strong> for the video.</li>
+                        <li>Provide the complete <strong>YouTube URL</strong> (watch page or shortened youtu.be link).</li>
+                        <li>Add a <strong>Description</strong> to help students understand what the video covers (optional).</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Tips for Effective Videos</h6>
+                </div>
+                <div class="card-body">
+                    <p>For the best educational experience:</p>
+                    <ol>
+                        <li>Select videos with clear audio and visuals.</li>
+                        <li>Prefer videos that are 5-15 minutes in length for optimal student engagement.</li>
+                        <li>Consider including specific instructions in the description (e.g., "Watch from 2:30 to 5:45").</li>
+                        <li>Include a mix of instructional and explanatory videos.</li>
+                        <li>Check that videos are appropriate for your students' age group.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const isGeneralCheckbox = document.getElementById('is_general');
+        const classSubjectContainer = document.getElementById('class_subject_container');
+        const classSubjectSelect = document.getElementById('class_subject');
+        const youtubeUrlInput = document.getElementById('youtube_url');
+        const urlValidation = document.getElementById('url_validation');
+        const videoPreviewContainer = document.getElementById('video_preview_container');
+        const videoPreview = document.getElementById('video_preview');
+        
+        // Toggle class subject field visibility based on general checkbox
+        if (isGeneralCheckbox && classSubjectContainer && classSubjectSelect) {
+            isGeneralCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    classSubjectContainer.style.display = 'none';
+                    classSubjectSelect.removeAttribute('required');
+                } else {
+                    classSubjectContainer.style.display = 'block';
+                    classSubjectSelect.setAttribute('required', 'required');
+                }
+            });
+        }
+        
+        // Validate YouTube URL and show preview
+        if (youtubeUrlInput && urlValidation && videoPreviewContainer && videoPreview) {
+            youtubeUrlInput.addEventListener('input', function() {
+                const url = this.value.trim();
+                
+                // Reset validation and preview
+                urlValidation.innerHTML = 'Enter the full YouTube URL.';
+                urlValidation.className = 'form-text';
+                videoPreviewContainer.style.display = 'none';
+                
+                if (url) {
+                    // Check if valid YouTube URL
+                    let videoId = null;
+                    
+                    // Parse different YouTube URL formats
+                    if (url.includes('youtube.com/watch?v=')) {
+                        const urlParams = new URLSearchParams(url.split('?')[1]);
+                        videoId = urlParams.get('v');
+                    } else if (url.includes('youtu.be/')) {
+                        videoId = url.split('youtu.be/')[1].split('?')[0];
+                    } else if (url.includes('youtube.com/embed/')) {
+                        videoId = url.split('youtube.com/embed/')[1].split('?')[0];
+                    }
+                    
+                    if (videoId) {
+                        // Valid YouTube URL
+                        urlValidation.innerHTML = 'Valid YouTube URL.';
+                        urlValidation.className = 'form-text text-success';
+                        
+                        // Show preview
+                        videoPreview.src = `https://www.youtube.com/embed/${videoId}`;
+                        videoPreviewContainer.style.display = 'block';
+                    } else {
+                        // Not a valid YouTube URL
+                        urlValidation.innerHTML = 'Please enter a valid YouTube URL (youtube.com/watch?v=... or youtu.be/...).';
+                        urlValidation.className = 'form-text text-danger';
+                    }
+                }
+            });
+        }
+        
+        // Form validation
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!isGeneralCheckbox.checked && !classSubjectSelect.value) {
+                    e.preventDefault();
+                    alert('Please select a class and subject, or mark the video as general.');
+                    return false;
+                }
+                
+                const url = youtubeUrlInput.value.trim();
+                let videoId = null;
+                
+                if (url.includes('youtube.com/watch?v=')) {
+                    const urlParams = new URLSearchParams(url.split('?')[1]);
+                    videoId = urlParams.get('v');
+                } else if (url.includes('youtu.be/')) {
+                    videoId = url.split('youtu.be/')[1].split('?')[0];
+                } else if (url.includes('youtube.com/embed/')) {
+                    videoId = url.split('youtube.com/embed/')[1].split('?')[0];
+                }
+                
+                if (!videoId) {
+                    e.preventDefault();
+                    alert('Please enter a valid YouTube URL.');
+                    return false;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

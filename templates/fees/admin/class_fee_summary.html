@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+
+{% block title %}Class Fee Summary - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet" />
+<style>
+  .class-card {
+    transition: all 0.3s;
+  }
+  .class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  .progress-bar-container {
+    height: 8px;
+    background-color: #eaecf4;
+    border-radius: 4px;
+    margin-top: 5px;
+  }
+  .progress-bar {
+    height: 100%;
+    border-radius: 4px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Class Fee Summary</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:fee_reports' %}">Reports</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Class Fee Summary</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="term" class="form-label">Term</label>
+          <select name="term" id="term" class="form-select">
+            <option value="">All Terms</option>
+            {% for term_option in terms %}
+              <option value="{{ term_option.id }}" {% if selected_term == term_option.id|stringformat:"i" %}selected{% endif %}>
+                {{ term_option.name }} ({{ term_option.academic_year }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="fee_category" class="form-label">Fee Type</label>
+          <select name="fee_category" id="fee_category" class="form-select">
+            <option value="">All Fee Types</option>
+            {% for category in fee_categories %}
+              <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-2"></i>Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Expected
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_expected|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Collected
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_collected|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                Total Outstanding
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_outstanding|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Overall Collection Rate
+              </div>
+              <div class="row no-gutters align-items-center">
+                <div class="col-auto">
+                  <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ collection_rate|default:"0"|floatformat:1 }}%</div>
+                </div>
+                <div class="col">
+                  <div class="progress progress-sm mr-2">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ collection_rate }}%" 
+                         aria-valuenow="{{ collection_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-percentage fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collection by Class Chart -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Fee Collection by Class</h6>
+          <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+              <div class="dropdown-header">Actions:</div>
+              <a class="dropdown-item" href="#" id="exportChartBtn">Export Chart</a>
+              <a class="dropdown-item" href="#" id="printChartBtn">Print Chart</a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="position: relative; height:400px;">
+            <canvas id="classCollectionChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Class Fee Summary Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Class Fee Summary</h6>
+    </div>
+    <div class="card-body">
+      {% if class_summaries %}
+        <div class="table-responsive">
+          <table class="table table-bordered" id="classSummaryTable" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Students</th>
+                <th>Expected Amount</th>
+                <th>Collected Amount</th>
+                <th>Outstanding Amount</th>
+                <th>Collection Rate</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for summary in class_summaries %}
+                <tr>
+                  <td>{{ summary.classroom.name }}</td>
+                  <td>{{ summary.student_count }}</td>
+                  <td>GHS {{ summary.expected_amount|floatformat:2 }}</td>
+                  <td>GHS {{ summary.collected_amount|floatformat:2 }}</td>
+                  <td>GHS {{ summary.outstanding_amount|floatformat:2 }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="me-2">{{ summary.collection_rate|floatformat:1 }}%</span>
+                      <div class="progress-bar-container flex-grow-1">
+                        <div class="progress-bar bg-{{ summary.collection_rate|floatformat:0|divisibleby:25|yesno:'danger,warning,info,success' }}" style="width: {{ summary.collection_rate }}%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="{% url 'fees:student_fee_list' %}?classroom={{ summary.classroom.id }}" class="btn btn-sm btn-primary">
+                      <i class="fas fa-eye me-1"></i>View Fees
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No class fee data available for the selected filters.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#classSummaryTable').DataTable({
+      order: [[5, 'desc']],
+      pageLength: 25
+    });
+    
+    // Class Collection Chart
+    const classCtx = document.getElementById('classCollectionChart').getContext('2d');
+    const classChart = new Chart(classCtx, {
+      type: 'bar',
+      data: {
+        labels: [
+          {% for summary in class_summaries %}
+            '{{ summary.classroom.name }}',
+          {% endfor %}
+        ],
+        datasets: [
+          {
+            label: 'Expected',
+            data: [
+              {% for summary in class_summaries %}
+                {{ summary.expected_amount }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(78, 115, 223, 0.8)',
+            borderColor: 'rgba(78, 115, 223, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Collected',
+            data: [
+              {% for summary in class_summaries %}
+                {{ summary.collected_amount }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(28, 200, 138, 0.8)',
+            borderColor: 'rgba(28, 200, 138, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Outstanding',
+            data: [
+              {% for summary in class_summaries %}
+                {{ summary.outstanding_amount }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(231, 74, 59, 0.8)',
+            borderColor: 'rgba(231, 74, 59, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Amount (GHS)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Class'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top'
+          },
+          title: {
+            display: true,
+            text: 'Fee Collection by Class'
+          }
+        }
+      }
+    });
+    
+    // Export Chart
+    $('#exportChartBtn').on('click', function(e) {
+      e.preventDefault();
+      
+      // Get current filter parameters
+      const term = $('#term').val();
+      const feeCategory = $('#fee_category').val();
+      
+      // Build export URL with filters
+      let exportUrl = "{% url 'fees:class_fee_summary' %}?export=true";
+      if (term) exportUrl += `&term=${term}`;
+      if (feeCategory) exportUrl += `&fee_category=${feeCategory}`;
+      
+      window.location.href = exportUrl;
+    });
+    
+    // Print Chart
+    $('#printChartBtn').on('click', function(e) {
+      e.preventDefault();
+      window.print();
+    });
+  });
+</script>
+{% endblock %}

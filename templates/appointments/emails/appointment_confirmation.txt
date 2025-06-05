@@ -1,0 +1,26 @@
+Dear {{ appointment.parent.user.get_full_name }},
+
+Your appointment has been successfully scheduled with {{ school_name }}. Here are the details:
+
+Date: {{ appointment.time_slot.date|date:"l, F j, Y" }}
+Time: {{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}
+Location: {{ school_address }}
+Purpose: {{ appointment.purpose }}
+
+Please note:
+- Arrive 5 minutes before your scheduled time
+- Bring any relevant documents or materials
+- If you need to cancel or reschedule, please do so at least 24 hours in advance
+
+{% if appointment.google_calendar_event_id %}
+This appointment has been added to your Google Calendar.
+{% endif %}
+
+To view your appointment details, visit: {{ appointment_url }}
+
+Best regards,
+{{ school_name }}
+
+---
+This is an automated message. Please do not reply to this email.
+If you have any questions, please contact us directly.

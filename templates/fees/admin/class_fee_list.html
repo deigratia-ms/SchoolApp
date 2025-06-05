@@ -1,0 +1,755 @@
+{% extends 'base.html' %}
+
+{% block title %}Class Fees - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Class Fees</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Class Fees</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label for="term" class="form-label">Term</label>
+          <select name="term" id="term" class="form-select">
+            <option value="">All Terms</option>
+            {% for term_option in terms %}
+              <option value="{{ term_option.id }}" {% if selected_term == term_option.id|stringformat:"i" %}selected{% endif %}>
+                {{ term_option.name }} ({{ term_option.academic_year }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="classroom" class="form-label">Class</label>
+          <select name="classroom" id="classroom" class="form-select">
+            <option value="">All Classes</option>
+            {% for classroom in classrooms %}
+              <option value="{{ classroom.id }}" {% if selected_classroom == classroom.id|stringformat:"i" %}selected{% endif %}>
+                {{ classroom.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="fee_category" class="form-label">Fee Type</label>
+          <select name="fee_category" id="fee_category" class="form-select">
+            <option value="">All Fee Types</option>
+            {% for category in fee_categories %}
+              <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-2"></i>Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mb-4">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClassFeeModal">
+      <i class="fas fa-plus-circle me-2"></i>Add New Class Fee
+    </button>
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkAssignModal">
+      <i class="fas fa-tasks me-2"></i>Bulk Assign Fees
+    </button>
+    <a href="{% url 'fees:category_list' %}" class="btn btn-secondary">
+      <i class="fas fa-tags me-2"></i>Manage Categories
+    </a>
+  </div>
+
+  <!-- Class Fees Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Class Fees</h6>
+      <div class="dropdown no-arrow">
+        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+          <div class="dropdown-header">Actions:</div>
+          <a class="dropdown-item" href="{% url 'fees:student_fee_list' %}">View Student Fees</a>
+          <a class="dropdown-item" href="{% url 'fees:payment_list' %}">View Payments</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="#" id="exportClassFeesBtn">Export Class Fees</a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if class_fees %}
+        <div class="table-responsive">
+          <table class="table table-bordered" id="classFeesTable" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Term</th>
+                <th>Class</th>
+                <th>Fee Type</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Students Assigned</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fee in class_fees %}
+                <tr>
+                  <td>{{ fee.term.name }} ({{ fee.term.academic_year }})</td>
+                  <td>{{ fee.classroom.name }}</td>
+                  <td>{{ fee.fee_category.name }}</td>
+                  <td>GHS {{ fee.amount|floatformat:2 }}</td>
+                  <td>{{ fee.due_date|date:"M d, Y" }}</td>
+                  <td>
+                    <span class="badge bg-info">{{ fee.student_count }}</span>
+                    {% if fee.student_count > 0 %}
+                      <a href="{% url 'fees:student_fee_list' %}?class_fee={{ fee.id }}" class="btn btn-sm btn-link">View</a>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-info edit-class-fee"
+                            data-id="{{ fee.id }}"
+                            data-term="{{ fee.term.id }}"
+                            data-classroom="{{ fee.classroom.id }}"
+                            data-category="{{ fee.fee_category.id }}"
+                            data-amount="{{ fee.amount }}"
+                            data-due-date="{{ fee.due_date|date:'Y-m-d' }}"
+                            data-description="{{ fee.description|default:'' }}"
+                            data-bs-toggle="tooltip"
+                            title="Edit Fee">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success assign-students"
+                            data-id="{{ fee.id }}"
+                            data-term="{{ fee.term.name }}"
+                            data-classroom="{{ fee.classroom.name }}"
+                            data-classroom-id="{{ fee.classroom.id }}"
+                            data-category="{{ fee.fee_category.name }}"
+                            data-bs-toggle="tooltip"
+                            title="Assign to Students">
+                      <i class="fas fa-user-plus"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger delete-class-fee"
+                            data-id="{{ fee.id }}"
+                            data-term="{{ fee.term.name }}"
+                            data-classroom="{{ fee.classroom.name }}"
+                            data-category="{{ fee.fee_category.name }}"
+                            data-bs-toggle="tooltip"
+                            title="Delete Fee">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No class fees found. Click the "Add New Class Fee" button to create one.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add Class Fee Modal -->
+<div class="modal fade" id="addClassFeeModal" tabindex="-1" aria-labelledby="addClassFeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'fees:create_class_fee' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addClassFeeModalLabel">Add New Class Fee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="term" class="form-label">Term <span class="text-danger">*</span></label>
+            <select class="form-select" id="term" name="term" required>
+              <option value="">Select Term</option>
+              {% for term in terms %}
+                <option value="{{ term.id }}" {% if term.is_current %}selected{% endif %}>
+                  {{ term.name }} ({{ term.academic_year }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="classroom" class="form-label">Class <span class="text-danger">*</span></label>
+            <select class="form-select" id="classroom" name="classroom" required>
+              <option value="">Select Class</option>
+              {% for classroom in classrooms %}
+                <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="fee_category" class="form-label">Fee Type <span class="text-danger">*</span></label>
+            <select class="form-select" id="fee_category" name="fee_category" required>
+              <option value="">Select Fee Type</option>
+              {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="amount" class="form-label">Amount (GHS) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" required>
+          </div>
+          <div class="mb-3">
+            <label for="due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="due_date" name="due_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="assign_to_all" name="assign_to_all" checked>
+            <label class="form-check-label" for="assign_to_all">Assign to all students in this class</label>
+            <small class="form-text text-muted d-block">Check to automatically create fee records for all students in this class</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Class Fee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Assign Students Modal -->
+<div class="modal fade" id="assignStudentsModal" tabindex="-1" aria-labelledby="assignStudentsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" id="assignStudentsForm" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="assignStudentsModalLabel">Assign Students to Fee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <p><strong>Term:</strong> <span id="assign_term_name"></span></p>
+            <p><strong>Class:</strong> <span id="assign_classroom_name"></span></p>
+            <p><strong>Fee Type:</strong> <span id="assign_category_name"></span></p>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="select_all_students">
+              <label class="form-check-label" for="select_all_students">
+                Select All Students
+              </label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div id="student_list_container" class="border p-3" style="max-height: 300px; overflow-y: auto;">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading students...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Selected Students</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Assign Modal -->
+<div class="modal fade" id="bulkAssignModal" tabindex="-1" aria-labelledby="bulkAssignModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'fees:generate_student_fees' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="bulkAssignModalLabel">Bulk Assign Fees</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="bulk_term" class="form-label">Term <span class="text-danger">*</span></label>
+            <select class="form-select" id="bulk_term" name="term" required>
+              <option value="">Select Term</option>
+              {% for term in terms %}
+                <option value="{{ term.id }}" {% if term.is_current %}selected{% endif %}>
+                  {{ term.name }} ({{ term.academic_year }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="bulk_classroom" class="form-label">Class <span class="text-danger">*</span></label>
+            <select class="form-select" id="bulk_classroom" name="classroom" required>
+              <option value="">Select Class</option>
+              <option value="all">All Classes</option>
+              {% for classroom in classrooms %}
+                <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="bulk_fee_categories" class="form-label">Fee Types <span class="text-danger">*</span></label>
+            <select class="form-select" id="bulk_fee_categories" name="fee_categories" multiple required size="5">
+              {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple fee types</small>
+          </div>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>This will assign the selected fee types to all students in the selected class(es) for the selected term.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Fees</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Class Fee Modal -->
+<div class="modal fade" id="editClassFeeModal" tabindex="-1" aria-labelledby="editClassFeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" id="editClassFeeForm" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editClassFeeModalLabel">Edit Class Fee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="edit_term" class="form-label">Term</label>
+              <select class="form-select" id="edit_term" name="term" required>
+                <option value="">Select Term</option>
+                {% for term in terms %}
+                  <option value="{{ term.id }}">{{ term.name }} ({{ term.academic_year }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="edit_classroom" class="form-label">Class</label>
+              <select class="form-select" id="edit_classroom" name="classroom" required>
+                <option value="">Select Class</option>
+                {% for classroom in classrooms %}
+                  <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="edit_fee_category" class="form-label">Fee Type</label>
+              <select class="form-select" id="edit_fee_category" name="fee_category" required>
+                <option value="">Select Fee Type</option>
+                {% for category in categories %}
+                  <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_amount" class="form-label">Amount (GHS)</label>
+              <input type="number" class="form-control" id="edit_amount" name="amount" step="0.01" min="0" required>
+            </div>
+
+            <div class="col-md-6">
+              <label for="edit_due_date" class="form-label">Due Date</label>
+              <input type="date" class="form-control" id="edit_due_date" name="due_date" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="edit_description" class="form-label">Description (Optional)</label>
+            <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+          </div>
+
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> Editing this class fee will update the amount and due date for all associated student fees.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Class Fee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Class Fee Modal -->
+<div class="modal fade" id="deleteClassFeeModal" tabindex="-1" aria-labelledby="deleteClassFeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="deleteClassFeeForm" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteClassFeeModalLabel">Delete Class Fee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete the following class fee?</p>
+          <ul>
+            <li><strong>Term:</strong> <span id="delete_term_name"></span></li>
+            <li><strong>Class:</strong> <span id="delete_classroom_name"></span></li>
+            <li><strong>Fee Type:</strong> <span id="delete_category_name"></span></li>
+          </ul>
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone. Deleting this class fee will also delete all associated student fees and payments.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Class Fee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Wait for document to be fully loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Document ready - using DOMContentLoaded');
+
+    // Log all action buttons to verify they exist
+    console.log('Edit buttons:', document.querySelectorAll('.edit-class-fee').length);
+    console.log('Assign buttons:', document.querySelectorAll('.assign-students').length);
+    console.log('Delete buttons:', document.querySelectorAll('.delete-class-fee').length);
+
+    // Initialize DataTable if jQuery is available
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+      try {
+        $('#classFeesTable').DataTable({
+          order: [[0, 'desc'], [1, 'asc'], [2, 'asc']]
+        });
+        console.log('DataTable initialized');
+      } catch (error) {
+        console.error('Error initializing DataTable:', error);
+      }
+    } else {
+      console.warn('jQuery or DataTable not available');
+    }
+
+    // Set current date as default due date
+    try {
+      const today = new Date();
+      const formattedDate = today.toISOString().substr(0, 10);
+      const dueDateInput = document.getElementById('due_date');
+      if (dueDateInput) {
+        dueDateInput.value = formattedDate;
+        console.log('Default due date set:', formattedDate);
+      }
+    } catch (error) {
+      console.error('Error setting default due date:', error);
+    }
+
+    // Edit Class Fee - using direct event listeners for each button
+    document.querySelectorAll('.edit-class-fee').forEach(button => {
+      button.addEventListener('click', function(e) {
+        console.log('Edit button clicked (direct)');
+        try {
+          const id = this.getAttribute('data-id');
+          const termId = this.getAttribute('data-term');
+          const classroomId = this.getAttribute('data-classroom');
+          const categoryId = this.getAttribute('data-category');
+          const amount = this.getAttribute('data-amount');
+          const dueDate = this.getAttribute('data-due-date');
+          const description = this.getAttribute('data-description');
+
+          console.log('Edit data:', { id, termId, classroomId, categoryId, amount, dueDate, description });
+
+          document.getElementById('edit_term').value = termId;
+          document.getElementById('edit_classroom').value = classroomId;
+          document.getElementById('edit_fee_category').value = categoryId;
+          document.getElementById('edit_amount').value = amount;
+          document.getElementById('edit_due_date').value = dueDate;
+          document.getElementById('edit_description').value = description;
+
+          const form = document.getElementById('editClassFeeForm');
+          form.action = "{% url 'fees:edit_class_fee' 0 %}".replace('0', id);
+
+          // Show modal using Bootstrap 5 API
+          const modal = new bootstrap.Modal(document.getElementById('editClassFeeModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error handling edit button click:', error);
+        }
+      });
+    });
+
+    // Assign Students - using direct event listeners
+    document.querySelectorAll('.assign-students').forEach(button => {
+      button.addEventListener('click', function(e) {
+        console.log('Assign Students button clicked (direct)');
+        try {
+          const id = this.getAttribute('data-id');
+          const termName = this.getAttribute('data-term');
+          const classroomName = this.getAttribute('data-classroom');
+          const categoryName = this.getAttribute('data-category');
+          const classroomId = this.getAttribute('data-classroom-id');
+
+          console.log('Assign data:', { id, termName, classroomName, categoryName, classroomId });
+
+          document.getElementById('assign_term_name').textContent = termName;
+          document.getElementById('assign_classroom_name').textContent = classroomName;
+          document.getElementById('assign_category_name').textContent = categoryName;
+
+          const form = document.getElementById('assignStudentsForm');
+          form.action = "{% url 'fees:generate_student_fees' %}";
+
+          // Add hidden input for class_fee_id
+          const existingInput = form.querySelector('input[name="class_fee"]');
+          if (existingInput) {
+            existingInput.value = id;
+          } else {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'class_fee';
+            input.value = id;
+            form.appendChild(input);
+          }
+
+          // Show loading indicator
+          document.getElementById('student_list_container').innerHTML = `
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-2">Loading students...</p>
+            </div>
+          `;
+
+          // Load students
+          const url = "{% url 'fees:api_students_by_class' 0 %}".replace('0', classroomId) + `?class_fee=${id}`;
+          console.log('Fetching students from:', url);
+
+          fetch(url)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log('Students data received:', data);
+              displayStudents(data);
+            })
+            .catch(error => {
+              console.error('Error loading students:', error);
+              document.getElementById('student_list_container').innerHTML =
+                '<div class="alert alert-danger">Error loading students. Please try again.</div>';
+            });
+
+          // Show modal using Bootstrap 5 API
+          const modal = new bootstrap.Modal(document.getElementById('assignStudentsModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error handling assign button click:', error);
+        }
+      });
+    });
+
+    // Delete Class Fee - using direct event listeners
+    document.querySelectorAll('.delete-class-fee').forEach(button => {
+      button.addEventListener('click', function(e) {
+        console.log('Delete button clicked (direct)');
+        try {
+          const id = this.getAttribute('data-id');
+          const termName = this.getAttribute('data-term');
+          const classroomName = this.getAttribute('data-classroom');
+          const categoryName = this.getAttribute('data-category');
+
+          console.log('Delete data:', { id, termName, classroomName, categoryName });
+
+          document.getElementById('delete_term_name').textContent = termName;
+          document.getElementById('delete_classroom_name').textContent = classroomName;
+          document.getElementById('delete_category_name').textContent = categoryName;
+
+          const form = document.getElementById('deleteClassFeeForm');
+          form.action = "{% url 'fees:delete_class_fee' 0 %}".replace('0', id);
+
+          // Show modal using Bootstrap 5 API
+          const modal = new bootstrap.Modal(document.getElementById('deleteClassFeeModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error handling delete button click:', error);
+        }
+      });
+    });
+
+    // Export Class Fees
+    const exportBtn = document.getElementById('exportClassFeesBtn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = "{% url 'fees:class_fee_export' %}";
+      });
+    }
+
+    // Initialize tooltips
+    try {
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(tooltipTriggerEl => {
+        new bootstrap.Tooltip(tooltipTriggerEl, {
+          trigger: 'hover'
+        });
+      });
+      console.log('Tooltips initialized');
+    } catch (error) {
+      console.error('Error initializing tooltips:', error);
+    }
+
+    // Function to display students in the modal
+    function displayStudents(data) {
+      try {
+        const container = document.getElementById('student_list_container');
+        container.innerHTML = '';
+
+        if (!data.students || data.students.length === 0) {
+          container.innerHTML = '<div class="alert alert-info">No students found in this class.</div>';
+          return;
+        }
+
+        // Add select/deselect all checkbox
+        const selectAllDiv = document.createElement('div');
+        selectAllDiv.className = 'mb-3';
+        selectAllDiv.innerHTML = `
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="select_all_students">
+            <label class="form-check-label" for="select_all_students">
+              <strong>Select All Students</strong>
+            </label>
+          </div>
+        `;
+        container.appendChild(selectAllDiv);
+
+        // Add divider
+        const divider = document.createElement('hr');
+        container.appendChild(divider);
+
+        // Create student list
+        const studentList = document.createElement('div');
+        studentList.className = 'student-list';
+        container.appendChild(studentList);
+
+        // Add students
+        data.students.forEach(student => {
+          const div = document.createElement('div');
+          div.className = 'form-check mb-2';
+
+          const input = document.createElement('input');
+          input.className = 'form-check-input student-checkbox';
+          input.type = 'checkbox';
+          input.id = `student_${student.id}`;
+          input.name = 'students';
+          input.value = student.id;
+          input.checked = student.has_fee;
+
+          const label = document.createElement('label');
+          label.className = 'form-check-label';
+          label.htmlFor = `student_${student.id}`;
+          label.textContent = `${student.name} (${student.student_id})`;
+
+          if (student.has_fee) {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-success ms-2';
+            badge.textContent = 'Already Assigned';
+            label.appendChild(badge);
+          }
+
+          div.appendChild(input);
+          div.appendChild(label);
+          studentList.appendChild(div);
+        });
+
+        // Initialize select all checkbox
+        const selectAllCheckbox = document.getElementById('select_all_students');
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', function() {
+            document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+              checkbox.checked = this.checked;
+            });
+          });
+        }
+
+        // Update select all checkbox when individual checkboxes change
+        document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+          checkbox.addEventListener('change', function() {
+            const allCheckboxes = document.querySelectorAll('.student-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+            if (selectAllCheckbox) {
+              selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
+            }
+          });
+        });
+
+        // Set initial state of select all checkbox
+        if (selectAllCheckbox) {
+          const allCheckboxes = document.querySelectorAll('.student-checkbox');
+          const checkedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+          selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
+        }
+      } catch (error) {
+        console.error('Error displaying students:', error);
+        const container = document.getElementById('student_list_container');
+        if (container) {
+          container.innerHTML = '<div class="alert alert-danger">Error displaying students. Please try again.</div>';
+        }
+      }
+    }
+  });
+
+  // Also add jQuery event handlers as a fallback
+  $(document).ready(function() {
+    console.log('jQuery document ready');
+
+    // Edit Class Fee - using event delegation as fallback
+    $(document).on('click', '.edit-class-fee', function() {
+      console.log('Edit button clicked (jQuery delegation)');
+    });
+
+    // Assign Students - using event delegation as fallback
+    $(document).on('click', '.assign-students', function() {
+      console.log('Assign button clicked (jQuery delegation)');
+    });
+
+    // Delete Class Fee - using event delegation as fallback
+    $(document).on('click', '.delete-class-fee', function() {
+      console.log('Delete button clicked (jQuery delegation)');
+    });
+  });
+</script>
+{% endblock %}

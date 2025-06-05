@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}ID Card Templates - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">ID Card Templates</h1>
+        <div>
+            <a href="{% url 'users:id_card_template_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create New Template
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="role" class="form-label">User Role</label>
+                    <select class="form-select" id="role" name="role">
+                        <option value="" {% if not role_filter %}selected{% endif %}>All Roles</option>
+                        <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Admin</option>
+                        <option value="TEACHER" {% if role_filter == 'TEACHER' %}selected{% endif %}>Teacher</option>
+                        <option value="STUDENT" {% if role_filter == 'STUDENT' %}selected{% endif %}>Student</option>
+                        <option value="PARENT" {% if role_filter == 'PARENT' %}selected{% endif %}>Parent</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a href="{% url 'users:id_card_template_list' %}" class="btn btn-outline-secondary w-100">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Templates List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All ID Card Templates</h6>
+        </div>
+        <div class="card-body">
+            {% if templates %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>User Role</th>
+                                <th>Status</th>
+                                <th>Header Text</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for template in templates %}
+                                <tr>
+                                    <td>{{ template.name }}</td>
+                                    <td><span class="badge bg-info">{{ template.get_role_display }}</span></td>
+                                    <td>
+                                        {% if template.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ template.header_text|truncatechars:50 }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'users:id_card_template_detail' template_id=template.id %}" class="btn btn-info btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'users:id_card_template_update' template_id=template.id %}" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'users:id_card_template_delete' template_id=template.id %}" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-id-card fa-4x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No ID card templates found</h5>
+                    <p class="text-muted">Create a new template to get started with ID card generation.</p>
+                    <a href="{% url 'users:id_card_template_create' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-2"></i>Create New Template
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Tips -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Quick Tips</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Creating Templates</h6>
+                    <p class="small">Create different templates for each user role (student, teacher, etc.). You can customize colors, dimensions, and add a background image.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Generating ID Cards</h6>
+                    <p class="small">Once templates are created, you can generate individual ID cards or batch generate for multiple users with the same template.</p>
+                    <a href="{% url 'users:id_card_list' %}" class="btn btn-sm btn-outline-primary">Go to ID Cards</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

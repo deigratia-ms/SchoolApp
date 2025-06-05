@@ -1,0 +1,674 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ assignment.title }} - Quiz - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="quiz-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ assignment.title }}</h1>
+        <div>
+            <span class="badge {% if time_remaining.is_negative %}bg-danger{% elif time_remaining.total_seconds < 300 %}bg-warning{% else %}bg-primary{% endif %} p-2">
+                {% if time_remaining.is_negative %}
+                    Time Expired!
+                {% else %}
+                    Due Date: 
+                    {% if time_remaining.days > 0 %}
+                        {{ time_remaining.days }} days
+                    {% endif %}
+                    {{ time_remaining.hours }}h {{ time_remaining.minutes }}m {{ time_remaining.seconds }}s
+                {% endif %}
+            </span>
+            
+            {% if assignment.time_limit and not existing_submission and not time_remaining.is_negative %}
+            <span id="quiz-timer" class="badge bg-danger p-2 ms-2 fs-5" style="display: none;">
+                Time Left: <span id="timer-countdown">00:00:00</span>
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Font Size Control for Young Students -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold me-2"><i class="fas fa-text-height"></i> Text Size:</span>
+                </div>
+                <div class="btn-group" role="group" aria-label="Font size control">
+                    <button type="button" class="btn btn-outline-primary font-size-btn" data-size="small">
+                        <span style="font-size: 12px;">Small</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary font-size-btn" data-size="medium">
+                        <span style="font-size: 16px;">Medium</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary font-size-btn" data-size="large">
+                        <span style="font-size: 20px;">Large</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% if is_retake %}
+    <div class="alert alert-warning mb-4">
+        <h4 class="alert-heading"><i class="fas fa-redo-alt"></i> Quiz Retake</h4>
+        <p class="fs-5">You are currently retaking this quiz (Attempt #{{ attempt_number }} of {{ max_attempts }} allowed).</p>
+        <p class="fs-5">Your previous answers have been cleared, and you will need to answer all questions again. 
+           {% if attempt_number > 1 %}<strong>Note:</strong> Questions may appear in a different order.{% endif %}</p>
+    </div>
+    {% endif %}
+    
+    {% if assignment.time_limit and not existing_submission and not time_remaining.is_negative %}
+    <div id="timer-alert" class="alert alert-info mb-4">
+        <h4 class="alert-heading">Quiz Timer</h4>
+        <p class="fs-5">This quiz has a time limit of <strong>{{ assignment.time_limit }} minutes</strong>. The timer has started and your quiz will be automatically submitted when time expires.</p>
+        <p class="fs-5">Please complete all questions before time runs out!</p>
+    </div>
+    {% endif %}
+
+    {% if time_remaining.is_negative and not existing_submission %}
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Quiz Deadline Passed!</h4>
+            <p class="fs-5">The deadline for this quiz has passed. You can no longer submit answers.</p>
+        </div>
+    {% elif existing_submission %}
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Quiz Already Submitted!</h4>
+            <p class="fs-5">You have already submitted this quiz on {{ existing_submission.submission_date|date:"M d, Y h:i A" }}.</p>
+            {% if existing_submission.is_graded %}
+                <p class="fs-5">Your score: {{ existing_submission.score }}/{{ assignment.max_score }}</p>
+                <a href="{% url 'assignments:quiz_result' assignment.id %}" class="btn btn-primary btn-lg">View Results</a>
+            {% else %}
+                <p class="fs-5">Your submission is pending grading. You'll be notified when grading is complete.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary fs-5">Quiz Questions</h6>
+                <div>
+                    <span class="badge bg-info me-2 fs-6">{{ questions.count }} Questions</span>
+                    <span class="badge bg-success fs-6">{{ assignment.max_score }} Points</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post" id="quizForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="progress mb-4" style="height: 25px;">
+                        <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                    </div>
+                    
+                    {% for question in questions %}
+                        <div class="quiz-question mb-4 pb-3 border-bottom{% if not forloop.first %} d-none{% endif %}" data-question-index="{{ forloop.counter0 }}">
+                            <div class="d-flex justify-content-between mb-2">
+                                <h4>Question {{ forloop.counter }} of {{ questions|length }}</h4>
+                                <div>
+                                    <span class="badge bg-primary fs-6">{{ question.points }} points</span>
+                                </div>
+                            </div>
+                            
+                            <div class="question-text mb-3">
+                                <p class="fs-5">{{ question.question_text }}</p>
+                            </div>
+                            
+                            <div class="answer-section">
+                                {% if question.question_type == 'MCQ' %}
+                                    <!-- Multiple choice question with randomized choices -->
+                                    <div class="form-group">
+                                        <label class="form-label fw-bold fs-5">Select your answer:</label>
+                                        <div class="choices-list">
+                                            {% if question.shuffled_choices %}
+                                                {% for choice in question.shuffled_choices %}
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="radio" name="choice_{{ question.id }}" id="choice_{{ choice.id }}" value="{{ choice.id }}" style="width: 20px; height: 20px;">
+                                                        <label class="form-check-label fs-5" for="choice_{{ choice.id }}" style="margin-left: 10px;">
+                                                            {{ choice.choice_text }}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for choice in question.choices.all %}
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="radio" name="choice_{{ question.id }}" id="choice_{{ choice.id }}" value="{{ choice.id }}" style="width: 20px; height: 20px;">
+                                                        <label class="form-check-label fs-5" for="choice_{{ choice.id }}" style="margin-left: 10px;">
+                                                            {{ choice.choice_text }}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                {% elif question.question_type == 'SHORT' %}
+                                    <!-- Short answer question -->
+                                    <div class="form-group">
+                                        <label for="short_answer_{{ question.id }}" class="form-label fw-bold fs-5">Your answer:</label>
+                                        <input type="text" class="form-control form-control-lg" id="short_answer_{{ question.id }}" name="text_{{ question.id }}" placeholder="Type your answer here...">
+                                    </div>
+                                    
+                                {% elif question.question_type == 'LONG' %}
+                                    <!-- Long answer question -->
+                                    <div class="form-group">
+                                        <label for="long_answer_{{ question.id }}" class="form-label fw-bold fs-5">Your answer:</label>
+                                        <textarea class="form-control form-control-lg" id="long_answer_{{ question.id }}" name="text_{{ question.id }}" rows="5" placeholder="Type your answer here..."></textarea>
+                                    </div>
+                                    
+                                {% elif question.question_type == 'FILE' %}
+                                    <!-- File upload question -->
+                                    <div class="form-group">
+                                        <label for="file_answer_{{ question.id }}" class="form-label fw-bold fs-5">Upload your file:</label>
+                                        <input type="file" class="form-control form-control-lg" id="file_answer_{{ question.id }}" name="file_{{ question.id }}">
+                                        {% if question.notes %}
+                                            <small class="form-text text-muted fs-6">{{ question.notes }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mt-4 pt-2">
+                                <div class="question-feedback text-center mb-3">
+                                    <span class="badge bg-info text-white fs-5 p-2">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Answer this question to continue
+                                    </span>
+                                </div>
+                                
+                                <div class="text-center">
+                                    {% if not forloop.last %}
+                                        <button type="button" class="btn btn-primary btn-lg next-question fs-4 py-3 px-4" id="next-question-{{ forloop.counter0 }}" disabled style="min-width: 200px;">
+                                            <i class="fas fa-arrow-right"></i> Next Question
+                                        </button>
+                                    {% endif %}
+                                    
+                                    {% if forloop.last %}
+                                        <button type="button" class="btn btn-success btn-lg fs-4 py-3 px-4" data-bs-toggle="modal" data-bs-target="#submitConfirmModal" style="min-width: 200px;">
+                                            <i class="fas fa-check-circle"></i> Submit Quiz
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- Question progress indicator (read-only) -->
+                    <div class="question-progress mb-4 text-center">
+                        <h5 class="text-primary mb-2 fs-5">Your Progress</h5>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                <span class="progress-text fs-6">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Confirm Submission Modal -->
+                    <div class="modal fade" id="submitConfirmModal" tabindex="-1" aria-labelledby="submitConfirmModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content" style="border-radius: 20px; border: 3px solid #4e73df;">
+                                <div class="modal-header bg-primary text-white" style="border-radius: 16px 16px 0 0;">
+                                    <h4 class="modal-title" id="submitConfirmModalLabel">
+                                        <i class="fas fa-check-double"></i> All Done?
+                                    </h4>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <div id="unansweredQuestionsWarning" class="alert alert-warning">
+                                        <h5><i class="fas fa-exclamation-triangle"></i> Oops!</h5>
+                                        <p class="fs-5">You still have <span id="unansweredCount">0</span> questions to answer.</p>
+                                        <p class="fs-5">Would you like to go back and answer them?</p>
+                                    </div>
+                                    
+                                    <div class="mt-3 mb-3">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/5610/5610944.png" alt="Quiz completion" class="img-fluid" style="max-width: 150px;">
+                                    </div>
+                                    
+                                    <h5>Are you ready to finish your quiz?</h5>
+                                    <p class="fs-5">Once you click "Finish Quiz", you can't change your answers.</p>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="button" class="btn btn-outline-primary btn-lg fs-5" data-bs-dismiss="modal">
+                                        <i class="fas fa-arrow-left"></i> Keep Working
+                                    </button>
+                                    <button type="submit" class="btn btn-success btn-lg fs-5" id="finalSubmitBtn">
+                                        <i class="fas fa-paper-plane"></i> Finish Quiz!
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Modal (shows after submission) -->
+                    <div class="modal fade" id="quizResultsModal" tabindex="-1" aria-labelledby="quizResultsModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content" style="border-radius: 20px; border: 3px solid #4e73df;">
+                                <div class="modal-header bg-primary text-white" style="border-radius: 16px 16px 0 0;">
+                                    <h4 class="modal-title" id="quizResultsModalLabel">
+                                        <i class="fas fa-trophy"></i> Quiz Completed!
+                                    </h4>
+                                </div>
+                                <div class="modal-body text-center p-4">
+                                    <div id="resultContent">
+                                        <!-- High Score -->
+                                        <div id="highScoreResult" style="display:none;">
+                                            <div class="mb-4">
+                                                <img src="https://cdn-icons-png.flaticon.com/512/2829/2829661.png" alt="Excellent!" class="img-fluid" style="max-width: 180px;">
+                                            </div>
+                                            <h2 class="text-success mb-3">Great job! <span class="student-name">{{ request.user.first_name }}</span>!</h2>
+                                            <h3 class="mb-4">You scored <span class="result-score">10</span> out of <span class="total-score">10</span>!</h3>
+                                            <p class="fs-5 mb-4">That's excellent work! Keep up the great learning!</p>
+                                        </div>
+                                        
+                                        <!-- Medium Score -->
+                                        <div id="mediumScoreResult" style="display:none;">
+                                            <div class="mb-4">
+                                                <img src="https://cdn-icons-png.flaticon.com/512/1021/1021199.png" alt="Good job!" class="img-fluid" style="max-width: 180px;">
+                                            </div>
+                                            <h2 class="text-primary mb-3">Good job! <span class="student-name">{{ request.user.first_name }}</span>!</h2>
+                                            <h3 class="mb-4">You scored <span class="result-score">7</span> out of <span class="total-score">10</span>!</h3>
+                                            <p class="fs-5 mb-4">Nice work! You're doing well, keep practicing!</p>
+                                        </div>
+                                        
+                                        <!-- Low Score -->
+                                        <div id="lowScoreResult" style="display:none;">
+                                            <div class="mb-4">
+                                                <img src="https://cdn-icons-png.flaticon.com/512/3502/3502021.png" alt="Keep trying!" class="img-fluid" style="max-width: 180px;">
+                                            </div>
+                                            <h2 class="text-warning mb-3">Nice try, <span class="student-name">{{ request.user.first_name }}</span>!</h2>
+                                            <h3 class="mb-4">You scored <span class="result-score">4</span> out of <span class="total-score">10</span>!</h3>
+                                            <p class="fs-5 mb-4">Don't worry! Learning takes practice. Let's try again!</p>
+                                        </div>
+                                        
+                                        <!-- Progress visualization -->
+                                        <div class="progress mb-4" style="height: 30px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%;" 
+                                                aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="resultProgressBar">
+                                                <span class="fs-6" id="resultPercentage">0%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <a href="#" class="btn btn-primary btn-lg fs-5" id="viewResultsBtn">
+                                        <i class="fas fa-list-ul"></i> View Detailed Results
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        const totalQuestions = {{ questions|length }};
+        let currentQuestion = 0;
+        let answeredQuestions = Array(totalQuestions).fill(false);
+        let timerStarted = false;
+        let timeLeft = {{ assignment.time_limit|default:0 }} * 60; // Convert minutes to seconds
+        let timerInterval;
+        
+        // Font size control system
+        initFontSizeControls();
+        
+        function initFontSizeControls() {
+            // Load user preference from localStorage
+            const savedSize = localStorage.getItem('quizFontSize') || 'medium';
+            setFontSize(savedSize);
+            
+            // Update button active state
+            $('.font-size-btn').removeClass('active');
+            $(`.font-size-btn[data-size="${savedSize}"]`).addClass('active');
+            
+            // Handle font size button clicks
+            $('.font-size-btn').click(function() {
+                const newSize = $(this).data('size');
+                setFontSize(newSize);
+                
+                // Save preference
+                localStorage.setItem('quizFontSize', newSize);
+                
+                // Update button active state
+                $('.font-size-btn').removeClass('active');
+                $(this).addClass('active');
+            });
+        }
+        
+        function setFontSize(size) {
+            // Remove existing font size classes
+            $('#quiz-container').removeClass('quiz-text-small quiz-text-medium quiz-text-large');
+            
+            // Add appropriate class
+            $('#quiz-container').addClass(`quiz-text-${size}`);
+        }
+        
+        // Question navigation
+        function showQuestion(index) {
+            $('.quiz-question').addClass('d-none');
+            $(`.quiz-question[data-question-index="${index}"]`).removeClass('d-none');
+            currentQuestion = index;
+            updateProgress();
+            updateNavButtons();
+        }
+        
+        function updateProgress() {
+            // Count answered questions
+            const answeredCount = answeredQuestions.filter(Boolean).length;
+            const percent = Math.round((answeredCount / totalQuestions) * 100);
+            
+            // Update progress bar
+            $('.progress-bar').css('width', `${percent}%`).attr('aria-valuenow', percent).text(`${percent}%`);
+        }
+        
+        function updateNavButtons() {
+            // Update navigation buttons
+            $('.question-nav-btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+            $(`.question-nav-btn[data-question-index="${currentQuestion}"]`).removeClass('btn-outline-secondary').addClass('btn-primary');
+            
+            // Mark answered questions
+            answeredQuestions.forEach((answered, index) => {
+                if (answered) {
+                    $(`.question-nav-btn[data-question-index="${index}"]`).addClass('btn-success').removeClass('btn-outline-secondary');
+                }
+            });
+        }
+        
+        // Check if question is answered
+        function checkQuestionAnswered(index) {
+            const $question = $(`.quiz-question[data-question-index="${index}"]`);
+            const questionId = $question.find('[name^="choice_"], [name^="text_"], [name^="file_"]').attr('name').split('_')[1];
+            
+            // Check based on question type
+            if ($question.find('[name^="choice_"]').length) {
+                // Multiple choice
+                answeredQuestions[index] = $question.find(`[name="choice_${questionId}"]:checked`).length > 0;
+            } else if ($question.find('[name^="text_"]').length) {
+                // Text answer
+                answeredQuestions[index] = $question.find(`[name="text_${questionId}"]`).val().trim() !== '';
+            } else if ($question.find('[name^="file_"]').length) {
+                // File upload
+                answeredQuestions[index] = $question.find(`[name="file_${questionId}"]`)[0]?.files?.length > 0;
+            }
+            
+            updateProgress();
+            updateNavButtons();
+        }
+        
+        // Timer functions - initialized on page load
+        function startTimer() {
+            $('#quiz-timer').show();
+            timerStarted = true;
+            
+            // Update timer display initially
+            updateTimerDisplay();
+            
+            // Set interval to update timer every second
+            timerInterval = setInterval(function() {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                // Auto-submit when timer reaches zero
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    
+                    // Show alert that time is up
+                    alert('Time is up! Your quiz is being submitted automatically.');
+                    
+                    // Submit the form
+                    $('#quizForm').submit();
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            // Calculate hours, minutes, seconds
+            const hours = Math.floor(timeLeft / 3600);
+            const minutes = Math.floor((timeLeft % 3600) / 60);
+            const seconds = timeLeft % 60;
+            
+            // Format display with leading zeros
+            const display = 
+                (hours < 10 ? '0' + hours : hours) + ':' + 
+                (minutes < 10 ? '0' + minutes : minutes) + ':' + 
+                (seconds < 10 ? '0' + seconds : seconds);
+            
+            // Update timer display
+            $('#timer-countdown').text(display);
+            
+            // Change color based on time left
+            if (timeLeft <= 60) { // Last minute
+                $('#quiz-timer').removeClass('bg-warning bg-primary').addClass('bg-danger');
+                $('#timer-countdown').addClass('blink');
+            } else if (timeLeft <= 300) { // Last 5 minutes
+                $('#quiz-timer').removeClass('bg-primary bg-danger').addClass('bg-warning');
+            } else {
+                $('#quiz-timer').removeClass('bg-danger bg-warning').addClass('bg-primary');
+            }
+        }
+
+        // Next button - fixed navigation with simple animation
+        $('.next-question').click(function() {
+            if (answeredQuestions[currentQuestion] && currentQuestion < totalQuestions - 1) {
+                // Show success feedback and move to next question
+                $('.question-feedback').html(`
+                    <span class="badge bg-success text-white fs-5 p-2">
+                        <i class="fas fa-check-circle"></i> 
+                        Good job! Moving to next question...
+                    </span>
+                `);
+                
+                // Short delay then show next question
+                setTimeout(function() {
+                    showQuestion(currentQuestion + 1);
+                }, 800);
+            }
+        });
+        
+        // Listen for changes to inputs to mark questions as answered and enable/disable buttons
+        $('[name^="choice_"], [name^="text_"], [name^="file_"]').on('change input', function() {
+            checkQuestionAnswered(currentQuestion);
+            
+            // Enable/disable the next button based on whether the current question is answered
+            if (answeredQuestions[currentQuestion]) {
+                $(`#next-question-${currentQuestion}`).prop('disabled', false);
+                // Show visual feedback that they can continue
+                $('.question-feedback').html(`
+                    <span class="badge bg-success text-white fs-5 p-2">
+                        <i class="fas fa-check-circle"></i> 
+                        Great! Click "Next Question" below
+                    </span>
+                `);
+                
+                // Auto-scroll to the next button for mobile users
+                if (window.innerWidth < 768) {
+                    $(`#next-question-${currentQuestion}`)[0].scrollIntoView({behavior: "smooth"});
+                }
+            } else {
+                $(`#next-question-${currentQuestion}`).prop('disabled', true);
+                // Show feedback that they need to answer
+                $('.question-feedback').html(`
+                    <span class="badge bg-info text-white fs-5 p-2">
+                        <i class="fas fa-info-circle"></i> 
+                        Please answer this question to continue
+                    </span>
+                `);
+            }
+        });
+        
+        // Handle form submission with immediate score feedback
+        $('#quizForm').submit(function(e) {
+            // Store information about this submission
+            localStorage.setItem('quizSubmitted', '{{ assignment.id }}');
+            localStorage.setItem('quizTotalQuestions', totalQuestions);
+            
+            // Let the form submit normally - no need to intercept
+            return true;
+        });
+        
+        // Handle submission confirmation
+        $('#finalSubmitBtn').click(function() {
+            // Check all questions
+            for (let i = 0; i < totalQuestions; i++) {
+                checkQuestionAnswered(i);
+            }
+            
+            // Count unanswered
+            const unansweredCount = answeredQuestions.filter(value => !value).length;
+            $('#unansweredCount').text(unansweredCount);
+            
+            if (unansweredCount > 0) {
+                $('#unansweredQuestionsWarning').show();
+            } else {
+                $('#unansweredQuestionsWarning').hide();
+            }
+        });
+        
+        // Initialize on page load
+        updateProgress();
+        updateNavButtons();
+        
+        // Start timer immediately if time limit exists
+        if (timeLeft > 0) {
+            startTimer();
+        }
+        
+        // Handle quiz results page redirect
+        $('#viewResultsBtn').click(function() {
+            window.location.href = "{% url 'assignments:quiz_result' assignment.id %}";
+        });
+        
+        // Check if coming from a quiz submission and show results
+        $(document).ready(function() {
+            // Check if coming from quiz result page
+            if (window.location.pathname.includes('quiz-result')) {
+                // Display appropriate score modal based on results
+                const score = {{ existing_submission.score|default:0 }};
+                const maxScore = {{ assignment.max_score }};
+                const percentage = Math.round((score / maxScore) * 100);
+                
+                // Update progress bar
+                $('#resultProgressBar').css('width', `${percentage}%`);
+                $('#resultPercentage').text(`${percentage}%`);
+                
+                // Show appropriate result section
+                if (percentage >= 80) {
+                    $('#highScoreResult').show();
+                } else if (percentage >= 60) {
+                    $('#mediumScoreResult').show();
+                } else {
+                    $('#lowScoreResult').show();
+                }
+                
+                // Show modal
+                $('#quizResultsModal').modal('show');
+            }
+        });
+        
+        // Add CSS for font sizes, blinking effect, and mobile styles
+        $("<style>")
+            .prop("type", "text/css")
+            .html(`
+                /* Font size classes */
+                .quiz-text-small {
+                    font-size: 0.9rem;
+                }
+                .quiz-text-small h1, .quiz-text-small h2 {
+                    font-size: 1.5rem;
+                }
+                .quiz-text-small h3, .quiz-text-small h4 {
+                    font-size: 1.2rem;
+                }
+                .quiz-text-small .fs-5 {
+                    font-size: 0.9rem !important;
+                }
+                .quiz-text-small .form-check-label {
+                    font-size: 0.9rem !important;
+                }
+                
+                .quiz-text-medium {
+                    font-size: 1rem;
+                }
+                .quiz-text-medium h1, .quiz-text-medium h2 {
+                    font-size: 1.8rem;
+                }
+                .quiz-text-medium h3, .quiz-text-medium h4 {
+                    font-size: 1.5rem;
+                }
+                .quiz-text-medium .fs-5 {
+                    font-size: 1.1rem !important;
+                }
+                .quiz-text-medium .form-check-label {
+                    font-size: 1.1rem !important;
+                }
+                
+                .quiz-text-large {
+                    font-size: 1.2rem;
+                }
+                .quiz-text-large h1, .quiz-text-large h2 {
+                    font-size: 2.2rem;
+                }
+                .quiz-text-large h3, .quiz-text-large h4 {
+                    font-size: 1.8rem;
+                }
+                .quiz-text-large .fs-5 {
+                    font-size: 1.3rem !important;
+                }
+                .quiz-text-large .form-check-label {
+                    font-size: 1.3rem !important;
+                }
+                
+                /* Animation effects */
+                @keyframes blink {
+                    0% { opacity: 1; }
+                    50% { opacity: 0.5; }
+                    100% { opacity: 1; }
+                }
+                .blink {
+                    animation: blink 1s linear infinite;
+                }
+                
+                /* Mobile friendly styles */
+                @media (max-width: 768px) {
+                    .quiz-question {
+                        padding: 15px;
+                    }
+                    
+                    .form-check-label {
+                        font-size: 1.2rem !important;
+                    }
+                    
+                    .form-check {
+                        padding: 10px;
+                        border: 1px solid #eee;
+                        border-radius: 8px;
+                        margin-bottom: 15px !important;
+                    }
+                    
+                    .form-check-input {
+                        width: 24px !important;
+                        height: 24px !important;
+                    }
+                    
+                    /* Larger touch targets */
+                    .next-question, .font-size-btn {
+                        padding: 15px !important;
+                        margin-bottom: 15px !important;
+                    }
+                }
+            `)
+            .appendTo("head");
+    });
+</script>
+{% endblock %}

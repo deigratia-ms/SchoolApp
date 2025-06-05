@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Message Details - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 class="mb-0">Message Details</h5>
+                            <p class="text-sm mb-0">View message details</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <a href="{% url 'communications:message_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Messages
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Message Header -->
+                    <div class="message-header border-bottom pb-3 mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-uppercase text-muted mb-1">
+                                    {% if message.sender == request.user %}
+                                        <i class="fas fa-paper-plane me-1"></i> Sent to:
+                                    {% else %}
+                                        <i class="fas fa-user me-1"></i> From:
+                                    {% endif %}
+                                </h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-2">
+                                        <!-- Avatar Placeholder -->
+                                        <div class="avatar-initial rounded-circle bg-gradient-primary">
+                                            {% if message.sender == request.user %}
+                                                {{ message.recipient.get_full_name|slice:":1" }}
+                                            {% else %}
+                                                {{ message.sender.get_full_name|slice:":1" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">
+                                            {% if message.sender == request.user %}
+                                                {{ message.recipient.get_full_name }}
+                                            {% else %}
+                                                {{ message.sender.get_full_name }}
+                                            {% endif %}
+                                        </h6>
+                                        <p class="text-xs text-secondary mb-0">
+                                            {% if message.sender == request.user %}
+                                                {{ message.recipient.email }}
+                                            {% else %}
+                                                {{ message.sender.email }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                                <h6 class="text-uppercase text-muted mb-1">Date & Time:</h6>
+                                <p class="mb-0">{{ message.created_at|date:"F d, Y" }} at {{ message.created_at|time:"H:i" }}</p>
+                                
+                                {% if message.is_read and message.sender != request.user %}
+                                    <span class="badge bg-success">Read on {{ message.read_at|date:"M d, Y" }} at {{ message.read_at|time:"H:i" }}</span>
+                                {% elif not message.is_read and message.sender != request.user %}
+                                    <span class="badge bg-warning">Unread</span>
+                                {% elif message.is_read and message.sender == request.user %}
+                                    <span class="badge bg-success">Read by recipient</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Not read by recipient</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Subject -->
+                    <div class="subject mb-4">
+                        <h4>{{ message.subject }}</h4>
+                    </div>
+                    
+                    <!-- Message Content -->
+                    <div class="message-content mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0">{{ message.content|linebreaks }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Attachment (if any) -->
+                    {% if message.attachment %}
+                        <div class="attachment mb-4">
+                            <h6 class="text-uppercase text-muted mb-2">Attachment:</h6>
+                            <div class="card card-sm">
+                                <div class="card-body p-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-paperclip me-2 text-primary"></i>
+                                        <span>{{ message.attachment.name|slice:"20:" }}</span>
+                                        <a href="{{ message.attachment.url }}" class="btn btn-sm btn-primary ms-auto" download>
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Actions -->
+                    <div class="actions mt-4 d-flex justify-content-end">
+                        {% if message.sender != request.user %}
+                            <a href="{% url 'communications:reply_message' message.id %}" class="btn btn-primary me-2">
+                                <i class="fas fa-reply"></i> Reply
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'communications:delete_message' message.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this message?');">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

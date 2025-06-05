@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Appointment{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h2 class="mb-0">
+                        <i class="fas fa-calendar-plus me-2"></i>Book an Appointment
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <!-- Date Filter -->
+                        <div class="col-md-6">
+                            <label for="date" class="form-label">Select Date</label>
+                            <select name="date" id="date" class="form-select">
+                                <option value="">All Dates</option>
+                                {% for date in available_dates %}
+                                    <option value="{{ date|date:'Y-m-d' }}" {% if selected_date == date|date:'Y-m-d' %}selected{% endif %}>
+                                        {{ date|date:"l, F j, Y" }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Time Range Filter -->
+                        <div class="col-md-6">
+                            <label for="time_range" class="form-label">Time of Day</label>
+                            <select name="time_range" id="time_range" class="form-select">
+                                <option value="all" {% if time_range == 'all' %}selected{% endif %}>All Times</option>
+                                <option value="morning" {% if time_range == 'morning' %}selected{% endif %}>Morning (9 AM - 12 PM)</option>
+                                <option value="afternoon" {% if time_range == 'afternoon' %}selected{% endif %}>Afternoon (12 PM - 3 PM)</option>
+                                <option value="evening" {% if time_range == 'evening' %}selected{% endif %}>Evening (3 PM - 6 PM)</option>
+                            </select>
+                        </div>
+
+                        <!-- Apply Filters Button -->
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-2"></i>Apply Filters
+                            </button>
+                            <a href="{% url 'appointments:book_appointment' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Clear Filters
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Time Slots -->
+    <div class="row">
+        <div class="col-12">
+            {% if page_obj %}
+                <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                    {% for slot in page_obj %}
+                        <div class="col">
+                            <div class="card h-100 time-slot-card">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary mb-3">
+                                        {{ slot.date|date:"l, F j" }}
+                                    </h5>
+                                    <p class="card-text mb-3">
+                                        <i class="far fa-clock me-2"></i>
+                                        {{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}
+                                    </p>
+                                    <a href="{% url 'appointments:preview_appointment' slot.id %}" class="btn btn-outline-primary w-100">
+                                        <i class="fas fa-calendar-check me-2"></i>Select Time Slot
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if selected_date %}&date={{ selected_date }}{% endif %}{% if time_range %}&time_range={{ time_range }}{% endif %}" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_date %}&date={{ selected_date }}{% endif %}{% if time_range %}&time_range={{ time_range }}{% endif %}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if selected_date %}&date={{ selected_date }}{% endif %}{% if time_range %}&time_range={{ time_range }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_date %}&date={{ selected_date }}{% endif %}{% if time_range %}&time_range={{ time_range }}{% endif %}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_date %}&date={{ selected_date }}{% endif %}{% if time_range %}&time_range={{ time_range }}{% endif %}" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    <h4 class="alert-heading mb-3">
+                        <i class="fas fa-info-circle me-2"></i>No Available Time Slots
+                    </h4>
+                    <p class="mb-0">
+                        There are currently no available time slots matching your criteria. Please try:
+                    </p>
+                    <ul class="mb-0 mt-2">
+                        <li>Selecting a different date</li>
+                        <li>Choosing a different time of day</li>
+                        <li>Clearing the filters to see all available slots</li>
+                        <li>Checking back later for new openings</li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .time-slot-card {
+        transition: transform 0.2s;
+    }
+    .time-slot-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+{% endblock %}

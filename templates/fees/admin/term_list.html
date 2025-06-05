@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+
+{% block title %}Academic Terms - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Academic Terms</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Terms</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">Academic Terms</h6>
+          <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createTermModal">
+            <i class="fas fa-plus fa-sm"></i> Add New Term
+          </button>
+        </div>
+        <div class="card-body">
+          {% if terms %}
+            <div class="table-responsive">
+              <table class="table table-bordered" id="termsTable" width="100%" cellspacing="0">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Academic Year</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for term in terms %}
+                    <tr>
+                      <td>{{ term.name }}</td>
+                      <td>{{ term.academic_year }}</td>
+                      <td>{{ term.start_date|date:"M d, Y" }}</td>
+                      <td>{{ term.end_date|date:"M d, Y"|default:"-" }}</td>
+                      <td>
+                        {% if term.is_current %}
+                          <span class="badge bg-success">Current</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <div class="btn-group">
+                          <button type="button" class="btn btn-sm btn-primary edit-term" 
+                                  data-id="{{ term.id }}"
+                                  data-name="{{ term.name }}"
+                                  data-academic-year="{{ term.academic_year }}"
+                                  data-start-date="{{ term.start_date|date:'Y-m-d' }}"
+                                  data-end-date="{{ term.end_date|date:'Y-m-d'|default:'' }}"
+                                  data-is-current="{{ term.is_current|yesno:'true,false' }}">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-danger delete-term"
+                                  data-id="{{ term.id }}"
+                                  data-name="{{ term.name }}"
+                                  data-academic-year="{{ term.academic_year }}"
+                                  {% if term.is_current %}disabled{% endif %}>
+                            <i class="fas fa-trash"></i>
+                          </button>
+                          {% if not term.is_current %}
+                            <button type="button" class="btn btn-sm btn-success set-current-term"
+                                    data-id="{{ term.id }}"
+                                    data-name="{{ term.name }}"
+                                    data-academic-year="{{ term.academic_year }}">
+                              <i class="fas fa-check"></i>
+                            </button>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <div class="mb-3">
+                <i class="fas fa-calendar-alt fa-4x text-gray-300"></i>
+              </div>
+              <p class="text-gray-500 mb-0">No academic terms found</p>
+              <a href="#" data-bs-toggle="modal" data-bs-target="#createTermModal" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-2"></i>Add First Term
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">About Academic Terms</h6>
+        </div>
+        <div class="card-body">
+          <p>Academic terms are used to organize the school year and manage fees for each period.</p>
+          <p>Examples of academic terms include:</p>
+          <ul>
+            <li>First Term</li>
+            <li>Second Term</li>
+            <li>Third Term</li>
+          </ul>
+          <p>You can set one term as the current term, which will be used as the default when creating new fees.</p>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>After creating terms, you can assign fees to classes for each term.
+          </div>
+        </div>
+      </div>
+
+      {% if current_term %}
+      <div class="card shadow mb-4 border-left-success">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-success">Current Term</h6>
+        </div>
+        <div class="card-body">
+          <h5>{{ current_term.name }}</h5>
+          <p class="mb-0">Academic Year: {{ current_term.academic_year }}</p>
+          <p class="mb-0">Start Date: {{ current_term.start_date|date:"M d, Y" }}</p>
+          <p class="mb-0">End Date: {{ current_term.end_date|date:"M d, Y"|default:"Not set" }}</p>
+          <hr>
+          <p class="mb-0 small text-muted">All new fees will be assigned to this term by default.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Create Term Modal -->
+<div class="modal fade" id="createTermModal" tabindex="-1" aria-labelledby="createTermModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'fees:create_term' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="createTermModalLabel">Create New Academic Term</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="name" class="form-label">Term Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="name" name="name" required>
+            <div class="form-text">E.g., First Term, Second Term, etc.</div>
+          </div>
+          <div class="mb-3">
+            <label for="academic_year" class="form-label">Academic Year <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="academic_year" name="academic_year" required>
+            <div class="form-text">E.g., 2023-2024</div>
+          </div>
+          <div class="mb-3">
+            <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" class="form-control" id="end_date" name="end_date">
+            <div class="form-text">Optional. Leave blank if the term is ongoing.</div>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="is_current" name="is_current">
+            <label class="form-check-label" for="is_current">Set as current term</label>
+            <div class="form-text">If checked, this will become the active term for new fees.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Term</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Term Modal -->
+<div class="modal fade" id="editTermModal" tabindex="-1" aria-labelledby="editTermModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="editTermForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editTermModalLabel">Edit Academic Term</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_name" class="form-label">Term Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="edit_name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_academic_year" class="form-label">Academic Year <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="edit_academic_year" name="academic_year" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="edit_start_date" name="start_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_end_date" class="form-label">End Date</label>
+            <input type="date" class="form-control" id="edit_end_date" name="end_date">
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="edit_is_current" name="is_current">
+            <label class="form-check-label" for="edit_is_current">Set as current term</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Term Modal -->
+<div class="modal fade" id="deleteTermModal" tabindex="-1" aria-labelledby="deleteTermModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="deleteTermForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteTermModalLabel">Delete Academic Term</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete the term <strong id="delete_term_name"></strong> (<span id="delete_term_year"></span>)?</p>
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone. Deleting a term will also remove all associated class fees and student fees.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Term</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Set Current Term Modal -->
+<div class="modal fade" id="setCurrentTermModal" tabindex="-1" aria-labelledby="setCurrentTermModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="setCurrentTermForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="setCurrentTermModalLabel">Set Current Term</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to set <strong id="current_term_name"></strong> (<span id="current_term_year"></span>) as the current term?</p>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>This will make this term the default for all new fees and reports.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Set as Current</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#termsTable').DataTable({
+      order: [[1, 'desc'], [0, 'asc']],
+      pageLength: 10
+    });
+    
+    // Edit Term
+    $('.edit-term').on('click', function() {
+      const id = $(this).data('id');
+      const name = $(this).data('name');
+      const academicYear = $(this).data('academic-year');
+      const startDate = $(this).data('start-date');
+      const endDate = $(this).data('end-date');
+      const isCurrent = $(this).data('is-current') === true;
+      
+      $('#edit_name').val(name);
+      $('#edit_academic_year').val(academicYear);
+      $('#edit_start_date').val(startDate);
+      $('#edit_end_date').val(endDate);
+      $('#edit_is_current').prop('checked', isCurrent);
+      
+      $('#editTermForm').attr('action', `{% url 'fees:term_list' %}${id}/edit/`);
+      $('#editTermModal').modal('show');
+    });
+    
+    // Delete Term
+    $('.delete-term').on('click', function() {
+      const id = $(this).data('id');
+      const name = $(this).data('name');
+      const academicYear = $(this).data('academic-year');
+      
+      $('#delete_term_name').text(name);
+      $('#delete_term_year').text(academicYear);
+      $('#deleteTermForm').attr('action', `{% url 'fees:term_list' %}${id}/delete/`);
+      $('#deleteTermModal').modal('show');
+    });
+    
+    // Set Current Term
+    $('.set-current-term').on('click', function() {
+      const id = $(this).data('id');
+      const name = $(this).data('name');
+      const academicYear = $(this).data('academic-year');
+      
+      $('#current_term_name').text(name);
+      $('#current_term_year').text(academicYear);
+      $('#setCurrentTermForm').attr('action', `{% url 'fees:term_list' %}${id}/edit/`);
+      $('#setCurrentTermForm').append('<input type="hidden" name="is_current" value="true">');
+      $('#setCurrentTermModal').modal('show');
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+# This directory contains default images for website content
+
+Required images:
+- about-hero.jpg (1920x600) - Default hero image for About page
+- admissions-hero.jpg (1920x600) - Default hero image for Admissions page
+- academics-hero.jpg (1920x600) - Default hero image for Academics page
+- story.jpg (800x600) - Default image for Our Story section
+- curriculum-image.jpg (800x600) - Default image for Curriculum section
+
+Image requirements:
+1. Hero images (1920x600)
+   - High quality landscape photos
+   - Should work well with white text overlay
+   - Showing educational/classroom environments
+
+2. Content images (800x600)
+   - Clear, well-lit photos
+   - Showing Montessori materials, students, or classroom activities
+   - Professional quality

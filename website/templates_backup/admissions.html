@@ -1,0 +1,310 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Admissions | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('https://images.unsplash.com/photo-1588075592446-265fd1e6e76f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up">Join Our Community</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            Begin your child's journey towards excellence in education
+        </p>
+    </div>
+</section>
+
+<!-- Admission Process -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Our Admission Process</h2>
+        <div class="row gy-4">
+            <div class="col-md-3" data-aos="fade-up">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-file-alt fa-3x"></i>
+                        </div>
+                        <h3 class="h5">1. Submit Inquiry</h3>
+                        <p class="card-text">Complete our online inquiry form to begin the admission process.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-building fa-3x"></i>
+                        </div>
+                        <h3 class="h5">2. School Tour</h3>
+                        <p class="card-text">Visit our campus and meet with our admissions team.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-clipboard-check fa-3x"></i>
+                        </div>
+                        <h3 class="h5">3. Application</h3>
+                        <p class="card-text">Submit formal application with required documents.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-check-circle fa-3x"></i>
+                        </div>
+                        <h3 class="h5">4. Enrollment</h3>
+                        <p class="card-text">Receive acceptance and complete enrollment process.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Programs & Tuition -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Programs & Tuition</h2>
+        <div class="row gy-4">
+            <div class="col-md-4" data-aos="fade-up">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="h5 card-title">Toddler Program</h3>
+                        <h6 class="text-muted mb-3">Ages 18 months - 3 years</h6>
+                        <ul class="list-unstyled mb-4">
+                            <li><i class="fas fa-check text-primary me-2"></i>Half Day: $800/month</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Full Day: $1,200/month</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Extended Care Available</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Includes Materials</li>
+                        </ul>
+                        <a href="#inquiry-form" class="btn btn-primary">Apply Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="h5 card-title">Primary Program</h3>
+                        <h6 class="text-muted mb-3">Ages 3 - 6 years</h6>
+                        <ul class="list-unstyled mb-4">
+                            <li><i class="fas fa-check text-primary me-2"></i>Half Day: $900/month</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Full Day: $1,400/month</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Extended Care Available</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Includes Materials</li>
+                        </ul>
+                        <a href="#inquiry-form" class="btn btn-primary">Apply Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="h5 card-title">Elementary Program</h3>
+                        <h6 class="text-muted mb-3">Ages 6 - 12 years</h6>
+                        <ul class="list-unstyled mb-4">
+                            <li><i class="fas fa-check text-primary me-2"></i>Full Day: $1,600/month</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Extended Care Available</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Includes Materials</li>
+                            <li><i class="fas fa-check text-primary me-2"></i>Field Trips Included</li>
+                        </ul>
+                        <a href="#inquiry-form" class="btn btn-primary">Apply Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Required Documents -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Required Documents</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row gy-4">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-file-medical text-primary me-2"></i>Medical Records</h5>
+                                <ul class="list-unstyled">
+                                    <li>- Immunization Records</li>
+                                    <li>- Health Assessment Form</li>
+                                    <li>- Emergency Contact Info</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-id-card text-primary me-2"></i>Identification</h5>
+                                <ul class="list-unstyled">
+                                    <li>- Birth Certificate</li>
+                                    <li>- Parent/Guardian ID</li>
+                                    <li>- Proof of Address</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-graduation-cap text-primary me-2"></i>Academic Records</h5>
+                                <ul class="list-unstyled">
+                                    <li>- Previous School Records</li>
+                                    <li>- Progress Reports</li>
+                                    <li>- Teacher Recommendations</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-file-contract text-primary me-2"></i>Additional Forms</h5>
+                                <ul class="list-unstyled">
+                                    <li>- Enrollment Agreement</li>
+                                    <li>- Financial Agreement</li>
+                                    <li>- Permission Forms</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Inquiry Form -->
+<section id="inquiry-form" class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Start Your Application</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <form method="post">
+                            {% csrf_token %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ form.name }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.email }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.phone }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.child_name }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.child_age }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.program_interest }}
+                                </div>
+                                <div class="col-12">
+                                    {{ form.start_date }}
+                                </div>
+                                <div class="col-12">
+                                    {{ form.message }}
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">Submit Inquiry</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Financial Aid -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Financial Aid & Scholarships</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center" data-aos="fade-up">
+                <p class="lead mb-4">We believe that quality education should be accessible to all families.</p>
+                <div class="row gy-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <i class="fas fa-hand-holding-usd fa-3x text-primary mb-3"></i>
+                                <h5>Need-Based Aid</h5>
+                                <p>Financial assistance available based on family income and circumstances.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <i class="fas fa-award fa-3x text-primary mb-3"></i>
+                                <h5>Merit Scholarships</h5>
+                                <p>Scholarships available for exceptional students and special circumstances.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a href="{% url 'contact' %}" class="btn btn-outline-primary mt-4">Contact Us About Financial Aid</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Frequently Asked Questions</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <div class="accordion" id="admissionsFAQ">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                When should I apply?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#admissionsFAQ">
+                            <div class="accordion-body">
+                                We accept applications year-round, but encourage early submission as spaces are limited. Priority enrollment for the following school year begins in January.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                Is previous Montessori experience required?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#admissionsFAQ">
+                            <div class="accordion-body">
+                                No, previous Montessori experience is not required. Our teachers are experienced in helping children transition into the Montessori environment.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                What is the student-teacher ratio?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#admissionsFAQ">
+                            <div class="accordion-body">
+                                Our student-teacher ratios are maintained at optimal levels: 6:1 for toddlers, 10:1 for primary, and 12:1 for elementary programs.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

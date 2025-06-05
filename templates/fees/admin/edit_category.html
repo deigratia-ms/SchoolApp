@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Fee Category - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Edit Fee Category</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:admin_dashboard' %}">Fees Management</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:category_list' %}">Categories</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Edit Fee Category: {{ category.name }}</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'fees:edit_category' category.id %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="name" name="name" value="{{ category.name }}" required>
+            </div>
+            <div class="mb-3">
+              <label for="category_type" class="form-label">Category Type <span class="text-danger">*</span></label>
+              <select class="form-select" id="category_type" name="category_type" required>
+                <option value="TUITION" {% if category.category_type == 'TUITION' %}selected{% endif %}>Tuition</option>
+                <option value="UNIFORM" {% if category.category_type == 'UNIFORM' %}selected{% endif %}>Uniform</option>
+                <option value="BOOKS" {% if category.category_type == 'BOOKS' %}selected{% endif %}>Books</option>
+                <option value="PTA" {% if category.category_type == 'PTA' %}selected{% endif %}>PTA Dues</option>
+                <option value="SPORTS" {% if category.category_type == 'SPORTS' %}selected{% endif %}>Sports</option>
+                <option value="TECHNOLOGY" {% if category.category_type == 'TECHNOLOGY' %}selected{% endif %}>Technology</option>
+                <option value="TRANSPORTATION" {% if category.category_type == 'TRANSPORTATION' %}selected{% endif %}>Transportation</option>
+                <option value="FEEDING" {% if category.category_type == 'FEEDING' %}selected{% endif %}>Feeding</option>
+                <option value="EXAMINATION" {% if category.category_type == 'EXAMINATION' %}selected{% endif %}>Examination</option>
+                <option value="OTHER" {% if category.category_type == 'OTHER' %}selected{% endif %}>Other</option>
+              </select>
+              <div class="form-text">Select the type of fee this category represents.</div>
+            </div>
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3">{{ category.description }}</textarea>
+              <div class="form-text">Provide a brief description of this fee category.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_required" name="is_required" {% if category.is_required %}checked{% endif %}>
+              <label class="form-check-label" for="is_required">Required for all students</label>
+              <div class="form-text">If checked, this fee will be mandatory for all students.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_recurring" name="is_recurring" {% if category.is_recurring %}checked{% endif %}>
+              <label class="form-check-label" for="is_recurring">Recurring every term</label>
+              <div class="form-text">If checked, this fee will be charged every term.</div>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if category.is_active %}checked{% endif %}>
+              <label class="form-check-label" for="is_active">Active</label>
+              <div class="form-text">If unchecked, this category will not be available for new fees.</div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'fees:category_list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Category Information</h6>
+        </div>
+        <div class="card-body">
+          <p><strong>Created:</strong> {{ category.created_at|date:"M d, Y" }}</p>
+          <p><strong>Last Updated:</strong> {{ category.updated_at|date:"M d, Y" }}</p>
+
+          {% if category_stats %}
+          <hr>
+          <h6 class="font-weight-bold">Usage Statistics</h6>
+          <p><strong>Class Fees:</strong> {{ category_stats.class_fee_count }}</p>
+          <p><strong>Student Fees:</strong> {{ category_stats.student_fee_count }}</p>
+          <p><strong>Total Amount:</strong> GHS {{ category_stats.total_amount|floatformat:2 }}</p>
+          <p><strong>Total Collected:</strong> GHS {{ category_stats.total_collected|floatformat:2 }}</p>
+          {% endif %}
+
+          <div class="alert alert-warning mt-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>Changing the category name or status will affect all associated fees.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

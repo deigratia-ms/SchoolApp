@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit Assignment - {{ assignment.title }} - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Submit Assignment</h1>
+        <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Assignment
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Submit Your Work</h6>
+                </div>
+                <div class="card-body">
+                    {% if deadline_passed %}
+                        <div class="alert alert-danger mb-4">
+                            <i class="fas fa-exclamation-circle"></i> The deadline for this assignment has passed. Late submissions may not be accepted.
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if existing_submission %}
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle"></i> You have already submitted this assignment. Submitting again will overwrite your previous submission.
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-4">
+                            <label for="text_submission" class="form-label">Your Answer / Response</label>
+                            <textarea class="form-control" id="text_submission" name="text_submission" rows="8" placeholder="Type your answer here...">{{ existing_submission.text_submission|default:'' }}</textarea>
+                            <small class="text-muted">You can either type your response here or upload a file below (or both).</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="file_submission" class="form-label">File Attachment</label>
+                            <input type="file" class="form-control" id="file_submission" name="file_submission">
+                            
+                            {% if existing_submission and existing_submission.file_submission %}
+                                <div class="mt-2">
+                                    <p class="mb-1">Current file: <a href="{{ existing_submission.file_submission.url }}" target="_blank">{{ existing_submission.file_submission.name|default:'Download' }}</a></p>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="remove_file" name="remove_file">
+                                        <label class="form-check-label" for="remove_file">
+                                            Remove existing file
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <small class="text-muted">Accepted file formats: PDF, DOC, DOCX, JPG, PNG, etc.</small>
+                        </div>
+                        
+                        <hr>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Assignment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Assignment Details</h6>
+                </div>
+                <div class="card-body">
+                    <h5>{{ assignment.title }}</h5>
+                    
+                    <p>
+                        {% if assignment.assignment_type == 'HOMEWORK' %}
+                            <span class="badge bg-primary">Homework</span>
+                        {% elif assignment.assignment_type == 'PROJECT' %}
+                            <span class="badge bg-success">Project</span>
+                        {% elif assignment.assignment_type == 'TEST' %}
+                            <span class="badge bg-warning">Test</span>
+                        {% elif assignment.assignment_type == 'EXAM' %}
+                            <span class="badge bg-danger">Exam</span>
+                        {% endif %}
+                    </p>
+                    
+                    <div class="mb-3">
+                        <strong>Due Date:</strong>
+                        <p class="text-{% if deadline_passed %}danger{% else %}dark{% endif %}">
+                            {{ assignment.due_date|date:"F d, Y - h:i A" }}
+                            {% if deadline_passed %}
+                                <span class="badge bg-danger ms-1">Overdue</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Class:</strong>
+                        <p>{{ assignment.class_subject.classroom.name }} {% if assignment.class_subject.classroom.section %}({{ assignment.class_subject.classroom.section }}){% endif %}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Subject:</strong>
+                        <p>{{ assignment.class_subject.subject.name }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Points:</strong>
+                        <p>{{ assignment.max_score }}</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <strong>Instructions:</strong>
+                        <div class="mt-1 p-3 bg-light rounded small">
+                            {{ assignment.description|linebreaks }}
+                        </div>
+                    </div>
+                    
+                    {% if assignment.file_attachment %}
+                    <div>
+                        <a href="{{ assignment.file_attachment.url }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                            <i class="fas fa-download"></i> Download Assignment File
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Submission History</h6>
+                </div>
+                <div class="card-body">
+                    {% if existing_submission %}
+                        <div class="small">
+                            <p><strong>Last submitted:</strong> {{ existing_submission.submission_date|date:"F d, Y - h:i A" }}</p>
+                            
+                            {% if existing_submission.is_graded %}
+                            <div class="alert alert-success small">
+                                <strong>Grade:</strong> {{ existing_submission.score }}/{{ assignment.max_score }}
+                            </div>
+                            
+                            {% if existing_submission.feedback %}
+                            <div>
+                                <strong>Feedback:</strong>
+                                <p class="bg-light p-2 rounded">{{ existing_submission.feedback }}</p>
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="alert alert-info small">
+                                <i class="fas fa-clock"></i> Your submission is awaiting grading.
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small">You haven't submitted this assignment yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

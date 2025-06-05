@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Staff Role - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Edit Staff Role</h1>
+    <div>
+      <a href="{% url 'payroll:staff_role_list' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Roles
+      </a>
+    </div>
+  </div>
+
+  <!-- Edit Role Form -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Role Information</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'payroll:edit_staff_role' role.id %}">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label for="name" class="form-label">Role Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="name" name="name" value="{{ role.name }}" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3">{{ role.description }}</textarea>
+            </div>
+            
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_teaching_staff" name="is_teaching_staff" {% if role.is_teaching_staff %}checked{% endif %}>
+              <label class="form-check-label" for="is_teaching_staff">Teaching Staff</label>
+              <div class="form-text">Check if this role is for teaching staff.</div>
+            </div>
+            
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if role.is_active %}checked{% endif %}>
+              <label class="form-check-label" for="is_active">Active</label>
+              <div class="form-text">Uncheck to deactivate this role.</div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'payroll:staff_role_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+              <button type="submit" class="btn btn-primary">Update Role</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

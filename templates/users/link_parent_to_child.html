@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}Link Parent to Child | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Link Parent to Child</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'users:user_management' %}">User Management</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Link Parent to Child</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'users:register_parent' %}" class="btn btn-sm btn-outline-primary me-2">
+                <i class="fas fa-user-plus me-1"></i>Register New Parent
+            </a>
+            <a href="{% url 'users:register_student' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-user-graduate me-1"></i>Register New Student
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Parent-Child Assignment</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="parent_id" class="form-label">Select Parent <span class="text-danger">*</span></label>
+                            <select class="form-select" id="parent_id" name="parent_id" required>
+                                <option value="">-- Select Parent --</option>
+                                {% for parent in parents %}
+                                <option value="{{ parent.id }}">{{ parent.user.get_full_name }} ({{ parent.user.email }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose the parent you want to link children to</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Select Students <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="selectAll">Select All</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAll">Deselect All</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-bordered" id="studentsTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50px;" class="text-center">Select</th>
+                                            <th>Student Name</th>
+                                            <th>Student ID</th>
+                                            <th>Grade</th>
+                                            <th>Current Parent</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students %}
+                                        <tr>
+                                            <td class="text-center">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="student_id" value="{{ student.id }}" 
+                                                        id="student{{ student.id }}">
+                                                    <label class="form-check-label" for="student{{ student.id }}"></label>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if student.user.profile_picture %}
+                                                        <img src="{{ student.user.profile_picture.url }}" alt="{{ student.user.get_full_name }}" 
+                                                            class="rounded-circle me-2" width="32" height="32">
+                                                    {% else %}
+                                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                            style="width: 32px; height: 32px;">
+                                                            <span>{{ student.user.first_name|first }}{{ student.user.last_name|first }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                    {{ student.user.get_full_name }}
+                                                </div>
+                                            </td>
+                                            <td>{{ student.student_id }}</td>
+                                            <td>{{ student.grade }} {% if student.section %}({{ student.section }}){% endif %}</td>
+                                            <td>
+                                                {% for parent in student.parent_set.all %}
+                                                    <span class="badge bg-info">{{ parent.user.get_full_name }}</span>
+                                                {% empty %}
+                                                    <span class="badge bg-secondary">No parent linked</span>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center">No students available</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'users:user_management' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Link Parent to Child</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <p>To link a parent to one or more children:</p>
+                    <ol>
+                        <li>Select a <strong>parent</strong> from the dropdown list.</li>
+                        <li>Check the <strong>students</strong> you want to assign to this parent.</li>
+                        <li>Click the <strong>"Link Parent to Child"</strong> button to save your changes.</li>
+                    </ol>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> A student can have multiple parents linked to their account. Existing parent-child relationships will be maintained.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Parent Details</h6>
+                </div>
+                <div class="card-body">
+                    <div id="parentDetails">
+                        <p class="text-center text-muted">Select a parent to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllBtn = document.getElementById('selectAll');
+        const deselectAllBtn = document.getElementById('deselectAll');
+        const checkboxes = document.querySelectorAll('input[name="student_id"]');
+        const parentSelect = document.getElementById('parent_id');
+        const parentDetailsDiv = document.getElementById('parentDetails');
+        
+        // Handle Select/Deselect All buttons
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+        }
+        
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            });
+        }
+        
+        // Parent selection change handler (for displaying parent details)
+        if (parentSelect && parentDetailsDiv) {
+            parentSelect.addEventListener('change', function() {
+                const parentId = this.value;
+                
+                if (!parentId) {
+                    parentDetailsDiv.innerHTML = '<p class="text-center text-muted">Select a parent to view details</p>';
+                    return;
+                }
+                
+                // We'd ideally use AJAX to fetch parent details here
+                // For now, just show a loading message
+                parentDetailsDiv.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Loading parent details...</p>';
+                
+                // Mock loading delay (in a real app, this would be an AJAX call)
+                setTimeout(() => {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const parentName = selectedOption.text;
+                    
+                    parentDetailsDiv.innerHTML = `
+                        <div class="text-center mb-3">
+                            <div class="bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                style="width: 64px; height: 64px;">
+                                <span style="font-size: 24px;">${parentName.charAt(0)}</span>
+                            </div>
+                            <h5 class="mt-2">${parentName}</h5>
+                        </div>
+                        <p><strong>Children:</strong> Loading...</p>
+                        <p><strong>Relationship:</strong> Parent</p>
+                        <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                    `;
+                }, 500);
+            });
+        }
+        
+        // Form validation
+        const form = document.querySelector('form');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const parentId = parentSelect.value;
+                const anyStudentSelected = Array.from(checkboxes).some(cb => cb.checked);
+                
+                if (!parentId) {
+                    e.preventDefault();
+                    alert('Please select a parent.');
+                    return;
+                }
+                
+                if (!anyStudentSelected) {
+                    e.preventDefault();
+                    alert('Please select at least one student.');
+                    return;
+                }
+            });
+        }
+        
+        // Initialize DataTable
+        if ($.fn.DataTable && document.getElementById('studentsTable')) {
+            $('#studentsTable').DataTable({
+                "pageLength": 10,
+                "order": [[1, 'asc']], // Sort by name by default
+                "columnDefs": [
+                    { "orderable": false, "targets": 0 } // Disable sorting on checkbox column
+                ]
+            });
+        }
+    });
+</script>
+{% endblock %}

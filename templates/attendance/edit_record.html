@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% load custom_filters %}
+
+{% block title %}Edit Attendance: {{ record.classroom.name }} - {{ record.date|date:"M d, Y" }} | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Edit Attendance Record</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'attendance:home' %}">Attendance</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'attendance:records' %}">Records</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'attendance:record_detail' record.id %}">Details</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'attendance:record_detail' record.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Record
+            </a>
+        </div>
+    </div>
+
+    <!-- Record Info -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Attendance Record Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-calendar-day fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Date</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ record.date|date:"l, F d, Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-chalkboard fa-2x text-success"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Class</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ record.classroom.name }} {% if record.classroom.section %}({{ record.classroom.section }}){% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-user-tie fa-2x text-info"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Originally Taken By</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ record.taken_by.user.get_full_name }}</div>
+                            <div class="small text-muted">{{ record.created_at|date:"M d, Y h:i A" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Attendance Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold">Edit Student Attendance</h6>
+            <div class="input-group w-25">
+                <input type="text" id="studentSearch" class="form-control" placeholder="Search students...">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+            </div>
+	        </div>
+	        <div class="card-body">
+	            <form id="editAttendanceForm" method="post" action="{% url 'attendance:edit_record' record.id %}">
+	                {% csrf_token %}
+	                
+	                <div class="attendanceStats mb-4">
+                    <div class="row g-2">
+                        <div class="col">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2 text-success"><i class="fas fa-check-circle"></i></div>
+                                <div>Present: <span id="presentCount">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2 text-danger"><i class="fas fa-times-circle"></i></div>
+                                <div>Absent: <span id="absentCount">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2 text-warning"><i class="fas fa-clock"></i></div>
+                                <div>Late: <span id="lateCount">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2 text-info"><i class="fas fa-clipboard-check"></i></div>
+                                <div>Excused: <span id="excusedCount">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2"><i class="fas fa-users"></i></div>
+                                <div>Total: <span id="totalStudents">{{ student_attendances|length }}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bulk Actions -->
+                <div class="card mb-4">
+                    <div class="card-header py-2">
+                        <h6 class="m-0 font-weight-bold">Bulk Actions</h6>
+                    </div>
+                    <div class="card-body py-2">
+                        <div class="row align-items-center g-2">
+                            <div class="col-auto">
+                                <label class="col-form-label">Mark selected students as:</label>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-success btn-sm bulk-action" data-status="PRESENT">
+                                    <i class="fas fa-check-circle me-1"></i>Present
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-danger btn-sm bulk-action" data-status="ABSENT">
+                                    <i class="fas fa-times-circle me-1"></i>Absent
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-warning btn-sm bulk-action" data-status="LATE">
+                                    <i class="fas fa-clock me-1"></i>Late
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-info btn-sm bulk-action" data-status="EXCUSED">
+                                    <i class="fas fa-clipboard-check me-1"></i>Excused
+                                </button>
+                            </div>
+                            <div class="col-auto ms-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                    <label class="form-check-label" for="selectAll">Select All</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Student Attendance List -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="studentTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px" class="text-center">
+                                    <i class="fas fa-check-square"></i>
+                                </th>
+                                <th>ID</th>
+                                <th>Student Name</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr class="student-row" data-student-id="{{ student.id }}">
+                                <td class="text-center">
+                                    <div class="form-check">
+                                        <input class="form-check-input student-checkbox" type="checkbox" name="selected_students" value="{{ student.id }}" id="student{{ student.id }}">
+                                        <label class="form-check-label" for="student{{ student.id }}"></label>
+                                    </div>
+                                </td>
+                                <td>{{ student.id_number }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if student.user.profile_picture %}
+                                        <img src="{{ student.user.profile_picture.url }}" class="rounded-circle me-2" width="40" height="40">
+                                        {% else %}
+                                        <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="font-weight-bold">{{ student.user.get_full_name }}</div>
+                                            <div class="small text-muted">{{ student.user.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group status-toggle" role="group" aria-label="Attendance Status">
+                                        {% with status=student_statuses|get_item:student.id %}
+                                            <input type="radio" class="btn-check" name="status_{{ student.id }}" id="present_{{ student.id }}" value="PRESENT" {% if status.status == 'PRESENT' %}checked{% endif %} autocomplete="off">
+                                            <label class="btn btn-outline-success btn-sm" for="present_{{ student.id }}" data-bs-toggle="tooltip" title="Present">
+                                                <i class="fas fa-check-circle"></i> Present
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" name="status_{{ student.id }}" id="absent_{{ student.id }}" value="ABSENT" {% if status.status == 'ABSENT' %}checked{% endif %} autocomplete="off">
+                                            <label class="btn btn-outline-danger btn-sm" for="absent_{{ student.id }}" data-bs-toggle="tooltip" title="Absent">
+                                                <i class="fas fa-times-circle"></i> Absent
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" name="status_{{ student.id }}" id="late_{{ student.id }}" value="LATE" {% if status.status == 'LATE' %}checked{% endif %} autocomplete="off">
+                                            <label class="btn btn-outline-warning btn-sm" for="late_{{ student.id }}" data-bs-toggle="tooltip" title="Late">
+                                                <i class="fas fa-clock"></i> Late
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" name="status_{{ student.id }}" id="excused_{{ student.id }}" value="EXCUSED" {% if status.status == 'EXCUSED' %}checked{% endif %} autocomplete="off">
+                                            <label class="btn btn-outline-info btn-sm" for="excused_{{ student.id }}" data-bs-toggle="tooltip" title="Excused">
+                                                <i class="fas fa-clipboard-check"></i> Excused
+                                            </label>
+                                        {% endwith %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group">
+                                        {% with status=student_statuses|get_item:student.id %}
+                                            <input type="text" class="form-control form-control-sm" name="remarks_{{ student.id }}" placeholder="Add remarks" value="{{ status.remarks|default:'' }}">
+                                        {% endwith %}
+                                        <button class="btn btn-outline-secondary btn-sm clear-remarks" type="button">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Record Notes -->
+                <div class="form-group mt-4">
+                    <label for="record_notes" class="form-label">Record Notes</label>
+                    <textarea class="form-control" id="record_notes" name="record_notes" rows="3" placeholder="Add general notes about this attendance record (optional)">{{ record.notes|default:'' }}</textarea>
+                </div>
+                
+                <!-- Last Modified -->
+                {% if record.updated_at %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i> Last updated by <strong>{{ record.updated_by.user.get_full_name }}</strong> on {{ record.updated_at|date:"F d, Y" }} at {{ record.updated_at|time:"g:i A" }}
+                </div>
+                {% endif %}
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'attendance:record_detail' record.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Status counters
+        function updateCounters() {
+            const total = document.querySelectorAll('tbody tr').length;
+            let present = 0;
+            let absent = 0;
+            let late = 0;
+            let excused = 0;
+            
+            document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                const value = radio.value;
+                if (value === 'PRESENT') present++;
+                else if (value === 'ABSENT') absent++;
+                else if (value === 'LATE') late++;
+                else if (value === 'EXCUSED') excused++;
+            });
+            
+            document.getElementById('presentCount').textContent = present;
+            document.getElementById('absentCount').textContent = absent;
+            document.getElementById('lateCount').textContent = late;
+            document.getElementById('excusedCount').textContent = excused;
+            document.getElementById('totalStudents').textContent = total;
+        }
+        
+        // Initialize counters
+        updateCounters();
+        
+        // Radio button click event to update counters
+        const radioButtons = document.querySelectorAll('input[type="radio"]');
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', updateCounters);
+        });
+        
+        // Search functionality
+        const searchInput = document.getElementById('studentSearch');
+        const table = document.getElementById('studentTable');
+        
+        if (searchInput && table) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                
+                for (let i = 0; i < rows.length; i++) {
+                    const studentName = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
+                    const studentId = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
+                    
+                    if (studentName.indexOf(searchTerm) > -1 || studentId.indexOf(searchTerm) > -1) {
+                        rows[i].style.display = '';
+                    } else {
+                        rows[i].style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Select all functionality
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                
+                studentCheckboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    if (row.style.display !== 'none') { // Only select visible rows
+                        checkbox.checked = isChecked;
+                    }
+                });
+            });
+            
+            // Update "Select All" state when individual checkboxes change
+            studentCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const allChecked = Array.from(studentCheckboxes)
+                        .filter(cb => cb.closest('tr').style.display !== 'none') // Only consider visible rows
+                        .every(cb => cb.checked);
+                    
+                    const someChecked = Array.from(studentCheckboxes)
+                        .filter(cb => cb.closest('tr').style.display !== 'none') // Only consider visible rows
+                        .some(cb => cb.checked);
+                    
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = someChecked && !allChecked;
+                });
+            });
+        }
+        
+        // Bulk actions
+        const bulkActionButtons = document.querySelectorAll('.bulk-action');
+        
+        bulkActionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const status = this.getAttribute('data-status');
+                const selectedStudents = Array.from(document.querySelectorAll('.student-checkbox:checked'));
+                
+                if (selectedStudents.length === 0) {
+                    alert('Please select at least one student.');
+                    return;
+                }
+                
+                selectedStudents.forEach(checkbox => {
+                    const studentId = checkbox.value;
+                    const statusInput = document.getElementById(`${status.toLowerCase()}_${studentId}`);
+                    if (statusInput) {
+                        statusInput.checked = true;
+                    }
+                });
+                
+                updateCounters();
+            });
+        });
+        
+        // Clear remarks button
+        const clearRemarksButtons = document.querySelectorAll('.clear-remarks');
+        
+        clearRemarksButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                input.value = '';
+            });
+        });
+        
+        // Row highlighting based on status
+        function updateRowHighlighting() {
+            document.querySelectorAll('tbody tr').forEach(row => {
+                // Remove all status classes
+                row.classList.remove('table-success', 'table-danger', 'table-warning', 'table-info');
+                
+                // Find checked status and add appropriate class
+                const checkedRadio = row.querySelector('input[type="radio"]:checked');
+                if (checkedRadio) {
+                    const status = checkedRadio.value;
+                    if (status === 'PRESENT') row.classList.add('table-success');
+                    else if (status === 'ABSENT') row.classList.add('table-danger');
+                    else if (status === 'LATE') row.classList.add('table-warning');
+                    else if (status === 'EXCUSED') row.classList.add('table-info');
+                }
+            });
+        }
+        
+        // Initialize row highlighting
+        updateRowHighlighting();
+        
+        // Update row highlighting when status changes
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                updateRowHighlighting();
+            });
+        });
+    });
+</script>
+{% endblock %}

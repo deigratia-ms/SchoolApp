@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block title %}Admission Letter Templates - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Admission Letter Templates</h1>
+        <a href="{% url 'users:admission_letter_template_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create New Template
+        </a>
+    </div>
+    
+    <!-- Filter and Search -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Templates</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="mb-0">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <label for="searchQuery" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="searchQuery" name="q" 
+                               placeholder="Search by name or content..." value="{{ request.GET.q|default:'' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter" name="status">
+                            <option value="" {% if not request.GET.status %}selected{% endif %}>All Templates</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active Only</option>
+                            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="sortBy" class="form-label">Sort By</label>
+                        <select class="form-select" id="sortBy" name="sort">
+                            <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                            <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name (Z-A)</option>
+                            <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                            <option value="-created_at" {% if request.GET.sort == '-created_at' or not request.GET.sort %}selected{% endif %}>Newest First</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Templates List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Available Templates</h6>
+            <span class="badge bg-primary">{{ templates|length }} Templates</span>
+        </div>
+        <div class="card-body">
+            {% if templates %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="templatesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Header Text</th>
+                                <th>Letter Body Preview</th>
+                                <th>Date Format</th>
+                                <th>Status</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for template in templates %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ template.name }}</strong>
+                                        {% if template.is_default %}
+                                            <span class="badge bg-info ms-2">Default</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ template.header_text }}</td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 250px;">
+                                            {{ template.letter_body|slice:":100" }}{% if template.letter_body|length > 100 %}...{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ template.date_format }}</span>
+                                    </td>
+                                    <td>
+                                        {% if template.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'users:admission_letter_template_detail' template.id %}" class="btn btn-sm btn-outline-primary" title="View Template">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'users:admission_letter_template_update' template.id %}" class="btn btn-sm btn-outline-success" title="Edit Template">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'users:admission_letter_template_delete' template.id %}" class="btn btn-sm btn-outline-danger" title="Delete Template">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            <a href="{% url 'users:admission_letter_generate' %}?template_id={{ template.id }}" class="btn btn-sm btn-outline-info" title="Generate Admission Letter">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <img src="https://via.placeholder.com/150?text=No+Templates" alt="No Templates" class="mb-3 rounded">
+                    <h5>No Admission Letter Templates Found</h5>
+                    <p class="text-muted">Create your first template to generate admission letters for students.</p>
+                    <a href="{% url 'users:admission_letter_template_create' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-2"></i>Create New Template
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Tips and Instructions -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Template Tips</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <h5 class="alert-heading"><i class="fas fa-lightbulb me-2"></i>Getting Started with Templates</h5>
+                        <p>Admission letter templates allow you to create customized letters for new students. Use variables to personalize each letter.</p>
+                    </div>
+                    
+                    <h6 class="font-weight-bold">Available Variables:</h6>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Variable</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>{student_name}</code></td>
+                                    <td>Full name of the student</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{student_id}</code></td>
+                                    <td>Student's ID number</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{parent_name}</code></td>
+                                    <td>Name of the parent/guardian</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{class_name}</code></td>
+                                    <td>Class the student is admitted to</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{admission_date}</code></td>
+                                    <td>Date of admission</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{academic_year}</code></td>
+                                    <td>Current academic year</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{school_name}</code></td>
+                                    <td>Name of the school</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{principal_name}</code></td>
+                                    <td>Name of the principal</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Make sure all template variables are surrounded by curly braces (e.g., <code>{student_name}</code>).
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-left-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-plus-circle text-primary me-2"></i>New Template</h5>
+                                    <p class="card-text">Create a new admission letter template from scratch.</p>
+                                    <a href="{% url 'users:admission_letter_template_create' %}" class="btn btn-sm btn-primary">Create Template</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-left-success">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-file-alt text-success me-2"></i>Generate Letters</h5>
+                                    <p class="card-text">Create admission letters for new students.</p>
+                                    <a href="{% url 'users:admission_letter_list' %}" class="btn btn-sm btn-success">Manage Letters</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-left-info">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-copy text-info me-2"></i>Duplicate Template</h5>
+                                    <p class="card-text">Clone an existing template as a starting point.</p>
+                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#duplicateModal">Duplicate</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-left-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-download text-warning me-2"></i>Import/Export</h5>
+                                    <p class="card-text">Import or export templates for backup or sharing.</p>
+                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#importExportModal">Import/Export</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Duplicate Template Modal -->
+<div class="modal fade" id="duplicateModal" tabindex="-1" aria-labelledby="duplicateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="duplicateModalLabel">Duplicate Template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'users:admission_letter_template_duplicate' %}" method="post" id="duplicateForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="templateToDuplicate" class="form-label">Select Template to Duplicate</label>
+                        <select class="form-select" id="templateToDuplicate" name="template_id" required>
+                            <option value="" selected disabled>Choose a template...</option>
+                            {% for template in templates %}
+                                <option value="{{ template.id }}">{{ template.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newTemplateName" class="form-label">New Template Name</label>
+                        <input type="text" class="form-control" id="newTemplateName" name="new_name" required
+                               placeholder="Copy of [Template Name]">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="duplicateForm" class="btn btn-primary">Duplicate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import/Export Modal -->
+<div class="modal fade" id="importExportModal" tabindex="-1" aria-labelledby="importExportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importExportModalLabel">Import/Export Templates</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="importExportTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="import-tab" data-bs-toggle="tab" 
+                                data-bs-target="#import-tab-pane" type="button" role="tab" 
+                                aria-controls="import-tab-pane" aria-selected="true">Import</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="export-tab" data-bs-toggle="tab" 
+                                data-bs-target="#export-tab-pane" type="button" role="tab" 
+                                aria-controls="export-tab-pane" aria-selected="false">Export</button>
+                    </li>
+                </ul>
+                <div class="tab-content pt-3" id="importExportTabContent">
+                    <div class="tab-pane fade show active" id="import-tab-pane" role="tabpanel" 
+                         aria-labelledby="import-tab" tabindex="0">
+                        <form action="{% url 'users:admission_letter_template_import' %}" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="importFile" class="form-label">Select Template File</label>
+                                <input class="form-control" type="file" id="importFile" name="template_file" accept=".json">
+                                <div class="form-text">Upload a previously exported template file (.json)</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Import Template</button>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="export-tab-pane" role="tabpanel" 
+                         aria-labelledby="export-tab" tabindex="0">
+                        <form action="{% url 'users:admission_letter_template_export' %}" method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="templateToExport" class="form-label">Select Template to Export</label>
+                                <select class="form-select" id="templateToExport" name="template_id" required>
+                                    <option value="" selected disabled>Choose a template...</option>
+                                    {% for template in templates %}
+                                        <option value="{{ template.id }}">{{ template.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Export Template</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-updating the new template name when selecting a template to duplicate
+        const templateToDuplicate = document.getElementById('templateToDuplicate');
+        const newTemplateName = document.getElementById('newTemplateName');
+        
+        if (templateToDuplicate && newTemplateName) {
+            templateToDuplicate.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.value) {
+                    newTemplateName.value = `Copy of ${selectedOption.text}`;
+                }
+            });
+        }
+        
+        // DataTable initialization (if available)
+        if ($.fn.DataTable && document.getElementById('templatesTable')) {
+            $('#templatesTable').DataTable({
+                "pageLength": 10,
+                "ordering": true,
+                "info": true,
+                "language": {
+                    "search": "Quick search:",
+                    "zeroRecords": "No matching templates found",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ templates",
+                    "infoEmpty": "No templates available",
+                    "infoFiltered": "(filtered from _MAX_ total templates)"
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

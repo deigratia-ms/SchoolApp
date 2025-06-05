@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payslip - {{ payslip.payslip_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin: 5px 0;
+        }
+        .header p {
+            margin: 5px 0;
+        }
+        .logo {
+            max-height: 80px;
+            margin-bottom: 10px;
+        }
+        .info-section {
+            margin-bottom: 20px;
+            width: 100%;
+            clear: both;
+        }
+        .info-section:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        .info-left {
+            float: left;
+            width: 48%;
+        }
+        .info-right {
+            float: right;
+            width: 48%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table.bordered {
+            border: 1px solid #ddd;
+        }
+        table.bordered th,
+        table.bordered td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            text-align: left;
+            background-color: #f5f5f5;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f5f5f5;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .net-pay {
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .signature {
+            margin-top: 50px;
+            border-top: 1px solid #333;
+            width: 200px;
+            padding-top: 5px;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            {% if school_settings.logo %}
+                <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }} Logo" class="logo">
+            {% endif %}
+            <h1>{{ school_settings.school_name|default:"Ricas School Management System" }}</h1>
+            <p>{{ school_settings.address|default:"" }}</p>
+            <p>Tel: {{ school_settings.phone|default:"" }} | Email: {{ school_settings.email|default:"" }}</p>
+            <h2>PAYSLIP</h2>
+        </div>
+        
+        <!-- Employee Information -->
+        <div class="info-section">
+            <div class="info-left">
+                <table>
+                    <tr>
+                        <th width="40%">Employee Name:</th>
+                        <td>{{ payslip.payroll.staff_salary.user.get_full_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Employee ID:</th>
+                        <td>{{ payslip.payroll.staff_salary.user.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Designation:</th>
+                        <td>{{ payslip.payroll.staff_salary.role.name|default:"Not Assigned" }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="info-right">
+                <table>
+                    <tr>
+                        <th width="40%">Payslip No:</th>
+                        <td>{{ payslip.payslip_number }}</td>
+                    </tr>
+                    <tr>
+                        <th>Pay Period:</th>
+                        <td>{{ payslip.payroll.period.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Payment Date:</th>
+                        <td>{{ payslip.payroll.payment.payment_date|date:"M d, Y"|default:"-" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Earnings and Deductions -->
+        <div class="info-section">
+            <div class="info-left">
+                <h3>Earnings</h3>
+                <table class="bordered">
+                    <tr>
+                        <th>Description</th>
+                        <th class="text-right">Amount (GH₵)</th>
+                    </tr>
+                    <tr>
+                        <td>Basic Salary</td>
+                        <td class="text-right">{{ payslip.payroll.base_salary|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Transport Allowance</td>
+                        <td class="text-right">{{ payslip.payroll.transport_allowance|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Housing Allowance</td>
+                        <td class="text-right">{{ payslip.payroll.housing_allowance|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Other Allowances</td>
+                        <td class="text-right">{{ payslip.payroll.other_allowances|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Gross Earnings</td>
+                        <td class="text-right">{{ payslip.payroll.gross_salary|floatformat:2 }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="info-right">
+                <h3>Deductions</h3>
+                <table class="bordered">
+                    <tr>
+                        <th>Description</th>
+                        <th class="text-right">Amount (GH₵)</th>
+                    </tr>
+                    <tr>
+                        <td>SSNIT Contribution</td>
+                        <td class="text-right">{{ payslip.payroll.ssnit_deduction|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Income Tax</td>
+                        <td class="text-right">{{ payslip.payroll.tax_deduction|floatformat:2 }}</td>
+                    </tr>
+                    {% if payslip.payroll.other_deductions > 0 %}
+                        <tr>
+                            <td>Other Deductions</td>
+                            <td class="text-right">{{ payslip.payroll.other_deductions|floatformat:2 }}</td>
+                        </tr>
+                    {% endif %}
+                    <tr class="total-row">
+                        <td>Total Deductions</td>
+                        <td class="text-right">{{ payslip.payroll.total_deductions|floatformat:2 }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Net Pay -->
+        <div class="net-pay">
+            <div class="info-section">
+                <div class="info-left">
+                    <h3>Net Pay: GH₵ {{ payslip.payroll.net_salary|floatformat:2 }}</h3>
+                </div>
+                <div class="info-right">
+                    <h3>Amount in Words: {{ amount_in_words }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Signature -->
+        <div class="info-section">
+            <div class="info-left">
+                <div class="signature">
+                    <p>{{ school_settings.principal_name|default:"Principal" }}</p>
+                    <p>Principal</p>
+                </div>
+            </div>
+            <div class="info-right" style="text-align: right;">
+                <p>Generated on: {{ payslip.generated_at|date:"M d, Y H:i" }}</p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>This is a computer-generated payslip and does not require a signature.</p>
+        </div>
+    </div>
+</body>
+</html>

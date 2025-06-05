@@ -1,0 +1,190 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Terms of Service content styling */
+    .terms-of-service-content {
+        max-width: 100%;
+    }
+
+    .terms-of-service-content h1,
+    .terms-of-service-content h2,
+    .terms-of-service-content h3,
+    .terms-of-service-content h4,
+    .terms-of-service-content h5,
+    .terms-of-service-content h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .terms-of-service-content p {
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+    .terms-of-service-content ul,
+    .terms-of-service-content ol {
+        margin-bottom: 1rem;
+        padding-left: 2rem;
+    }
+
+    .terms-of-service-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .terms-of-service-content table {
+        width: 100%;
+        margin-bottom: 1rem;
+        border-collapse: collapse;
+    }
+
+    .terms-of-service-content table, .terms-of-service-content th, .terms-of-service-content td {
+        border: 1px solid #dee2e6;
+    }
+
+    .terms-of-service-content th, .terms-of-service-content td {
+        padding: 0.75rem;
+        vertical-align: top;
+    }
+
+    .terms-of-service-content th {
+        background-color: #f8f9fa;
+    }
+
+    /* Make sure content doesn't overflow */
+    .terms-of-service-content img {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+{% endblock %}
+
+{% block title %}Terms of Service | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+{% if terms_hero and terms_hero.image %}
+<!-- Use terms hero image if available -->
+<section class="hero-banner" style="background-image: url('{{ terms_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ terms_hero.title|default:"Terms of Service" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ terms_hero.content|default:"Please read these terms carefully before using our website and services." }}
+        </p>
+    </div>
+</section>
+{% elif contact_hero and contact_hero.image %}
+<!-- Use contact hero image as fallback -->
+<section class="hero-banner" style="background-image: url('{{ contact_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ terms_hero.title|default:"Terms of Service" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ terms_hero.content|default:"Please read these terms carefully before using our website and services." }}
+        </p>
+    </div>
+</section>
+{% else %}
+<!-- Fallback to color background if no images available -->
+<section class="py-5 bg-primary-teal text-white text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-4" data-aos="fade-up">Terms of Service</h1>
+                <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                    Please read these terms carefully before using our website and services.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Terms of Service Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4 p-lg-5">
+                        {% if terms_content and terms_content.content %}
+                            <div class="terms-of-service-content">
+                                {{ terms_content.content|safe }}
+                            </div>
+                        {% else %}
+                            <div class="terms-of-service-content">
+                                <h2 class="mb-4">Terms of Service</h2>
+                                <p class="text-muted">Last updated: January 1, 2023</p>
+
+                                <h4 class="mt-5 mb-3">1. Acceptance of Terms</h4>
+                                <p>By accessing or using the Deigratia Montessori School website, school management system, and related services (collectively, the "Services"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Services.</p>
+
+                                <h4 class="mt-5 mb-3">2. Description of Services</h4>
+                                <p>Deigratia Montessori School provides educational services, information about our programs, and online tools for students, parents, and staff. Our Services include our website, school management system, communication platforms, and other related services.</p>
+
+                                <h4 class="mt-5 mb-3">3. User Accounts</h4>
+                                <p>Some features of our Services require you to create an account. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to:</p>
+                                <ul>
+                                    <li>Provide accurate and complete information when creating your account</li>
+                                    <li>Update your information as necessary to keep it current</li>
+                                    <li>Notify us immediately of any unauthorized use of your account</li>
+                                    <li>Ensure that you log out of your account at the end of each session</li>
+                                </ul>
+
+                                <h4 class="mt-5 mb-3">4. User Conduct</h4>
+                                <p>When using our Services, you agree not to:</p>
+                                <ul>
+                                    <li>Violate any applicable laws or regulations</li>
+                                    <li>Infringe upon the rights of others</li>
+                                    <li>Interfere with or disrupt the Services or servers</li>
+                                    <li>Attempt to gain unauthorized access to any part of the Services</li>
+                                    <li>Use the Services for any illegal or unauthorized purpose</li>
+                                    <li>Transmit any viruses, malware, or other harmful code</li>
+                                    <li>Collect or harvest any information from the Services without authorization</li>
+                                </ul>
+
+                                <h4 class="mt-5 mb-3">5. Intellectual Property</h4>
+                                <p>All content, features, and functionality of our Services, including but not limited to text, graphics, logos, icons, images, audio clips, digital downloads, and software, are owned by Deigratia Montessori School or its licensors and are protected by copyright, trademark, and other intellectual property laws.</p>
+                                <p>You may not reproduce, distribute, modify, create derivative works of, publicly display, publicly perform, republish, download, store, or transmit any of the material on our Services without our prior written consent.</p>
+
+                                <h4 class="mt-5 mb-3">6. Third-Party Links and Content</h4>
+                                <p>Our Services may contain links to third-party websites or services that are not owned or controlled by Deigratia Montessori School. We have no control over, and assume no responsibility for, the content, privacy policies, or practices of any third-party websites or services. You acknowledge and agree that we shall not be responsible or liable for any damage or loss caused by your use of any such websites or services.</p>
+
+                                <h4 class="mt-5 mb-3">7. Disclaimer of Warranties</h4>
+                                <p>Our Services are provided on an "as is" and "as available" basis, without any warranties of any kind, either express or implied. We do not guarantee that our Services will be uninterrupted, secure, or error-free.</p>
+
+                                <h4 class="mt-5 mb-3">8. Limitation of Liability</h4>
+                                <p>To the fullest extent permitted by applicable law, Deigratia Montessori School shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Services.</p>
+
+                                <h4 class="mt-5 mb-3">9. Indemnification</h4>
+                                <p>You agree to defend, indemnify, and hold harmless Deigratia Montessori School, its officers, directors, employees, and agents, from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to your violation of these Terms of Service or your use of the Services.</p>
+
+                                <h4 class="mt-5 mb-3">10. Modifications to Terms</h4>
+                                <p>We reserve the right to modify these Terms of Service at any time. If we make changes, we will provide notice by posting the updated terms on our website and updating the "Last updated" date. Your continued use of the Services after any such changes constitutes your acceptance of the new Terms of Service.</p>
+
+                                <h4 class="mt-5 mb-3">11. Governing Law</h4>
+                                <p>These Terms of Service shall be governed by and construed in accordance with the laws of the state where Deigratia Montessori School is located, without regard to its conflict of law provisions.</p>
+
+                                <h4 class="mt-5 mb-3">12. Contact Information</h4>
+                                <p>If you have any questions about these Terms of Service, please contact us at:</p>
+                                <address>
+                                    <strong>Deigratia Montessori School</strong><br>
+                                    {{ site_settings.address|default:"123 School Street, City, State, ZIP" }}<br>
+                                    Email: {{ site_settings.contact_email|default:"info@deigratia.edu" }}<br>
+                                    Phone: {{ site_settings.contact_phone|default:"(123) 456-7890" }}
+                                </address>
+                            </div>
+                        {% endif %}
+
+                        <div class="text-center mt-5">
+                            <p class="text-muted">If you have any questions about our Terms of Service, please <a href="{% url 'website:contact' %}">contact us</a>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

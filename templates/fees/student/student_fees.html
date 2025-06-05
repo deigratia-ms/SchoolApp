@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}My Fees - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">My Fees</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">My Fees</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Term Selection -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="term" class="form-label">Select Term</label>
+          <select name="term" id="term" class="form-select" onchange="this.form.submit()">
+            {% for term_option in terms %}
+              <option value="{{ term_option.id }}" {% if term.id == term_option.id %}selected{% endif %}>
+                {{ term_option.name }} ({{ term_option.academic_year }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            Showing fees for: <strong>{{ term.name }} ({{ term.academic_year }})</strong>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Fee Summary Card -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Fee Summary</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3 mb-3 mb-md-0">
+          <div class="card bg-light h-100">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-2">Total Fees</h6>
+              <h3 class="mb-0">GHS {{ total_amount|floatformat:2 }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+          <div class="card bg-light h-100">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-2">Amount Paid</h6>
+              <h3 class="mb-0 text-success">GHS {{ total_paid|floatformat:2 }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+          <div class="card bg-light h-100">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-2">Outstanding Balance</h6>
+              <h3 class="mb-0 {% if total_balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                GHS {{ total_balance|floatformat:2 }}
+              </h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+          <div class="card bg-light h-100">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-2">Payment Progress</h6>
+              <div class="progress mt-2" style="height: 20px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ payment_percentage }}%;"
+                     aria-valuenow="{{ payment_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                  {{ payment_percentage|floatformat:1 }}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee Details Table -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Fee Details</h5>
+    </div>
+    <div class="card-body">
+      {% if student_fees %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Fee Type</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Paid</th>
+                <th>Balance</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fee in student_fees %}
+                <tr>
+                  <td>{{ fee.class_fee.fee_category.name }}</td>
+                  <td>{{ fee.class_fee.description|default:"" }}</td>
+                  <td>GHS {{ fee.amount|floatformat:2 }}</td>
+                  <td>GHS {{ fee.amount_paid|floatformat:2 }}</td>
+                  <td>GHS {{ fee.balance|floatformat:2 }}</td>
+                  <td>{{ fee.due_date|date:"M d, Y" }}</td>
+                  <td>
+                    {% if fee.status == 'PAID' %}
+                      <span class="badge bg-success">Paid</span>
+                    {% elif fee.status == 'PARTIALLY_PAID' %}
+                      <span class="badge bg-warning text-dark">Partially Paid</span>
+                    {% elif fee.status == 'OVERDUE' %}
+                      <span class="badge bg-danger">Overdue</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if user.is_admin or user.is_accountant or user.is_parent %}
+                      <a href="{% url 'fees:student_fee_invoice' student.id fee.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-file-invoice me-1"></i>Invoice
+                      </a>
+                    {% else %}
+                      <span class="text-muted"><i class="fas fa-lock me-1"></i>Not available</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No fee records found for this term.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Payment History -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Recent Payments</h5>
+      <a href="{% url 'fees:student_payment_history' student.id %}" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-history me-1"></i>View All
+      </a>
+    </div>
+    <div class="card-body">
+      {% if recent_payments %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Fee Type</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Receipt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in recent_payments %}
+                <tr>
+                  <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                  <td>{{ payment.student_fee.class_fee.fee_category.name }}</td>
+                  <td>GHS {{ payment.amount|floatformat:2 }}</td>
+                  <td>{{ payment.get_payment_method_display }}</td>
+                  <td>
+                    {% if payment.receipt %}
+                      <a href="{% url 'fees:receipt_detail' payment.receipt.id %}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-receipt me-1"></i>{{ payment.receipt.receipt_number }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">No receipt</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No payment records found.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

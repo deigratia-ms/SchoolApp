@@ -1,0 +1,1041 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Reports | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Attendance Reports</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'attendance:home' %}">Attendance</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Reports</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <button id="printReport" class="btn btn-secondary">
+                <i class="fas fa-print me-2"></i>Print
+            </button>
+            <a href="{% url 'attendance:export_report' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-primary">
+                <i class="fas fa-file-export me-2"></i>Export Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Report Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" id="reportForm" class="row g-3">
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from|date:'Y-m-d' }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to|date:'Y-m-d' }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="classroom" class="form-label">Class</label>
+                    <select class="form-select" id="classroom" name="classroom">
+                        <option value="">All Classes</option>
+                        {% for class in classrooms %}
+                        <option value="{{ class.id }}" {% if selected_classroom == class.id %}selected{% endif %}>
+                            {{ class.name }} {% if class.section %}({{ class.section }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="report_type" class="form-label">Report Type</label>
+                    <select class="form-select" id="report_type" name="report_type">
+                        <option value="daily" {% if report_type == 'daily' %}selected{% endif %}>Daily Summary</option>
+                        <option value="weekly" {% if report_type == 'weekly' %}selected{% endif %}>Weekly Analysis</option>
+                        <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Monthly Trends</option>
+                        <option value="student" {% if report_type == 'student' %}selected{% endif %}>Student Comparison</option>
+                        <option value="class" {% if report_type == 'class' %}selected{% endif %}>Class Comparison</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3 student-filter" style="display: {% if report_type == 'student' %}block{% else %}none{% endif %};">
+                    <label for="student" class="form-label">Student</label>
+                    <select class="form-select" id="student" name="student">
+                        <option value="">All Students</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}" {% if selected_student == student.id %}selected{% endif %}>
+                            {{ student.user.get_full_name }} ({{ student.id_number }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3 class-filter" style="display: {% if report_type == 'class' %}block{% else %}none{% endif %};">
+                    <label for="compare_class" class="form-label">Compare With</label>
+                    <select class="form-select" id="compare_class" name="compare_class">
+                        <option value="">Select Class</option>
+                        {% for class in classrooms %}
+                        <option value="{{ class.id }}" {% if compare_classroom == class.id %}selected{% endif %}>
+                            {{ class.name }} {% if class.section %}({{ class.section }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="status_filter" class="form-label">Status Filter</label>
+                    <select class="form-select" id="status_filter" name="status_filter">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="present" {% if status_filter == 'present' %}selected{% endif %}>Present Only</option>
+                        <option value="absent" {% if status_filter == 'absent' %}selected{% endif %}>Absent Only</option>
+                        <option value="late" {% if status_filter == 'late' %}selected{% endif %}>Late Only</option>
+                        <option value="excused" {% if status_filter == 'excused' %}selected{% endif %}>Excused Only</option>
+                        <option value="problem" {% if status_filter == 'problem' %}selected{% endif %}>Absence Issues</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-primary me-2">Generate Report</button>
+                    <button type="reset" class="btn btn-secondary">Reset Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Content -->
+    <div class="card shadow mb-4" id="reportContent">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">{{ report_title|default:"Attendance Report" }}</h6>
+            <p class="m-0 small text-muted">{{ date_from|date:"M d, Y" }} to {{ date_to|date:"M d, Y" }}</p>
+        </div>
+        <div class="card-body">
+            {% if report_data %}
+                <!-- Summary Statistics -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-success h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Present
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ report_data.present_count }}</div>
+                                        <div class="mt-2 text-xs text-dark">{{ report_data.present_percentage|floatformat:1 }}% of total</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-danger h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                            Absent
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ report_data.absent_count }}</div>
+                                        <div class="mt-2 text-xs text-dark">{{ report_data.absent_percentage|floatformat:1 }}% of total</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-warning h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Late
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ report_data.late_count }}</div>
+                                        <div class="mt-2 text-xs text-dark">{{ report_data.late_percentage|floatformat:1 }}% of total</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-info h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Excused
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ report_data.excused_count }}</div>
+                                        <div class="mt-2 text-xs text-dark">{{ report_data.excused_percentage|floatformat:1 }}% of total</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Overview Chart -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4 class="h5 mb-3">Attendance Overview</h4>
+                        <div class="chart-container" style="position: relative; height:300px;">
+                            <canvas id="overviewChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Report Based on Type -->
+                {% if report_type == 'daily' %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="h5 mb-3">Daily Attendance Summary</h4>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Present</th>
+                                            <th>Absent</th>
+                                            <th>Late</th>
+                                            <th>Excused</th>
+                                            <th>Total</th>
+                                            <th>Attendance Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for day in report_data.daily_data %}
+                                        <tr>
+                                            <td>{{ day.date|date:"l, M d" }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ day.present }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ day.absent }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning text-dark">{{ day.late }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ day.excused }}</span>
+                                            </td>
+                                            <td class="text-center">{{ day.total }}</td>
+                                            <td class="text-center">
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ day.attendance_rate }}%;" 
+                                                         aria-valuenow="{{ day.attendance_rate }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                                <span class="small">
+                                                    {{ day.attendance_rate|floatformat:1 }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% elif report_type == 'weekly' %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="h5 mb-3">Weekly Attendance Analysis</h4>
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="weeklyChart"></canvas>
+                            </div>
+                            <div class="table-responsive mt-4">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Week</th>
+                                            <th>Present</th>
+                                            <th>Absent</th>
+                                            <th>Late</th>
+                                            <th>Excused</th>
+                                            <th>Total</th>
+                                            <th>Attendance Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for week in report_data.weekly_data %}
+                                        <tr>
+                                            <td>{{ week.start_date|date:"M d" }} - {{ week.end_date|date:"M d" }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ week.present }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ week.absent }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning text-dark">{{ week.late }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ week.excused }}</span>
+                                            </td>
+                                            <td class="text-center">{{ week.total }}</td>
+                                            <td class="text-center">
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ week.attendance_rate }}%;" 
+                                                         aria-valuenow="{{ week.attendance_rate }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                                <span class="small">
+                                                    {{ week.attendance_rate|floatformat:1 }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% elif report_type == 'monthly' %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="h5 mb-3">Monthly Attendance Trends</h4>
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                            <div class="table-responsive mt-4">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Present</th>
+                                            <th>Absent</th>
+                                            <th>Late</th>
+                                            <th>Excused</th>
+                                            <th>Total</th>
+                                            <th>Attendance Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for month in report_data.monthly_data %}
+                                        <tr>
+                                            <td>{{ month.month_name }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ month.present }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ month.absent }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning text-dark">{{ month.late }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ month.excused }}</span>
+                                            </td>
+                                            <td class="text-center">{{ month.total }}</td>
+                                            <td class="text-center">
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ month.attendance_rate }}%;" 
+                                                         aria-valuenow="{{ month.attendance_rate }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                                <span class="small">
+                                                    {{ month.attendance_rate|floatformat:1 }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% elif report_type == 'student' %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="h5 mb-3">Student Attendance Comparison</h4>
+                            {% if selected_student %}
+                                <div class="alert alert-info">
+                                    Showing detailed attendance for: <strong>{{ selected_student_name }}</strong>
+                                </div>
+                                <div class="chart-container" style="position: relative; height:300px;">
+                                    <canvas id="studentDetailChart"></canvas>
+                                </div>
+                            {% else %}
+                                <div class="chart-container" style="position: relative; height:400px;">
+                                    <canvas id="studentComparisonChart"></canvas>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="table-responsive mt-4">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>ID</th>
+                                            <th>Present</th>
+                                            <th>Absent</th>
+                                            <th>Late</th>
+                                            <th>Excused</th>
+                                            <th>Attendance Rate</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in report_data.student_data %}
+                                        <tr>
+                                            <td>{{ student.name }}</td>
+                                            <td>{{ student.id_number }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ student.present }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ student.absent }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning text-dark">{{ student.late }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ student.excused }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ student.attendance_rate }}%;" 
+                                                         aria-valuenow="{{ student.attendance_rate }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                                <span class="small">
+                                                    {{ student.attendance_rate|floatformat:1 }}%
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'attendance:student_record' student.id %}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-user me-1"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% elif report_type == 'class' %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="h5 mb-3">Class Attendance Comparison</h4>
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="classComparisonChart"></canvas>
+                            </div>
+                            <div class="table-responsive mt-4">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Class</th>
+                                            <th>Total Students</th>
+                                            <th>Present</th>
+                                            <th>Absent</th>
+                                            <th>Late</th>
+                                            <th>Excused</th>
+                                            <th>Attendance Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for class in report_data.class_data %}
+                                        <tr>
+                                            <td>{{ class.name }}</td>
+                                            <td class="text-center">{{ class.total_students }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ class.present }}</span>
+                                                <span class="small">({{ class.present_percentage|floatformat:1 }}%)</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ class.absent }}</span>
+                                                <span class="small">({{ class.absent_percentage|floatformat:1 }}%)</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning text-dark">{{ class.late }}</span>
+                                                <span class="small">({{ class.late_percentage|floatformat:1 }}%)</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ class.excused }}</span>
+                                                <span class="small">({{ class.excused_percentage|floatformat:1 }}%)</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ class.attendance_rate }}%;" 
+                                                         aria-valuenow="{{ class.attendance_rate }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                                <span class="small">
+                                                    {{ class.attendance_rate|floatformat:1 }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Students at Risk of Poor Attendance -->
+                {% if report_data.at_risk_students %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4 class="h5 mb-3">Students at Risk (Attendance Below 75%)</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>ID</th>
+                                        <th>Class</th>
+                                        <th>Present</th>
+                                        <th>Absent</th>
+                                        <th>Late</th>
+                                        <th>Attendance Rate</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in report_data.at_risk_students %}
+                                    <tr>
+                                        <td>{{ student.name }}</td>
+                                        <td>{{ student.id_number }}</td>
+                                        <td>{{ student.class_name }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">{{ student.present }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger">{{ student.absent }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-warning text-dark">{{ student.late }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar bg-danger" role="progressbar" 
+                                                     style="width: {{ student.attendance_rate }}%;" 
+                                                     aria-valuenow="{{ student.attendance_rate }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span class="small text-danger fw-bold">
+                                                {{ student.attendance_rate|floatformat:1 }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'attendance:student_record' student.id %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-user me-1"></i> View
+                                            </a>
+                                            <a href="{% url 'communications:compose' %}?recipient={{ student.parent_id }}" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-envelope me-1"></i> Contact Parent
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar fa-3x mb-3 text-muted"></i>
+                    <p class="text-muted">Select filters and click "Generate Report" to view attendance reports.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide conditional filters based on report type
+        const reportTypeSelect = document.getElementById('report_type');
+        const studentFilter = document.querySelector('.student-filter');
+        const classFilter = document.querySelector('.class-filter');
+        
+        if (reportTypeSelect) {
+            reportTypeSelect.addEventListener('change', function() {
+                const reportType = this.value;
+                
+                if (reportType === 'student') {
+                    studentFilter.style.display = 'block';
+                    classFilter.style.display = 'none';
+                } else if (reportType === 'class') {
+                    studentFilter.style.display = 'none';
+                    classFilter.style.display = 'block';
+                } else {
+                    studentFilter.style.display = 'none';
+                    classFilter.style.display = 'none';
+                }
+            });
+        }
+        
+        // Reset button functionality
+        const resetButton = document.querySelector('button[type="reset"]');
+        if (resetButton) {
+            resetButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = "{% url 'attendance:reports' %}";
+            });
+        }
+        
+        // Print functionality
+        const printButton = document.getElementById('printReport');
+        if (printButton) {
+            printButton.addEventListener('click', function() {
+                window.print();
+            });
+        }
+        
+        // Charts
+        {% if report_data %}
+            // Overview Chart
+            const overviewCtx = document.getElementById('overviewChart');
+            if (overviewCtx) {
+                new Chart(overviewCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Present', 'Absent', 'Late', 'Excused'],
+                        datasets: [{
+                            data: [
+                                {{ report_data.present_count }}, 
+                                {{ report_data.absent_count }}, 
+                                {{ report_data.late_count }}, 
+                                {{ report_data.excused_count }}
+                            ],
+                            backgroundColor: [
+                                'rgba(40, 167, 69, 0.8)',
+                                'rgba(220, 53, 69, 0.8)',
+                                'rgba(255, 193, 7, 0.8)',
+                                'rgba(23, 162, 184, 0.8)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Weekly Chart
+            {% if report_type == 'weekly' %}
+            const weeklyCtx = document.getElementById('weeklyChart');
+            if (weeklyCtx) {
+                new Chart(weeklyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [{% for week in report_data.weekly_data %}'{{ week.start_date|date:"M d" }} - {{ week.end_date|date:"M d" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                        datasets: [
+                            {
+                                label: 'Present',
+                                data: [{% for week in report_data.weekly_data %}{{ week.present }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Absent',
+                                data: [{% for week in report_data.weekly_data %}{{ week.absent }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Late',
+                                data: [{% for week in report_data.weekly_data %}{{ week.late }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Excused',
+                                data: [{% for week in report_data.weekly_data %}{{ week.excused }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(23, 162, 184, 0.8)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        }
+                    }
+                });
+            }
+            {% endif %}
+            
+            // Monthly Chart
+            {% if report_type == 'monthly' %}
+            const monthlyCtx = document.getElementById('monthlyChart');
+            if (monthlyCtx) {
+                new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [{% for month in report_data.monthly_data %}'{{ month.month_name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                        datasets: [
+                            {
+                                label: 'Present Rate',
+                                data: [{% for month in report_data.monthly_data %}{{ month.attendance_rate|floatformat:1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 2,
+                                tension: 0.1,
+                                yAxisID: 'y-percent'
+                            },
+                            {
+                                label: 'Absent Rate',
+                                data: [{% for month in report_data.monthly_data %}{{ month.absent_percentage|floatformat:1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                                borderColor: 'rgba(220, 53, 69, 1)',
+                                borderWidth: 2,
+                                tension: 0.1,
+                                yAxisID: 'y-percent'
+                            },
+                            {
+                                label: 'Total Students',
+                                data: [{% for month in report_data.monthly_data %}{{ month.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(108, 117, 125, 0.2)',
+                                borderColor: 'rgba(108, 117, 125, 1)',
+                                borderWidth: 2,
+                                tension: 0.1,
+                                yAxisID: 'y-count'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            'y-percent': {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)'
+                                },
+                                min: 0,
+                                max: 100
+                            },
+                            'y-count': {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Student Count'
+                                },
+                                min: 0,
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        }
+                    }
+                });
+            }
+            {% endif %}
+            
+            // Student Comparison Chart
+            {% if report_type == 'student' and not selected_student %}
+            const studentComparisonCtx = document.getElementById('studentComparisonChart');
+            if (studentComparisonCtx) {
+                new Chart(studentComparisonCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [{% for student in report_data.student_data %}'{{ student.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                        datasets: [
+                            {
+                                label: 'Present',
+                                data: [{% for student in report_data.student_data %}{{ student.present }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Absent',
+                                data: [{% for student in report_data.student_data %}{{ student.absent }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Late',
+                                data: [{% for student in report_data.student_data %}{{ student.late }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Excused',
+                                data: [{% for student in report_data.student_data %}{{ student.excused }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: 'rgba(23, 162, 184, 0.8)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            },
+                            y: {
+                                stacked: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        }
+                    }
+                });
+            }
+            {% endif %}
+            
+            // Student Detail Chart
+            {% if report_type == 'student' and selected_student %}
+            const studentDetailCtx = document.getElementById('studentDetailChart');
+            if (studentDetailCtx) {
+                const studentData = {{ report_data.student_detail_data|safe }};
+                
+                new Chart(studentDetailCtx, {
+                    type: 'line',
+                    data: {
+                        labels: studentData.labels,
+                        datasets: [
+                            {
+                                label: 'Present',
+                                data: studentData.present,
+                                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 2,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Absent',
+                                data: studentData.absent,
+                                backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                                borderColor: 'rgba(220, 53, 69, 1)',
+                                borderWidth: 2,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Late',
+                                data: studentData.late,
+                                backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                                borderColor: 'rgba(255, 193, 7, 1)',
+                                borderWidth: 2,
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        }
+                    }
+                });
+            }
+            {% endif %}
+            
+            // Class Comparison Chart
+            {% if report_type == 'class' %}
+            const classComparisonCtx = document.getElementById('classComparisonChart');
+            if (classComparisonCtx) {
+                new Chart(classComparisonCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Present Rate', 'Absent Rate', 'Late Rate', 'Excused Rate', 'Total Students'],
+                        datasets: [
+                            {% for class in report_data.class_data %}
+                            {
+                                label: '{{ class.name }}',
+                                data: [
+                                    {{ class.present_percentage|floatformat:1 }},
+                                    {{ class.absent_percentage|floatformat:1 }},
+                                    {{ class.late_percentage|floatformat:1 }},
+                                    {{ class.excused_percentage|floatformat:1 }},
+                                    {{ class.total_students }}
+                                ],
+                                backgroundColor: 'rgba({{ forloop.counter0 }}0, {{ forloop.counter0 }}0, {{ forloop.counter0 }}0, 0.2)',
+                                borderColor: 'rgba({{ forloop.counter0 }}0, {{ forloop.counter0 }}0, {{ forloop.counter0 }}0, 1)',
+                                borderWidth: 2
+                            }{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+            {% endif %}
+        {% endif %}
+    });
+</script>
+
+<style>
+    @media print {
+        .sidebar, .topbar, nav, form, .btn, .no-print {
+            display: none !important;
+        }
+        
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        .card-header {
+            background-color: #f8f9fc !important;
+            color: #000 !important;
+        }
+        
+        body {
+            font-size: 12pt;
+            color: #000;
+            background-color: #fff;
+        }
+        
+        .container-fluid {
+            width: 100%;
+            padding: 0;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            page-break-after: avoid;
+        }
+        
+        table {
+            page-break-inside: auto;
+        }
+        
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        
+        thead {
+            display: table-header-group;
+        }
+        
+        tfoot {
+            display: table-footer-group;
+        }
+    }
+</style>
+{% endblock %}

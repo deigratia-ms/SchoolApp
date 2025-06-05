@@ -1,0 +1,368 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">User Management</h1>
+        <a href="{% url 'users:create_user' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Add New User
+        </a>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Users</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="mb-0">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <label for="searchQuery" class="form-label">Search</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="searchQuery" name="search" 
+                                   placeholder="Name, email, username..." 
+                                   value="{{ search_query|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="roleFilter" class="form-label">Role</label>
+                        <select class="form-select" id="roleFilter" name="role">
+                            <option value="" {% if not role_filter %}selected{% endif %}>All Roles</option>
+                            <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Administrators</option>
+                            <option value="TEACHER" {% if role_filter == 'TEACHER' %}selected{% endif %}>Teachers</option>
+                            <option value="STUDENT" {% if role_filter == 'STUDENT' %}selected{% endif %}>Students</option>
+                            <option value="PARENT" {% if role_filter == 'PARENT' %}selected{% endif %}>Parents</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter" name="status">
+                            <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">User Directory</h6>
+            <span class="badge bg-primary">{{ users|length }} Users</span>
+        </div>
+        <div class="card-body">
+            {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="usersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 280px;">Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if user.profile_picture %}
+                                                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" 
+                                                     class="rounded-circle me-3" width="40" height="40">
+                                            {% else %}
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                                                     style="width: 40px; height: 40px;">
+                                                    <span>{{ user.first_name|first }}{{ user.last_name|first }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ user.get_full_name }}</div>
+                                                <div class="small text-muted">
+                                                    {% if user.is_teacher %}
+                                                        Teacher ID: {{ user.teacher.employee_id }}
+                                                    {% elif user.is_student %}
+                                                        Student ID: {{ user.student.student_id }}
+                                                    {% elif user.is_parent %}
+                                                        Parent of: 
+                                                        {% for child in user.parent.children.all %}
+                                                            {{ child.user.get_full_name }}{% if not forloop.last %}, {% endif %}
+                                                        {% empty %}
+                                                            No children linked
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        <span class="badge {% if user.is_admin %}bg-danger{% elif user.is_teacher %}bg-success{% elif user.is_student %}bg-primary{% elif user.is_parent %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ user.get_role_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if user.is_active and user.is_verified %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif user.is_active and not user.is_verified %}
+                                            <span class="badge bg-warning">Unverified</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'users:edit_user' user.id %}" class="btn btn-sm btn-outline-primary" title="Edit User">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-success" title="View Details"
+                                                    data-bs-toggle="modal" data-bs-target="#userDetailModal{{ user.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if user.is_student %}
+                                                <a href="{% url 'users:generate_id_card' user.id %}" class="btn btn-sm btn-outline-info" title="Generate ID Card">
+                                                    <i class="fas fa-id-card"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if user.id != request.user.id %}
+                                                <a href="{% url 'users:delete_user' user.id %}" class="btn btn-sm btn-outline-danger" title="Delete User">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- User Detail Modal -->
+                                <div class="modal fade" id="userDetailModal{{ user.id }}" tabindex="-1" aria-labelledby="userDetailModalLabel{{ user.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="userDetailModalLabel{{ user.id }}">User Details: {{ user.get_full_name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-4 text-center mb-4">
+                                                        {% if user.profile_picture %}
+                                                            <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" 
+                                                                class="rounded-circle mb-3" width="150" height="150">
+                                                        {% else %}
+                                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                                                style="width: 150px; height: 150px;">
+                                                                <span style="font-size: 48px;">{{ user.first_name|first }}{{ user.last_name|first }}</span>
+                                                            </div>
+                                                        {% endif %}
+                                                        <h5>{{ user.get_full_name }}</h5>
+                                                        <span class="badge {% if user.is_admin %}bg-danger{% elif user.is_teacher %}bg-success{% elif user.is_student %}bg-primary{% elif user.is_parent %}bg-info{% else %}bg-secondary{% endif %}">
+                                                            {{ user.get_role_display }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4 fw-bold">Email:</div>
+                                                <div class="col-sm-8">{{ user.email }}</div>
+                                            </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Phone:</div>
+                                                            <div class="col-sm-8">{{ user.phone_number|default:"Not provided" }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Date Joined:</div>
+                                                            <div class="col-sm-8">{{ user.date_joined|date:"F j, Y" }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Last Login:</div>
+                                                            <div class="col-sm-8">
+                                                                {% if user.last_login %}
+                                                                    {{ user.last_login|date:"F j, Y, g:i a" }}
+                                                                {% else %}
+                                                                    Never
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Role-specific information -->
+                                                        {% if user.is_student %}
+                                                            <h6 class="border-bottom pb-2 mb-3 mt-4">Student Information</h6>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Student ID:</div>
+                                                                <div class="col-sm-8">{{ user.student.student_id }}</div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Grade:</div>
+                                                                <div class="col-sm-8">{{ user.student.grade }}</div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Section:</div>
+                                                                <div class="col-sm-8">{{ user.student.section }}</div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">PIN:</div>
+                                                                <div class="col-sm-8">{{ user.student.pin }}</div>
+                                                            </div>
+                                                        {% elif user.is_teacher %}
+                                                            <h6 class="border-bottom pb-2 mb-3 mt-4">Teacher Information</h6>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Employee ID:</div>
+                                                                <div class="col-sm-8">{{ user.teacher.employee_id }}</div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Department:</div>
+                                                                <div class="col-sm-8">{{ user.teacher.department }}</div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Qualification:</div>
+                                                                <div class="col-sm-8">{{ user.teacher.qualification }}</div>
+                                                            </div>
+                                                        {% elif user.is_parent %}
+                                                            <h6 class="border-bottom pb-2 mb-3 mt-4">Parent Information</h6>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Relationship:</div>
+                                                                <div class="col-sm-8">{{ user.parent.relationship }}</div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Occupation:</div>
+                                                                <div class="col-sm-8">{{ user.parent.occupation }}</div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-sm-4 fw-bold">Children:</div>
+                                                                <div class="col-sm-8">
+                                                                    <ul class="list-unstyled">
+                                                                    {% for child in user.parent.children.all %}
+                                                                        <li>
+                                                                            <a href="#" data-bs-toggle="modal" data-bs-target="#userDetailModal{{ child.user.id }}">
+                                                                                {{ child.user.get_full_name }} ({{ child.grade }})
+                                                                            </a>
+                                                                        </li>
+                                                                    {% empty %}
+                                                                        <li>No children linked</li>
+                                                                    {% endfor %}
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a href="{% url 'users:edit_user' user.id %}" class="btn btn-primary">
+                                                    <i class="fas fa-edit me-2"></i>Edit User
+                                                </a>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-users fa-3x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No users found</h5>
+                    <p class="text-muted">
+                        {% if role_filter or search_query %}
+                            No users match your current filters. Try adjusting your search criteria.
+                        {% else %}
+                            There are no users in the system yet. Start by adding a new user.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'users:create_user' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-user-plus me-2"></i>Add New User
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 border-left-primary">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-user-graduate text-primary me-2"></i>Student Management</h5>
+                    <p class="card-text">Register new students, manage student information, and link to parents.</p>
+                    <a href="{% url 'users:register_student' %}" class="btn btn-sm btn-primary">Register Student</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 border-left-success">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-chalkboard-teacher text-success me-2"></i>Teacher Management</h5>
+                    <p class="card-text">Register new teachers, assign subjects, and manage teacher records.</p>
+                    <a href="{% url 'users:register_teacher' %}" class="btn btn-sm btn-success">Register Teacher</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 border-left-info">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-users text-info me-2"></i>Parent Management</h5>
+                    <p class="card-text">Register new parents and link them to their children.</p>
+                    <div class="btn-group">
+                        <a href="{% url 'users:register_parent' %}" class="btn btn-sm btn-info">Register Parent</a>
+                        <a href="{% url 'users:link_parent_to_child' %}" class="btn btn-sm btn-outline-info">Link to Child</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        if ($.fn.DataTable && document.getElementById('usersTable')) {
+            $('#usersTable').DataTable({
+                "pageLength": 25,
+                // Custom role-based sorting (students, parents, teachers, admins)
+                "columnDefs": [
+                    { "orderable": false, "targets": 4 }, // Disable sorting on actions column
+                    { 
+                        "targets": 2, // Role column (index adjusted after removing username)
+                        "type": "custom-role-sort",
+                        "render": function(data, type, row) {
+                            return data; // Return the cell data for rendering
+                        }
+                    }
+                ],
+                "order": [[2, 'asc']] // Sort by role column by default
+            });
+            
+            // Custom sorting function for roles
+            $.fn.dataTable.ext.type.order['custom-role-sort-pre'] = function(data) {
+                // Extract the role name from the badge HTML
+                const roleText = $(data).text().trim();
+                
+                // Assign sort values based on role (lower numbers come first)
+                if (roleText.includes('Student')) return 1;  // Students first
+                if (roleText.includes('Parent')) return 2;   // Parents second
+                if (roleText.includes('Teacher')) return 3;  // Teachers third
+                if (roleText.includes('Admin')) return 4;    // Admins last
+                return 5; // Any other role comes last
+            };
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}News & Announcements | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up">News & Announcements</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            Stay informed about the latest updates and achievements at Deigratia Montessori
+        </p>
+    </div>
+</section>
+
+<!-- News Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Featured News -->
+                {% if announcements %}
+                {% for announcement in announcements %}
+                <article class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                    {% if announcement.image %}
+                    <img src="{{ announcement.image.url }}" class="card-img-top" alt="{{ announcement.title }}">
+                    {% endif %}
+                    <div class="card-body p-4">
+                        {% if announcement.is_featured %}
+                        <div class="announcement-badge mb-2">Featured</div>
+                        {% endif %}
+                        <h2 class="card-title h3">{{ announcement.title }}</h2>
+                        <p class="card-text text-muted mb-3">
+                            <small>
+                                <i class="far fa-calendar-alt me-1"></i> {{ announcement.date_posted|date:"F d, Y" }}
+                            </small>
+                        </p>
+                        <p class="card-text">{{ announcement.content|truncatewords:50 }}</p>
+                        <a href="{% url 'announcement-detail' announcement.pk %}" class="btn btn-primary">Read More</a>
+                    </div>
+                </article>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav aria-label="News pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-newspaper fa-3x text-muted mb-3"></i>
+                    <h4>No Announcements</h4>
+                    <p>Check back soon for updates!</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <div class="sticky-sidebar">
+                    <!-- Newsletter Signup -->
+                    <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                        <div class="card-body p-4">
+                            <h3 class="card-title h5">Newsletter Signup</h3>
+                            <p class="card-text">Stay updated with our latest news and announcements.</p>
+                            <form class="newsletter-form">
+                                <div class="mb-3">
+                                    <input type="email" class="form-control" placeholder="Your email address" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Subscribe</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-12 col-md-4">
+                            <!-- Categories -->
+                            <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                                <div class="card-body p-4">
+                                    <h3 class="card-title h5">Categories</h3>
+                                    <div class="list-group list-group-flush">
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                            School Updates
+                                            <span class="badge bg-primary rounded-pill">12</span>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                            Student Achievements
+                                            <span class="badge bg-primary rounded-pill">8</span>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                            Community Events
+                                            <span class="badge bg-primary rounded-pill">5</span>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                            Parent Resources
+                                            <span class="badge bg-primary rounded-pill">7</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 col-md-4">
+                            <!-- Archives -->
+                            <div class="card border-0 shadow-sm mb-4" data-aos="fade-up">
+                                <div class="card-body p-4">
+                                    <h3 class="card-title h5">Archives</h3>
+                                    <div class="list-group list-group-flush">
+                                        <a href="#" class="list-group-item list-group-item-action">September 2023</a>
+                                        <a href="#" class="list-group-item list-group-item-action">August 2023</a>
+                                        <a href="#" class="list-group-item list-group-item-action">July 2023</a>
+                                        <a href="#" class="list-group-item list-group-item-action">June 2023</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 col-md-4">
+                            <!-- Social Media -->
+                            <div class="card border-0 shadow-sm" data-aos="fade-up">
+                                <div class="card-body p-4">
+                                    <h3 class="card-title h5">Follow Us</h3>
+                                    <p class="card-text mb-3">Stay connected on social media for daily updates and highlights.</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="#" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
+                                            <i class="fab fa-facebook-f"></i>
+                                            <span>Facebook</span>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-info d-flex align-items-center justify-content-center gap-2">
+                                            <i class="fab fa-twitter"></i>
+                                            <span>Twitter</span>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2">
+                                            <i class="fab fa-instagram"></i>
+                                            <span>Instagram</span>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
+                                            <i class="fab fa-linkedin-in"></i>
+                                            <span>LinkedIn</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <h2>Want to Share Your Story?</h2>
+                <p class="lead mb-4">We love hearing from our community! Share your Deigratia Montessori experience or submit news for our website.</p>
+                <a href="{% url 'contact' %}" class="btn btn-primary btn-lg">Contact Us</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero-banner {
+        position: relative;
+        height: 300px;
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        margin-top: -48px;
+    }
+
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .announcement-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background-color: #ffc107;
+        color: #000;
+        border-radius: 50px;
+        font-size: 0.875rem;
+    }
+
+    @media (min-width: 992px) {
+        .sticky-sidebar {
+            position: sticky;
+            top: 100px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .row > [class*="col-md-"] {
+            margin-bottom: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}

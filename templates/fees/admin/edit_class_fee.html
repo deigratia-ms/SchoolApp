@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Class Fee - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Edit Class Fee</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:class_fee_list' %}">Class Fees</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit Class Fee</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Edit Class Fee</h6>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label for="term" class="form-label">Term</label>
+            <select class="form-select" id="term" name="term" required>
+              <option value="">Select Term</option>
+              {% for term in terms %}
+                <option value="{{ term.id }}" {% if term.id == class_fee.term.id %}selected{% endif %}>
+                  {{ term.name }} ({{ term.academic_year }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-4">
+            <label for="classroom" class="form-label">Class</label>
+            <select class="form-select" id="classroom" name="classroom" required>
+              <option value="">Select Class</option>
+              {% for classroom in classrooms %}
+                <option value="{{ classroom.id }}" {% if classroom.id == class_fee.classroom.id %}selected{% endif %}>
+                  {{ classroom.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-4">
+            <label for="fee_category" class="form-label">Fee Type</label>
+            <select class="form-select" id="fee_category" name="fee_category" required>
+              <option value="">Select Fee Type</option>
+              {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id == class_fee.fee_category.id %}selected{% endif %}>
+                  {{ category.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="amount" class="form-label">Amount (GHS)</label>
+            <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" 
+                   value="{{ class_fee.amount }}" required>
+          </div>
+          
+          <div class="col-md-6">
+            <label for="due_date" class="form-label">Due Date</label>
+            <input type="date" class="form-control" id="due_date" name="due_date" 
+                   value="{{ class_fee.due_date|date:'Y-m-d' }}" required>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="description" class="form-label">Description (Optional)</label>
+          <textarea class="form-control" id="description" name="description" rows="3">{{ class_fee.description }}</textarea>
+        </div>
+        
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>Note:</strong> Editing this class fee will update the amount and due date for all associated student fees.
+        </div>
+        
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'fees:class_fee_list' %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Update Class Fee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

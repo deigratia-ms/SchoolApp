@@ -1,0 +1,37 @@
+{% extends 'core/emails/base_email.html' %}
+
+{% block title %}Appointment Confirmation{% endblock %}
+
+{% block content %}
+<h2>Appointment Confirmed!</h2>
+
+<p>Dear {{ appointment.parent.user.get_full_name }},</p>
+
+<p>Your appointment has been successfully scheduled with {{ school_name }}.</p>
+
+<div class="details">
+    <h3>Appointment Details:</h3>
+    <p><strong>Date:</strong> {{ appointment.time_slot.date|date:"l, F j, Y" }}</p>
+    <p><strong>Time:</strong> {{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}</p>
+    <p><strong>Location:</strong> {{ school_address }}</p>
+    <p><strong>Purpose:</strong> {{ appointment.purpose }}</p>
+</div>
+
+<div class="details">
+    <h3>Important Notes:</h3>
+    <ul>
+        <li>Please arrive 5 minutes before your scheduled time</li>
+        <li>Bring any relevant documents or materials</li>
+        <li>If you need to cancel or reschedule, please do so at least 24 hours in advance</li>
+    </ul>
+</div>
+
+{% if appointment.google_calendar_event_id %}
+<p>This appointment has been added to your Google Calendar.</p>
+{% endif %}
+
+<a href="{{ appointment_url }}" class="button">View Appointment Details</a>
+
+<p>Best regards,<br>
+{{ school_name }} Team</p>
+{% endblock %}

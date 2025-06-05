@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Appointment Settings - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .settings-section h5 {
+        border-bottom: 2px solid #0a2351;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .slot-generation-card {
+        background-color: #e9f7fe;
+        border-left: 4px solid #17a2b8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'appointments:admin_dashboard' %}">Appointment Administration</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Settings</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Appointment System Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="settings-section">
+                            <h5><i class="fas fa-cog me-2"></i>General Settings</h5>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.default_appointment_purpose.id_for_label }}">Default Appointment Purpose</label>
+                                        {{ form.default_appointment_purpose }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mt-4">
+                                        {{ form.system_active }}
+                                        <label class="form-check-label" for="{{ form.system_active.id_for_label }}">
+                                            System Active
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mt-2">
+                                        {{ form.auto_confirm_appointments }}
+                                        <label class="form-check-label" for="{{ form.auto_confirm_appointments.id_for_label }}">
+                                            Auto-confirm Appointments
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h5><i class="fas fa-clock me-2"></i>Time Slot Settings</h5>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.appointment_duration.id_for_label }}">Appointment Duration (minutes)</label>
+                                        {{ form.appointment_duration }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.day_start_time.id_for_label }}">Day Start Time</label>
+                                        {{ form.day_start_time }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.day_end_time.id_for_label }}">Day End Time</label>
+                                        {{ form.day_end_time }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.days_to_generate.id_for_label }}">Days to Generate</label>
+                                        {{ form.days_to_generate }}
+                                        <small class="form-text text-muted">Number of days to generate slots for</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.excluded_days.id_for_label }}">Excluded Days</label>
+                                        {{ form.excluded_days }}
+                                        <small class="form-text text-muted">Days to exclude (0=Monday, 6=Sunday)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.slot_start_date.id_for_label }}">Slot Start Date</label>
+                                        {{ form.slot_start_date }}
+                                        <small class="form-text text-muted">Start date for generating slots (leave empty for today)</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.slot_end_date.id_for_label }}">Slot End Date</label>
+                                        {{ form.slot_end_date }}
+                                        <small class="form-text text-muted">End date for generating slots (leave empty to use Days to Generate)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.excluded_hours.id_for_label }}">Excluded Hours</label>
+                                        {{ form.excluded_hours }}
+                                        <small class="form-text text-muted">Time ranges to exclude (e.g., lunch breaks)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h5><i class="fas fa-bell me-2"></i>Notification Settings</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.reminder_days.id_for_label }}">Reminder Days</label>
+                                        {{ form.reminder_days }}
+                                        <small class="form-text text-muted">Days before appointment to send reminder</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card slot-generation-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Generate Time Slots</h5>
+                </div>
+                <div class="card-body">
+                    <p>Generate time slots based on your settings. This will create available appointment slots for the specified number of days.</p>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> This will only create new slots and will not affect existing ones.
+                    </div>
+
+                    <form method="post" action="{% url 'appointments:generate_time_slots' %}">
+                        {% csrf_token %}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-calendar-plus me-2"></i> Generate Time Slots
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Time Slot Settings</h6>
+                    <ul>
+                        <li><strong>Appointment Duration:</strong> Length of each appointment in minutes</li>
+                        <li><strong>Day Start/End Time:</strong> Working hours for appointments</li>
+                        <li><strong>Days to Generate:</strong> How many days in advance to create slots</li>
+                        <li><strong>Excluded Days:</strong> Days of the week to skip (e.g., weekends)</li>
+                        <li><strong>Slot Start/End Date:</strong> Specific date range for slot generation</li>
+                        <li><strong>Excluded Hours:</strong> Time periods to skip within a day (e.g., lunch breaks)</li>
+                    </ul>
+
+                    <h6>Other Settings</h6>
+                    <ul>
+                        <li><strong>Auto-confirm:</strong> Automatically confirm new appointments</li>
+                        <li><strong>Reminder Days:</strong> When to send reminder emails</li>
+                        <li><strong>System Active:</strong> Enable/disable the entire appointment system</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

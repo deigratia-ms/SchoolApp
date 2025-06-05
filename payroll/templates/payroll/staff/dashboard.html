@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payroll Dashboard - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">My Payroll Dashboard</h1>
+    <div>
+      <a href="{% url 'dashboard:teacher_dashboard' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Main Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Salary Information -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">My Salary Information</h6>
+        </div>
+        <div class="card-body">
+          {% if staff_salary %}
+            <div class="row">
+              <div class="col-md-6">
+                <table class="table table-borderless">
+                  <tr>
+                    <th width="40%">Role:</th>
+                    <td>{{ staff_salary.role.name|default:"Not Assigned" }}</td>
+                  </tr>
+                  <tr>
+                    <th>Base Salary:</th>
+                    <td>GH₵ {{ staff_salary.base_salary|floatformat:2|intcomma }}</td>
+                  </tr>
+                  <tr>
+                    <th>Transport Allowance:</th>
+                    <td>GH₵ {{ staff_salary.transport_allowance|floatformat:2|intcomma }}</td>
+                  </tr>
+                  <tr>
+                    <th>Housing Allowance:</th>
+                    <td>GH₵ {{ staff_salary.housing_allowance|floatformat:2|intcomma }}</td>
+                  </tr>
+                </table>
+              </div>
+              <div class="col-md-6">
+                <table class="table table-borderless">
+                  <tr>
+                    <th width="40%">Other Allowances:</th>
+                    <td>GH₵ {{ staff_salary.other_allowances|floatformat:2|intcomma }}</td>
+                  </tr>
+                  <tr>
+                    <th>Gross Salary:</th>
+                    <td>GH₵ {{ staff_salary.gross_salary|floatformat:2|intcomma }}</td>
+                  </tr>
+                  <tr>
+                    <th>Total Deductions:</th>
+                    <td>GH₵ {{ staff_salary.total_deductions|floatformat:2|intcomma }}</td>
+                  </tr>
+                  <tr>
+                    <th>Net Salary:</th>
+                    <td>GH₵ {{ staff_salary.net_salary|floatformat:2|intcomma }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No salary information found. Please contact the administration.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Earnings ({{ current_year }})
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_earnings|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Paid ({{ current_year }})
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_paid|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                Total Deductions ({{ current_year }})
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_deductions|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-minus-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Pending Payments
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_count }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clock fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Payslips -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Recent Payslips</h6>
+          <a href="{% url 'payroll:staff_payslips' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-list me-1"></i> View All
+          </a>
+        </div>
+        <div class="card-body">
+          {% if recent_payslips %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Payslip Number</th>
+                    <th>Period</th>
+                    <th>Generated On</th>
+                    <th>Net Salary</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payslip in recent_payslips %}
+                    <tr>
+                      <td>{{ payslip.payslip_number }}</td>
+                      <td>{{ payslip.payroll.period.name }}</td>
+                      <td>{{ payslip.generated_at|date:"M d, Y" }}</td>
+                      <td>GH₵ {{ payslip.payroll.net_salary|floatformat:2|intcomma }}</td>
+                      <td>
+                        <a href="{% url 'payroll:staff_payslip_detail' payslip.id %}" class="btn btn-sm btn-primary">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        {% if payslip.pdf_file %}
+                          <a href="{% url 'payroll:download_payslip' payslip.id %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-download"></i>
+                          </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No payslips found.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Payments -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">Recent Payments</h6>
+          <a href="{% url 'payroll:staff_payment_history' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-list me-1"></i> View All
+          </a>
+        </div>
+        <div class="card-body">
+          {% if recent_payments %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Payment Date</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Transaction ID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payment in recent_payments %}
+                    <tr>
+                      <td>{{ payment.payroll.period.name }}</td>
+                      <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                      <td>GH₵ {{ payment.amount|floatformat:2|intcomma }}</td>
+                      <td>
+                        {% if payment.payment_method == 'CASH' %}
+                          <span class="badge bg-success">Cash</span>
+                        {% elif payment.payment_method == 'BANK_TRANSFER' %}
+                          <span class="badge bg-primary">Bank Transfer</span>
+                        {% elif payment.payment_method == 'MOBILE_MONEY' %}
+                          <span class="badge bg-info">Mobile Money</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ payment.get_payment_method_display }}</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ payment.transaction_id|default:"-" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No payment history found.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

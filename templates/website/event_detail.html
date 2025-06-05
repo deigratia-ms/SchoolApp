@@ -1,0 +1,460 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}{{ event.title }} | Deigratia Montessori School{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Event Detail Page Styles */
+    .container {
+        overflow: hidden; /* Prevent content from extending outside container */
+    }
+
+    .event-hero {
+        background-color: var(--primary-color);
+        background-image: linear-gradient(rgba(0, 77, 77, 0.56), rgba(6, 90, 90, 0.48)),
+                          url('{% if event.image %}{{ event.image.url }}{% else %}https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80{% endif %}');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+    }
+
+    .event-hero__content {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .event-hero__title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .event-hero__meta {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.9;
+    }
+
+    .event-detail-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .event-detail-card__header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 1.5rem;
+    }
+
+    .event-detail-card__body {
+        padding: 2rem;
+    }
+
+    .event-detail-card__footer {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    .event-info-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .event-info-item__icon {
+        width: 40px;
+        height: 40px;
+        background-color: rgba(0, 128, 128, 0.1);
+        color: var(--primary-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+
+    .event-info-item__content {
+        flex-grow: 1;
+    }
+
+    .event-info-item__label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .event-info-item__value {
+        font-size: 1.1rem;
+        color: #212529;
+    }
+
+    .event-description {
+        line-height: 1.8;
+        color: #495057;
+    }
+
+    .event-cta {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .event-cta__title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #212529;
+    }
+
+    .event-cta__text {
+        margin-bottom: 1.5rem;
+        color: #495057;
+    }
+
+    .event-image {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .related-events {
+        margin-top: 3rem;
+    }
+
+    .related-events__title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #212529;
+    }
+
+    .related-event-card {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+
+    .related-event-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .related-event-card__image {
+        height: 180px;
+        object-fit: cover;
+    }
+
+    .related-event-card__date {
+        background-color: var(--primary-color);
+        color: white;
+        font-size: 0.875rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .related-event-card__title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #212529;
+    }
+
+    .related-event-card__location {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    /* Ensure sidebar content is properly contained */
+    .col-lg-4 {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Limit height of related events and add scrolling if needed */
+    .list-group-flush {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    /* Make sure all cards have proper spacing */
+    .card {
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 767px) {
+        .event-hero__title {
+            font-size: 2rem;
+        }
+
+        .event-detail-card__body {
+            padding: 1.5rem;
+        }
+
+        .event-info-item__icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Ensure proper spacing on mobile */
+        .container {
+            padding-bottom: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Event Hero Section -->
+<section class="event-hero">
+    <div class="container">
+        <div class="event-hero__content">
+            <h1 class="event-hero__title">{{ event.title }}</h1>
+            <div class="event-hero__meta">
+                <span><i class="far fa-calendar-alt me-2"></i>{{ event.date|date:"F j, Y" }}</span>
+                {% if not event.all_day and event.date.time %}
+                    <span class="mx-3">|</span>
+                    <span><i class="far fa-clock me-2"></i>{{ event.date|time:"g:i A" }}</span>
+                {% endif %}
+                {% if event.location %}
+                    <span class="mx-3">|</span>
+                    <span><i class="fas fa-map-marker-alt me-2"></i>{{ event.location }}</span>
+                {% endif %}
+            </div>
+            {% if event.registration_required and event.registration_link %}
+                <a href="{{ event.registration_link }}" target="_blank" class="btn btn-light btn-lg">
+                    <i class="fas fa-ticket-alt me-2"></i>Register Now
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Main Content -->
+<div class="container py-5 mb-5">
+    <div class="row">
+        <!-- Event Details -->
+        <div class="col-lg-8">
+            {% if event.image %}
+                <img src="{{ event.image.url }}" alt="{{ event.title }}" class="event-image">
+            {% endif %}
+
+            <div class="event-detail-card">
+                <div class="event-detail-card__header">
+                    <h2 class="h4 mb-0">Event Details</h2>
+                </div>
+                <div class="event-detail-card__body">
+                    <div class="event-description mb-4">
+                        {{ event.description|linebreaks }}
+                    </div>
+
+                    <h3 class="h5 mb-3">Event Information</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="event-info-item">
+                                <div class="event-info-item__icon">
+                                    <i class="far fa-calendar-alt"></i>
+                                </div>
+                                <div class="event-info-item__content">
+                                    <div class="event-info-item__label">Date</div>
+                                    <div class="event-info-item__value">{{ event.date|date:"l, F j, Y" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="event-info-item">
+                                <div class="event-info-item__icon">
+                                    <i class="far fa-clock"></i>
+                                </div>
+                                <div class="event-info-item__content">
+                                    <div class="event-info-item__label">Time</div>
+                                    <div class="event-info-item__value">
+                                        {% if event.all_day %}
+                                            All Day
+                                        {% elif event.date.time %}
+                                            {{ event.date|time:"g:i A" }}
+                                        {% else %}
+                                            To Be Announced
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="event-info-item">
+                                <div class="event-info-item__icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="event-info-item__content">
+                                    <div class="event-info-item__label">Location</div>
+                                    <div class="event-info-item__value">{{ event.location|default:"School Campus" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if event.category %}
+                        <div class="col-md-6">
+                            <div class="event-info-item">
+                                <div class="event-info-item__icon">
+                                    <i class="fas fa-tag"></i>
+                                </div>
+                                <div class="event-info-item__content">
+                                    <div class="event-info-item__label">Category</div>
+                                    <div class="event-info-item__value">{{ event.category.name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if event.registration_required %}
+                    <div class="event-cta">
+                        <h3 class="event-cta__title">Join Us for This Event!</h3>
+                        <p class="event-cta__text">Registration is required to attend this event. Please click the button below to secure your spot.</p>
+                        <a href="{{ event.registration_link }}" target="_blank" class="btn btn-primary btn-lg">
+                            <i class="fas fa-ticket-alt me-2"></i>Register Now
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="event-detail-card__footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'website:events' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Events
+                        </a>
+                        <div class="d-flex">
+                            <a href="#" class="btn btn-outline-primary me-2" onclick="window.print(); return false;">
+                                <i class="fas fa-print me-2"></i>Print
+                            </a>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="shareDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-share-alt me-2"></i>Share
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="shareDropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank">
+                                            <i class="fab fa-facebook-f me-2"></i>Facebook
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ event.title }}" target="_blank">
+                                            <i class="fab fa-twitter me-2"></i>Twitter
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="mailto:?subject={{ event.title }}&body=Check out this event: {{ request.build_absolute_uri }}">
+                                            <i class="fas fa-envelope me-2"></i>Email
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Contact Info -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0">Need More Information?</h3>
+                </div>
+                <div class="card-body">
+                    <p>If you have any questions about this event, please don't hesitate to contact us:</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <div class="bg-light rounded-circle p-2">
+                                <i class="fas fa-phone text-primary"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="small text-muted">Phone</div>
+                            <div class="fw-bold">{{ site_settings.contact_phone|default:"(123) 456-7890" }}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <div class="bg-light rounded-circle p-2">
+                                <i class="fas fa-envelope text-primary"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="small text-muted">Email</div>
+                            <div class="fw-bold">{{ site_settings.contact_email|default:"info@deigratia.edu" }}</div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{% url 'website:contact' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-paper-plane me-2"></i>Contact Us
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Widget -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0">Add to Calendar</h3>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-3">Don't miss this event! Add it to your calendar:</p>
+                    <div class="d-grid gap-2">
+                        <a href="https://www.google.com/calendar/render?action=TEMPLATE&text={{ event.title|urlencode }}&dates={{ event.date|date:'Ymd' }}T{{ event.date|time:'His' }}Z/{{ event.date|date:'Ymd' }}T{{ event.date|time:'His' }}Z&details={{ event.description|truncatewords:50|urlencode }}&location={{ event.location|urlencode }}&sf=true&output=xml" target="_blank" class="btn btn-outline-secondary">
+                            <i class="fab fa-google me-2"></i>Google Calendar
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary">
+                            <i class="far fa-calendar-alt me-2"></i>iCal/Outlook
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Events -->
+            {% if related_events %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0">Related Events</h3>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for related_event in related_events %}
+                        <a href="{% url 'website:event-detail' related_event.id %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 px-0 border-bottom">
+                            {% if related_event.image %}
+                            <div class="me-3">
+                                <img src="{{ related_event.image.url }}" alt="{{ related_event.title }}" class="rounded" width="60" height="60" style="object-fit: cover;">
+                            </div>
+                            {% endif %}
+                            <div>
+                                <div class="small text-primary mb-1">{{ related_event.date|date:"M j, Y" }}</div>
+                                <h6 class="mb-0">{{ related_event.title }}</h6>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

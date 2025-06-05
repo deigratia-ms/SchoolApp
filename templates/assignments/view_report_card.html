@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Card: {{ report_card.student.user.get_full_name }} - {{ report_card.term }} {{ report_card.academic_year }} | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Student Report Card</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'assignments:report_card_list' %}">Report Cards</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">View Report Card</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'assignments:print_report_card' report_card.id %}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-print me-2"></i>Print Report Card
+            </a>
+            {% if user.is_staff or user.is_teacher %}
+            <a href="{% url 'assignments:report_card_detail' report_card.id %}" class="btn btn-info ms-2">
+                <i class="fas fa-edit me-2"></i>Edit View
+            </a>
+            {% endif %}
+            <a href="{% url 'assignments:report_card_list' %}" class="btn btn-secondary ms-2">
+                <i class="fas fa-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {{ report_card.term }} {{ report_card.academic_year }} Report Card
+            </h6>
+            <span class="badge {% if report_card.average_score >= 80 %}bg-success{% elif report_card.average_score >= 60 %}bg-warning{% else %}bg-danger{% endif %} p-2">
+                Overall Average: {{ report_card.average_score|floatformat:1 }}%
+            </span>
+        </div>
+        <div class="card-body">
+            <!-- School & Report Info -->
+            <div class="text-center mb-4">
+                <img src="{{ school_logo_url|default:'#' }}" alt="School Logo" class="mb-3" width="120">
+                <h3 class="mb-1">Ricas School Management System</h3>
+                <p class="text-muted">123 Education Street, Knowledge City</p>
+                <h4 class="mt-3 text-primary">STUDENT PROGRESS REPORT</h4>
+                <p class="text-muted">{{ report_card.term }} - {{ report_card.academic_year }}</p>
+            </div>
+
+            <!-- Student Information -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body p-3">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto me-3">
+                                    {% if report_card.student.user.profile_picture %}
+                                    <img src="{{ report_card.student.user.profile_picture.url }}" alt="{{ report_card.student.user.get_full_name }}" class="rounded-circle" width="80" height="80">
+                                    {% else %}
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem;">
+                                        {{ report_card.student.user.get_initials }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col">
+                                    <h4 class="font-weight-bold mb-1">{{ report_card.student.user.get_full_name }}</h4>
+                                    <p class="mb-1"><strong>Student ID:</strong> {{ report_card.student.id_number }}</p>
+                                    <p class="mb-1"><strong>Class:</strong> {{ report_card.student.classroom.name }} {% if report_card.student.classroom.section %}({{ report_card.student.classroom.section }}){% endif %}</p>
+                                    <p class="mb-0"><strong>Roll Number:</strong> {{ report_card.student.roll_number|default:'Not assigned' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body p-3">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Attendance Summary</div>
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-6">
+                                            <p class="mb-1 small"><strong>Total School Days:</strong> {{ report_card.total_school_days }}</p>
+                                            <p class="mb-1 small"><strong>Days Present:</strong> {{ report_card.days_present }}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="mb-1 small"><strong>Days Absent:</strong> {{ report_card.days_absent }}</p>
+                                            <p class="mb-1 small"><strong>Days Late:</strong> {{ report_card.days_late }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ report_card.attendance_percentage }}%" 
+                                                 aria-valuenow="{{ report_card.attendance_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <p class="text-center mt-1 small"><strong>Attendance Rate:</strong> {{ report_card.attendance_percentage }}%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Performance -->
+            <h5 class="mb-3 text-gray-800">Academic Performance</h5>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Subject</th>
+                            <th class="text-center">Assignments ({{ assignments_weight }}%)</th>
+                            <th class="text-center">Quizzes ({{ quizzes_weight }}%)</th>
+                            <th class="text-center">Exams ({{ exams_weight }}%)</th>
+                            <th class="text-center">Total (%)</th>
+                            <th class="text-center">Grade</th>
+                            <th class="text-center">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade in report_card.grades.all %}
+                        <tr>
+                            <td>{{ grade.subject.name }}</td>
+                            <td class="text-center">{{ grade.assignment_score|floatformat:1 }}</td>
+                            <td class="text-center">{{ grade.quiz_score|floatformat:1 }}</td>
+                            <td class="text-center">{{ grade.exam_score|floatformat:1 }}</td>
+                            <td class="text-center">
+                                <strong>{{ grade.total_score|floatformat:1 }}</strong>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge {% if grade.total_score >= 80 %}bg-success{% elif grade.total_score >= 60 %}bg-warning{% else %}bg-danger{% endif %} p-2">
+                                    {{ grade.letter_grade }}
+                                </span>
+                            </td>
+                            <td>{{ grade.remarks|default:'N/A' }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No grades recorded for this term</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-secondary">
+                        <tr>
+                            <th>Overall Average</th>
+                            <th class="text-center">{{ report_card.average_assignment_score|floatformat:1 }}</th>
+                            <th class="text-center">{{ report_card.average_quiz_score|floatformat:1 }}</th>
+                            <th class="text-center">{{ report_card.average_exam_score|floatformat:1 }}</th>
+                            <th class="text-center">{{ report_card.average_score|floatformat:1 }}</th>
+                            <th class="text-center">
+                                <span class="badge {% if report_card.average_score >= 80 %}bg-success{% elif report_card.average_score >= 60 %}bg-warning{% else %}bg-danger{% endif %} p-2">
+                                    {{ report_card.overall_grade }}
+                                </span>
+                            </th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Skills Assessment -->
+            <h5 class="mb-3 text-gray-800">Skills & Conduct Assessment</h5>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Learning Skills</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Skill</th>
+                                            <th class="text-center">Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Responsibility</td>
+                                            <td class="text-center">{{ report_card.responsibility_rating }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Organization</td>
+                                            <td class="text-center">{{ report_card.organization_rating }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Independent Work</td>
+                                            <td class="text-center">{{ report_card.independent_work_rating }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Collaboration</td>
+                                            <td class="text-center">{{ report_card.collaboration_rating }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Initiative</td>
+                                            <td class="text-center">{{ report_card.initiative_rating }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-2 small text-muted">
+                                <p class="mb-1"><strong>Rating Scale:</strong></p>
+                                <p class="mb-0">E - Excellent, G - Good, S - Satisfactory, N - Needs Improvement</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Comments</h6>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="font-weight-bold">Teacher's Comments:</h6>
+                            <div class="p-3 bg-light rounded mb-3">
+                                <p class="mb-0">{{ report_card.teacher_comments|default:'No comments provided.' }}</p>
+                            </div>
+                            
+                            <h6 class="font-weight-bold">Principal's Comments:</h6>
+                            <div class="p-3 bg-light rounded">
+                                <p class="mb-0">{{ report_card.principal_comments|default:'No comments provided.' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Term -->
+            <div class="alert alert-info" role="alert">
+                <h5 class="alert-heading">Next Term Information</h5>
+                <p class="mb-0">The next academic term ({{ next_term }}) begins on <strong>{{ next_term_start_date|date:"F d, Y" }}</strong>.</p>
+            </div>
+
+            <!-- Signatures -->
+            <div class="row mt-5 mb-3">
+                <div class="col-md-4 text-center">
+                    <div class="border-top pt-2">
+                        <p>{{ report_card.generated_by.get_full_name }}</p>
+                        <p class="text-muted small">Teacher's Signature</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="border-top pt-2">
+                        <p>{{ principal_name|default:'School Principal' }}</p>
+                        <p class="text-muted small">Principal's Signature</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="border-top pt-2">
+                        <p>_____________________</p>
+                        <p class="text-muted small">Parent's Signature</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-5 mb-3">
+                <p class="text-muted small">
+                    This report card was generated on {{ report_card.generated_date|date:"F d, Y" }}.<br>
+                    Ricas School Management System &copy; {{ report_card.academic_year }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show grading scale explanation on hover
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

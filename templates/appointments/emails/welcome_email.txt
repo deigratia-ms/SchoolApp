@@ -1,0 +1,15 @@
+Welcome to {{ school_name }}!
+
+Dear {{ user.get_full_name }},
+
+Thank you for registering with our appointment booking system. We're excited to have you join our community!
+
+You can now:
+* Book appointments with our staff
+* View and manage your upcoming appointments
+* Update your profile information
+
+If you have any questions or need assistance, please don't hesitate to contact us.
+
+Best regards,
+{{ school_name }} Team

@@ -1,0 +1,157 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Academics | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('{% if sections.academics_hero.image %}{{ sections.academics_hero.image.url }}{% else %}https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80{% endif %}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ sections.academics_hero.title|default:"Academic Excellence" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ sections.academics_hero.content|default:"Discover our comprehensive Montessori curriculum designed to nurture every child's potential" }}
+        </p>
+    </div>
+</section>
+
+<!-- Programs Overview -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Our Programs</h2>
+        <div class="row gy-4">
+            {% for program in programs %}
+            <div class="col-md-4" data-aos="fade-up" {% if not forloop.first %}data-aos-delay="{{ forloop.counter0|multiply:100 }}"{% endif %}>
+                <div class="card h-100 border-0 shadow-sm">
+                    {% if program.image %}
+                    <img src="{{ program.image.url }}" class="card-img-top" alt="{{ program.title }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ program.title }}</h5>
+                        <h6 class="text-muted mb-3">{{ program.age_range }}</h6>
+                        <p class="card-text">{{ program.description }}</p>
+                        <ul class="list-unstyled">
+                            {% for feature in program.features %}
+                            <li><i class="fas fa-check text-primary me-2"></i>{{ feature }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">Program information coming soon...</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Curriculum Approach -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Our Curriculum Approach</h2>
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-6" data-aos="fade-right">
+                {% if sections.curriculum_image and sections.curriculum_image.image %}
+                    <img src="{{ sections.curriculum_image.image.url }}" class="img-fluid rounded-3 shadow" alt="Montessori Materials">
+                {% else %}
+                    <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="img-fluid rounded-3 shadow" alt="Montessori Materials">
+                {% endif %}
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="accordion" id="curriculumAccordion">
+                    {% for item in curriculum_items %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                            <button class="accordion-button{% if not forloop.first %} collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
+                                {{ item.title }}
+                            </button>
+                        </h2>
+                        <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" data-bs-parent="#curriculumAccordion">
+                            <div class="accordion-body">
+                                {{ item.content }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-info">
+                        Curriculum approach details coming soon...
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Special Programs -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Special Programs & Activities</h2>
+        <div class="row gy-4">
+                    {% for program in special_programs %}
+                    <div class="col-md-6 col-lg-3" data-aos="fade-up" {% if not forloop.first %}data-aos-delay="{{ forloop.counter0|multiply:100 }}"{% endif %}>
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <div class="text-primary mb-3">
+                                    <i class="fas fa-{{ program.icon }} fa-3x"></i>
+                                </div>
+                                <h5 class="card-title">{{ program.title }}</h5>
+                                <p class="card-text">{{ program.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center">
+                        <p class="text-muted">Special programs information coming soon...</p>
+                    </div>
+                    {% endfor %}
+                </div>
+    </div>
+</section>
+
+<!-- Assessment & Progress -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Assessment & Progress</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <p class="lead mb-4">{{ sections.assessment_intro.content|default:"We believe in assessing children's progress in a way that respects their individual development and maintains the joy of learning." }}</p>
+                        <div class="row gy-4">
+                            {% for method in assessment_methods %}
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-{{ method.icon }} text-primary me-2"></i>{{ method.title }}</h5>
+                                <p>{{ method.description }}</p>
+                            </div>
+                            {% empty %}
+                            <div class="col-12 text-center">
+                                <p class="text-muted">Assessment methods information coming soon...</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <h2 class="mb-4">{{ sections.cta_section.title|default:"Ready to Begin Your Child's Journey?" }}</h2>
+                <p class="lead mb-4">{{ sections.cta_section.content|default:"Experience the difference of a Montessori education at Deigratia Montessori School." }}</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'website:admissions' %}" class="btn btn-primary btn-lg">Apply Now</a>
+                    <a href="{% url 'website:contact' %}" class="btn btn-outline-primary btn-lg">Schedule a Tour</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

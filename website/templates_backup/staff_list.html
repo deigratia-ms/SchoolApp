@@ -1,0 +1,126 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Our Staff | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('{% static 'website/images/staff-banner.jpg' %}');">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up">Our Staff</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            Meet our dedicated team of educators and professionals
+        </p>
+    </div>
+</section>
+
+<!-- Staff List -->
+<section class="py-5">
+    <div class="container">
+        {% for staff_type, staff_type_display in staff_types.items %}
+        <div class="mb-5">
+            <h2 class="section-title" data-aos="fade-up">{{ staff_type_display }}</h2>
+            <div class="row g-4">
+                {% for member in staff_members %}
+                {% if member.staff_type == staff_type %}
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card staff-card h-100 border-0 shadow-sm">
+                        {% if member.image %}
+                        <img src="{{ member.image.url }}" class="card-img-top staff-img" alt="{{ member.name }}">
+                        {% else %}
+                        <img src="{% static 'website/images/placeholder-staff.jpg' %}" class="card-img-top staff-img" alt="Staff Placeholder">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ member.name }}</h5>
+                            <p class="card-subtitle text-primary mb-2">{{ member.position }}</p>
+                            <p class="card-text text-truncate">{{ member.bio }}</p>
+                            <button class="btn btn-primary view-staff-details" data-staff-id="{{ member.id }}">
+                                View Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Staff Modal -->
+<div class="modal fade" id="staffModal" tabindex="-1" aria-labelledby="staffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staffModalLabel">Staff Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 staff-modal-image">
+                        <img src="" alt="" class="img-fluid rounded">
+                    </div>
+                    <div class="col-md-8">
+                        <h3 class="staff-name mb-2"></h3>
+                        <p class="staff-position text-primary"></p>
+                        <div class="staff-bio mt-3"></div>
+                        
+                        <div class="staff-qualifications mt-4">
+                            <h5>Qualifications</h5>
+                            <div class="qualification-content"></div>
+                        </div>
+                        
+                        <div class="staff-achievements mt-4">
+                            <h5>Achievements</h5>
+                            <div class="achievement-content"></div>
+                        </div>
+                        
+                        <div class="staff-interests mt-4">
+                            <h5>Interests & Specializations</h5>
+                            <div class="interest-content"></div>
+                        </div>
+                        
+                        <div class="staff-contact mt-4">
+                            <h5>Contact Information</h5>
+                            <p class="staff-email"></p>
+                            <p class="staff-phone"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const staffModal = new bootstrap.Modal(document.getElementById('staffModal'));
+    
+    document.querySelectorAll('.view-staff-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const staffId = this.dataset.staffId;
+            fetch(`/api/staff/${staffId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update modal content
+                    document.querySelector('.staff-modal-image img').src = data.image_url;
+                    document.querySelector('.staff-name').textContent = data.name;
+                    document.querySelector('.staff-position').textContent = data.position;
+                    document.querySelector('.staff-bio').textContent = data.bio;
+                    document.querySelector('.qualification-content').textContent = data.qualification || 'Not provided';
+                    document.querySelector('.achievement-content').textContent = data.achievements || 'Not provided';
+                    document.querySelector('.interest-content').textContent = data.interests || 'Not provided';
+                    document.querySelector('.staff-email').textContent = `Email: ${data.email}`;
+                    document.querySelector('.staff-phone').textContent = data.phone ? `Phone: ${data.phone}` : '';
+                    
+                    // Show modal
+                    staffModal.show();
+                });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Admission Letter Template{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create Admission Letter Template</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">New Template Details</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="name">Template Name*</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                    <div class="invalid-feedback">Please provide a template name.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="header_text">Header Text*</label>
+                    <input type="text" class="form-control" id="header_text" name="header_text" 
+                           value="Admission Letter" required>
+                    <div class="invalid-feedback">Please provide header text.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="body_template">Body Template*</label>
+                    <textarea class="form-control" id="body_template" name="body_template" rows="10" required>
+Dear {student_name},
+
+We are pleased to inform you that you have been admitted to {grade} for the academic year {academic_year}.
+
+Your admission details are as follows:
+- Student ID: {student_id}
+- Grade: {grade}
+- Section: {section}
+- Admission Date: {admission_date}
+
+{additional_info}
+
+Best regards,
+{signatory_name}
+{signatory_position}
+                    </textarea>
+                    <small class="form-text text-muted">
+                        Available placeholders: {student_name}, {student_id}, {grade}, {section}, 
+                        {academic_year}, {admission_date}, {additional_info}, {signatory_name}, 
+                        {signatory_position}
+                    </small>
+                    <div class="invalid-feedback">Please provide the letter template body.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="footer_text">Footer Text</label>
+                    <textarea class="form-control" id="footer_text" name="footer_text" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="signature_image">Signature Image</label>
+                    <input type="file" class="form-control" id="signature_image" name="signature_image" 
+                           accept="image/*">
+                    <small class="form-text text-muted">Upload a signature image (optional)</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="signatory_name">Signatory Name</label>
+                        <input type="text" class="form-control" id="signatory_name" name="signatory_name">
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label for="signatory_position">Signatory Position</label>
+                        <input type="text" class="form-control" id="signatory_position" name="signatory_position">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" checked>
+                        <label class="custom-control-label" for="is_active">Active Template</label>
+                    </div>
+                </div>
+
+                <div class="form-group text-right">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>Save Template
+                    </button>
+                    <a href="{% url 'users:admission_letter_template_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Preview image on file select
+        $("#signature_image").change(function() {
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#signature_preview').attr('src', e.target.result);
+                    $('#signature_preview_container').show();
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    });
+</script>
+{% endblock %}

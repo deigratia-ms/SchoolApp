@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 class="mb-0">Notifications</h5>
+                            <p class="text-sm mb-0">View and manage your notifications</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <button id="mark-all-read" class="btn btn-info">
+                                <i class="fas fa-check-double"></i> Mark All as Read
+                            </button>
+                            <button id="clear-all" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    <!-- Filter options -->
+                    <div class="p-3">
+                        <form method="get" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="filter_type" class="form-label">Notification Type</label>
+                                <select class="form-select form-select-sm" id="filter_type" name="type" onchange="this.form.submit()">
+                                    <option value="">All Types</option>
+                                    <option value="ASSIGNMENT" {% if request.GET.type == 'ASSIGNMENT' %}selected{% endif %}>Assignment</option>
+                                    <option value="ANNOUNCEMENT" {% if request.GET.type == 'ANNOUNCEMENT' %}selected{% endif %}>Announcement</option>
+                                    <option value="EVENT" {% if request.GET.type == 'EVENT' %}selected{% endif %}>Event</option>
+                                    <option value="GRADE" {% if request.GET.type == 'GRADE' %}selected{% endif %}>Grade</option>
+                                    <option value="ATTENDANCE" {% if request.GET.type == 'ATTENDANCE' %}selected{% endif %}>Attendance</option>
+                                    <option value="MESSAGE" {% if request.GET.type == 'MESSAGE' %}selected{% endif %}>Message</option>
+                                    <option value="SYSTEM" {% if request.GET.type == 'SYSTEM' %}selected{% endif %}>System</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filter_read" class="form-label">Read Status</label>
+                                <select class="form-select form-select-sm" id="filter_read" name="read" onchange="this.form.submit()">
+                                    <option value="">All Notifications</option>
+                                    <option value="unread" {% if request.GET.read == 'unread' %}selected{% endif %}>Unread Only</option>
+                                    <option value="read" {% if request.GET.read == 'read' %}selected{% endif %}>Read Only</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filter_date" class="form-label">Date Range</label>
+                                <select class="form-select form-select-sm" id="filter_date" name="date_range" onchange="this.form.submit()">
+                                    <option value="">All Time</option>
+                                    <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>Today</option>
+                                    <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>This Week</option>
+                                    <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>This Month</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <a href="{% url 'communications:notification_list' %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Clear Filters
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Notifications list -->
+                    <div class="px-0">
+                        {% if notifications %}
+                        <ul class="list-group list-group-flush">
+                            {% for notification in notifications %}
+                            <li class="list-group-item px-4 py-3 {% if not notification.is_read %}bg-light{% endif %}">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        {% if notification.notification_type == 'ASSIGNMENT' %}
+                                            <div class="icon icon-shape icon-sm bg-gradient-primary shadow text-center">
+                                                <i class="fas fa-file-alt text-white opacity-10"></i>
+                                            </div>
+                                        {% elif notification.notification_type == 'ANNOUNCEMENT' %}
+                                            <div class="icon icon-shape icon-sm bg-gradient-warning shadow text-center">
+                                                <i class="fas fa-bullhorn text-white opacity-10"></i>
+                                            </div>
+                                        {% elif notification.notification_type == 'EVENT' %}
+                                            <div class="icon icon-shape icon-sm bg-gradient-info shadow text-center">
+                                                <i class="fas fa-calendar-alt text-white opacity-10"></i>
+                                            </div>
+                                        {% elif notification.notification_type == 'GRADE' %}
+                                            <div class="icon icon-shape icon-sm bg-gradient-success shadow text-center">
+                                                <i class="fas fa-award text-white opacity-10"></i>
+                                            </div>
+                                        {% elif notification.notification_type == 'ATTENDANCE' %}
+                                            <div class="icon icon-shape icon-sm bg-gradient-danger shadow text-center">
+                                                <i class="fas fa-user-check text-white opacity-10"></i>
+                                            </div>
+                                        {% elif notification.notification_type == 'MESSAGE' %}
+                                            <div class="icon icon-shape icon-sm bg-gradient-secondary shadow text-center">
+                                                <i class="fas fa-envelope text-white opacity-10"></i>
+                                            </div>
+                                        {% else %}
+                                            <div class="icon icon-shape icon-sm bg-gradient-dark shadow text-center">
+                                                <i class="fas fa-bell text-white opacity-10"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col ml-3">
+                                        <h6 class="mb-1 {% if not notification.is_read %}font-weight-bold{% endif %}">
+                                            {{ notification.title }}
+                                            {% if not notification.is_read %}
+                                                <span class="badge bg-danger">New</span>
+                                            {% endif %}
+                                        </h6>
+                                        <p class="text-sm mb-1">{{ notification.message }}</p>
+                                        <div class="d-flex align-items-center">
+                                            <small class="text-muted me-3">{{ notification.created_at|date:"M d, Y" }} at {{ notification.created_at|time:"g:i A" }}</small>
+                                            {% if notification.link %}
+                                            <a href="{{ notification.link }}" target="_blank" rel="noopener noreferrer" class="btn btn-link btn-sm p-0 text-primary me-3">
+                                                 View
+                                            </a>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-auto">
+                                        {% if not notification.is_read %}
+                                            <button class="btn btn-sm btn-outline-primary mark-read-btn" data-id="{{ notification.id }}">
+                                                <i class="fas fa-check"></i> Mark as Read
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-danger delete-btn" data-id="{{ notification.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <!-- Pagination -->
+                        {% if notifications.paginator.num_pages > 1 %}
+                        <div class="p-3">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center">
+                                    {% if notifications.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ notifications.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for num in notifications.paginator.page_range %}
+                                    {% if notifications.number == num %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                                    {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if notifications.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ notifications.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                        
+                        {% else %}
+                        <div class="text-center p-5">
+                            <div class="mb-3">
+                                <i class="fas fa-bell-slash text-muted" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="text-muted">No notifications found</h5>
+                            <p class="text-muted">
+                                {% if request.GET %}
+                                    No notifications match your current filters. 
+                                    <a href="{% url 'communications:notification_list' %}">Clear filters</a> to see all notifications.
+                                {% else %}
+                                    You have no notifications at the moment.
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mark as read button functionality
+        document.querySelectorAll('.mark-read-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                markAsRead(notificationId);
+            });
+        });
+        
+        // Delete button functionality
+        document.querySelectorAll('.delete-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                deleteNotification(notificationId);
+            });
+        });
+        
+        // Mark all as read button
+        document.getElementById('mark-all-read').addEventListener('click', function() {
+            if (confirm('Mark all notifications as read?')) {
+                markAllAsRead();
+            }
+        });
+        
+        // Clear all button
+        document.getElementById('clear-all').addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete all notifications? This action cannot be undone.')) {
+                clearAllNotifications();
+            }
+        });
+        
+        // API functions (to be implemented with AJAX)
+        function markAsRead(id) {
+            // In a real implementation, this would make an AJAX call to the server
+            fetch(`/communications/notifications/${id}/mark-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        function deleteNotification(id) {
+            // In a real implementation, this would make an AJAX call to the server
+            fetch(`/communications/notifications/${id}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        function markAllAsRead() {
+            // In a real implementation, this would make an AJAX call to the server
+            fetch('/communications/notifications/mark-all-read/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        function clearAllNotifications() {
+            // In a real implementation, this would make an AJAX call to the server
+            fetch('/communications/notifications/clear-all/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Helper function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends 'base.html' %} {% block title %}Create New Subject | Ricas School
+Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Create New Subject</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'courses:subject_list' %}">Subjects</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Create</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Subject Information</h6>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="name" class="form-label"
+                >Subject Name <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="name"
+                required
+              />
+              <div class="form-text">
+                E.g., Mathematics, English, Science, etc.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="code" class="form-label"
+                >Subject Code <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="code"
+                name="code"
+                required
+              />
+              <div class="form-text">
+                A unique code for this subject (e.g., MATH101, ENG201, etc.)
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea
+                class="form-control"
+                id="description"
+                name="description"
+                rows="4"
+              ></textarea>
+              <div class="form-text">
+                A brief description of what this subject covers.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Class Assignment</label>
+              <div class="card">
+                <div class="card-header py-2">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="select_all_classes"
+                    />
+                    <label class="form-check-label fw-bold" for="select_all_classes">
+                      Select All Classes
+                    </label>
+                  </div>
+                </div>
+                <div class="card-body" style="max-height: 250px; overflow-y: auto;">
+                  <div class="row">
+                    {% for classroom in classrooms %}
+                    <div class="col-md-6 col-lg-4 mb-2">
+                      <div class="form-check">
+                        <input
+                          class="form-check-input class-checkbox"
+                          type="checkbox"
+                          id="class_{{ classroom.id }}"
+                          name="selected_classes"
+                          value="{{ classroom.id }}"
+                        />
+                        <label class="form-check-label" for="class_{{ classroom.id }}">
+                          {{ classroom.name }}{% if classroom.section %} ({{ classroom.section }}){% endif %}
+                        </label>
+                      </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                      <div class="alert alert-info mb-0">
+                        No classes found in the system. Please create classes first.
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              <div class="form-text">
+                Select which classes this subject should be applied to. If none are selected, the subject will be created but not assigned to any classes.
+              </div>
+            </div>
+
+            <div class="mb-3" id="teacher_selection_container">
+              <label for="teacher" class="form-label">
+                Default Teacher <small>(optional)</small>
+              </label>
+              <select class="form-select" id="teacher" name="teacher">
+                <option value="">-- Select Teacher --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">
+                  {{ teacher.user.get_full_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                You can select a default teacher or leave this empty to assign different teachers 
+                to each class later after the subject is created.
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a
+                href="{% url 'courses:subject_list' %}"
+                class="btn btn-secondary me-md-2"
+                >Cancel</a
+              >
+              <button type="submit" class="btn btn-primary">
+                Create Subject
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Instructions</h6>
+        </div>
+        <div class="card-body">
+          <p>Please fill in the form to create a new subject:</p>
+          <ul>
+            <li>
+              Enter a <strong>Subject Name</strong> that clearly identifies the
+              subject (e.g., Mathematics, English).
+            </li>
+            <li>
+              Provide a unique <strong>Subject Code</strong> that will be used
+              as a reference (e.g., MATH101).
+            </li>
+            <li>
+              Add a <strong>Description</strong> that explains what the subject
+              covers and its objectives (optional).
+            </li>
+          </ul>
+          <p>
+            After creating the subject, you can assign it to classes and
+            teachers.
+          </p>
+        </div>
+      </div>
+
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">What's Next?</h6>
+        </div>
+        <div class="card-body">
+          <p>After creating a subject, you'll need to:</p>
+          <ol>
+            <li>Assign the subject to specific classes.</li>
+            <li>Designate teachers who will teach this subject.</li>
+            <li>Add course materials and YouTube videos for the subject.</li>
+            <li>Create assignments and quizzes related to the subject.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Convert subject name to code suggestion
+    const nameInput = document.getElementById("name");
+    const codeInput = document.getElementById("code");
+
+    if (nameInput && codeInput) {
+      nameInput.addEventListener("blur", function () {
+        if (codeInput.value === "") {
+          // Only suggest if code field is empty
+          const name = nameInput.value.trim();
+          if (name) {
+            // Take first 4 letters of name, uppercase, and add '101'
+            const suggestedCode = name.substring(0, 4).toUpperCase() + "101";
+            codeInput.value = suggestedCode;
+          }
+        }
+      });
+    }
+
+    // Handle "Select All" checkbox for classes
+    const selectAllCheckbox = document.getElementById("select_all_classes");
+    const classCheckboxes = document.querySelectorAll(".class-checkbox");
+    
+    if (selectAllCheckbox && classCheckboxes.length > 0) {
+      // Select All functionality
+      selectAllCheckbox.addEventListener("change", function() {
+        const isChecked = this.checked;
+        classCheckboxes.forEach(checkbox => {
+          checkbox.checked = isChecked;
+        });
+      });
+      
+      // Update "Select All" based on individual selections
+      classCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", function() {
+          let allChecked = true;
+          classCheckboxes.forEach(cb => {
+            if (!cb.checked) allChecked = false;
+          });
+          selectAllCheckbox.checked = allChecked;
+          
+          // Show indeterminate state when some but not all are selected
+          selectAllCheckbox.indeterminate = !allChecked && 
+            Array.from(classCheckboxes).some(cb => cb.checked);
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}

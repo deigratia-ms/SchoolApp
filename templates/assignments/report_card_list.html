@@ -1,0 +1,472 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Cards | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Report Cards</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Report Cards</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            {% if user.is_admin %}
+            <a href="{% url 'assignments:generate_report_cards' %}" class="btn btn-primary">
+                <i class="fas fa-file-alt me-2"></i>Generate Report Cards
+            </a>
+            {% elif user.is_teacher %}
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#accessDeniedModal">
+                <i class="fas fa-file-alt me-2"></i>Generate Report Cards
+            </button>
+            {% if report_cards %}
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'assignments:export_all_report_cards' 'pdf' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+                        <i class="fas fa-file-pdf me-2 text-danger"></i>Export as PDF
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'assignments:export_all_report_cards' 'excel' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+                        <i class="fas fa-file-excel me-2 text-success"></i>Export as Excel
+                    </a></li>
+                </ul>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Performance Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Overall Performance Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Subject-wise Performance</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="subjectPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Attendance Correlation</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="attendanceCorrelationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Filters Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <!-- Role-specific filters -->
+                {% if user.is_admin %}
+                <div class="col-md-3">
+                    <label for="classroom" class="form-label">Class</label>
+                    <select class="form-select" id="classroom" name="classroom">
+                        <option value="">All Classes</option>
+                        {% for classroom in classrooms %}
+                            <option value="{{ classroom.id }}" {% if selected_classroom == classroom.id %}selected{% endif %}>
+                                {{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% elif user.is_teacher %}
+                <div class="col-md-3">
+                    <label for="classroom" class="form-label">Class</label>
+                    <select class="form-select" id="classroom" name="classroom">
+                        <option value="">All Classes</option>
+                        {% for classroom in teacher_classrooms %}
+                            <option value="{{ classroom.id }}" {% if selected_classroom == classroom.id %}selected{% endif %}>
+                                {{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% elif user.is_parent %}
+                <div class="col-md-3">
+                    <label for="child" class="form-label">Child</label>
+                    <select class="form-select" id="child" name="child">
+                        <option value="">All Children</option>
+                        {% for child in children %}
+                            <option value="{{ child.id }}" {% if selected_child == child.id %}selected{% endif %}>
+                                {{ child.user.get_full_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <!-- Time period filters -->
+                <div class="col-md-3">
+                    <label for="time_period" class="form-label">Time Period</label>
+                    <select class="form-select" id="time_period" name="time_period">
+                        <option value="">All Periods</option>
+                        <option value="weekly" {% if selected_time_period == "weekly" %}selected{% endif %}>Weekly</option>
+                        <option value="monthly" {% if selected_time_period == "monthly" %}selected{% endif %}>Monthly</option>
+                        <option value="termly" {% if selected_time_period == "termly" %}selected{% endif %}>Termly</option>
+                        <option value="yearly" {% if selected_time_period == "yearly" %}selected{% endif %}>Yearly</option>
+                    </select>
+                </div>
+
+                <!-- Subject filter -->
+                <div class="col-md-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <select class="form-select" id="subject" name="subject">
+                        <option value="">All Subjects</option>
+                        {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if selected_subject == subject.id %}selected{% endif %}>
+                                {{ subject.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Performance range filter -->
+                <div class="col-md-3">
+                    <label for="performance_range" class="form-label">Performance Range</label>
+                    <select class="form-select" id="performance_range" name="performance_range">
+                        <option value="">All Ranges</option>
+                        <option value="90-100" {% if selected_performance_range == "90-100" %}selected{% endif %}>90-100%</option>
+                        <option value="80-89" {% if selected_performance_range == "80-89" %}selected{% endif %}>80-89%</option>
+                        <option value="70-79" {% if selected_performance_range == "70-79" %}selected{% endif %}>70-79%</option>
+                        <option value="60-69" {% if selected_performance_range == "60-69" %}selected{% endif %}>60-69%</option>
+                        <option value="0-59" {% if selected_performance_range == "0-59" %}selected{% endif %}>Below 60%</option>
+                    </select>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'assignments:report_card_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-undo me-1"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Cards List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if user.is_student %}
+                    My Report Cards
+                {% elif user.is_parent and selected_child %}
+                    {{ selected_child_name }}'s Report Cards
+                {% elif selected_classroom %}
+                    Report Cards for {{ selected_classroom_name }}
+                {% else %}
+                    Available Report Cards
+                {% endif %}
+            </h6>
+            <div class="input-group w-25">
+                <input type="text" id="reportCardSearch" class="form-control" placeholder="Search...">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if report_cards %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="reportCardTable">
+                        <thead class="table-light">
+                            <tr>
+                                {% if not user.is_student %}
+                                <th>Student</th>
+                                {% endif %}
+                                {% if not selected_classroom and user.is_admin or user.is_teacher %}
+                                <th>Class</th>
+                                {% endif %}
+                                <th>Term</th>
+                                <th>Academic Year</th>
+                                <th class="text-center">Average Score</th>
+                                <th class="text-center">Generated Date</th>
+                                <th class="text-center">Generated By</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report_card in report_cards %}
+                            <tr>
+                                {% if not user.is_student %}
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if report_card.student.user.profile_picture %}
+                                        <img src="{{ report_card.student.user.profile_picture.url }}" class="rounded-circle me-2" width="40" height="40">
+                                        {% else %}
+                                        <div class="bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <span>{{ report_card.student.user.get_initials }}</span>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="font-weight-bold">{{ report_card.student.user.get_full_name }}</div>
+                                            <div class="small text-muted">ID: {{ report_card.student.id_number }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                {% endif %}
+
+                                {% if not selected_classroom and user.is_admin or user.is_teacher %}
+                                <td>{{ report_card.student.classroom.name }} {% if report_card.student.classroom.section %}({{ report_card.student.classroom.section }}){% endif %}</td>
+                                {% endif %}
+
+                                <td>{{ report_card.term }}</td>
+                                <td>{{ report_card.academic_year }}</td>
+                                <td class="text-center">
+                                    <span class="badge {% if report_card.average_score >= 80 %}bg-success{% elif report_card.average_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ report_card.average_score|floatformat:1 }}%
+                                    </span>
+                                </td>
+                                <td class="text-center">{{ report_card.generated_date|date:"M d, Y" }}</td>
+                                <td class="text-center">{{ report_card.generated_by.get_full_name }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'assignments:report_card_detail' report_card.id %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <a href="{% url 'assignments:print_report_card' report_card.id %}" class="btn btn-primary btn-sm" target="_blank">
+                                        <i class="fas fa-print"></i> Print
+                                    </a>
+                                    <a href="{% url 'assignments:export_report_card' report_card.id 'pdf' %}" class="btn btn-danger btn-sm" target="_blank">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                    <a href="{% url 'assignments:export_report_card' report_card.id 'excel' %}" class="btn btn-success btn-sm" target="_blank">
+                                        <i class="fas fa-file-excel"></i> Excel
+                                    </a>
+                                    {% if user.is_admin %}
+                                    <a href="{% url 'assignments:generate_report_card' report_card.student.id %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-sync-alt"></i> Regenerate
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if report_cards.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if report_cards.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ report_cards.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </span>
+                        </li>
+                        {% endif %}
+
+                        {% for num in report_cards.paginator.page_range %}
+                            {% if report_cards.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > report_cards.number|add:'-3' and num < report_cards.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if query_params %}&{{ query_params }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if report_cards.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ report_cards.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-alt fa-4x mb-3 text-muted"></i>
+                    <p class="lead text-muted">No report cards available.</p>
+                    {% if user.is_admin or user.is_teacher %}
+                    <a href="{% url 'assignments:generate_report_cards' %}" class="btn btn-primary">
+                        <i class="fas fa-file-alt me-2"></i>Generate Report Cards
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('reportCardSearch');
+        const table = document.getElementById('reportCardTable');
+
+        if (searchInput && table) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+                for (let i = 0; i < rows.length; i++) {
+                    const cells = rows[i].getElementsByTagName('td');
+                    let found = false;
+
+                    for (let j = 0; j < cells.length - 1; j++) { // Skip the actions cell
+                        if (cells[j].textContent.toLowerCase().indexOf(searchTerm) > -1) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    rows[i].style.display = found ? '' : 'none';
+                }
+            });
+        }
+
+        // Initialize charts
+        const chartData = JSON.parse('{{ chart_data|escapejs }}');
+
+        // Performance Trend Chart
+        const trendCtx = document.getElementById('performanceTrendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.trend.labels,
+                datasets: [{
+                    label: 'Average Score',
+                    data: chartData.trend.data,
+                    borderColor: '#4e73df',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Subject Performance Chart
+        const subjectCtx = document.getElementById('subjectPerformanceChart').getContext('2d');
+        new Chart(subjectCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.subjects.labels,
+                datasets: [{
+                    label: 'Average Score',
+                    data: chartData.subjects.data,
+                    backgroundColor: '#36b9cc'
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Attendance Correlation Chart
+        const attendanceCtx = document.getElementById('attendanceCorrelationChart').getContext('2d');
+        new Chart(attendanceCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Attendance vs Performance',
+                    data: chartData.attendance,
+                    backgroundColor: '#1cc88a'
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Attendance Percentage'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Performance Score'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<!-- Access Denied Modal -->
+<div class="modal fade" id="accessDeniedModal" tabindex="-1" aria-labelledby="accessDeniedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="accessDeniedModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Access Restricted
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-lock fa-4x text-danger mb-3"></i>
+                    <h5>Permission Denied</h5>
+                </div>
+                <p>Only administrators are authorized to generate report cards.</p>
+                <p>please contact the school administrator If needed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

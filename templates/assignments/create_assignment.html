@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Assignment - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create Assignment</h1>
+        <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Assignments
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Assignment Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="class_subject" class="form-label">Class & Subject <span class="text-danger">*</span></label>
+                                <select class="form-select" id="class_subject" name="class_subject" required>
+                                    <option value="">Select Class & Subject</option>
+                                    {% for class_subject in class_subjects %}
+                                    <option value="{{ class_subject.id }}">
+                                        {{ class_subject.classroom.name }} {% if class_subject.classroom.section %}({{ class_subject.classroom.section }}){% endif %} - {{ class_subject.subject.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="assignment_type" class="form-label">Assignment Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="assignment_type" name="assignment_type" required>
+                                    <option value="HOMEWORK">Homework</option>
+                                    <option value="QUIZ">Quiz</option>
+                                    <option value="TEST">Test</option>
+                                    <option value="EXAM">Exam</option>
+                                    <option value="PROJECT">Project</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="max_score" class="form-label">Maximum Score <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="max_score" name="max_score" min="1" value="100" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="due_date" name="due_date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="due_time" class="form-label">Due Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="due_time" name="due_time" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="file_attachment" class="form-label">Attachment (optional)</label>
+                            <input type="file" class="form-control" id="file_attachment" name="file_attachment">
+                            <small class="text-muted">Upload documents, images, or other files related to this assignment.</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    Active (visible to students)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="quiz-options" style="display:none;">
+                            <hr>
+                            <h5 class="mb-3">Quiz Options</h5>
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle"></i> After creating the quiz, you'll be able to add questions.
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="time_limit" class="form-label">Time Limit (minutes)</label>
+                                    <input type="number" class="form-control" id="time_limit" name="time_limit" min="1" placeholder="Optional">
+                                    <small class="text-muted">When set, students will have this many minutes to complete the quiz once started. The quiz will auto-submit when time expires.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="questions_to_display" class="form-label">Questions to Display</label>
+                                    <input type="number" class="form-control" id="questions_to_display" name="questions_to_display" min="1" placeholder="Optional">
+                                    <small class="text-muted">If set, only this many questions will be randomly selected from your question bank. Leave empty to show all questions.</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="randomize_questions" name="randomize_questions" checked>
+                                        <label class="form-check-label" for="randomize_questions">
+                                            Randomize Question Order
+                                        </label>
+                                        <div>
+                                            <small class="text-muted">Helps prevent sharing of answers. Consider disabling for younger students who may get confused by different question orders.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="randomize_choices" name="randomize_choices" checked>
+                                        <label class="form-check-label" for="randomize_choices">
+                                            Randomize Answer Choices
+                                        </label>
+                                        <div>
+                                            <small class="text-muted">Shuffles the order of multiple choice answers. Consider disabling for younger students who may get confused by different answer orders.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Assignment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Show/hide quiz options based on assignment type
+        $('#assignment_type').change(function() {
+            if ($(this).val() === 'QUIZ') {
+                $('.quiz-options').slideDown();
+            } else {
+                $('.quiz-options').slideUp();
+            }
+        });
+        
+        // Set default due date (tomorrow)
+        let tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        let year = tomorrow.getFullYear();
+        let month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        let day = String(tomorrow.getDate()).padStart(2, '0');
+        $('#due_date').val(`${year}-${month}-${day}`);
+        
+        // Set default due time (noon)
+        $('#due_time').val('12:00');
+    });
+</script>
+{% endblock %}

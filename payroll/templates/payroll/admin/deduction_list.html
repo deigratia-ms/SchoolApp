@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Deductions - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Deductions</h1>
+    <div>
+      <a href="{% url 'payroll:create_deduction' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Add Deduction
+      </a>
+      <a href="{% url 'payroll:admin_dashboard' %}" class="btn btn-outline-primary ms-2">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Form -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+          <form method="get" class="row g-3">
+            <div class="col-md-4">
+              <label for="staff" class="form-label">Staff Member</label>
+              <select name="staff" id="staff" class="form-select">
+                <option value="">All Staff</option>
+                {% for staff in staff_with_salary %}
+                  <option value="{{ staff.user.id }}" {% if selected_staff == staff.user.id|stringformat:"i" %}selected{% endif %}>
+                    {{ staff.user.get_full_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="type" class="form-label">Deduction Type</label>
+              <select name="type" id="type" class="form-select">
+                <option value="">All Types</option>
+                {% for type_code, type_name in deduction_types %}
+                  <option value="{{ type_code }}" {% if selected_type == type_code %}selected{% endif %}>
+                    {{ type_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="recurring" class="form-label">Recurring</label>
+              <select name="recurring" id="recurring" class="form-select">
+                <option value="">All</option>
+                <option value="true" {% if selected_recurring == 'true' %}selected{% endif %}>Yes</option>
+                <option value="false" {% if selected_recurring == 'false' %}selected{% endif %}>No</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter me-2"></i>Filter
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deductions List -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Deductions</h6>
+        </div>
+        <div class="card-body">
+          {% if deductions %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Staff Name</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Recurring</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for deduction in deductions %}
+                    <tr>
+                      <td>{{ deduction.staff_salary.user.get_full_name }}</td>
+                      <td>{{ deduction.get_deduction_type_display }}</td>
+                      <td>GH₵ {{ deduction.amount|floatformat:2|intcomma }}</td>
+                      <td>{{ deduction.start_date|date:"M d, Y" }}</td>
+                      <td>{{ deduction.end_date|date:"M d, Y"|default:"Ongoing" }}</td>
+                      <td>
+                        {% if deduction.is_recurring %}
+                          <span class="badge bg-success">Yes</span>
+                        {% else %}
+                          <span class="badge bg-danger">No</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ deduction.description|default:"-"|truncatechars:30 }}</td>
+                      <td>
+                        <a href="{% url 'payroll:edit_deduction' deduction.id %}" class="btn btn-sm btn-warning">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if deductions.has_other_pages %}
+              <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  {% if deductions.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_recurring %}&recurring={{ selected_recurring }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ deductions.previous_page_number }}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_recurring %}&recurring={{ selected_recurring }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                  
+                  {% for i in deductions.paginator.page_range %}
+                    {% if deductions.number == i %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > deductions.number|add:'-3' and i < deductions.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_recurring %}&recurring={{ selected_recurring }}{% endif %}">{{ i }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                  
+                  {% if deductions.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ deductions.next_page_number }}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_recurring %}&recurring={{ selected_recurring }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ deductions.paginator.num_pages }}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_recurring %}&recurring={{ selected_recurring }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No deductions found. <a href="{% url 'payroll:create_deduction' %}" class="alert-link">Add a new deduction</a>.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

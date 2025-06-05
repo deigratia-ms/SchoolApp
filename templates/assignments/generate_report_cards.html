@@ -1,0 +1,818 @@
+{% extends 'base.html' %}
+
+{% block title %}Generate Report Cards | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Generate Report Cards</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'assignments:report_card_list' %}">Report Cards</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Generate</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'assignments:report_card_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Report Cards
+            </a>
+        </div>
+    </div>
+
+    <!-- Selection Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Report Card Generation Options</h6>
+            {% if user.role == 'TEACHER' %}
+            <div class="small text-muted mt-1">
+                <i class="fas fa-info-circle me-1"></i> Note: Only class teachers can generate report cards for their assigned classes
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="post" id="reportCardForm">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <!-- Class Selection -->
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="classroom" class="form-label required">Class</label>
+                            {% if user.is_admin %}
+                            <select class="form-select" id="classroom" name="classroom" required>
+                                <option value="" disabled selected>Select a Class</option>
+                                {% for classroom in classrooms %}
+                                    <option value="{{ classroom.id }}">
+                                        {{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% elif user.is_teacher %}
+                            <select class="form-select" id="classroom" name="classroom" required>
+                                <option value="" disabled selected>Select a Class</option>
+                                {% for classroom in teacher_classrooms %}
+                                    <option value="{{ classroom.id }}">
+                                        {{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                            <div class="form-text">Select the class for which you want to generate report cards.</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Academic Period -->
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="term" class="form-label required">Term</label>
+                            <select class="form-select" id="term" name="term" required>
+                                <option value="" disabled selected>Select Term</option>
+                                <option value="First Term">First Term</option>
+                                <option value="Second Term">Second Term</option>
+                                <option value="Third Term">Third Term</option>
+                            </select>
+                            <div class="form-text">The academic term for these report cards.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="academic_year" class="form-label required">Academic Year</label>
+                            <select class="form-select" id="academic_year" name="academic_year" required>
+                                <option value="" disabled selected>Select Year</option>
+                                {% for year in academic_years %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">The academic year for these report cards.</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assessment Weight Configuration -->
+                    <div class="col-md-12">
+                        <div class="card border-left-primary shadow py-2 mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">Assessment Weight Configuration</h5>
+                                <p class="card-text small text-muted">Configure how different assessment types should be weighted in the final grade calculation.</p>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="weight_configuration" class="form-label">Use Predefined Configuration</label>
+                                            <select class="form-select" id="weight_configuration" name="weight_configuration">
+                                                <option value="" selected>Custom Configuration</option>
+                                                {% for config in weight_configurations %}
+                                                    <option value="{{ config.id }}">{{ config.name }}{% if config.is_default %} (Default){% endif %}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">Select a predefined weight configuration or customize below.</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <button type="button" class="btn btn-outline-primary" id="loadConfigBtn">
+                                            <i class="fas fa-sync-alt me-2"></i>Load Configuration
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="row" id="customWeightsSection">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header bg-light py-2">
+                                                <h6 class="m-0 font-weight-bold">Include Components</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input component-checkbox" type="checkbox" value="include_classwork" id="includeClasswork" name="include_classwork" checked>
+                                                    <label class="form-check-label" for="includeClasswork">
+                                                        Include Classwork
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input component-checkbox" type="checkbox" value="include_quizzes" id="includeQuizzes" name="include_quizzes" checked>
+                                                    <label class="form-check-label" for="includeQuizzes">
+                                                        Include Quizzes
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input component-checkbox" type="checkbox" value="include_tests" id="includeTests" name="include_tests" checked>
+                                                    <label class="form-check-label" for="includeTests">
+                                                        Include Tests
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input component-checkbox" type="checkbox" value="include_midterms" id="includeMidterms" name="include_midterms" checked>
+                                                    <label class="form-check-label" for="includeMidterms">
+                                                        Include Midterms
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input component-checkbox" type="checkbox" value="include_projects" id="includeProjects" name="include_projects" checked>
+                                                    <label class="form-check-label" for="includeProjects">
+                                                        Include Projects
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input component-checkbox" type="checkbox" value="include_exams" id="includeExams" name="include_exams" checked>
+                                                    <label class="form-check-label" for="includeExams">
+                                                        Include Exams
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input component-checkbox" type="checkbox" value="include_attendance" id="includeAttendance" name="include_attendance" checked>
+                                                    <label class="form-check-label" for="includeAttendance">
+                                                        Include Attendance
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header bg-light py-2">
+                                                <h6 class="m-0 font-weight-bold">Component Weights (%)</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label for="classworkWeight" class="form-label">Classwork Weight</label>
+                                                    <input type="number" class="form-control component-weight" id="classworkWeight" name="classwork_weight" min="0" max="100" value="10">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="quizWeight" class="form-label">Quiz Weight</label>
+                                                    <input type="number" class="form-control component-weight" id="quizWeight" name="quiz_weight" min="0" max="100" value="15">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="testWeight" class="form-label">Test Weight</label>
+                                                    <input type="number" class="form-control component-weight" id="testWeight" name="test_weight" min="0" max="100" value="20">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="midtermWeight" class="form-label">Midterm Weight</label>
+                                                    <input type="number" class="form-control component-weight" id="midtermWeight" name="midterm_weight" min="0" max="100" value="15">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="projectWeight" class="form-label">Project Weight</label>
+                                                    <input type="number" class="form-control component-weight" id="projectWeight" name="project_weight" min="0" max="100" value="10">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="examWeight" class="form-label">Exam Weight</label>
+                                                    <input type="number" class="form-control component-weight" id="examWeight" name="exam_weight" min="0" max="100" value="25">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="attendanceWeight" class="form-label">Attendance Weight</label>
+                                                    <input type="number" class="form-control component-weight" id="attendanceWeight" name="attendance_weight" min="0" max="100" value="5">
+                                                </div>
+                                                
+                                                <div class="alert alert-info">
+                                                    <div class="d-flex align-items-center">
+                                                        <span>Total:</span>
+                                                        <strong class="ms-2" id="totalWeight">100</strong>
+                                                        <span class="ms-1">%</span>
+                                                        <span class="ms-2 badge bg-success" id="weightStatus">Valid</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Generation Options -->
+                    <div class="col-md-12">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Generation Options</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="all_students" id="allStudents" name="all_students" checked>
+                                <label class="form-check-label" for="allStudents">
+                                    Generate for all students in selected class
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="regenerate" id="regenerate" name="regenerate">
+                                <label class="form-check-label" for="regenerate">
+                                    Regenerate existing report cards (overwrite)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="include_comments" id="includeComments" name="include_comments" checked>
+                                <label class="form-check-label" for="includeComments">
+                                    Include teacher comments (if available)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="notify_parents" id="notifyParents" name="notify_parents">
+                                <label class="form-check-label" for="notifyParents">
+                                    Notify parents when report cards are ready
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <!-- Student List (appears after class selection) -->
+                <div id="studentListSection" style="display: none;">
+                    <h5 class="mb-3">Student Selection</h5>
+                    <p class="text-muted">Select the students for whom you want to generate report cards. If "Generate for all students" is checked, this selection will be ignored.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="studentTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAllStudents">
+                                        </div>
+                                    </th>
+                                    <th>Student</th>
+                                    <th>ID Number</th>
+                                    <th class="text-center">Existing Report Card</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody">
+                                {% if students_with_grades %}
+                                    {% for student_data in students_with_grades %}
+                                    <tr>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input student-checkbox" type="checkbox"
+                                                       name="student_ids[]" value="{{ student_data.student.id }}"
+                                                       id="student{{ student_data.student.id }}">
+                                            </div>
+                                        </td>
+                                        <td>{{ student_data.student.user.get_full_name }}</td>
+                                        <td>{{ student_data.student.student_id }}</td>
+                                        <td>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-primary">Overall: {{ student_data.overall_average|floatformat:1 }}%</span>
+                                                <button type="button" class="btn btn-sm btn-outline-info"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#gradesModal{{ student_data.student.id }}">
+                                                    View Grades
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Grades Modal for each student -->
+                                    <div class="modal fade" id="gradesModal{{ student_data.student.id }}"
+                                         tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">
+                                                        Grades for {{ student_data.student.user.get_full_name }}
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <table class="table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Subject</th>
+                                                                <th class="text-end">Average</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for subject, average in student_data.subject_averages.items %}
+                                                            <tr>
+                                                                <td>{{ subject }}</td>
+                                                                <td class="text-end">
+                                                                    <span class="badge {% if average >= 90 %}bg-success
+                                                                                     {% elif average >= 80 %}bg-primary
+                                                                                     {% elif average >= 70 %}bg-info
+                                                                                     {% elif average >= 60 %}bg-warning
+                                                                                     {% else %}bg-danger{% endif %}">
+                                                                        {{ average|floatformat:1 }}%
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr>
+                                                                <th>Overall Average</th>
+                                                                <th class="text-end">
+                                                                    <span class="badge bg-primary">
+                                                                        {{ student_data.overall_average|floatformat:1 }}%
+                                                                    </span>
+                                                                </th>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">Please select a class to view students</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mt-4 d-flex justify-content-between">
+                    <button type="button" id="previewBtn" class="btn btn-info" disabled>
+                        <i class="fas fa-eye me-2"></i>Preview Results
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-alt me-2"></i>Generate Report Cards
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Preview Section (appears after clicking Preview) -->
+    <div id="previewSection" style="display: none;" class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Report Card Generation Preview</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Total Students</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalStudents">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        New Report Cards</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="newReportCards">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                        Regenerate Report Cards</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="regenerateCount">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-sync-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info" role="alert">
+                <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Information</h5>
+                <p>The system will generate report cards for the selected students based on:</p>
+                <ul>
+                    <li><strong>Assignments:</strong> Submission grades from all assignments in the term</li>
+                    <li><strong>Quizzes:</strong> Results from all quizzes in the term</li>
+                    <li><strong>Attendance:</strong> Attendance records from the term</li>
+                </ul>
+                <p class="mb-0">Make sure all grades have been entered before generating report cards.</p>
+            </div>
+            
+            <div id="incompleteSectionWarning" class="alert alert-warning" role="alert" style="display: none;">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Warning</h5>
+                <p>Some students have incomplete grade information:</p>
+                <ul id="incompleteStudentsList">
+                    <!-- Incomplete students will be listed here -->
+                </ul>
+                <p class="mb-0">Report cards for these students may not include all grade information.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Modal -->
+    <div class="modal fade" id="progressModal" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="progressModalLabel">Generating Report Cards</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <p class="text-center">Please wait while the system generates report cards.</p>
+                    <p class="text-center">This may take a few moments.</p>
+                    
+                    <div class="progress mt-4">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                    </div>
+                    <p class="text-center mt-2"><span id="processedCount">0</span> of <span id="totalToProcess">0</span> processed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const classroomSelect = document.getElementById('classroom');
+        const studentListSection = document.getElementById('studentListSection');
+        const studentTableBody = document.getElementById('studentTableBody');
+        const allStudentsCheckbox = document.getElementById('allStudents');
+        const regenerateCheckbox = document.getElementById('regenerate');
+        const previewBtn = document.getElementById('previewBtn');
+        const previewSection = document.getElementById('previewSection');
+        const selectAllStudentsCheckbox = document.getElementById('selectAllStudents');
+        const reportCardForm = document.getElementById('reportCardForm');
+        
+        // Assessment weight configuration elements
+        const weightConfigSelect = document.getElementById('weight_configuration');
+        const loadConfigBtn = document.getElementById('loadConfigBtn');
+        const componentWeights = document.querySelectorAll('.component-weight');
+        const componentCheckboxes = document.querySelectorAll('.component-checkbox');
+        const totalWeightDisplay = document.getElementById('totalWeight');
+        const weightStatusDisplay = document.getElementById('weightStatus');
+        
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Calculate and update total weight
+        function updateTotalWeight() {
+            let total = 0;
+            
+            // Only add weights for components that are checked/included
+            componentCheckboxes.forEach((checkbox, index) => {
+                if (checkbox.checked && componentWeights[index]) {
+                    total += parseInt(componentWeights[index].value) || 0;
+                }
+            });
+            
+            // Update the total display
+            totalWeightDisplay.textContent = total;
+            
+            // Update status based on total
+            if (total === 100) {
+                weightStatusDisplay.className = 'ms-2 badge bg-success';
+                weightStatusDisplay.textContent = 'Valid';
+            } else if (total < 100) {
+                weightStatusDisplay.className = 'ms-2 badge bg-warning';
+                weightStatusDisplay.textContent = 'Under 100%';
+            } else {
+                weightStatusDisplay.className = 'ms-2 badge bg-danger';
+                weightStatusDisplay.textContent = 'Over 100%';
+            }
+        }
+        
+        // Attach event listeners to all weight inputs
+        componentWeights.forEach(input => {
+            input.addEventListener('input', updateTotalWeight);
+        });
+        
+        // Attach event listeners to checkboxes
+        componentCheckboxes.forEach((checkbox, index) => {
+            checkbox.addEventListener('change', function() {
+                // Enable/disable the corresponding weight input
+                if (componentWeights[index]) {
+                    componentWeights[index].disabled = !this.checked;
+                    
+                    // If disabling, set value to 0
+                    if (!this.checked) {
+                        componentWeights[index].value = 0;
+                    }
+                }
+                
+                // Update the total
+                updateTotalWeight();
+            });
+        });
+        
+        // Handle loading predefined configurations
+        loadConfigBtn.addEventListener('click', function() {
+            const configId = weightConfigSelect.value;
+            
+            if (configId) {
+                // In a real implementation, this would be an AJAX call to get the config
+                // For this demo, we'll simulate loading a configuration
+                
+                // Simulate AJAX response - In production, this would be a server response
+                const sampleConfigs = {
+                    '1': {
+                        name: 'Standard Configuration',
+                        include_classwork: true,
+                        include_quizzes: true,
+                        include_tests: true,
+                        include_midterms: true,
+                        include_projects: true,
+                        include_exams: true,
+                        include_attendance: true,
+                        classwork_weight: 10,
+                        quiz_weight: 15,
+                        test_weight: 20,
+                        midterm_weight: 15,
+                        project_weight: 10,
+                        exam_weight: 25,
+                        attendance_weight: 5
+                    },
+                    '2': {
+                        name: 'Exam-Focused',
+                        include_classwork: true,
+                        include_quizzes: true,
+                        include_tests: true,
+                        include_midterms: true,
+                        include_projects: false,
+                        include_exams: true,
+                        include_attendance: false,
+                        classwork_weight: 5,
+                        quiz_weight: 15,
+                        test_weight: 20,
+                        midterm_weight: 20,
+                        project_weight: 0,
+                        exam_weight: 40,
+                        attendance_weight: 0
+                    },
+                    '3': {
+                        name: 'Elementary',
+                        include_classwork: true,
+                        include_quizzes: true,
+                        include_tests: true,
+                        include_midterms: false,
+                        include_projects: true,
+                        include_exams: true,
+                        include_attendance: true,
+                        classwork_weight: 20,
+                        quiz_weight: 15,
+                        test_weight: 20,
+                        midterm_weight: 0,
+                        project_weight: 15,
+                        exam_weight: 20,
+                        attendance_weight: 10
+                    }
+                };
+                
+                const config = sampleConfigs[configId];
+                
+                if (config) {
+                    // Apply the configuration
+                    document.getElementById('includeClasswork').checked = config.include_classwork;
+                    document.getElementById('includeQuizzes').checked = config.include_quizzes;
+                    document.getElementById('includeTests').checked = config.include_tests;
+                    document.getElementById('includeMidterms').checked = config.include_midterms;
+                    document.getElementById('includeProjects').checked = config.include_projects;
+                    document.getElementById('includeExams').checked = config.include_exams;
+                    document.getElementById('includeAttendance').checked = config.include_attendance;
+                    
+                    document.getElementById('classworkWeight').value = config.classwork_weight;
+                    document.getElementById('classworkWeight').disabled = !config.include_classwork;
+                    
+                    document.getElementById('quizWeight').value = config.quiz_weight;
+                    document.getElementById('quizWeight').disabled = !config.include_quizzes;
+                    
+                    document.getElementById('testWeight').value = config.test_weight;
+                    document.getElementById('testWeight').disabled = !config.include_tests;
+                    
+                    document.getElementById('midtermWeight').value = config.midterm_weight;
+                    document.getElementById('midtermWeight').disabled = !config.include_midterms;
+                    
+                    document.getElementById('projectWeight').value = config.project_weight;
+                    document.getElementById('projectWeight').disabled = !config.include_projects;
+                    
+                    document.getElementById('examWeight').value = config.exam_weight;
+                    document.getElementById('examWeight').disabled = !config.include_exams;
+                    
+                    document.getElementById('attendanceWeight').value = config.attendance_weight;
+                    document.getElementById('attendanceWeight').disabled = !config.include_attendance;
+                    
+                    // Update the total
+                    updateTotalWeight();
+                }
+            }
+        });
+        
+        // Initialize weights calculation
+        updateTotalWeight();
+        
+        // Show/hide student list based on "all students" checkbox
+        allStudentsCheckbox.addEventListener('change', function() {
+            if (classroomSelect.value) {
+                studentListSection.style.display = this.checked ? 'none' : 'block';
+            }
+        });
+        
+        // Load students when class is selected
+        classroomSelect.addEventListener('change', function() {
+            if (this.value) {
+                previewBtn.disabled = false;
+                
+                // Only show student list if "all students" is not checked
+                if (!allStudentsCheckbox.checked) {
+                    studentListSection.style.display = 'block';
+                }
+                
+                // Simulating AJAX loading of students (would be replaced with actual AJAX call)
+                // This is just a placeholder; in a real implementation, you'd fetch data from the server
+                simulateLoadStudents(this.value);
+            } else {
+                previewBtn.disabled = true;
+                studentListSection.style.display = 'none';
+            }
+        });
+        
+        // Preview button click
+        previewBtn.addEventListener('click', function() {
+            if (classroomSelect.value) {
+                previewSection.style.display = 'block';
+                
+                // Scroll to the preview section
+                previewSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // Update preview counts (this would be based on actual data in a real implementation)
+                updatePreview();
+            }
+        });
+        
+        // Select all students
+        selectAllStudentsCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#studentTableBody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+        
+        // Form submission
+        reportCardForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show the progress modal
+            const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+            progressModal.show();
+            
+            // Simulate progress (would be replaced with actual AJAX report card generation)
+            simulateReportCardGeneration();
+        });
+        
+        // Simulate loading students for a class
+        function simulateLoadStudents(classId) {
+            // In a real implementation, this would be an AJAX call to get students
+            // This is just sample data for demonstration
+            const sampleStudents = [
+                { id: 1, name: 'John Smith', idNumber: 'ST-2023-001', hasReportCard: true },
+                { id: 2, name: 'Maria Johnson', idNumber: 'ST-2023-002', hasReportCard: false },
+                { id: 3, name: 'David Williams', idNumber: 'ST-2023-003', hasReportCard: true },
+                { id: 4, name: 'Sarah Brown', idNumber: 'ST-2023-004', hasReportCard: false },
+                { id: 5, name: 'Michael Davis', idNumber: 'ST-2023-005', hasReportCard: false }
+            ];
+            
+            // Clear existing students
+            studentTableBody.innerHTML = '';
+            
+            // Add students to the table
+            sampleStudents.forEach(student => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input student-checkbox" type="checkbox" name="student_ids[]" value="${student.id}" id="student${student.id}">
+                        </div>
+                    </td>
+                    <td>${student.name}</td>
+                    <td>${student.idNumber}</td>
+                    <td class="text-center">
+                        ${student.hasReportCard ? 
+                            '<span class="badge bg-success">Exists</span>' : 
+                            '<span class="badge bg-secondary">None</span>'}
+                    </td>
+                `;
+                studentTableBody.appendChild(row);
+            });
+        }
+        
+        // Update preview information
+        function updatePreview() {
+            // In a real implementation, this would calculate based on selected students
+            // For this demo, we'll use placeholder values
+            const totalStudents = document.querySelectorAll('#studentTableBody tr').length;
+            const existingReportCards = document.querySelectorAll('#studentTableBody .badge.bg-success').length;
+            
+            document.getElementById('totalStudents').textContent = totalStudents;
+            document.getElementById('newReportCards').textContent = totalStudents - existingReportCards;
+            document.getElementById('regenerateCount').textContent = regenerateCheckbox.checked ? existingReportCards : 0;
+            
+            // Show warning for incomplete data (simulated)
+            const showWarning = Math.random() > 0.5; // Random for demo purposes
+            document.getElementById('incompleteSectionWarning').style.display = showWarning ? 'block' : 'none';
+            
+            if (showWarning) {
+                // Add some sample students with incomplete data
+                const incompleteList = document.getElementById('incompleteStudentsList');
+                incompleteList.innerHTML = `
+                    <li><strong>John Smith</strong> - Missing quiz grades for Mathematics</li>
+                    <li><strong>Sarah Brown</strong> - Missing attendance records for 3 days</li>
+                `;
+            }
+        }
+        
+        // Simulate report card generation with progress
+        function simulateReportCardGeneration() {
+            const progressBar = document.querySelector('.progress-bar');
+            const processedCount = document.getElementById('processedCount');
+            const totalToProcess = document.getElementById('totalToProcess');
+            
+            // Total students
+            const total = document.querySelectorAll('#studentTableBody tr').length;
+            totalToProcess.textContent = total;
+            
+            let current = 0;
+            const interval = setInterval(() => {
+                current++;
+                const percentage = (current / total) * 100;
+                
+                progressBar.style.width = percentage + '%';
+                progressBar.setAttribute('aria-valuenow', percentage);
+                processedCount.textContent = current;
+                
+                if (current >= total) {
+                    clearInterval(interval);
+                    
+                    // Redirect after completion (after a short delay)
+                    setTimeout(() => {
+                        window.location.href = "{% url 'assignments:report_card_list' %}";
+                    }, 1500);
+                }
+            }, 500); // Adjust the interval for faster/slower progress
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Question Details - {{ assignment.title }} - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Question Details</h1>
+        <div>
+            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Back to Assignment
+            </a>
+            {% if user.is_teacher and assignment.created_by == user or user.is_admin %}
+            <a href="{% url 'assignments:edit_question' question.id %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit"></i> Edit Question
+            </a>
+            <a href="{% url 'assignments:delete_question' question.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete Question
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Question Details Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Question {{ question.order }}
+                        <span class="badge bg-info ms-2">{{ question.get_question_type_display }}</span>
+                    </h6>
+                    <div>
+                        <span class="badge bg-primary">{{ question.points }} Points</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Question</h5>
+                        <div class="p-3 bg-light rounded">
+                            {{ question.question_text|linebreaks }}
+                        </div>
+                    </div>
+                    
+                    {% if question.question_type == 'MCQ' and choices %}
+                    <div class="mb-4">
+                        <h5>Answer Choices</h5>
+                        <div class="list-group">
+                            {% for choice in choices %}
+                                {% if user.is_teacher or user.is_admin %}
+                                    {% if choice.is_correct %}
+                                        <div class="list-group-item list-group-item-success">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                                    {{ choice.choice_text }}
+                                                </div>
+                                                <span class="badge bg-success">Correct Answer</span>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="list-group-item">
+                                            {{ choice.choice_text }}
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- For students and parents, show all choices the same way -->
+                                    <div class="list-group-item">
+                                        {{ choice.choice_text }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if question.question_type == 'SHORT' and extra_data.expected_answer %}
+                        {% if user.is_teacher or user.is_admin %}
+                        <div class="mb-4">
+                            <h5>Expected Answer</h5>
+                            <div class="p-3 bg-light rounded">
+                                {{ extra_data.expected_answer }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if question.question_type == 'LONG' and extra_data.grading_notes %}
+                        {% if user.is_teacher or user.is_admin %}
+                        <div class="mb-4">
+                            <h5>Grading Notes</h5>
+                            <div class="p-3 bg-light rounded">
+                                {{ extra_data.grading_notes }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if question.question_type == 'FILE' and extra_data.allowed_file_types %}
+                    <div class="mb-4">
+                        <h5>Allowed File Types</h5>
+                        <div class="p-3 bg-light rounded">
+                            {{ extra_data.allowed_file_types }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h5>Additional Details</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 30%">Assignment</th>
+                                    <td>{{ assignment.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Question Type</th>
+                                    <td>{{ question.get_question_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Points</th>
+                                    <td>{{ question.points }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Show Feedback</th>
+                                    <td>
+                                        {% if question.show_feedback %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Question Order</th>
+                                    <td>{{ question.order }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Assignment Info Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Assignment Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Title:</div>
+                        <div>{{ assignment.title }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Type:</div>
+                        <div>
+                            {% if assignment.assignment_type == 'HOMEWORK' %}
+                                <span class="badge bg-primary">Homework</span>
+                            {% elif assignment.assignment_type == 'QUIZ' %}
+                                <span class="badge bg-info">Quiz</span>
+                            {% elif assignment.assignment_type == 'TEST' %}
+                                <span class="badge bg-warning">Test</span>
+                            {% elif assignment.assignment_type == 'EXAM' %}
+                                <span class="badge bg-danger">Exam</span>
+                            {% elif assignment.assignment_type == 'PROJECT' %}
+                                <span class="badge bg-success">Project</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Class:</div>
+                        <div>{{ assignment.class_subject.classroom.name }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Subject:</div>
+                        <div>{{ assignment.class_subject.subject.name }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Due Date:</div>
+                        <div>{{ assignment.due_date|date:"M d, Y" }}</div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-primary w-100">
+                            <i class="fas fa-list"></i> View All Questions
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Next/Previous Question Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Navigation</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 pe-1">
+                            {% if prev_question %}
+                            <a href="{% url 'assignments:question_detail' prev_question.id %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </a>
+                            {% else %}
+                            <button class="btn btn-outline-secondary w-100" disabled>
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="col-6 ps-1">
+                            {% if next_question %}
+                            <a href="{% url 'assignments:question_detail' next_question.id %}" class="btn btn-outline-primary w-100">
+                                Next <i class="fas fa-arrow-right"></i>
+                            </a>
+                            {% else %}
+                            <button class="btn btn-outline-secondary w-100" disabled>
+                                Next <i class="fas fa-arrow-right"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

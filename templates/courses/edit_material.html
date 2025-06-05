@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Course Material | Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tox-tinymce {
+        border-radius: 0.25rem;
+    }
+
+    .draft-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+    }
+
+    .card-header.collapsible {
+        cursor: pointer;
+    }
+
+    .card-header.collapsible:hover {
+        background-color: rgba(0,0,0,0.03);
+    }
+
+    .card-header.collapsible::after {
+        content: '\f077';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        float: right;
+    }
+
+    .card-header.collapsible.collapsed::after {
+        content: '\f078';
+    }
+
+    @media (max-width: 768px) {
+        .instruction-cards .card-body {
+            display: none;
+        }
+        .instruction-cards .card-header.collapsible.collapsed + .card-body {
+            display: none;
+        }
+        .instruction-cards .card-header.collapsible:not(.collapsed) + .card-body {
+            display: block;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Edit Course Material</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'courses:material_list' %}">Materials</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'courses:material_detail' material.id %}">{{ material.title }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4 position-relative">
+                {% if material.is_draft %}
+                <span class="badge bg-warning draft-badge">Draft</span>
+                {% endif %}
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Edit Material</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="materialForm">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="class_subject" class="form-label">Class & Subject <span class="text-danger">*</span></label>
+                            <select class="form-select" id="class_subject" name="class_subject" required>
+                                <option value="">Select a class and subject</option>
+                                {% for cs in class_subjects %}
+                                <option value="{{ cs.id }}" {% if material.class_subject.id == cs.id %}selected{% endif %}>
+                                    {{ cs.classroom.name }} - {{ cs.subject.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the class and subject for which this material is intended.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ material.title }}" required>
+                            <div class="form-text">A descriptive title for the material (e.g., "Chapter 1 Notes", "Algebra Formulas").</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Write a concise summary of what this material covers and how students should use it...">{{ material.description }}</textarea>
+                            <div class="form-text text-muted small mt-2">
+                                <i class="fas fa-info-circle text-primary me-1"></i> This description will be displayed to students before they access the full content.
+                            </div>
+                        </div>
+
+                        <div class="mb-4 border p-3 bg-light rounded">
+                            <label for="content" class="form-label fw-bold fs-5">Content <span class="badge bg-primary">Main Material</span></label>
+                            {{ material.content|safe }}
+                            <textarea class="form-control tinymce" id="content" name="content">{{ material.content }}</textarea>
+                            <div class="mt-3 alert alert-info">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> <strong>Teacher Tips:</strong> This is the main educational content that students will see. Use the rich text editor to create engaging, well-structured material. Use headings to organize content, add images or tables to illustrate concepts, and highlight important information with colors or formatting.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="file" class="form-label">File (Optional)</label>
+                            {% if material.file %}
+                            <div class="mb-2">
+                                <span class="text-primary">Current file:</span>
+                                <a href="{{ material.file.url }}" target="_blank">{{ material.file.name|slice:"14:" }}</a>
+                                <div class="form-check mt-1">
+                                    <input class="form-check-input" type="checkbox" id="remove_file" name="remove_file">
+                                    <label class="form-check-label" for="remove_file">
+                                        Remove current file
+                                    </label>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <input type="file" class="form-control" id="file" name="file">
+                            <div class="form-text">
+                                Upload a file (PDF, Word, PowerPoint, images, etc.). Maximum file size: 10MB.
+                                <span id="fileTypeHelp" class="text-muted"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_draft" name="is_draft" {% if material.is_draft %}checked{% endif %}>
+                                <label class="form-check-label" for="is_draft">
+                                    Save as draft (not visible to students)
+                                </label>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i> Draft materials are only visible to you and administrators. Uncheck this box when you're ready to publish the material to students.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'courses:material_detail' material.id %}" class="btn btn-secondary">Cancel</a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 instruction-cards">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 collapsible" data-bs-toggle="collapse" data-bs-target="#instructionsCollapse" aria-expanded="true">
+                    <h6 class="m-0 font-weight-bold">Instructions</h6>
+                </div>
+                <div class="card-body collapse show" id="instructionsCollapse">
+                    <p>You can update this course material by:</p>
+                    <ul>
+                        <li>Changing the <strong>Class & Subject</strong> if needed.</li>
+                        <li>Editing the <strong>Title</strong> or <strong>Description</strong>.</li>
+                        <li>Writing or updating the <strong>Content</strong> using the rich text editor.</li>
+                        <li>Replacing the attached <strong>File</strong> (optional).</li>
+                        <li>Saving as a <strong>Draft</strong> if you're not ready to publish.</li>
+                    </ul>
+                    <p>Students will be able to view both your written content and download any attached files.</p>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header py-3 collapsible" data-bs-toggle="collapse" data-bs-target="#tipsCollapse" aria-expanded="true">
+                    <h6 class="m-0 font-weight-bold">Tips for Effective Materials</h6>
+                </div>
+                <div class="card-body collapse show" id="tipsCollapse">
+                    <p>For best results:</p>
+                    <ol>
+                        <li>Use headings to organize your content.</li>
+                        <li>Add color and formatting to highlight important points.</li>
+                        <li>Include images or diagrams when helpful.</li>
+                        <li>Keep files under 10MB for faster downloading.</li>
+                        <li>Convert complex documents to PDF to ensure all students can view them.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="/static/tinymce/tinymce.min.js"></script>
+<script>
+    tinymce.init({
+        selector: 'textarea.tinymce',
+        height: 400,
+        plugins: [
+            'advlist autolink lists link image charmap print preview anchor',
+            'searchreplace visualblocks code fullscreen',
+            'insertdatetime media table paste code help wordcount imagetools hr',
+            'emoticons template pagebreak nonbreaking quickbars',
+            'codesample directionality visualchars textpattern noneditable',
+            'table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
+        ],
+        toolbar: [
+            { name: 'history', items: ['undo', 'redo'] },
+            { name: 'styles', items: ['styleselect', 'formatselect', 'fontselect', 'fontsizeselect'] },
+            { name: 'formatting', items: ['bold', 'italic', 'underline', 'strikethrough'] },
+            { name: 'colors', items: ['forecolor', 'backcolor'] },
+            { name: 'alignment', items: ['alignleft', 'aligncenter', 'alignright', 'alignjustify'] },
+            { name: 'lists', items: ['bullist', 'numlist', 'outdent', 'indent'] },
+            { name: 'insert', items: ['image', 'media', 'table', 'hr', 'charmap', 'emoticons', 'codesample'] },
+            { name: 'tools', items: ['removeformat', 'code', 'fullscreen', 'help'] }
+        ],
+        toolbar_mode: 'wrap',
+        menubar: 'file edit view insert format tools table help',
+        menu: {
+            insert: {
+                title: 'Insert',
+                items: 'image media link template codesample inserttable | charmap emoticons hr pagebreak nonbreaking anchor tableofcontents | insertdatetime'
+            },
+            format: {
+                title: 'Format',
+                items: 'bold italic underline strikethrough superscript subscript | formats blockformats fontformats fontsizes align | forecolor backcolor | removeformat'
+            },
+            tools: {
+                title: 'Tools',
+                items: 'spellchecker spellcheckerlanguage | code wordcount'
+            },
+            table: {
+                title: 'Table',
+                items: 'inserttable | cell row column | tableprops deletetable'
+            }
+        },
+        images_upload_url: '/upload-image/',  /* This should match your Django URL pattern */
+        automatic_uploads: true,
+        image_title: true,
+        file_picker_types: 'image media',
+        /* Image upload handler - creates dummy URL for uploaded image */
+        images_upload_handler: function (blobInfo, success, failure) {
+            // For local development without a server endpoint
+            // This allows temporary use of images without a backend handler
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                success(canvas.toDataURL('image/png'));
+            };
+            img.src = URL.createObjectURL(blobInfo.blob());
+        },
+        setup: function(editor) {
+            editor.on('change', function() {
+                editor.save();
+            });
+
+            // Add a custom button for quick image insertion
+            editor.ui.registry.addButton('quickimage', {
+                icon: 'image',
+                tooltip: 'Insert image',
+                onAction: function () {
+                    editor.execCommand('mceImage');
+                }
+            });
+
+            // Add a custom button for quick table insertion
+            editor.ui.registry.addButton('quicktable', {
+                icon: 'table',
+                tooltip: 'Insert table',
+                onAction: function () {
+                    editor.execCommand('mceInsertTable');
+                }
+            });
+
+            // Add a custom button for quick media insertion
+            editor.ui.registry.addButton('quickmedia', {
+                icon: 'embed',
+                tooltip: 'Insert media',
+                onAction: function () {
+                    editor.execCommand('mceMedia');
+                }
+            });
+        },
+        quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
+        quickbars_insert_toolbar: 'quickimage quicktable quickmedia',
+        contextmenu: 'link image table media',
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 16px }',
+        // Add a help button that shows available shortcuts
+        help_tabs: ['shortcuts', 'plugins', 'versions'],
+        // Add image tools for editing images
+        imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions',
+        // Add table toolbar for better table editing
+        table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+        // Add media embed options
+        media_live_embeds: true,
+        media_alt_source: true,
+        media_poster: true,
+        // Add visual indication for tables and images
+        object_resizing: 'img,table',
+        // Add visual blocks to see structure
+        visualblocks_default_state: false
+    });
+
+    // Handle file input change
+    document.getElementById('file').addEventListener('change', function() {
+        const fileInput = this;
+        const fileTypeHelp = document.getElementById('fileTypeHelp');
+
+        if (fileInput.files.length > 0) {
+            const fileName = fileInput.files[0].name;
+            const fileExt = fileName.split('.').pop().toLowerCase();
+            const fileSize = (fileInput.files[0].size / 1024 / 1024).toFixed(2); // in MB
+
+            // Show file type info
+            if (['pdf'].includes(fileExt)) {
+                fileTypeHelp.innerHTML = `<span class="text-success">PDF document (${fileSize} MB). Students will be able to view this in-browser.</span>`;
+            } else if (['doc', 'docx'].includes(fileExt)) {
+                fileTypeHelp.innerHTML = `<span class="text-primary">Word document (${fileSize} MB). Students will need to download this to view.</span>`;
+            } else if (['ppt', 'pptx'].includes(fileExt)) {
+                fileTypeHelp.innerHTML = `<span class="text-primary">PowerPoint presentation (${fileSize} MB). Students will need to download this to view.</span>`;
+            } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExt)) {
+                fileTypeHelp.innerHTML = `<span class="text-success">Image (${fileSize} MB). Students will be able to view this in-browser.</span>`;
+            } else {
+                fileTypeHelp.innerHTML = `<span class="text-muted">File type: .${fileExt} (${fileSize} MB). Students will need to download this to view.</span>`;
+            }
+
+            // Validate file size
+            if (fileInput.files[0].size > 10 * 1024 * 1024) { // 10MB in bytes
+                fileTypeHelp.innerHTML += '<br><span class="text-danger">Warning: File exceeds the recommended 10MB size limit.</span>';
+            }
+        } else {
+            fileTypeHelp.innerHTML = '';
+        }
+    });
+
+    // Handle remove file checkbox
+    const removeFileCheckbox = document.getElementById('remove_file');
+    const fileInput = document.getElementById('file');
+
+    if (removeFileCheckbox) {
+        removeFileCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                fileInput.disabled = true;
+                fileInput.value = '';
+                document.getElementById('fileTypeHelp').innerHTML = '';
+            } else {
+                fileInput.disabled = false;
+            }
+        });
+    }
+
+    // Initialize collapsible cards and tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Initialize collapsible cards
+        const collapsibleHeaders = document.querySelectorAll('.card-header.collapsible');
+
+        collapsibleHeaders.forEach(header => {
+            // On mobile, collapse by default
+            if (window.innerWidth <= 768) {
+                header.classList.add('collapsed');
+                const target = document.querySelector(header.getAttribute('data-bs-target'));
+                if (target) target.classList.remove('show');
+            }
+
+            header.addEventListener('click', function() {
+                this.classList.toggle('collapsed');
+            });
+        });
+    });
+</script>
+{% endblock %}

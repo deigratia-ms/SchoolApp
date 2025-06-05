@@ -1,0 +1,204 @@
+{% extends 'website/base.html' %}
+
+{% load static %}
+
+
+{% block title %}Virtual Tour - Deigratia Montessori School{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+<style>
+    .virtual-tour-hero {
+        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{% static "website/images/school-building.jpg" %}') center/cover no-repeat;
+        color: white;
+        padding: 100px 0;
+        margin-top: -48px;
+    }
+
+    .location-card {
+        transition: transform 0.3s ease-in-out;
+        height: 100%;
+    }
+
+    .location-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .location-image {
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .video-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .video-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .tour-gallery {
+        margin-top: 20px;
+    }
+
+    .tour-gallery img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+    }
+
+    .tour-gallery img:hover {
+        transform: scale(1.05);
+    }
+
+    .map-container {
+        height: 400px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="virtual-tour-hero">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 text-center" data-aos="fade-up">
+                <h1 class="display-4 mb-4">Virtual Tour</h1>
+                <p class="lead">Experience our campus from anywhere in the world. Explore our facilities, classrooms, and learning spaces.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <!-- Map Section -->
+        <div class="row mb-5">
+            <div class="col-12" data-aos="fade-up">
+                <h2 class="text-center mb-4">Our Location</h2>
+                <div class="map-container">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3971.018231933814!2d0.1062873!3d5.5892456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNcKwMzUnMjEuMyJOIDDCsDA2JzIyLjYiRQ!5e0!3m2!1sen!2sgh!4v1623456789012!5m2!1sen!2sgh"
+                        width="100%" 
+                        height="100%" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+                <div class="text-center">
+                    <p><i class="fas fa-map-marker-alt text-primary me-2"></i>Located in Oyibi, Greater Accra Region, Ghana</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tour Locations -->
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h2 class="mb-4">Explore Our Campus</h2>
+                <p class="lead mb-5">Take a virtual walk through our facilities and discover what makes our school special.</p>
+            </div>
+        </div>
+
+        <div class="row">
+            {% for location in tour_locations %}
+            <div class="col-md-6 col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|mult:100 }}">
+                <div class="card location-card h-100 shadow-sm">
+                    <img src="{{ location.image.url }}" alt="{{ location.name }}" class="card-img-top location-image">
+                    <div class="card-body">
+                        <h3 class="card-title h4">{{ location.name }}</h3>
+                        <p class="card-text">{{ location.description|truncatewords:30 }}</p>
+                        
+                        {% if location.video_url %}
+                        <button type="button" class="btn btn-outline-primary mb-2" data-bs-toggle="modal" data-bs-target="#videoModal{{ location.id }}">
+                            <i class="fas fa-play-circle me-2"></i>Watch Video Tour
+                        </button>
+                        {% endif %}
+                        
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#galleryModal{{ location.id }}">
+                            <i class="fas fa-images me-2"></i>View Gallery
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {% if location.video_url %}
+            <!-- Video Modal -->
+            <div class="modal fade" id="videoModal{{ location.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ location.name }} - Video Tour</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <div class="video-container">
+                                <iframe src="{{ location.video_url }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Gallery Modal -->
+            <div class="modal fade" id="galleryModal{{ location.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ location.name }} - Photo Gallery</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row tour-gallery">
+                                {% for image in location.images.all %}
+                                <div class="col-md-4">
+                                    <a href="{{ image.image.url }}" data-lightbox="gallery-{{ location.id }}" data-title="{{ image.caption }}">
+                                        <img src="{{ image.image.url }}" alt="{{ image.caption|default:location.name }}" class="img-fluid">
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center" data-aos="fade-up">
+                <h2 class="mb-4">Schedule an In-Person Visit</h2>
+                <p class="lead mb-4">While our virtual tour gives you a great overview of our facilities, nothing compares to experiencing our school in person.</p>
+                <a href="{% url 'contact' %}" class="btn btn-primary btn-lg">Contact Us to Schedule a Visit</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<script>
+    lightbox.option({
+        'resizeDuration': 200,
+        'wrapAround': true
+    });
+</script>
+{% endblock %}

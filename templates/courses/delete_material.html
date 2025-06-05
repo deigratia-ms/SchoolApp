@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Material - {{ material.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'courses:material_list' %}">Course Materials</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'courses:material_detail' material_id=material.id %}">{{ material.title }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Delete</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Delete Material</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Warning!</h5>
+                        <p>You are about to delete the material <strong>{{ material.title }}</strong>. This action cannot be undone.</p>
+                        <p>
+                            <strong>Material Details:</strong><br>
+                            <ul>
+                                <li><strong>Title:</strong> {{ material.title }}</li>
+                                <li><strong>Class:</strong> {{ material.class_subject.classroom.name }} {{ material.class_subject.classroom.section }}</li>
+                                <li><strong>Subject:</strong> {{ material.class_subject.subject.name }}</li>
+                                <li><strong>Added by:</strong> {{ material.created_by.get_full_name }}</li>
+                                <li><strong>Added on:</strong> {{ material.created_at|date:"F j, Y, g:i a" }}</li>
+                            </ul>
+                        </p>
+                        <p>All students with access to this material will lose access once deleted.</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-end">
+                            <a href="{% url 'courses:material_detail' material_id=material.id %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-1"></i> Delete Material
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

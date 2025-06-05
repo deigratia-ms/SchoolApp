@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Class{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Delete Class</h1>
+        <a href="{% url 'courses:class_detail' classroom.id %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Class
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Confirm Deletion</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">Warning!</h4>
+                        <p>You are about to delete the class <strong>{{ classroom.name }} {{ classroom.section|default:"" }}</strong>.</p>
+                        <hr>
+                        <p>This action cannot be undone. Deleting this class will also remove:</p>
+                        <ul>
+                            <li>All associated class subjects</li>
+                            <li>All schedules for this class</li>
+                            <li>All student enrollments in this class</li>
+                        </ul>
+                        <p class="mb-0">Are you sure you want to continue?</p>
+                    </div>
+
+                    <!-- Class Details -->
+                    <div class="card mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Class Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" width="100%" cellspacing="0">
+                                    <tr>
+                                        <th>Class Name</th>
+                                        <td>{{ classroom.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Section</th>
+                                        <td>{{ classroom.section|default:"N/A" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Grade Level</th>
+                                        <td>{{ classroom.grade_level }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Class Teacher</th>
+                                        <td>
+                                            {% if classroom.class_teacher %}
+                                                {{ classroom.class_teacher.user.get_full_name }}
+                                            {% else %}
+                                                No teacher assigned
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Number of Students</th>
+                                        <td>{{ classroom.students.count }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Class Subjects to be deleted -->
+                    {% if class_subjects %}
+                    <div class="card mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Subjects Taught in This Class</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Subject</th>
+                                            <th>Teacher</th>
+                                            <th>Students</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for class_subject in class_subjects %}
+                                        <tr>
+                                            <td>{{ class_subject.subject.name }} ({{ class_subject.subject.code }})</td>
+                                            <td>
+                                                {% if class_subject.teacher %}
+                                                    {{ class_subject.teacher.user.get_full_name }}
+                                                {% else %}
+                                                    No teacher assigned
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ class_subject.students.count }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Delete Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'courses:class_detail' classroom.id %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-danger">Delete Class</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

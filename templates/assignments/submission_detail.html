@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Submission Details - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Submission Details</h1>
+        <div>
+            <a href="{% if submission.assignment and submission.assignment.id %}{% url 'assignments:assignment_detail' submission.assignment.id %}{% else %}#{% endif %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Back to Assignment
+            </a>
+            {% if user.is_teacher and submission.assignment.created_by == user or user.is_admin %}
+                {% if not submission.is_graded %}
+                <a href="{% url 'assignments:grade_submission' submission.id %}" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Grade Submission
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+     {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Submission Details Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Submission Information</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Assignment:</strong> {{ submission.assignment.title }}</p>
+                    <p><strong>Student:</strong> {{ submission.student.user.get_full_name }}</p>
+                    <p><strong>Submission Date:</strong> {{ submission.submission_date|date:"M d, Y - h:i A" }}</p>
+
+                    {% if submission.assignment.assignment_type == 'QUIZ' %}
+                        <hr>
+                        <h5>Quiz Answers</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Question</th>
+                                        <th>Answer</th>
+                                        {% if submission.is_graded %}
+                                        <th>Score</th>
+                                        <th>Feedback</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for answer in submission.studentanswer_set.all %}
+                                    <tr>
+                                        <td>{{ answer.question.question_text }}</td>
+                                        <td>
+                                            {% if answer.question.question_type == 'MCQ' %}
+                                                {{ answer.selected_choice.choice_text }}
+                                            {% elif answer.question.question_type in 'SHORT,LONG' %}
+                                                {{ answer.text_answer|default:"No answer provided." }}
+                                            {% else %}
+                                                {% if answer.file_answer %}
+                                                    <a href="{{ answer.file_answer.url }}" target="_blank">Download File</a>
+                                                {% else %}
+                                                   No file submitted.
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                         {% if submission.is_graded %}
+                                            <td>{{ answer.score }} / {{ answer.question.points }}</td>
+                                            <td>{{ answer.feedback|default:"No feedback provided." }}</td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        {% if submission.text_submission %}
+                        <hr>
+                        <h5>Text Submission</h5>
+                        <p>{{ submission.text_submission }}</p>
+                        {% endif %}
+
+                        {% if submission.file_submission %}
+                        <hr>
+                        <h5>File Submission</h5>
+                        <p><a href="{{ submission.file_submission.url }}" class="btn btn-outline-primary" target="_blank">Download File</a></p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if submission.is_graded %}
+            <!-- Grading Details Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Grading</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Score:</strong> {{ submission.score }} / {{ submission.assignment.max_score }}</p>
+                    <p><strong>Teacher Comment:</strong> {{ submission.teacher_comment|default:"No comment provided." }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

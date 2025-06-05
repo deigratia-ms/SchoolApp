@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Recent Activities - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Recent Activities and Users</h1>
+        <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Recent Activities Section -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">System Activity</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Recent Activity Feed -->
+                    <div class="activity-feed">
+                        {% if recent_activities %} 
+                        {% for activity in recent_activities %}
+                        <div class="activity-item d-flex mb-3">
+                            <div class="me-3">
+                                <div class="activity-icon bg-{{ activity.color }}-light text-{{ activity.color }} rounded-circle">
+                                    <i class="{{ activity.icon }}"></i>
+                                </div>
+                            </div>
+                            <div class="activity-content flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ activity.text }}</strong>
+                                    <small class="text-muted">{{ activity.time|timesince }} ago</small>
+                                </div>
+                                <div class="text-muted small">by {{ activity.user }}</div>
+                            </div>
+                        </div>
+                        {% endfor %} 
+                        {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-history fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="text-muted">No recent activity found</h5>
+                            <p class="text-muted small">
+                                System activity will appear here once users start interacting with the system.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'dashboard:activity_log' %}" class="btn btn-sm btn-primary">
+                        View All Activity
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Users Section -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Users</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for recent_user in recent_users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if recent_user.profile_picture %}
+                                            <img src="{{ recent_user.profile_picture.url }}" class="rounded-circle me-2" 
+                                                width="32" height="32" alt="{{ recent_user.get_full_name }}" />
+                                            {% else %}
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                style="width: 32px; height: 32px">
+                                                <span>{{ recent_user.first_name|first }}{{ recent_user.last_name|first }}</span>
+                                            </div>
+                                            {% endif %} 
+                                            {{ recent_user.get_full_name }}
+                                        </div>
+                                    </td>
+                                    <td>{{ recent_user.role }}</td>
+                                    <td>{{ recent_user.date_joined|date:"M d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center">No recent users</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'users:user_management' %}" class="btn btn-sm btn-primary">
+                        Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Activities</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="activity-type" class="form-label">Activity Type</label>
+                    <select class="form-select" id="activity-type" name="type">
+                        <option value="" selected>All Activities</option>
+                        <option value="assignment">Assignments</option>
+                        <option value="submission">Submissions</option>
+                        <option value="grade">Grades</option>
+                        <option value="announcement">Announcements</option>
+                        <option value="attendance">Attendance</option>
+                        <option value="material">Materials</option>
+                        <option value="video">Videos</option>
+                        <option value="event">Events</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date-range" class="form-label">Date Range</label>
+                    <select class="form-select" id="date-range" name="date_range">
+                        <option value="all" selected>All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="user-filter" class="form-label">User</label>
+                    <input type="text" class="form-control" id="user-filter" name="user" placeholder="Filter by username">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Full Activity List -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Activity History</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Activity</th>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                        <tr>
+                            <td>{{ activity.time|date:"M d, Y h:i A" }}</td>
+                            <td>{{ activity.text }}</td>
+                            <td>{{ activity.user }}</td>
+                            <td>
+                                <span class="badge bg-{{ activity.color }}">{{ activity.type|title }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ activity.url }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-history fa-3x text-muted"></i>
+                                </div>
+                                <p class="text-muted">No system activity found matching these criteria.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if activities.paginator.num_pages > 1 %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Activity pagination">
+                    <ul class="pagination">
+                        {% if activities.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ activities.previous_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in activities.paginator.page_range %}
+                            {% if activities.number == num %}
+                                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                            {% elif num > activities.number|add:'-3' and num < activities.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if activities.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ activities.next_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ activities.paginator.num_pages }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.user %}&user={{ request.GET.user }}{% endif %}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,646 @@
+{% extends 'base.html' %} {% block title %}Batch Generate ID Cards - School
+Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Batch Generate ID Cards</h1>
+    <div>
+      <a
+        href="{% url 'users:id_card_generate' %}"
+        class="btn btn-outline-primary me-2"
+      >
+        <i class="fas fa-user me-2"></i>Single ID Card
+      </a>
+      <a href="{% url 'users:id_card_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to ID Cards
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Form -->
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Batch Generation Details
+          </h6>
+        </div>
+        <div class="card-body">
+          <form method="post" id="batchGenerateForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+              <h5 class="mb-3">Template and Role Selection</h5>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="template_id" class="form-label"
+                    >ID Card Template <span class="text-danger">*</span></label
+                  >
+                  <select
+                    class="form-select"
+                    id="template_id"
+                    name="template_id"
+                    required
+                  >
+                    <option value="" selected disabled>
+                      Select a template...
+                    </option>
+                    {% for template in templates %} {% if template.is_active %}
+                    <option
+                      value="{{ template.id }}"
+                      data-role="{{ template.role }}"
+                    >
+                      {{ template.name }} ({{ template.get_role_display }})
+                    </option>
+                    {% endif %} {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="role" class="form-label"
+                    >User Role <span class="text-danger">*</span></label
+                  >
+                  <select class="form-select" id="role" name="role" required>
+                    <option value="" selected disabled>Select a role...</option>
+                    <option value="STUDENT">Students</option>
+                    <option value="TEACHER">Teachers</option>
+                    <option value="PARENT">Parents</option>
+                    <option value="ADMIN">Administrators</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                Make sure to select a template that matches the user role.
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <h5 class="mb-3">Card Details</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="issue_date" class="form-label"
+                    >Issue Date <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="issue_date"
+                    name="issue_date"
+                    value="{{ today|date:'Y-m-d' }}"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="expiry_date" class="form-label"
+                    >Expiry Date <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="expiry_date"
+                    name="expiry_date"
+                    value="{{ next_year|date:'Y-m-d' }}"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4" id="userSelectionSection" style="display: none">
+              <h5 class="mb-3">User Selection</h5>
+
+              <div class="form-check mb-3">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="selection_type"
+                  id="allUsers"
+                  value="all"
+                  checked
+                />
+                <label class="form-check-label" for="allUsers">
+                  Generate for all users with the selected role
+                </label>
+              </div>
+              <div class="form-check mb-3">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="selection_type"
+                  id="specificUsers"
+                  value="specific"
+                />
+                <label class="form-check-label" for="specificUsers">
+                  Select specific users
+                </label>
+              </div>
+
+              <!-- User selection table - shown when specificUsers is selected -->
+              <div id="userSelectionTable" class="mt-3" style="display: none">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 40px">
+                          <div class="form-check">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              id="selectAllUsers"
+                            />
+                          </div>
+                        </th>
+                        <th>Name</th>
+                        <th>ID</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                      <!-- Will be populated with JS -->
+                    </tbody>
+                  </table>
+                </div>
+                <div
+                  id="noUsersMessage"
+                  class="alert alert-warning mt-3"
+                  style="display: none"
+                >
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  No users found with the selected role. Please select a
+                  different role.
+                </div>
+                <div id="loadingUsers" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="mt-2">Loading users...</p>
+                </div>
+              </div>
+
+              <!-- Additional options for all users -->
+              <div id="allUsersOptions" class="mt-3">
+                <div class="alert alert-warning">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  This will generate ID cards for all users with the selected
+                  role who don't already have an active ID card.
+                </div>
+
+                <div class="card">
+                  <div class="card-body">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="skipExisting"
+                        name="skip_existing"
+                        checked
+                      />
+                      <label class="form-check-label" for="skipExisting">
+                        Skip users who already have an active ID card
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="regenerateExpired"
+                        name="regenerate_expired"
+                      />
+                      <label class="form-check-label" for="regenerateExpired">
+                        Regenerate ID cards for users with expired cards
+                      </label>
+                    </div>
+
+                    <div class="mt-3">
+                      <div id="userCountDisplay" class="alert alert-info">
+                        <!-- Will be populated with JS -->
+                        <i class="fas fa-info-circle me-2"></i>
+                        Calculating the number of users...
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+              <a
+                href="{% url 'users:id_card_list' %}"
+                class="btn btn-outline-secondary"
+                >Cancel</a
+              >
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="generateButton"
+                disabled
+              >
+                <i class="fas fa-id-card me-2"></i>Generate ID Cards
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info and Tips -->
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Batch Generation Info
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <h5 class="alert-heading">
+              <i class="fas fa-info-circle me-2"></i>How It Works
+            </h5>
+            <p>
+              Batch generation allows you to create ID cards for multiple users
+              at once using the same template and expiry date.
+            </p>
+          </div>
+
+          <div class="mb-4">
+            <h6>
+              <i class="fas fa-lightbulb text-warning me-2"></i>Tips for Batch
+              Generation
+            </h6>
+            <ul class="small">
+              <li class="mb-2">
+                Select a template that matches the user role you want to
+                generate cards for.
+              </li>
+              <li class="mb-2">
+                By default, users who already have active ID cards will be
+                skipped.
+              </li>
+              <li class="mb-2">
+                You can choose to regenerate ID cards for users with expired
+                cards.
+              </li>
+              <li class="mb-2">
+                All cards will have the same issue and expiry dates.
+              </li>
+              <li class="mb-2">
+                Generated cards can be printed individually or in bulk after
+                generation.
+              </li>
+            </ul>
+          </div>
+
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title">
+                <i class="fas fa-bolt text-danger me-2"></i>Time-Saving Features
+              </h6>
+              <p class="card-text small">
+                Use class/grade filters to quickly generate ID cards for entire
+                classes or departments. Perfect for start-of-year card issuance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Card -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Selected Template Preview
+          </h6>
+        </div>
+        <div class="card-body">
+              <div id="templatePreview" class="text-center">
+                <!-- Will be populated when a template is selected -->
+                <div class="py-5" id="previewPlaceholder">
+                  <i class="fas fa-id-card fa-4x text-muted"></i>
+                  <p class="mt-3 text-muted">Select a template to see preview</p>
+                </div>
+                
+                <!-- CR80 Preview Card (Initially Hidden) -->
+                <div id="cr80Preview" style="display: none;">
+                  <div class="mb-2 text-center" style="font-size: 11px; color: #666;">
+                    CR80 Standard (2.125" × 3.375") - Landscape Orientation
+                  </div>
+                  <div class="preview-card" style="width: 300px; height: 190px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                    <!-- Card Header -->
+                    <div class="preview-header" style="background-color: #4e73df; color: white; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                      <div>
+                        <i class="fas fa-school me-1"></i>
+                        School Name
+                      </div>
+                      <div id="previewTitle">ID CARD</div>
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div class="preview-body" style="display: flex; flex: 1; background: white; padding: 10px;">
+                      <!-- Left Column (Photo) -->
+                      <div style="width: 70px; display: flex; flex-direction: column; align-items: center;">
+                        <div style="width: 60px; height: 75px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; background: #f8f9fc; margin-bottom: 5px;">
+                          <i class="fas fa-user text-muted"></i>
+                        </div>
+                      </div>
+                      
+                      <!-- Right Column (Information) -->
+                      <div style="flex: 1; padding-left: 5px;">
+                        <div id="previewRoleBadge" style="display: inline-block; background: rgba(0,0,0,0.1); padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-bottom: 5px;">Role</div>
+                        <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px;">User Name</div>
+                        <div style="font-size: 11px; line-height: 1.4;">
+                          <div><strong>ID:</strong> USER-ID</div>
+                          <div><strong>Valid:</strong> One Year</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Card Footer -->
+                    <div style="background: rgba(0,0,0,0.05); border-top: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">
+                      School Address | Phone Number
+                    </div>
+                  </div>
+                  <div class="mt-2 text-muted small">
+                    This is just a preview. The actual ID cards will include complete user information.
+                  </div>
+                </div>
+              </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Elements
+    const templateSelect = document.getElementById("template_id");
+    const roleSelect = document.getElementById("role");
+    const userSelectionSection = document.getElementById(
+      "userSelectionSection"
+    );
+    const userSelectionTable = document.getElementById("userSelectionTable");
+    const allUsersOptions = document.getElementById("allUsersOptions");
+    const userTableBody = document.getElementById("userTableBody");
+    const noUsersMessage = document.getElementById("noUsersMessage");
+    const loadingUsers = document.getElementById("loadingUsers");
+    const selectAllUsers = document.getElementById("selectAllUsers");
+    const userCountDisplay = document.getElementById("userCountDisplay");
+    const generateButton = document.getElementById("generateButton");
+    const templatePreview = document.getElementById("templatePreview");
+
+    // Selection type radios
+    const allUsers = document.getElementById("allUsers");
+    const specificUsers = document.getElementById("specificUsers");
+
+    // Update form based on template and role selection
+    function updateFormState() {
+      const templateValue = templateSelect.value;
+      const roleValue = roleSelect.value;
+
+      if (templateValue && roleValue) {
+        // Get the role from the selected template
+        const templateRole =
+          templateSelect.options[templateSelect.selectedIndex].getAttribute(
+            "data-role"
+          );
+
+        // Check if the selected template matches the selected role
+        if (templateRole === roleValue) {
+          // Show user selection section
+          userSelectionSection.style.display = "block";
+
+          // Enable generate button
+          generateButton.disabled = false;
+
+          // Update template preview
+          updateTemplatePreview(templateValue);
+
+          // Update user selection based on the selected type
+          updateUserSelection();
+
+          // Update user count for "all users" option
+          updateUserCount(roleValue);
+        } else {
+          // Template and role don't match
+          userSelectionSection.style.display = "none";
+          generateButton.disabled = true;
+          templatePreview.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Selected template (${
+                              templateSelect.options[
+                                templateSelect.selectedIndex
+                              ].textContent
+                            }) 
+                            is not compatible with the selected role (${
+                              roleSelect.options[roleSelect.selectedIndex]
+                                .textContent
+                            }).
+                        </div>
+                        <p class="text-muted">Please select a template designed for ${
+                          roleSelect.options[roleSelect.selectedIndex]
+                            .textContent
+                        }</p>
+                    `;
+        }
+      } else {
+        // If either template or role is not selected, hide user selection
+        userSelectionSection.style.display = "none";
+        generateButton.disabled = true;
+      }
+    }
+
+    // Update user selection based on the selected type (all or specific)
+    function updateUserSelection() {
+      if (allUsers.checked) {
+        allUsersOptions.style.display = "block";
+        userSelectionTable.style.display = "none";
+      } else {
+        allUsersOptions.style.display = "none";
+        userSelectionTable.style.display = "block";
+
+        // Load users for the selected role
+        loadUsersForRole(roleSelect.value);
+      }
+    }
+
+    // Function to load users for a role from the database
+    function loadUsersForRole(role) {
+      // Show loading state
+      loadingUsers.style.display = "block";
+      noUsersMessage.style.display = "none";
+      userTableBody.innerHTML = "";
+
+      // Fetch users from the database via AJAX
+      fetch(`/api/users/?role=${role}`)
+        .then((response) => response.json())
+        .then((users) => {
+          // Hide loading state
+          loadingUsers.style.display = "none";
+
+          if (users.length > 0) {
+            // Populate table with fetched users
+            users.forEach((user) => {
+              userTableBody.innerHTML += `
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input user-checkbox" type="checkbox" name="user_ids" value="${
+                                              user.id
+                                            }" ${
+                user.hasCard ? "disabled" : ""
+              }>
+                                        </div>
+                                    </td>
+                                    <td>${user.name}</td>
+                                    <td>${user.userId}</td>
+                                    <td>
+                                        ${
+                                          user.hasCard
+                                            ? '<span class="badge bg-success">Has Active Card</span>'
+                                            : '<span class="badge bg-info">No Active Card</span>'
+                                        }
+                                    </td>
+                                </tr>
+                            `;
+            });
+
+            // Add event listeners to checkboxes
+            document.querySelectorAll(".user-checkbox").forEach((checkbox) => {
+              checkbox.addEventListener("change", function () {
+                // Update UI based on selection
+                updateSelectionCount();
+              });
+            });
+
+            // Initialize "select all" checkbox
+            selectAllUsers.checked = false;
+            selectAllUsers.addEventListener("change", function () {
+              document
+                .querySelectorAll(".user-checkbox:not([disabled])")
+                .forEach((checkbox) => {
+                  checkbox.checked = this.checked;
+                });
+              updateSelectionCount();
+            });
+
+            // Initial count update
+            updateSelectionCount();
+          } else {
+            // No users found
+            noUsersMessage.style.display = "block";
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching users:", error);
+          loadingUsers.style.display = "none";
+          noUsersMessage.style.display = "block";
+          noUsersMessage.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading users. Please try again.
+                    `;
+        });
+    }
+
+    // Update the count of selected users
+    function updateSelectionCount() {
+      const selectedCount = document.querySelectorAll(
+        ".user-checkbox:checked"
+      ).length;
+      const totalCount = document.querySelectorAll(
+        ".user-checkbox:not([disabled])"
+      ).length;
+
+      generateButton.innerHTML = `<i class="fas fa-id-card me-2"></i>Generate ${selectedCount} ID Card${
+        selectedCount !== 1 ? "s" : ""
+      }`;
+      generateButton.disabled = selectedCount === 0;
+    }
+
+    // Update the count of users for the "all users" option
+    function updateUserCount(role) {
+      // This would be an AJAX call in a real app
+      let count;
+
+      switch (role) {
+        case "STUDENT":
+          count = 120;
+          break;
+        case "TEACHER":
+          count = 34;
+          break;
+        case "PARENT":
+          count = 95;
+          break;
+        case "ADMIN":
+          count = 8;
+          break;
+        default:
+          count = 0;
+      }
+
+      // Update the UI
+      userCountDisplay.innerHTML = `
+                <i class="fas fa-info-circle me-2"></i>
+                This will generate ID cards for <strong>${count}</strong> users with the role 
+                <strong>${
+                  roleSelect.options[roleSelect.selectedIndex].textContent
+                }</strong>.
+            `;
+
+      // Update generate button text
+      generateButton.innerHTML = `<i class="fas fa-id-card me-2"></i>Generate ${count} ID Cards`;
+    }
+
+    // Update template preview
+    function updateTemplatePreview(templateId) {
+      // Hide placeholder and show CR80 preview
+      document.getElementById("previewPlaceholder").style.display = "none";
+      document.getElementById("cr80Preview").style.display = "block";
+      
+      // Get template details from the selected option
+      const templateName = templateSelect.options[templateSelect.selectedIndex].textContent.split(" (")[0];
+      const role = roleSelect.options[roleSelect.selectedIndex].textContent;
+      
+      // Update template preview title
+      document.getElementById("previewTitle").textContent = templateName.toUpperCase();
+      document.getElementById("previewRoleBadge").textContent = role;
+      
+      // Set role-specific colors
+      const previewCard = document.querySelector(".preview-card");
+      const previewHeader = document.querySelector(".preview-header");
+      
+      // Apply role-specific styling
+      switch(roleSelect.value) {
+        case "STUDENT":
+          previewHeader.style.backgroundColor = "#3498db"; // Blue
+          document.getElementById("previewRoleBadge").style.backgroundColor = "rgba(52, 152, 219, 0.3)";
+          break;
+        case "TEACHER":
+          previewHeader.style.backgroundColor = "#27ae60"; // Green
+          document.getElementById("previewRoleBadge").style.backgroundColor = "rgba(39, 174, 96, 0.3)";
+          break;
+        case "PARENT":
+          previewHeader.style.backgroundColor = "#8e44ad"; // Purple
+          document.getElementById("previewRoleBadge").style.backgroundColor = "rgba(142, 68, 173, 0.3)";
+          break;
+        case "ADMIN":
+          previewHeader.style.backgroundColor = "#e74c3c"; // Red
+          document.getElementById("previewRoleBadge").style.backgroundColor = "rgba(231, 76, 60, 0.3)";
+          break;
+        default:
+          previewHeader.style.backgroundColor = "#4e73df"; // Default blue
+          document.getElementById("previewRoleBadge").style.backgroundColor = "rgba(78, 115, 223, 0.3)";
+      }
+    }
+
+    // Event listeners
+    templateSelect.addEventListener("change", updateFormState);
+    roleSelect.addEventListener("change", updateFormState);
+    allUsers.addEventListener("change", updateUserSelection);
+    specificUsers.addEventListener("change", updateUserSelection);
+  });
+</script>
+{% endblock %}

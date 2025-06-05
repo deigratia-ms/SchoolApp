@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Management - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Student Management</h1>
+        <a href="{% url 'users:register_student' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Add New Student
+        </a>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Students</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="mb-0">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <label for="searchQuery" class="form-label">Search</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="searchQuery" name="search" 
+                                   placeholder="Name, email, student ID..." 
+                                   value="{{ search_query|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="gradeFilter" class="form-label">Grade/Class</label>
+                        <select class="form-select" id="gradeFilter" name="grade_level">
+                            <option value="" {% if not grade_filter %}selected{% endif %}>All Classes</option>
+                            {% for classroom in classrooms %}
+                                <option value="{{ classroom.grade_level }}" {% if grade_filter == classroom.grade_level %}selected{% endif %}>
+                                    {{ classroom.name }} (Grade {{ classroom.grade_level }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter" name="status">
+                            <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Student Directory</h6>
+            <span class="badge bg-primary">{{ students|length }} Students</span>
+        </div>
+        <div class="card-body">
+            {% if students %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="studentsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 280px;">Name</th>
+                                <th>Student ID</th>
+                                <th>Grade/Class</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if student.user.profile_picture %}
+                                                <img src="{{ student.user.profile_picture.url }}" alt="{{ student.user.get_full_name }}" 
+                                                     class="rounded-circle me-3" width="40" height="40">
+                                            {% else %}
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                                                     style="width: 40px; height: 40px;">
+                                                    <span>{{ student.user.first_name|first }}{{ student.user.last_name|first }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ student.user.get_full_name }}</div>
+                                                <!-- Student name only, classroom info shown in dedicated column -->
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ student.student_id }}</td>
+                                    <td>
+                                        {% if student.grade %}
+                                            <div>{{ student.grade.name }}{% if student.grade.section %} {{ student.grade.section }}{% endif %}</div>
+                                        {% else %}
+                                            {% for classroom in student.classrooms.all %}
+                                                <div>{{ classroom.name }}{% if classroom.section %} {{ classroom.section }}{% endif %}</div>
+                                            {% empty %}
+                                                Not assigned
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ student.user.email }}</td>
+                                    <td>
+                                        {% if student.user.is_active and student.user.is_verified %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif student.user.is_active and not student.user.is_verified %}
+                                            <span class="badge bg-warning">Unverified</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'users:edit_user' student.user.id %}" class="btn btn-sm btn-outline-primary" title="Edit Student">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-success" title="View Details"
+                                                    data-bs-toggle="modal" data-bs-target="#userDetailModal{{ student.user.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="{% url 'users:generate_id_card' student.user.id %}" class="btn btn-sm btn-outline-info" title="Generate ID Card">
+                                                <i class="fas fa-id-card"></i>
+                                            </a>
+                                            {% if student.user.id != request.user.id %}
+                                                <a href="{% url 'users:delete_user' student.user.id %}" class="btn btn-sm btn-outline-danger" title="Delete Student">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Student Detail Modal -->
+                                <div class="modal fade" id="userDetailModal{{ student.user.id }}" tabindex="-1" aria-labelledby="userDetailModalLabel{{ student.user.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="userDetailModalLabel{{ student.user.id }}">Student Details: {{ student.user.get_full_name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-4 text-center mb-4">
+                                                        {% if student.user.profile_picture %}
+                                                            <img src="{{ student.user.profile_picture.url }}" alt="{{ student.user.get_full_name }}" 
+                                                                class="rounded-circle mb-3" width="150" height="150">
+                                                        {% else %}
+                                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                                                style="width: 150px; height: 150px;">
+                                                                <span style="font-size: 48px;">{{ student.user.first_name|first }}{{ student.user.last_name|first }}</span>
+                                                            </div>
+                                                        {% endif %}
+                                                        <h5>{{ student.user.get_full_name }}</h5>
+                                                        <span class="badge bg-primary">Student</span>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Username:</div>
+                                                            <div class="col-sm-8">{{ student.user.username }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Email:</div>
+                                                            <div class="col-sm-8">{{ student.user.email }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Phone:</div>
+                                                            <div class="col-sm-8">{{ student.user.phone_number|default:"Not provided" }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Date Joined:</div>
+                                                            <div class="col-sm-8">{{ student.user.date_joined|date:"F j, Y" }}</div>
+                                                        </div>
+                                                        
+                                                        <h6 class="border-bottom pb-2 mb-3 mt-4">Student Information</h6>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Student ID:</div>
+                                                            <div class="col-sm-8">{{ student.student_id }}</div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">Class/Grade:</div>
+                                                            <div class="col-sm-8">
+                                                                {% if student.grade %}
+                                                                    {{ student.grade.name }}{% if student.grade.section %} {{ student.grade.section }}{% endif %}
+                                                                {% else %}
+                                                                    {% with classroom=student.classrooms.first %}
+                                                                        {% if classroom %}
+                                                                            {{ classroom.name }}{% if classroom.section %} {{ classroom.section }}{% endif %}
+                                                                        {% else %}
+                                                                            Not assigned to any class
+                                                                        {% endif %}
+                                                                    {% endwith %}
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-4 fw-bold">PIN:</div>
+                                                            <div class="col-sm-8">{{ student.pin }}</div>
+                                                        </div>
+                                                        
+                                                        <h6 class="border-bottom pb-2 mb-3 mt-4">Enrolled Subjects</h6>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-12">
+                                                                <ul class="list-unstyled">
+                                                                {% if student.grade %}
+                                                                    {% with current_class_subjects=student.enrolled_subjects.all|dictsort:"classroom.id" %}
+                                                                        {% with has_subjects=False %}
+                                                                            {% for subject in current_class_subjects %}
+                                                                                {% if subject.classroom.id == student.grade.id %}
+                                                                                    <li>{{ subject.subject.name }}</li>
+                                                                                    {% with has_subjects=True %}{% endwith %}
+                                                                                {% endif %}
+                                                                            {% endfor %}
+                                                                            
+                                                                            {% if not has_subjects %}
+                                                                                <li>No subjects enrolled for current class</li>
+                                                                            {% endif %}
+                                                                        {% endwith %}
+                                                                    {% endwith %}
+                                                                {% else %}
+                                                                    <li>No class assigned</li>
+                                                                {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <h6 class="border-bottom pb-2 mb-3 mt-4">Parents/Guardians</h6>
+                                                        <div class="row mb-2">
+                                                            <div class="col-sm-12">
+                                                                <ul class="list-unstyled">
+                                                                {% for parent in student.parents.all %}
+                                                                    <li>
+                                                                        <a href="#" data-bs-toggle="modal" data-bs-target="#userDetailModal{{ parent.user.id }}">
+                                                                            {{ parent.user.get_full_name }} ({{ parent.relationship }})
+                                                                        </a>
+                                                                    </li>
+                                                                {% empty %}
+                                                                    <li>No parents linked</li>
+                                                                {% endfor %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <div class="btn-group">
+                                                    <a href="{% url 'users:edit_user' student.user.id %}" class="btn btn-primary">
+                                                        <i class="fas fa-edit me-2"></i>Edit Student
+                                                    </a>
+                                                    <a href="{% url 'users:admission_letter_generate' %}?student_id={{ student.id }}" class="btn btn-info">
+                                                        <i class="fas fa-file-alt me-2"></i>Generate Admission Letter
+                                                    </a>
+                                                </div>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-user-graduate fa-3x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No students found</h5>
+                    <p class="text-muted">
+                        {% if grade_filter or search_query %}
+                            No students match your current filters. Try adjusting your search criteria.
+                        {% else %}
+                            There are no students in the system yet. Start by adding a new student.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'users:register_student' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-user-plus me-2"></i>Add New Student
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Student Management Actions</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'users:register_student' %}" class="card h-100 border-left-primary text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary"><i class="fas fa-user-plus me-2"></i>Register Student</h5>
+                            <p class="card-text text-muted">Add a new student to the system with all necessary information.</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'courses:class_list' %}" class="card h-100 border-left-success text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-success"><i class="fas fa-school me-2"></i>Assign to Class</h5>
+                            <p class="card-text text-muted">Assign students to classes and subjects from the class management page.</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'users:link_parent_to_child' %}" class="card h-100 border-left-info text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-info"><i class="fas fa-users me-2"></i>Link Parents</h5>
+                            <p class="card-text text-muted">Link students to their parents or guardians for proper access.</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <a href="{% url 'users:id_card_batch_generate' %}" class="card h-100 border-left-warning text-decoration-none">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning"><i class="fas fa-id-card me-2"></i>Generate ID Cards</h5>
+                            <p class="card-text text-muted">Create ID cards for multiple students with custom templates.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        if ($.fn.DataTable && document.getElementById('studentsTable')) {
+            $('#studentsTable').DataTable({
+                "pageLength": 25,
+                "columnDefs": [
+                    { "orderable": false, "targets": 5 } // Disable sorting on actions column
+                ],
+                "language": {
+                    "search": "Quick search:",
+                    "zeroRecords": "No matching students found",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ students",
+                    "infoEmpty": "No students available",
+                    "infoFiltered": "(filtered from _MAX_ total students)"
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

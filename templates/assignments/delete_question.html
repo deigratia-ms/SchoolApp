@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Question - {{ question.assignment.title }} - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Delete Quiz Question</h1>
+        <div>
+            <a href="{% url 'assignments:assignment_detail' question.assignment.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Quiz
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h6 class="m-0 font-weight-bold">Confirm Question Deletion</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Warning: You are about to permanently delete this question. This action cannot be undone.
+                    </div>
+                    
+                    <h5 class="mb-4">Question Details</h5>
+                    
+                    <div class="mb-3">
+                        <strong>Question Text:</strong>
+                        <div class="p-3 bg-light rounded mt-2">
+                            {{ question.question_text }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Question Type:</strong> {{ question.get_question_type_display }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Points:</strong> {{ question.points }}
+                        </div>
+                    </div>
+                    
+                    {% if question.question_type == 'MCQ' and choices %}
+                        <div class="mb-3">
+                            <strong>Answer Choices:</strong>
+                            <ul class="list-group mt-2">
+                                {% for choice in choices %}
+                                    <li class="list-group-item {% if choice.is_correct %}list-group-item-success{% endif %}">
+                                        {{ choice.choice_text }}
+                                        {% if choice.is_correct %}<span class="badge bg-success">Correct Answer</span>{% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'assignments:assignment_detail' question.assignment.id %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Question
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

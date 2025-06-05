@@ -1,0 +1,764 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+{% load widget_tweaks %}
+
+{% block title %}Contact Us | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+{% if contact_hero and contact_hero.image %}
+<section class="contact-hero" style="background-image: url('{{ contact_hero.image.url }}');">
+    <div class="hero-overlay"></div>
+    <div class="hero-content text-center">
+        <h1 data-aos="fade-up">{{ contact_hero.title|default:"Contact Us" }}</h1>
+        <p class="lead" data-aos="fade-up" data-aos-delay="100">
+            We're here to help! Get in touch with us for any inquiries.
+        </p>
+    </div>
+</section>
+{% else %}
+<section class="contact-hero" style="background-image: url('{% static "img/contact-hero.jpg" %}');">
+    <div class="hero-overlay"></div>
+    <div class="hero-content text-center">
+        <h1 data-aos="fade-up">Contact Us</h1>
+        <p class="lead" data-aos="fade-up" data-aos-delay="100">
+            We're here to help! Get in touch with us for any inquiries.
+        </p>
+    </div>
+</section>
+{% endif %}
+
+<style>
+    .contact-hero {
+        position: relative;
+        height: 40vh;
+        min-height: 200px;
+        max-height: 350px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-size: cover;
+        background-position: center;
+        color: white;
+        overflow: hidden;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 0 1rem;
+        width: 100%;
+        max-width: 800px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .hero-content .lead {
+        margin-bottom: 0;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 768px) {
+        .contact-hero {
+            height: 30vh;
+        }
+
+        .hero-content h1 {
+            font-size: 2rem;
+        }
+
+        .hero-content .lead {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<!-- Contact Information -->
+<section class="py-4">
+    <div class="container">
+        <div class="contact-cards">
+            <div class="contact-card" data-aos="fade-up">
+                <div class="contact-card-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="contact-card-content">
+                    <h5>Visit Us</h5>
+                    <div class="contact-info">
+                        {% if settings and settings.address %}
+                            {{ settings.address|linebreaksbr }}
+                        {% else %}
+                            123 School Street<br>
+                            City, State 12345<br>
+                            United States
+                        {% endif %}
+                    </div>
+                    {% if settings and settings.office_hours %}
+                        <div class="contact-hours">
+                            <i class="far fa-clock me-1"></i> {{ settings.office_hours }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="contact-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="contact-card-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div class="contact-card-content">
+                    <h5>Call Us</h5>
+                    <div class="contact-info">
+                        {% if settings %}
+                            {% if settings.contact_phone %}
+                                <div class="contact-item">
+                                    <span class="contact-label">Main:</span>
+                                    <a href="tel:{{ settings.contact_phone }}">{{ settings.contact_phone }}</a>
+                                </div>
+                            {% endif %}
+                            {% if settings.admissions_phone %}
+                                <div class="contact-item">
+                                    <span class="contact-label">Admissions:</span>
+                                    <a href="tel:{{ settings.admissions_phone }}">{{ settings.admissions_phone }}</a>
+                                </div>
+                            {% endif %}
+                            {% if settings.fax_number %}
+                                <div class="contact-item">
+                                    <span class="contact-label">Fax:</span>
+                                    <span>{{ settings.fax_number }}</span>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="contact-item">
+                                <span class="contact-label">Main:</span>
+                                <a href="tel:+11234567890">(123) 456-7890</a>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-label">Admissions:</span>
+                                <a href="tel:+11234567891">(123) 456-7891</a>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-label">Fax:</span>
+                                <span>(123) 456-7892</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="contact-card-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="contact-card-content">
+                    <h5>Email Us</h5>
+                    <div class="contact-info">
+                        {% if settings %}
+                            {% if settings.contact_email %}
+                                <div class="contact-item">
+                                    <span class="contact-label">General:</span>
+                                    <a href="mailto:{{ settings.contact_email }}">{{ settings.contact_email }}</a>
+                                </div>
+                            {% endif %}
+                            {% if settings.admissions_email %}
+                                <div class="contact-item">
+                                    <span class="contact-label">Admissions:</span>
+                                    <a href="mailto:{{ settings.admissions_email }}">{{ settings.admissions_email }}</a>
+                                </div>
+                            {% endif %}
+                            {% if settings.support_email %}
+                                <div class="contact-item">
+                                    <span class="contact-label">Support:</span>
+                                    <a href="mailto:{{ settings.support_email }}">{{ settings.support_email }}</a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="contact-item">
+                                <span class="contact-label">General:</span>
+                                <a href="mailto:info@deigratia.edu">info@deigratia.edu</a>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-label">Admissions:</span>
+                                <a href="mailto:admissions@deigratia.edu">admissions@deigratia.edu</a>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-label">Support:</span>
+                                <a href="mailto:help@deigratia.edu">help@deigratia.edu</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .contact-cards {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .contact-card {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .contact-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+    }
+
+    .contact-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        height: 60px;
+        background-color: var(--bs-primary);
+        color: white;
+        border-radius: 50%;
+        margin-right: 20px;
+        flex-shrink: 0;
+    }
+
+    .contact-card-icon i {
+        font-size: 1.5rem;
+    }
+
+    .contact-card-content {
+        flex: 1;
+    }
+
+    .contact-card-content h5 {
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .contact-info {
+        color: #555;
+    }
+
+    .contact-item {
+        margin-bottom: 8px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .contact-label {
+        font-weight: 500;
+        color: #666;
+        margin-right: 5px;
+    }
+
+    .contact-hours {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    @media (min-width: 768px) {
+        .contact-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .contact-item {
+            flex-direction: row;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .contact-cards {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .contact-card {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .contact-card-icon {
+            margin-right: 0;
+            margin-bottom: 15px;
+            width: 70px;
+            height: 70px;
+        }
+
+        .contact-card-icon i {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+
+<!-- Contact Form and Map -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="contact-form-map-container">
+            <div class="contact-form-container" data-aos="fade-up">
+                <div class="contact-form-card">
+                    <h2>Send Us a Message</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-floating mb-3">
+                            {% render_field form.name class="form-control" placeholder="Your full name" id="id_name" class+="is-invalid"|yesno:form.name.errors %}
+                            <label for="id_name">{{ form.name.label }}</label>
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-floating mb-3">
+                            {% render_field form.email class="form-control" placeholder="your.email@example.com" id="id_email" class+="is-invalid"|yesno:form.email.errors %}
+                            <label for="id_email">{{ form.email.label }}</label>
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-floating mb-3">
+                            {% render_field form.phone class="form-control" placeholder="+1 (123) 456-7890" id="id_phone" class+="is-invalid"|yesno:form.phone.errors %}
+                            <label for="id_phone">{{ form.phone.label }} (Optional)</label>
+                            {% if form.phone.errors %}
+                                <div class="invalid-feedback">{{ form.phone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-floating mb-3">
+                            {% render_field form.subject class="form-control" placeholder="What is your message about?" id="id_subject" class+="is-invalid"|yesno:form.subject.errors %}
+                            <label for="id_subject">{{ form.subject.label }}</label>
+                            {% if form.subject.errors %}
+                                <div class="invalid-feedback">{{ form.subject.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-floating mb-3">
+                            {% render_field form.message class="form-control" rows="5" style="height: 120px" placeholder="Please provide details about your inquiry..." id="id_message" class+="is-invalid"|yesno:form.message.errors %}
+                            <label for="id_message">{{ form.message.label }}</label>
+                            {% if form.message.errors %}
+                                <div class="invalid-feedback">{{ form.message.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="map-container" data-aos="fade-up" data-aos-delay="100">
+                <div class="map-card">
+                    <h2>Find Us</h2>
+                    <div class="map-wrapper">
+                        {% if google_maps_embed_url %}
+                            <iframe src="{{ google_maps_embed_url }}"
+                                    style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        {% elif settings and settings.google_maps_api_key and settings.google_maps_latitude and settings.google_maps_longitude %}
+                            <!-- Dynamic map with API key -->
+                            <div id="map"></div>
+                            <script>
+                                function initMap() {
+                                    const schoolLocation = {
+                                        lat: {{ settings.google_maps_latitude }},
+                                        lng: {{ settings.google_maps_longitude }}
+                                    };
+                                    const map = new google.maps.Map(document.getElementById("map"), {
+                                        zoom: {{ settings.google_maps_zoom }},
+                                        center: schoolLocation,
+                                    });
+                                    const marker = new google.maps.Marker({
+                                        position: schoolLocation,
+                                        map: map,
+                                        title: "Deigratia Montessori School"
+                                    });
+                                }
+                            </script>
+                            <script async defer
+                                src="https://maps.googleapis.com/maps/api/js?key={{ settings.google_maps_api_key }}&callback=initMap">
+                            </script>
+                        {% else %}
+                            <!-- Fallback static map image -->
+                            <div class="map-fallback">
+                                <i class="fas fa-map-marked-alt fa-4x text-muted mb-3"></i>
+                                <h5>Map Unavailable</h5>
+                                <p class="mb-0">Please contact us for directions to our school.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .contact-form-map-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .contact-form-card,
+    .map-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 24px;
+        height: 100%;
+    }
+
+    .contact-form-card h2,
+    .map-card h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .map-wrapper {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .map-wrapper iframe,
+    #map {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .map-fallback {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        background-color: #f5f5f5;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .form-floating > .form-control {
+        padding: 1rem 0.75rem;
+    }
+
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 0.65;
+        transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+    }
+
+    .form-floating > label {
+        padding: 1rem 0.75rem;
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+    }
+
+    @media (min-width: 992px) {
+        .contact-form-map-container {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .map-wrapper {
+            height: 100%;
+            min-height: 350px;
+        }
+    }
+</style>
+
+{% if settings and settings.office_hours %}
+<!-- Office Hours -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title text-center mb-4" data-aos="fade-up">Office Hours</h2>
+        <div class="office-hours-container">
+            <div class="office-hours-card" data-aos="fade-up">
+                <div class="office-hours-icon">
+                    <i class="far fa-clock"></i>
+                </div>
+                <h4>{{ settings.office_hours }}</h4>
+                <p>Please contact us in advance to schedule appointments outside regular hours.</p>
+                <p class="office-hours-note">* Hours may vary during holidays and school events</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .office-hours-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .office-hours-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 30px 20px;
+        text-align: center;
+    }
+
+    .office-hours-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 70px;
+        height: 70px;
+        background-color: var(--bs-primary);
+        color: white;
+        border-radius: 50%;
+        margin-bottom: 20px;
+    }
+
+    .office-hours-icon i {
+        font-size: 1.8rem;
+    }
+
+    .office-hours-card h4 {
+        margin-bottom: 15px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .office-hours-card p {
+        color: #666;
+        margin-bottom: 0;
+    }
+
+    .office-hours-note {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 15px;
+    }
+</style>
+{% endif %}
+
+<!-- FAQs -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title text-center" data-aos="fade-up">Frequently Asked Questions</h2>
+        <div class="faq-title-underline" data-aos="fade-up"></div>
+
+        <div class="faq-container" data-aos="fade-up">
+            {% if faqs %}
+                {% for faq in faqs %}
+                <div class="faq-item" id="faq{{ faq.id }}">
+                    <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faqAnswer{{ faq.id }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="faqAnswer{{ faq.id }}">
+                        {{ faq.question }}
+                    </div>
+                    <div id="faqAnswer{{ faq.id }}" class="faq-answer collapse {% if forloop.first %}show{% endif %}">
+                        {{ faq.answer|linebreaks }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="faq-item" id="faq1">
+                    <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faqAnswer1" aria-expanded="true" aria-controls="faqAnswer1">
+                        What are your school hours?
+                    </div>
+                    <div id="faqAnswer1" class="faq-answer collapse show">
+                        Our school operates Monday through Friday, 8:00 AM to 4:00 PM. Extended care options are available from 7:00 AM to 6:00 PM for an additional fee.
+                    </div>
+                </div>
+
+                <div class="faq-item" id="faq2">
+                    <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faqAnswer2" aria-expanded="false" aria-controls="faqAnswer2">
+                        How can I schedule a tour of the school?
+                    </div>
+                    <div id="faqAnswer2" class="faq-answer collapse">
+                        You can schedule a tour by contacting our admissions office or filling out the contact form above. We offer tours on weekdays between 9:00 AM and 2:00 PM by appointment.
+                    </div>
+                </div>
+
+                <div class="faq-item" id="faq3">
+                    <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faqAnswer3" aria-expanded="false" aria-controls="faqAnswer3">
+                        Do you offer transportation services?
+                    </div>
+                    <div id="faqAnswer3" class="faq-answer collapse">
+                        Yes, we offer transportation services for students within a 10-mile radius of the school. Our buses are equipped with safety features and experienced drivers. Please contact the administration office for more details and fees.
+                    </div>
+                </div>
+
+                <div class="faq-item" id="faq4">
+                    <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faqAnswer4" aria-expanded="false" aria-controls="faqAnswer4">
+                        How can I apply for admission?
+                    </div>
+                    <div id="faqAnswer4" class="faq-answer collapse">
+                        The admission process begins with submitting an application form available on our website or at the school office. After reviewing your application, we'll schedule an assessment and interview. Admission decisions are typically made within two weeks.
+                    </div>
+                </div>
+
+                <div class="faq-item" id="faq5">
+                    <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faqAnswer5" aria-expanded="false" aria-controls="faqAnswer5">
+                        What is the best way to contact a teacher?
+                    </div>
+                    <div id="faqAnswer5" class="faq-answer collapse">
+                        The best way to contact teachers is through our school communication platform or via email. Teachers are also available for scheduled meetings during their office hours. For urgent matters, please contact the school office.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<style>
+    /* FAQ Section Styles */
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #004d4d;
+        margin-bottom: 0.5rem;
+    }
+
+    .faq-title-underline {
+        height: 3px;
+        width: 80px;
+        background-color: #ff6b6b;
+        margin: 0 auto 2rem;
+    }
+
+    .faq-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .faq-item {
+        margin-bottom: 1rem;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        background-color: white;
+        color: #333;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: #f8f8f8;
+    }
+
+    .faq-question::after {
+        content: '+';
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: #004d4d;
+        transition: all 0.3s ease;
+    }
+
+    .faq-question[aria-expanded="true"] {
+        background-color: #004d4d;
+        color: white;
+        border-color: #004d4d;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .faq-question[aria-expanded="true"]::after {
+        content: '\u2212';
+        color: white;
+    }
+
+    .faq-answer {
+        background-color: white;
+        padding: 1.5rem;
+        color: #555;
+        line-height: 1.6;
+        border: 1px solid #ddd;
+        border-top: none;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+
+    /* Mobile Styles */
+    @media (max-width: 768px) {
+        .section-title {
+            font-size: 1.5rem;
+        }
+
+        .faq-question {
+            padding: 0.875rem 1.25rem;
+            font-size: 0.95rem;
+        }
+
+        .faq-question::after {
+            right: 1.25rem;
+            font-size: 1.25rem;
+        }
+
+        .faq-answer {
+            padding: 1.25rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Desktop Enhancements */
+    @media (min-width: 992px) {
+        .section-title {
+            font-size: 2rem;
+        }
+
+        .faq-title-underline {
+            width: 100px;
+            margin-bottom: 3rem;
+        }
+
+        .faq-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .faq-question {
+            padding: 1.25rem 1.75rem;
+            font-size: 1.1rem;
+        }
+
+        .faq-answer {
+            padding: 1.75rem;
+        }
+    }
+</style>
+{% endblock %}

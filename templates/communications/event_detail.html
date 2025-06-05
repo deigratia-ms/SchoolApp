@@ -1,0 +1,664 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Event Details</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'communications:event_list' %}">Communications</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'communications:event_list' %}">Events</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            {% if user.is_admin or user.id == event.created_by.id %}
+            <a href="{% url 'communications:edit_event' event.id %}" class="btn btn-warning">
+                <i class="fas fa-edit me-2"></i>Edit Event
+            </a>
+            <a href="{% url 'communications:delete_event' event.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this event?');">
+                <i class="fas fa-trash me-2"></i>Delete
+            </a>
+            {% endif %}
+            <a href="{% url 'communications:event_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Events
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Event Information Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold">Event Information</h6>
+                    <span class="badge {% if event.start_date > current_date %}bg-primary{% elif event.end_date < current_date %}bg-secondary{% else %}bg-success{% endif %}">
+                        {% if event.start_date > current_date %}
+                            Upcoming
+                        {% elif event.end_date < current_date %}
+                            Past
+                        {% else %}
+                            In Progress
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="event-header d-flex align-items-center mb-4">
+                        <div class="event-icon me-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            {% if event.event_type == 'MEETING' %}
+                                <i class="fas fa-users fa-2x"></i>
+                            {% elif event.event_type == 'CEREMONY' %}
+                                <i class="fas fa-graduation-cap fa-2x"></i>
+                            {% elif event.event_type == 'SPORTS' %}
+                                <i class="fas fa-running fa-2x"></i>
+                            {% elif event.event_type == 'HOLIDAY' %}
+                                <i class="fas fa-calendar-day fa-2x"></i>
+                            {% elif event.event_type == 'EXAM' %}
+                                <i class="fas fa-book-open fa-2x"></i>
+                            {% else %}
+                                <i class="fas fa-calendar-check fa-2x"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h2 class="h4 mb-1">{{ event.title }}</h2>
+                            <p class="text-muted mb-0">
+                                {% if event.event_type == 'MEETING' %}
+                                    Meeting
+                                {% elif event.event_type == 'CEREMONY' %}
+                                    Ceremony
+                                {% elif event.event_type == 'SPORTS' %}
+                                    Sports Event
+                                {% elif event.event_type == 'HOLIDAY' %}
+                                    Holiday
+                                {% elif event.event_type == 'EXAM' %}
+                                    Examination
+                                {% else %}
+                                    {{ event.event_type|title }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="small text-uppercase fw-bold text-muted mb-1">Date & Time</h6>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                    {% if event.start_date|date:"Y-m-d" == event.end_date|date:"Y-m-d" %}
+                                        <span>{{ event.start_date|date:"l, F d, Y" }}</span>
+                                    {% else %}
+                                        <span>{{ event.start_date|date:"M d, Y" }} - {{ event.end_date|date:"M d, Y" }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex align-items-center mt-2">
+                                    <i class="fas fa-clock text-primary me-2"></i>
+                                    {% if event.all_day %}
+                                        <span>All day event</span>
+                                    {% else %}
+                                        <span>{{ event.start_time|time:"g:i A" }} - {{ event.end_time|time:"g:i A" }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="small text-uppercase fw-bold text-muted mb-1">Location</h6>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                    <span>{{ event.location|default:"No location specified" }}</span>
+                                </div>
+                                {% if event.is_virtual %}
+                                    <div class="d-flex align-items-center mt-2">
+                                        <i class="fas fa-video text-primary me-2"></i>
+                                        <span>Virtual Event</span>
+                                        {% if event.meeting_link %}
+                                            <a href="{{ event.meeting_link }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                                <i class="fas fa-external-link-alt me-1"></i>Join Meeting
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="small text-uppercase fw-bold text-muted mb-1">Organized By</h6>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-tie text-primary me-2"></i>
+                                    <span>{{ event.created_by.get_full_name }}</span>
+                                </div>
+                                <div class="d-flex align-items-center mt-2">
+                                    <i class="fas fa-envelope text-primary me-2"></i>
+                                    <span>{{ event.created_by.email }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="small text-uppercase fw-bold text-muted mb-1">For</h6>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-users text-primary me-2"></i>
+                                    <span>
+                                        {% if event.target_audience == 'ALL' %}
+                                            Everyone
+                                        {% elif event.target_audience == 'STAFF' %}
+                                            Staff Only
+                                        {% elif event.target_audience == 'TEACHERS' %}
+                                            Teachers Only
+                                        {% elif event.target_audience == 'STUDENTS' %}
+                                            Students Only
+                                        {% elif event.target_audience == 'PARENTS' %}
+                                            Parents Only
+                                        {% else %}
+                                            {{ event.target_audience|title }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% if event.target_class %}
+                                    <div class="d-flex align-items-center mt-2">
+                                        <i class="fas fa-chalkboard text-primary me-2"></i>
+                                        <span>Class: {{ event.target_class.name }} {% if event.target_class.section %}({{ event.target_class.section }}){% endif %}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="small text-uppercase fw-bold text-muted mb-2">Description</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ event.description|linebreaks }}
+                        </div>
+                    </div>
+
+                    {% if event.attachment %}
+                        <div class="mb-4">
+                            <h6 class="small text-uppercase fw-bold text-muted mb-2">Attachment</h6>
+                            <div class="list-group">
+                                <a href="{{ event.attachment.url }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
+                                    <div>
+                                        {% with ext=event.attachment.name|slice:"-3:" %}
+                                            {% if ext == 'pdf' %}
+                                                <i class="fas fa-file-pdf text-danger me-2"></i>
+                                            {% elif ext == 'doc' or ext == 'ocx' %}
+                                                <i class="fas fa-file-word text-primary me-2"></i>
+                                            {% elif ext == 'xls' or ext == 'lsx' %}
+                                                <i class="fas fa-file-excel text-success me-2"></i>
+                                            {% elif ext == 'ppt' or ext == 'ptx' %}
+                                                <i class="fas fa-file-powerpoint text-warning me-2"></i>
+                                            {% elif ext == 'jpg' or ext == 'png' or ext == 'gif' or ext == 'peg' %}
+                                                <i class="fas fa-file-image text-info me-2"></i>
+                                            {% else %}
+                                                <i class="fas fa-file text-secondary me-2"></i>
+                                            {% endif %}
+                                        {% endwith %}
+                                        {{ event.attachment.name|slice:"7:" }}
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        <i class="fas fa-download me-1"></i> Download
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if event.attachments.all %}
+                        <div class="mb-4">
+                            <h6 class="small text-uppercase fw-bold text-muted mb-2">Additional Attachments</h6>
+                            <div class="list-group">
+                                {% for attachment in event.attachments.all %}
+                                    <a href="{{ attachment.file.url }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
+                                        <div>
+                                            <i class="fas fa-file-{{ attachment.file_type_icon }} text-primary me-2"></i>
+                                            {{ attachment.filename }}
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">{{ attachment.file_size }}</span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <span class="text-muted small">
+                                Created on {{ event.created_at|date:"M d, Y" }} at {{ event.created_at|time:"g:i A" }}
+                                {% if event.updated_at %}
+                                <br>Last updated on {{ event.updated_at|date:"M d, Y" }} at {{ event.updated_at|time:"g:i A" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            {% if user.is_authenticated and not user.is_admin and event.start_date >= current_date %}
+                                {% if is_attending %}
+                                    <form method="post" action="{% url 'communications:decline_event' event.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-times-circle me-2"></i>Decline
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{% url 'communications:attend_event' event.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-success">
+                                            <i class="fas fa-check-circle me-2"></i>Attend
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Comments ({{ comments|length }})</h6>
+                </div>
+                <div class="card-body">
+                    {% if comments %}
+                        <div class="comments-list">
+                            {% for comment in comments %}
+                                <div class="comment d-flex mb-4">
+                                    <div class="flex-shrink-0 me-3">
+                                        {% if comment.user.profile_picture %}
+                                            <img src="{{ comment.user.profile_picture.url }}" alt="{{ comment.user.get_full_name }}" class="rounded-circle" width="50" height="50">
+                                        {% else %}
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                <span class="fw-bold">{{ comment.user.get_initials }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">{{ comment.user.get_full_name }}</h6>
+                                                <p class="text-muted small mb-0">{{ comment.created_at|date:"M d, Y" }} at {{ comment.created_at|time:"g:i A" }}</p>
+                                            </div>
+                                            <div>
+                                                {% if user.id == comment.user.id or user.is_admin %}
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-v"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                {% comment %}
+                                                {% if user.id == comment.user.id %}
+                                                <li>
+                                                    <a class="dropdown-item" href="#">
+                                                        <i class="fas fa-edit me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                                {% endif %}
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#">
+                                                        <i class="fas fa-trash me-2"></i>Delete
+                                                    </a>
+                                                </li>
+                                                {% endcomment %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            {{ comment.content|linebreaks }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="far fa-comment-alt fa-3x mb-3 text-muted"></i>
+                            <p class="text-muted">No comments yet. Be the first to comment!</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Comment functionality temporarily disabled -->
+                    {% comment %}
+                    {% if user.is_authenticated %}
+                        <div class="comment-form mt-4">
+                            <h6 class="font-weight-bold">Add Comment</h6>
+                            <form method="post" action="#">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <textarea class="form-control" name="content" rows="3" placeholder="Write your comment here..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-2"></i>Post Comment
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                    {% endcomment %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Countdown Card -->
+            {% if event.start_date > current_date %}
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">Event Countdown</h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="countdown-container" data-target-date="{{ event.start_date|date:'Y-m-d' }} {{ event.start_time|time:'H:i:s' }}">
+                            <div class="row g-2">
+                                <div class="col-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h3 class="countdown-days mb-0">--</h3>
+                                        <small class="text-muted">Days</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h3 class="countdown-hours mb-0">--</h3>
+                                        <small class="text-muted">Hours</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h3 class="countdown-minutes mb-0">--</h3>
+                                        <small class="text-muted">Minutes</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h3 class="countdown-seconds mb-0">--</h3>
+                                        <small class="text-muted">Seconds</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if event.meeting_link and event.is_virtual %}
+                            <a href="{{ event.meeting_link }}" target="_blank" class="btn btn-primary mt-3 w-100">
+                                <i class="fas fa-video me-2"></i>Join Meeting
+                            </a>
+                        {% endif %}
+                        <button class="btn btn-outline-primary mt-2 w-100 add-to-calendar-btn" data-event-title="{{ event.title }}" data-event-start="{{ event.start_date|date:'Y-m-d' }}T{{ event.start_time|time:'H:i:s' }}" data-event-end="{{ event.end_date|date:'Y-m-d' }}T{{ event.end_time|time:'H:i:s' }}" data-event-description="{{ event.description }}" data-event-location="{{ event.location }}">
+                            <i class="fas fa-calendar-plus me-2"></i>Add to Calendar
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Attendees Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Attendees ({{ attendees|length }})</h6>
+                </div>
+                <div class="card-body">
+                    {% if attendees %}
+                        <div class="input-group mb-3">
+                            <input type="text" id="attendeeSearch" class="form-control" placeholder="Search attendees...">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
+
+                        <div class="attendees-list">
+                            {% for attendee in attendees %}
+                                <div class="attendee d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0 me-2">
+                                        {% if attendee.user.profile_picture %}
+                                            <img src="{{ attendee.user.profile_picture.url }}" alt="{{ attendee.user.get_full_name }}" class="rounded-circle" width="40" height="40">
+                                        {% else %}
+                                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <span class="fw-bold">{{ attendee.user.get_initials }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ms-2">
+                                        <div class="fw-bold">{{ attendee.user.get_full_name }}</div>
+                                        <div class="small text-muted">
+                                            {% if attendee.user.is_admin %}
+                                                Administrator
+                                            {% elif attendee.user.is_teacher %}
+                                                Teacher
+                                            {% elif attendee.user.is_student %}
+                                                Student
+                                            {% elif attendee.user.is_parent %}
+                                                Parent
+                                            {% else %}
+                                                User
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x mb-3 text-muted"></i>
+                            <p class="text-muted">No attendees yet. Be the first to attend!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Share Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Share Event</h6>
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="eventUrl" value="{{ request.scheme }}://{{ request.get_host }}{% url 'communications:event_detail' event.id %}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="copyUrlBtn">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="d-flex justify-content-around mt-3">
+                        <a href="mailto:?subject={{ event.title }}&body=Check out this event: {{ request.scheme }}://{{ request.get_host }}{% url 'communications:event_detail' event.id %}" class="btn btn-outline-primary" title="Email">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                        <a href="https://wa.me/?text={{ event.title }} - {{ request.scheme }}://{{ request.get_host }}{% url 'communications:event_detail' event.id %}" target="_blank" class="btn btn-outline-success" title="WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="https://telegram.me/share/url?url={{ request.scheme }}://{{ request.get_host }}{% url 'communications:event_detail' event.id %}&text={{ event.title }}" target="_blank" class="btn btn-outline-info" title="Telegram">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?text={{ event.title }}&url={{ request.scheme }}://{{ request.get_host }}{% url 'communications:event_detail' event.id %}" target="_blank" class="btn btn-outline-primary" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.scheme }}://{{ request.get_host }}{% url 'communications:event_detail' event.id %}" target="_blank" class="btn btn-outline-primary" title="Facebook">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Similar Events -->
+            {% if similar_events %}
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold">Similar Events</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for similar in similar_events %}
+                                <a href="{% url 'communications:event_detail' similar.id %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ similar.title }}</h6>
+                                        <small>{{ similar.start_date|date:"M d" }}</small>
+                                    </div>
+                                    <p class="mb-1 small text-truncate">{{ similar.description|truncatechars:100 }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ similar.location|default:"No location" }}
+                                    </small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Countdown timer
+        const countdownContainer = document.querySelector('.countdown-container');
+        if (countdownContainer) {
+            const targetDate = new Date(countdownContainer.getAttribute('data-target-date')).getTime();
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = targetDate - now;
+
+                if (distance < 0) {
+                    document.querySelector('.countdown-days').textContent = '0';
+                    document.querySelector('.countdown-hours').textContent = '0';
+                    document.querySelector('.countdown-minutes').textContent = '0';
+                    document.querySelector('.countdown-seconds').textContent = '0';
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                document.querySelector('.countdown-days').textContent = days;
+                document.querySelector('.countdown-hours').textContent = hours;
+                document.querySelector('.countdown-minutes').textContent = minutes;
+                document.querySelector('.countdown-seconds').textContent = seconds;
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Copy URL to clipboard
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        if (copyUrlBtn) {
+            copyUrlBtn.addEventListener('click', function() {
+                const eventUrl = document.getElementById('eventUrl');
+                eventUrl.select();
+                document.execCommand('copy');
+
+                // Show feedback
+                const originalHtml = copyUrlBtn.innerHTML;
+                copyUrlBtn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(function() {
+                    copyUrlBtn.innerHTML = originalHtml;
+                }, 2000);
+            });
+        }
+
+        // Search attendees
+        const attendeeSearch = document.getElementById('attendeeSearch');
+        if (attendeeSearch) {
+            attendeeSearch.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const attendees = document.querySelectorAll('.attendee');
+
+                attendees.forEach(function(attendee) {
+                    const name = attendee.querySelector('.fw-bold').textContent.toLowerCase();
+                    const role = attendee.querySelector('.small').textContent.toLowerCase();
+
+                    if (name.includes(searchTerm) || role.includes(searchTerm)) {
+                        attendee.style.display = '';
+                    } else {
+                        attendee.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Add to calendar functionality
+        const addToCalendarBtn = document.querySelector('.add-to-calendar-btn');
+        if (addToCalendarBtn) {
+            addToCalendarBtn.addEventListener('click', function() {
+                const title = this.getAttribute('data-event-title');
+                const start = this.getAttribute('data-event-start');
+                const end = this.getAttribute('data-event-end');
+                const description = this.getAttribute('data-event-description');
+                const location = this.getAttribute('data-event-location');
+
+                // Create Google Calendar URL
+                const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start.replace(/[-:]/g, '')}/${end.replace(/[-:]/g, '')}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
+
+                // Create iCal file content
+                const icalContent = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+URL:${window.location.href}
+DTSTART:${start.replace(/[-:]/g, '')}
+DTEND:${end.replace(/[-:]/g, '')}
+SUMMARY:${title}
+DESCRIPTION:${description.replace(/\n/g, '\\n')}
+LOCATION:${location}
+END:VEVENT
+END:VCALENDAR`;
+
+                // Create menu with options
+                const menu = document.createElement('div');
+                menu.className = 'dropdown-menu show position-absolute';
+                menu.style.top = '40px';
+                menu.style.left = '0';
+                menu.style.zIndex = '1000';
+                menu.innerHTML = `
+                    <a class="dropdown-item" href="${googleUrl}" target="_blank"><i class="fab fa-google me-2"></i>Google Calendar</a>
+                    <a class="dropdown-item" href="#" id="ical-download"><i class="far fa-calendar-alt me-2"></i>iCal File</a>
+                    <a class="dropdown-item" href="#" id="outlook-download"><i class="fab fa-microsoft me-2"></i>Outlook</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" id="cancel-calendar"><i class="fas fa-times me-2"></i>Cancel</a>
+                `;
+
+                addToCalendarBtn.parentNode.style.position = 'relative';
+                addToCalendarBtn.parentNode.appendChild(menu);
+
+                // Handle iCal download
+                document.getElementById('ical-download').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const blob = new Blob([icalContent], { type: 'text/calendar;charset=utf-8' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `${title.replace(/\s+/g, '-')}.ics`;
+                    link.click();
+                    menu.remove();
+                });
+
+                // Handle Outlook download (same as iCal)
+                document.getElementById('outlook-download').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const blob = new Blob([icalContent], { type: 'text/calendar;charset=utf-8' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `${title.replace(/\s+/g, '-')}.ics`;
+                    link.click();
+                    menu.remove();
+                });
+
+                // Handle cancel
+                document.getElementById('cancel-calendar').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    menu.remove();
+                });
+
+                // Remove menu when clicking anywhere else
+                document.addEventListener('click', function removeMenu(e) {
+                    if (!menu.contains(e.target) && e.target !== addToCalendarBtn) {
+                        menu.remove();
+                        document.removeEventListener('click', removeMenu);
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

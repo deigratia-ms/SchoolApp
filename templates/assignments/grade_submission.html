@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+
+{% block title %}Grade Submission - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Grade Submission</h1>
+        <a href="{% url 'assignments:submission_detail' submission.id %}" class="btn btn-secondary">
+            <i class="fas fa-eye"></i> View Submission
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Submission Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h5 class="font-weight-bold">Student</h5>
+                        <p>{{ submission.student.user.get_full_name|default:submission.student.user.username }}</p>
+                        <p class="text-muted small">ID: {{ submission.student.student_id }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5 class="font-weight-bold">Assignment</h5>
+                        <p>{{ submission.assignment.title }}</p>
+                        <p class="text-muted small">
+                            {{ submission.assignment.class_subject.classroom.name }}
+                            {% if submission.assignment.class_subject.classroom.section %}
+                                ({{ submission.assignment.class_subject.classroom.section }})
+                            {% endif %}
+                            - {{ submission.assignment.class_subject.subject.name }}
+                        </p>
+                        <p class="text-muted small">Max Score: {{ submission.assignment.max_score }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5 class="font-weight-bold">Submission Time</h5>
+                        <p>{{ submission.submission_date|date:"M d, Y - h:i A" }}</p>
+                        {% if submission.submission_date > submission.assignment.due_date %}
+                            <p class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Submitted late
+                                ({{ submission.submission_date|timeuntil:submission.assignment.due_date }} after deadline)
+                            </p>
+                        {% else %}
+                            <p class="text-success">
+                                <i class="fas fa-check-circle"></i> Submitted on time
+                                ({{ submission.assignment.due_date|timeuntil:submission.submission_date }} before deadline)
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Grade Form -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Overall Grade</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="gradeForm">
+                        {% csrf_token %}
+                        {% if submission.assignment.assignment_type != 'QUIZ' %}
+                            <div class="mb-3">
+                                <label for="score" class="form-label">Score</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="score" id="score" min="0" 
+                                        max="{{ submission.assignment.max_score }}" 
+                                        value="{{ submission.score|default:0 }}" required>
+                                    <span class="input-group-text">/ {{ submission.assignment.max_score }}</span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="mb-3">
+                                <label class="form-label">Total Score (Auto-calculated)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="totalScore" 
+                                        value="0" disabled>
+                                    <span class="input-group-text">/ {{ submission.assignment.max_score }}</span>
+                                </div>
+                                <small class="form-text text-muted">Grade individual questions below to calculate total score</small>
+                            </div>
+                            <input type="hidden" name="score" id="scoreFinal" value="0">
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="teacher_comment" class="form-label">Feedback to Student</label>
+                            <textarea class="form-control" name="teacher_comment" id="teacher_comment" rows="5">{{ submission.teacher_comment|default:"" }}</textarea>
+                        </div>
+                        
+                        {% if submission.assignment.assignment_type != 'QUIZ' %}
+                            <button type="submit" class="btn btn-primary" name="grade_submission">Save Grade</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary" name="grade_quiz">Save All Grades</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            {% if submission.assignment.assignment_type == 'QUIZ' %}
+                <!-- Quiz Grading Form -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Grade Individual Questions</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if student_answers %}
+                            <form method="post" id="quizGradeForm">
+                                {% csrf_token %}
+                                {% for answer in student_answers %}
+                                    <div class="quiz-question mb-4 pb-3 border-bottom" data-max-points="{{ answer.question.points }}">
+                                        <div class="question mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h5 class="mb-0">Question {{ forloop.counter }}</h5>
+                                                    <p class="text-muted small">{{ answer.question.points }} points</p>
+                                                </div>
+                                                {% if answer.question.question_type == 'MCQ' %}
+                                                    <button type="button" class="btn btn-sm btn-outline-primary auto-grade-btn" 
+                                                        data-question-id="{{ answer.question.id }}"
+                                                        data-answer-id="{{ answer.id }}">
+                                                        <i class="fas fa-robot"></i> Auto-Grade
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                            <p>{{ answer.question.question_text }}</p>
+                                        </div>
+                                        
+                                        <div class="student-answer">
+                                            <h6>Student Answer:</h6>
+                                            
+                                            {% if answer.question.question_type == 'MCQ' %}
+                                                <!-- Multiple choice -->
+                                                {% if answer.selected_choice %}
+                                                    <div>
+                                                        {{ answer.selected_choice.choice_text }}
+                                                    </div>
+                                                    <div class="correct-answer mt-2">
+                                                        <p class="text-muted">Correct answer: 
+                                                            <span class="text-success">
+                                                                {{ answer.question.get_correct_choice.choice_text }}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                {% else %}
+                                                    <p class="text-muted">No answer selected</p>
+                                                {% endif %}
+                                                
+                                            {% elif answer.question.question_type == 'SHORT' or answer.question.question_type == 'LONG' %}
+                                                <!-- Text answer -->
+                                                <div class="p-3 bg-light rounded">
+                                                    {{ answer.text_answer|default:"No answer provided"|linebreaks }}
+                                                </div>
+                                                
+                                                {% if answer.question.notes %}
+                                                    <div class="mt-2">
+                                                        <p class="text-muted">Expected Answer: {{ answer.question.notes|slice:"17:" }}</p>
+                                                    </div>
+                                                {% endif %}
+                                                
+                                            {% elif answer.question.question_type == 'FILE' %}
+                                                <!-- File answer -->
+                                                {% if answer.file_answer %}
+                                                    <a href="{{ answer.file_answer.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                        <i class="fas fa-download"></i> Download File
+                                                    </a>
+                                                {% else %}
+                                                    <p class="text-muted">No file submitted</p>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="grading mt-3">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="points_{{ answer.id }}" class="form-label">Points</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control question-score" 
+                                                                name="points_{{ answer.id }}" 
+                                                                id="points_{{ answer.id }}" 
+                                                                min="0" 
+                                                                max="{{ answer.question.points }}" 
+                                                                value="{{ answer.score|default:0 }}">
+                                                            <span class="input-group-text">/ {{ answer.question.points }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="is_correct_{{ answer.id }}" class="form-label">Correctness</label>
+                                                        <select class="form-select" name="is_correct_{{ answer.id }}" id="is_correct_{{ answer.id }}">
+                                                            <option value="correct" {% if answer.is_correct %}selected{% endif %}>Correct</option>
+                                                            <option value="incorrect" {% if not answer.is_correct %}selected{% endif %}>Incorrect</option>
+                                                            <option value="partial" {% if answer.score and answer.score < answer.question.points and answer.score > 0 %}selected{% endif %}>Partially Correct</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="feedback_{{ answer.id }}" class="form-label">Question Feedback</label>
+                                                <textarea class="form-control" name="feedback_{{ answer.id }}" 
+                                                    id="feedback_{{ answer.id }}" rows="2">{{ answer.feedback|default:"" }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </form>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <p>No quiz answers found.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <!-- Regular Assignment Content -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Submission Content</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if submission.text_submission %}
+                            <div class="mb-4">
+                                <h5>Text Submission</h5>
+                                <div class="p-3 bg-light rounded">
+                                    {{ submission.text_submission|linebreaks }}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if submission.file_submission %}
+                            <div class="mb-4">
+                                <h5>File Submission</h5>
+                                <div class="d-flex align-items-center">
+                                    <div class="file-icon me-3">
+                                        <i class="fas fa-file fa-2x text-primary"></i>
+                                    </div>
+                                    <div class="file-details">
+                                        <p class="mb-0">{{ submission.file_submission.name|slice:"10:" }}</p>
+                                        <small class="text-muted">
+                                            {% with size=submission.file_submission.size|filesizeformat %}
+                                                {{ size }}
+                                            {% endwith %}
+                                        </small>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <a href="{{ submission.file_submission.url }}" class="btn btn-primary" target="_blank">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if not submission.text_submission and not submission.file_submission %}
+                            <div class="text-center py-5">
+                                <p>No content submitted.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // For quiz grading - update total score
+        function updateTotalScore() {
+            let totalScore = 0;
+            $('.question-score').each(function() {
+                const score = parseFloat($(this).val()) || 0;
+                totalScore += score;
+            });
+            
+            $('#totalScore').val(totalScore);
+            $('#scoreFinal').val(totalScore);
+        }
+        
+        // Auto-grade MCQ questions
+        $('.auto-grade-btn').click(function() {
+            const questionId = $(this).data('question-id');
+            const answerId = $(this).data('answer-id');
+            const questionBlock = $(this).closest('.quiz-question');
+            const maxPoints = questionBlock.data('max-points');
+            
+            // Get the auto-grade result using AJAX
+            $.ajax({
+                url: `/assignments/api/auto-grade/${answerId}/`,
+                method: 'GET',
+                success: function(data) {
+                    if (data.success) {
+                        // Update UI based on correctness
+                        if (data.is_correct) {
+                            $(`#points_${answerId}`).val(maxPoints);
+                            $(`#is_correct_${answerId}`).val('correct');
+                        } else {
+                            $(`#points_${answerId}`).val(0);
+                            $(`#is_correct_${answerId}`).val('incorrect');
+                        }
+                        
+                        // Update feedback if provided
+                        if (data.feedback) {
+                            $(`#feedback_${answerId}`).val(data.feedback);
+                        }
+                        
+                        // Update total score
+                        updateTotalScore();
+                    } else {
+                        alert('Error auto-grading: ' + data.message);
+                    }
+                },
+                error: function() {
+                    alert('Error connecting to auto-grading service');
+                }
+            });
+        });
+        
+        // Update correctness dropdown when score changes
+        $('.question-score').on('input', function() {
+            const input = $(this);
+            const value = parseFloat(input.val()) || 0;
+            const maxPoints = parseFloat(input.closest('.quiz-question').data('max-points'));
+            const answerId = input.attr('id').replace('points_', '');
+            
+            // Update correctness dropdown
+            if (value === maxPoints) {
+                $(`#is_correct_${answerId}`).val('correct');
+            } else if (value === 0) {
+                $(`#is_correct_${answerId}`).val('incorrect');
+            } else {
+                $(`#is_correct_${answerId}`).val('partial');
+            }
+            
+            // Update total score
+            updateTotalScore();
+        });
+        
+        // Update score when correctness dropdown changes
+        $('[id^="is_correct_"]').change(function() {
+            const select = $(this);
+            const value = select.val();
+            const answerId = select.attr('id').replace('is_correct_', '');
+            const questionBlock = select.closest('.quiz-question');
+            const maxPoints = parseFloat(questionBlock.data('max-points'));
+            
+            // Update score based on correctness
+            if (value === 'correct') {
+                $(`#points_${answerId}`).val(maxPoints);
+            } else if (value === 'incorrect') {
+                $(`#points_${answerId}`).val(0);
+            } else if (value === 'partial' && $(`#points_${answerId}`).val() == 0) {
+                // Only change if it's currently 0
+                $(`#points_${answerId}`).val(Math.round(maxPoints / 2));
+            }
+            
+            // Update total score
+            updateTotalScore();
+        });
+        
+        // Initial total score calculation
+        updateTotalScore();
+        
+        // Submit both forms when the main form is submitted
+        $('#gradeForm').submit(function() {
+            if ($('#quizGradeForm').length) {
+                // Merge the quiz form inputs into the main form
+                $('#quizGradeForm').find('input, textarea, select').each(function() {
+                    const input = $(this).clone();
+                    input.appendTo('#gradeForm');
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

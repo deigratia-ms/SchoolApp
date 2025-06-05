@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Assessment Weight Configuration | {{ block.super }}{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'dashboard:admin_assessment_weights' %}">Assessment Weight Configurations</a></li>
+<li class="breadcrumb-item active">Delete Configuration</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card card-danger">
+                <div class="card-header">
+                    <h3 class="card-title">Confirm Deletion</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="icon fas fa-exclamation-triangle"></i> Warning!</h5>
+                        You are about to delete the assessment weight configuration: <strong>{{ config.name }}</strong>
+                    </div>
+                    
+                    <p>This action cannot be undone. Are you sure you want to proceed?</p>
+                    
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title">Configuration Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 30%">Name</th>
+                                    <td>{{ config.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Description</th>
+                                    <td>{{ config.description|default:"No description provided" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Term</th>
+                                    <td>{{ config.get_term_display|default:"All Terms" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Default Configuration</th>
+                                    <td>{% if config.is_default %}<span class="badge badge-success">Yes</span>{% else %}<span class="badge badge-secondary">No</span>{% endif %}</td>
+                                </tr>
+                            </table>
+                            
+                            <h6 class="mt-3">Assessment Components</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Component</th>
+                                            <th>Included</th>
+                                            <th>Weight</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Classwork</td>
+                                            <td>{% if config.include_classwork %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                            <td>{% if config.include_classwork %}{{ config.classwork_weight }}%{% else %}N/A{% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Quizzes</td>
+                                            <td>{% if config.include_quizzes %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                            <td>{% if config.include_quizzes %}{{ config.quiz_weight }}%{% else %}N/A{% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Tests</td>
+                                            <td>{% if config.include_tests %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                            <td>{% if config.include_tests %}{{ config.test_weight }}%{% else %}N/A{% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Midterms</td>
+                                            <td>{% if config.include_midterm %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                            <td>{% if config.include_midterm %}{{ config.midterm_weight }}%{% else %}N/A{% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Projects</td>
+                                            <td>{% if config.include_projects %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                            <td>{% if config.include_projects %}{{ config.project_weight }}%{% else %}N/A{% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Exams</td>
+                                            <td>{% if config.include_final_exam %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                            <td>{% if config.include_final_exam %}{{ config.final_exam_weight }}%{% else %}N/A{% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Attendance</td>
+                                            <td>{% if config.include_attendance %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                            <td>{% if config.include_attendance %}{{ config.attendance_weight }}%{% else %}N/A{% endif %}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if config.is_default %}
+                    <div class="alert alert-danger mt-3">
+                        <h5><i class="icon fas fa-ban"></i> Default Configuration Warning!</h5>
+                        This is currently set as the default configuration. If deleted, you will need to set another configuration as the default.
+                    </div>
+                    {% endif %}
+                    
+                    {% if in_use %}
+                    <div class="alert alert-danger mt-3">
+                        <h5><i class="icon fas fa-exclamation-circle"></i> Configuration In Use!</h5>
+                        This configuration is currently being used for report card generation. Deleting it may affect existing report cards.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Confirm Deletion</button>
+                        <a href="{% url 'dashboard:admin_assessment_weights' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

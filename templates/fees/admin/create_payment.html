@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+
+{% block title %}Record Payment - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Record New Payment</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:payment_list' %}">Payments</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Record Payment</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payment Details</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'fees:create_payment' %}">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="student" class="form-label">Student <span class="text-danger">*</span></label>
+              <select class="form-select" id="student" name="student" required>
+                <option value="">Select Student</option>
+                {% for student in students %}
+                  <option value="{{ student.id }}">{{ student.user.first_name }} {{ student.user.last_name }} ({{ student.student_id }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="fee" class="form-label">Fee <span class="text-danger">*</span></label>
+              <select class="form-select" id="fee" name="fee" required disabled>
+                <option value="">Select a student first</option>
+              </select>
+              <div class="form-text">Select the fee this payment is for.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="amount" class="form-label">Amount <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">GHS</span>
+                <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
+              <select class="form-select" id="payment_method" name="payment_method" required>
+                <option value="CASH">Cash</option>
+                <option value="MOBILE_MONEY">Mobile Money</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="CHEQUE">Cheque</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="transaction_id" class="form-label">Transaction ID</label>
+              <input type="text" class="form-control" id="transaction_id" name="transaction_id">
+              <div class="form-text">For mobile money or bank transfers, enter the transaction reference.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="payment_date" class="form-label">Payment Date <span class="text-danger">*</span></label>
+              <input type="datetime-local" class="form-control" id="payment_date" name="payment_date" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Received By</label>
+              <input type="text" class="form-control" value="{{ request.user.get_full_name }}" readonly>
+              <div class="form-text">Payment will be recorded as received by your account.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notes</label>
+              <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+              <div class="form-text">Any additional information about this payment.</div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'fees:payment_list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Record Payment</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Fee Information</h6>
+        </div>
+        <div class="card-body">
+          <div id="fee_details" class="d-none">
+            <p><strong>Student:</strong> <span id="student_name"></span></p>
+            <p><strong>Fee Type:</strong> <span id="fee_type"></span></p>
+            <p><strong>Term:</strong> <span id="fee_term"></span></p>
+            <p><strong>Class:</strong> <span id="fee_class"></span></p>
+            <hr>
+            <p><strong>Total Amount:</strong> GHS <span id="fee_total"></span></p>
+            <p><strong>Amount Paid:</strong> GHS <span id="fee_paid"></span></p>
+            <p><strong>Balance:</strong> GHS <span id="fee_balance"></span></p>
+            <p><strong>Status:</strong> <span id="fee_status" class="badge"></span></p>
+            <p><strong>Due Date:</strong> <span id="fee_due_date"></span></p>
+
+            <div class="alert alert-info mt-3">
+              <i class="fas fa-info-circle me-2"></i>The payment amount will be automatically applied to this fee.
+            </div>
+          </div>
+
+          <div id="no_fee_selected" class="text-center py-4">
+            <div class="mb-3">
+              <i class="fas fa-file-invoice-dollar fa-4x text-gray-300"></i>
+            </div>
+            <p class="text-gray-500 mb-0">Select a student and fee to see details</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payment Instructions</h6>
+        </div>
+        <div class="card-body">
+          <ol>
+            <li>Select the student making the payment</li>
+            <li>Choose the specific fee being paid</li>
+            <li>Enter the payment amount</li>
+            <li>Select the payment method</li>
+            <li>Enter transaction details if applicable</li>
+            <li>Verify the payment date and received by information</li>
+            <li>Add any notes if needed</li>
+            <li>Click "Record Payment" to complete the transaction</li>
+          </ol>
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>Once recorded, a payment cannot be deleted. It can only be reversed with a negative payment.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set current date and time as default
+    const now = new Date();
+    const formattedDateTime = now.toISOString().slice(0, 16);
+    document.getElementById('payment_date').value = formattedDateTime;
+
+    // Handle form submission to format date correctly
+    document.querySelector('form').addEventListener('submit', function(e) {
+      // Format the payment date to YYYY-MM-DD format
+      const paymentDateInput = document.getElementById('payment_date');
+      if (paymentDateInput.value && paymentDateInput.value.includes('T')) {
+        // Create a hidden input with just the date part
+        const dateOnly = paymentDateInput.value.split('T')[0];
+        // Add a hidden field with the formatted date
+        const hiddenDateInput = document.createElement('input');
+        hiddenDateInput.type = 'hidden';
+        hiddenDateInput.name = 'payment_date';
+        hiddenDateInput.value = dateOnly;
+        this.appendChild(hiddenDateInput);
+        // Disable the original input so it doesn't get submitted
+        paymentDateInput.disabled = true;
+      }
+    });
+
+    // Load student fees when student is selected
+    $('#student').on('change', function() {
+      const studentId = $(this).val();
+      const feeSelect = $('#fee');
+
+      if (!studentId) {
+        feeSelect.html('<option value="">Select a student first</option>');
+        feeSelect.prop('disabled', true);
+        $('#fee_details').addClass('d-none');
+        $('#no_fee_selected').removeClass('d-none');
+        return;
+      }
+
+      // Enable fee select and show loading
+      feeSelect.prop('disabled', false);
+      feeSelect.html('<option value="">Loading fees...</option>');
+
+      // Fetch student fees
+      fetch(`{% url 'fees:api_student_fees' 0 %}`.replace('0', studentId))
+        .then(response => response.json())
+        .then(data => {
+          feeSelect.html('<option value="">Select a fee</option>');
+
+          if (data.fees.length === 0) {
+            feeSelect.html('<option value="">No outstanding fees found</option>');
+            feeSelect.prop('disabled', true);
+            return;
+          }
+
+          // Add fees to select
+          data.fees.forEach(fee => {
+            const option = document.createElement('option');
+            option.value = fee.id;
+            option.textContent = `${fee.category} - ${fee.term} (Balance: GHS ${fee.balance.toFixed(2)})`;
+            option.dataset.category = fee.category;
+            option.dataset.term = fee.term;
+            option.dataset.classroom = fee.classroom;
+            option.dataset.total = fee.amount;
+            option.dataset.paid = fee.amount_paid;
+            option.dataset.balance = fee.balance;
+            option.dataset.status = fee.status;
+            option.dataset.dueDate = fee.due_date;
+            feeSelect.append(option);
+          });
+
+          // Update student name
+          $('#student_name').text(data.student_name);
+        })
+        .catch(error => {
+          console.error('Error loading fees:', error);
+          feeSelect.html('<option value="">Error loading fees</option>');
+        });
+    });
+
+    // Show fee details when fee is selected
+    $('#fee').on('change', function() {
+      const selectedOption = $(this).find('option:selected');
+
+      if (!selectedOption.val()) {
+        $('#fee_details').addClass('d-none');
+        $('#no_fee_selected').removeClass('d-none');
+        return;
+      }
+
+      // Update fee details
+      $('#fee_type').text(selectedOption.data('category'));
+      $('#fee_term').text(selectedOption.data('term'));
+      $('#fee_class').text(selectedOption.data('classroom'));
+      $('#fee_total').text(selectedOption.data('total').toFixed(2));
+      $('#fee_paid').text(selectedOption.data('paid').toFixed(2));
+      $('#fee_balance').text(selectedOption.data('balance').toFixed(2));
+      $('#fee_due_date').text(selectedOption.data('dueDate'));
+
+      // Set status badge color
+      const statusBadge = $('#fee_status');
+      statusBadge.text(selectedOption.data('status'));
+
+      switch (selectedOption.data('status')) {
+        case 'PAID':
+          statusBadge.removeClass().addClass('badge bg-success');
+          break;
+        case 'PARTIALLY_PAID':
+          statusBadge.removeClass().addClass('badge bg-warning');
+          break;
+        case 'OVERDUE':
+          statusBadge.removeClass().addClass('badge bg-danger');
+          break;
+        default:
+          statusBadge.removeClass().addClass('badge bg-secondary');
+      }
+
+      // Set default amount to balance
+      $('#amount').val(selectedOption.data('balance').toFixed(2));
+
+      // Show fee details
+      $('#fee_details').removeClass('d-none');
+      $('#no_fee_selected').addClass('d-none');
+    });
+
+    // Validate payment amount
+    $('#amount').on('change', function() {
+      const selectedOption = $('#fee').find('option:selected');
+
+      if (!selectedOption.val()) {
+        return;
+      }
+
+      const balance = selectedOption.data('balance');
+      const amount = parseFloat($(this).val());
+
+      if (amount > balance) {
+        alert(`Warning: The payment amount (GHS ${amount.toFixed(2)}) is greater than the outstanding balance (GHS ${balance.toFixed(2)}). This will result in an overpayment.`);
+      }
+    });
+  });
+</script>
+{% endblock %}

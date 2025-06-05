@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}My Attendance - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">My Attendance</h1>
+    <div>
+      <div class="btn-group">
+        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fas fa-filter me-2"></i>Filter
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item {% if period == 'all' %}active{% endif %}" href="{% url 'attendance:my_attendance' %}">All Time</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item {% if period == 'current_month' %}active{% endif %}" href="{% url 'attendance:my_attendance' %}?period=current_month">Current Month</a></li>
+          <li><a class="dropdown-item {% if period == 'current_term' %}active{% endif %}" href="{% url 'attendance:my_attendance' %}?period=current_term">Current Term</a></li>
+          <li><a class="dropdown-item {% if period == 'current_year' %}active{% endif %}" href="{% url 'attendance:my_attendance' %}?period=current_year">Current Academic Year</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-primary text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Attendance Rate</div>
+              <div class="display-6">{{ attendance_percentage|floatformat:1 }}%</div>
+            </div>
+            <i class="fas fa-chart-pie fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-success text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Days Present</div>
+              <div class="display-6">{{ days_present }}</div>
+            </div>
+            <i class="fas fa-check-circle fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-danger text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Days Absent</div>
+              <div class="display-6">{{ days_absent }}</div>
+            </div>
+            <i class="fas fa-times-circle fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card bg-warning text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="me-3">
+              <div class="text-white-50">Days Late</div>
+              <div class="display-6">{{ days_late }}</div>
+            </div>
+            <i class="fas fa-clock fa-2x text-white-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Chart -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Monthly Attendance Overview</h5>
+        </div>
+        <div class="card-body">
+          {% if monthly_data %}
+            <div class="progress" style="height: 25px;">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ monthly_data.present_percentage }}%" aria-valuenow="{{ monthly_data.present_percentage }}" aria-valuemin="0" aria-valuemax="100">Present ({{ monthly_data.present_percentage }}%)</div>
+              <div class="progress-bar bg-warning" role="progressbar" style="width: {{ monthly_data.late_percentage }}%" aria-valuenow="{{ monthly_data.late_percentage }}" aria-valuemin="0" aria-valuemax="100">Late ({{ monthly_data.late_percentage }}%)</div>
+              <div class="progress-bar bg-info" role="progressbar" style="width: {{ monthly_data.excused_percentage }}%" aria-valuenow="{{ monthly_data.excused_percentage }}" aria-valuemin="0" aria-valuemax="100">Excused ({{ monthly_data.excused_percentage }}%)</div>
+              <div class="progress-bar bg-danger" role="progressbar" style="width: {{ monthly_data.absent_percentage }}%" aria-valuenow="{{ monthly_data.absent_percentage }}" aria-valuemin="0" aria-valuemax="100">Absent ({{ monthly_data.absent_percentage }}%)</div>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>No monthly attendance data available.
+            </div>
+          {% endif %}
+
+          <div class="row mt-4">
+            <div class="col">
+              <h6>Attendance Trend (Last 10 School Days)</h6>
+              <div class="d-flex flex-wrap mt-3">
+                {% for record in recent_records %}
+                <div class="me-2 mb-2">
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="badge rounded-pill p-2 mb-1 {% if record.status == 'PRESENT' %}bg-success{% elif record.status == 'ABSENT' %}bg-danger{% elif record.status == 'LATE' %}bg-warning{% else %}bg-info{% endif %}" data-bs-toggle="tooltip" title="{{ record.attendance_record.date|date:'M d, Y' }} - {{ record.get_status_display }}">
+                      <i class="fas {% if record.status == 'PRESENT' %}fa-check{% elif record.status == 'ABSENT' %}fa-times{% elif record.status == 'LATE' %}fa-clock{% else %}fa-calendar-check{% endif %}"></i>
+                    </div>
+                    <small class="text-muted">{{ record.attendance_record.date|date:"d" }}</small>
+                  </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No recent attendance records.</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Weekly Summary</h5>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Attendance Rate</h6>
+                <strong class="{% if weekly_attendance_percentage >= 90 %}text-success{% elif weekly_attendance_percentage >= 75 %}text-primary{% elif weekly_attendance_percentage >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                  {{ weekly_attendance_percentage|floatformat:1 }}%
+                </strong>
+              </div>
+            </div>
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Days Present</h6>
+                <strong class="text-success">{{ weekly_present }}</strong>
+              </div>
+            </div>
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Days Absent</h6>
+                <strong class="text-danger">{{ weekly_absent }}</strong>
+              </div>
+            </div>
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Days Late</h6>
+                <strong class="text-warning">{{ weekly_late }}</strong>
+              </div>
+            </div>
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Days Excused</h6>
+                <strong class="text-info">{{ weekly_excused }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Records -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Attendance Records</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Class</th>
+              <th>Status</th>
+              <th>Remarks</th>
+              <th>Recorded By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in attendance_records %}
+            <tr>
+              <td>{{ record.attendance_record.date|date:"M d, Y" }}</td>
+              <td>{{ record.attendance_record.classroom.name }} {% if record.attendance_record.classroom.section %}{{ record.attendance_record.classroom.section }}{% endif %}</td>
+              <td>
+                <span class="badge {% if record.status == 'PRESENT' %}bg-success{% elif record.status == 'ABSENT' %}bg-danger{% elif record.status == 'LATE' %}bg-warning{% else %}bg-info{% endif %}">
+                  {{ record.get_status_display }}
+                </span>
+              </td>
+              <td>{{ record.remarks|default:"-" }}</td>
+              <td>{{ record.attendance_record.taken_by.user.get_full_name|default:"System" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center">No attendance records found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if attendance_records.has_other_pages %}
+      <nav aria-label="Attendance pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if attendance_records.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ attendance_records.previous_page_number }}{% if period %}&period={{ period }}{% endif %}" tabindex="-1" aria-disabled="true">Previous</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">Previous</span>
+          </li>
+          {% endif %}
+          
+          {% for i in attendance_records.paginator.page_range %}
+            {% if attendance_records.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item"><a class="page-link" href="?page={{ i }}{% if period %}&period={{ period }}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if attendance_records.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ attendance_records.next_page_number }}{% if period %}&period={{ period }}{% endif %}">Next</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">Next</span>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Enable tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+  });
+</script>
+{% endblock %}

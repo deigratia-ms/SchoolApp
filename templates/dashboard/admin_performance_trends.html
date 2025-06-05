@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Performance Trends - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Performance Trends</h1>
+    <div>
+        <a href="{% url 'dashboard:admin_performance_overview' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Overview
+        </a>
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown">
+            <i class="fas fa-cog"></i> Actions
+        </button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="#">Print Report</a>
+            <a class="dropdown-item" href="#">Export Data</a>
+            <a class="dropdown-item" href="#">Email Report</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Analyze academic performance trends over time</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5>Select Trend Type</h5>
+                        <div class="btn-group btn-group-lg btn-block" role="group">
+                            <a href="?trend_type=term{% if selected_subject %}&subject={{ selected_subject }}{% endif %}{% if selected_grade_level %}&grade_level={{ selected_grade_level }}{% endif %}" class="btn btn-{% if trend_type == 'term' %}primary{% else %}outline-primary{% endif %}">
+                                <i class="fas fa-chart-line mr-1"></i> By Term
+                            </a>
+                            <a href="?trend_type=monthly{% if selected_subject %}&subject={{ selected_subject }}{% endif %}{% if selected_grade_level %}&grade_level={{ selected_grade_level }}{% endif %}" class="btn btn-{% if trend_type == 'monthly' %}primary{% else %}outline-primary{% endif %}">
+                                <i class="fas fa-calendar-alt mr-1"></i> Monthly
+                            </a>
+                            <a href="?trend_type=yearly{% if selected_subject %}&subject={{ selected_subject }}{% endif %}{% if selected_grade_level %}&grade_level={{ selected_grade_level }}{% endif %}" class="btn btn-{% if trend_type == 'yearly' %}primary{% else %}outline-primary{% endif %}">
+                                <i class="fas fa-calendar-check mr-1"></i> Yearly
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <form id="filter-form" method="get" class="form-inline">
+                            <input type="hidden" name="trend_type" value="{{ trend_type }}">
+                            
+                            <div class="form-group mb-2 w-100">
+                                <label for="subject" class="mr-2">Subject:</label>
+                                <select name="subject" id="subject" class="form-control w-50">
+                                    <option value="">All Subjects</option>
+                                    {% for subject in all_subjects %}
+                                        <option value="{{ subject.id }}" {% if selected_subject == subject.id|stringformat:"s" %}selected{% endif %}>{{ subject.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group mb-2 w-100">
+                                <label for="grade_level" class="mr-2">Grade Level:</label>
+                                <select name="grade_level" id="grade_level" class="form-control w-50">
+                                    <option value="">All Grades</option>
+                                    {% for grade in all_grade_levels %}
+                                        <option value="{{ grade }}" {% if selected_grade_level == grade|stringformat:"s" %}selected{% endif %}>Grade {{ grade }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-sm mb-2">
+                                <i class="fas fa-filter mr-1"></i> Apply Filters
+                            </button>
+                            <a href="?trend_type={{ trend_type }}" class="btn btn-outline-secondary btn-sm mb-2 ml-2">
+                                <i class="fas fa-times mr-1"></i> Reset Filters
+                            </a>
+                        </form>
+                    </div>
+                    
+                    <div class="col-md-9">
+                        {% if trend_data %}
+                            <canvas id="trendChart" height="150"></canvas>
+                        {% else %}
+                            <div class="alert alert-info">
+                                No data available for the selected criteria. Try adjusting your filters.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if trend_data %}
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5>Grade Distribution</h5>
+                            <canvas id="distributionChart" height="100"></canvas>
+                        </div>
+                    </div>
+                
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Average Score</th>
+                                    <th>Pass Rate</th>
+                                    <th>A</th>
+                                    <th>B</th>
+                                    <th>C</th>
+                                    <th>D</th>
+                                    <th>F</th>
+                                    <th>Total Grades</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in trend_data %}
+                                    <tr>
+                                        <td>{{ data.period }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-{% if data.avg_score < 60 %}danger{% elif data.avg_score < 70 %}warning{% elif data.avg_score < 80 %}info{% else %}success{% endif %}" 
+                                                        role="progressbar" 
+                                                        style="width: {{ data.avg_score }}%"></div>
+                                                </div>
+                                                <span>{{ data.avg_score }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ data.pass_rate }}%</td>
+                                        <td>{{ data.a_count }}</td>
+                                        <td>{{ data.b_count }}</td>
+                                        <td>{{ data.c_count }}</td>
+                                        <td>{{ data.d_count }}</td>
+                                        <td>{{ data.f_count }}</td>
+                                        <td>{{ data.total_grades }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if trend_data %}
+    // Line chart for average scores and pass rates
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    const labels = {{ labels|safe }};
+    const avgScores = {{ avg_scores|safe }};
+    const passRates = {{ pass_rates|safe }};
+
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Average Score (%)',
+                    data: avgScores,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    fill: false
+                },
+                {
+                    label: 'Pass Rate (%)',
+                    data: passRates,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Stacked bar chart for grade distribution
+    const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+    const aCounts = {{ a_counts|safe }};
+    const bCounts = {{ b_counts|safe }};
+    const cCounts = {{ c_counts|safe }};
+    const dCounts = {{ d_counts|safe }};
+    const fCounts = {{ f_counts|safe }};
+
+    new Chart(distributionCtx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'A',
+                    data: aCounts,
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'B',
+                    data: bCounts,
+                    backgroundColor: 'rgba(23, 162, 184, 0.7)',
+                    borderColor: 'rgba(23, 162, 184, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'C',
+                    data: cCounts,
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'D',
+                    data: dCounts,
+                    backgroundColor: 'rgba(255, 145, 0, 0.7)',
+                    borderColor: 'rgba(255, 145, 0, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'F',
+                    data: fCounts,
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    stacked: true
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Handle form submission
+    document.getElementById('filter-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const subject = document.getElementById('subject').value;
+        const gradeLevel = document.getElementById('grade_level').value;
+        const trendType = document.querySelector('input[name="trend_type"]').value;
+        
+        let url = `?trend_type=${trendType}`;
+        
+        if (subject) {
+            url += `&subject=${subject}`;
+        }
+        
+        if (gradeLevel) {
+            url += `&grade_level=${gradeLevel}`;
+        }
+        
+        window.location.href = url;
+    });
+});
+</script>
+{% endblock %}

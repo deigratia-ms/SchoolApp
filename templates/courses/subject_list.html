@@ -1,0 +1,951 @@
+{% extends 'base.html' %} {% block title %}Subjects | Ricas School Management
+System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Subjects</h1>
+    <div>
+      {% if user.role == 'ADMIN' %}
+      <button
+        type="button"
+        class="btn btn-outline-primary me-2"
+        data-bs-toggle="modal"
+        data-bs-target="#bulkActionsModal"
+      >
+        <i class="fas fa-cogs me-2"></i>Bulk Actions
+      </button>
+      <a href="{% url 'courses:create_subject' %}" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-2"></i>Add New Subject
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" id="all-subjects-tab"
+            >All Subjects</a
+          >
+        </li>
+        {% if user.role == 'ADMIN' or user.role == 'TEACHER' %}
+        <li class="nav-item">
+          <a class="nav-link" href="#" id="unused-subjects-tab">Unused Subjects</a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    <div class="card-body">
+      <div class="d-flex justify-content-between mb-3">
+        <div class="d-flex">
+          <select
+            class="form-select me-2"
+            id="filterByPrefix"
+            style="width: auto"
+          >
+            <option value="all">All Subject Areas</option>
+            <!-- Will be populated by JS -->
+          </select>
+        </div>
+        <div class="input-group" style="width: 250px">
+          <input
+            type="text"
+            id="subjectSearch"
+            class="form-control"
+            placeholder="Search..."
+          />
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if subjects %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover" id="subjectTable">
+            <thead class="table-light">
+              <tr class="align-middle">
+                <th class="d-none d-md-table-cell">
+                  <input
+                    type="checkbox"
+                    id="selectAllSubjects"
+                    class="form-check-input"
+                  />
+                </th>
+                <th>Name</th>
+                <th class="d-none d-md-table-cell">Code</th>
+                <th class="d-none d-lg-table-cell">Description</th>
+                {% if user.role == 'ADMIN' or user.role == 'TEACHER' %}
+                <th>Classes</th>
+                <th width="200" class="actions-column">Actions</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for subject in subjects %}
+              <tr class="subject-row" data-href="{% url 'courses:subject_detail' subject.id %}" style="cursor: pointer;">
+                <td class="d-none d-md-table-cell">
+                  {% if user.role == 'ADMIN' %}
+                  <input
+                    type="checkbox"
+                    class="form-check-input subject-checkbox"
+                    value="{{ subject.id }}"
+                  />
+                  {% endif %}
+                </td>
+                <td>
+                  <div>
+                    <a href="{% url 'courses:subject_detail' subject.id %}" class="text-decoration-none text-primary">
+                      {{ subject.name }}
+                      {% if subject.recent_assignments %}
+                      <span class="badge bg-danger ms-2">New</span>
+                      {% endif %}
+                    </a>
+                    {% if subject.recent_materials %}
+                    <small class="ms-2">
+                      <i class="fas fa-file-alt text-success" title="New materials available"></i>
+                    </small>
+                    {% endif %}
+                  </div>
+                  <div class="d-md-none mt-1">
+                    <small class="badge bg-secondary">{{ subject.code }}</small>
+                  </div>
+                </td>
+                <td class="d-none d-md-table-cell">
+                  <span class="badge bg-secondary">{{ subject.code }}</span>
+                </td>
+                <td class="d-none d-lg-table-cell">{{ subject.description|truncatechars:100|default:"-" }}</td>
+                {% if user.role == 'ADMIN' or user.role == 'TEACHER' %}
+                <td>
+                  <span class="badge bg-primary">{{ subject.classes.count }}</span>
+                  {% if user.role == 'ADMIN' %}
+                  <a href="#"
+                     class="ms-2 text-primary small"
+                     data-bs-toggle="modal"
+                     data-bs-target="#manageClassesModal"
+                     data-subject-id="{{ subject.id }}"
+                     data-subject-name="{{ subject.name }}">
+                    <i class="fas fa-cog"></i>
+                  </a>
+                  {% endif %}
+                </td>
+                <td class="actions-cell">
+                  <div class="d-flex flex-wrap gap-1">
+                    <a href="{% url 'courses:subject_detail' subject.id %}"
+                       class="btn btn-sm btn-info"
+                       title="View Subject">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    {% if user.role == 'ADMIN' %}
+                    <a href="{% url 'courses:edit_subject' subject.id %}"
+                       class="btn btn-sm btn-warning"
+                       title="Edit Subject">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button"
+                            class="btn btn-sm btn-success"
+                            title="Add to Class"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addToClassModal"
+                            data-subject-id="{{ subject.id }}"
+                            data-subject-name="{{ subject.name }}">
+                      <i class="fas fa-school"></i>
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm btn-info"
+                            title="Apply to All Classes"
+                            data-bs-toggle="modal"
+                            data-bs-target="#applyToAllModal"
+                            data-subject-id="{{ subject.id }}"
+                            data-subject-name="{{ subject.name }}">
+                      <i class="fas fa-clone"></i>
+                    </button>
+                    <a href="{% url 'courses:delete_subject' subject.id %}"
+                       class="btn btn-sm btn-danger"
+                       title="Delete Subject">
+                      <i class="fas fa-trash"></i>
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+          <i class="fas fa-book fa-3x mb-3 text-muted"></i>
+          <p class="text-muted">
+            No subjects found. {% if user.role == 'ADMIN' %}Click the button
+            above to add a new subject.{% endif %}
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if user.is_admin %}
+  <!-- Manage Classes Modal -->
+  <div
+    class="modal fade"
+    id="manageClassesModal"
+    tabindex="-1"
+    aria-labelledby="manageClassesModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="manageClassesModalLabel">
+            Manage Classes
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p>Manage classes for <strong id="subjectNameClasses"></strong>.</p>
+
+          <div class="mt-3">
+            <h6>Assigned Classes</h6>
+            <div id="loadingClasses" class="text-center py-3">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-2">Loading classes...</p>
+            </div>
+            <div id="classesList" class="d-none">
+              <!-- Will be populated via AJAX -->
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button
+              type="button"
+              id="addNewClassBtn"
+              class="btn btn-sm btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#addToClassModal"
+              data-bs-dismiss="modal"
+            >
+              <i class="fas fa-plus-circle me-2"></i>Add to More Classes
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add to Class Modal -->
+  <div
+    class="modal fade"
+    id="addToClassModal"
+    tabindex="-1"
+    aria-labelledby="addToClassModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addToClassModalLabel">
+            Add Subject to Class
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <form
+          id="addToClassForm"
+          method="post"
+          action="{% url 'courses:create_class_subject' %}"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>Add <strong id="subjectNameForClass"></strong> to a class.</p>
+
+            <div class="mb-3">
+              <label for="class_id" class="form-label">Class</label>
+              <select 
+                class="form-select" 
+                id="class_id" 
+                name="classroom" 
+                required
+              >
+                <option value="">-- Select Class --</option>
+                {% for class in classes %}
+                  <option value="{{ class.id }}">
+                    {{ class.name }}{% if class.section %} ({{ class.section }}){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="class_teacher" class="form-label">Subject Teacher</label>
+              <select 
+                class="form-select" 
+                id="class_teacher" 
+                name="teacher" 
+                required
+              >
+                <option value="">-- Select Teacher --</option>
+                {% for teacher in teachers %}
+                  <option value="{{ teacher.id }}">
+                    {{ teacher.user.get_full_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <input type="hidden" id="classSubjectId" name="subject" value="" />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Add to Class</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apply to All Classes Modal -->
+  <div
+    class="modal fade"
+    id="applyToAllModal"
+    tabindex="-1"
+    aria-labelledby="applyToAllModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="applyToAllModalLabel">
+            Apply Subject to All Classes
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <form
+          id="applyToAllForm"
+          method="post"
+          action="{% url 'courses:apply_subject_to_all' %}"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              This will add <strong id="subjectNameForAll"></strong> to all
+              classes that don't already have it.
+            </div>
+
+            <div class="mb-3">
+              <label for="default_teacher" class="form-label"
+                >Default Teacher</label
+              >
+              <select
+                class="form-select"
+                id="default_teacher"
+                name="teacher"
+              >
+                <option value="">-- No Teacher (Optional) --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">
+                  {{ teacher.user.get_full_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Optional: If selected, this teacher will be assigned to teach this subject in all
+                classes. If no teacher is selected, you'll need to assign teachers individually later.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="skip_existing"
+                  name="skip_existing"
+                  checked
+                />
+                <label class="form-check-label" for="skip_existing">
+                  Skip classes that already have this subject
+                </label>
+              </div>
+            </div>
+
+            <input
+              type="hidden"
+              id="applySubjectId"
+              name="subject_id"
+              value=""
+            />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Apply to All Classes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Actions Modal -->
+  <div
+    class="modal fade"
+    id="bulkActionsModal"
+    tabindex="-1"
+    aria-labelledby="bulkActionsModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="bulkActionsModalLabel">
+            Bulk Actions for Subjects
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Select the subjects from the list before performing bulk actions.
+          </div>
+
+          <div class="list-group">
+            <button
+              type="button"
+              id="bulkApplyToAll"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              disabled
+              data-bs-toggle="modal"
+              data-bs-target="#bulkApplyModal"
+              data-bs-dismiss="modal"
+            >
+              <div>
+                <i class="fas fa-clone me-2"></i>
+                <strong>Apply to All Classes</strong>
+                <div class="small text-muted">
+                  Add selected subjects to all classes
+                </div>
+              </div>
+              <span class="badge bg-primary rounded-pill">0</span>
+            </button>
+
+            <button
+              type="button"
+              id="bulkDeleteSubjects"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center list-group-item-danger"
+              disabled
+            >
+              <div>
+                <i class="fas fa-trash me-2"></i>
+                <strong>Delete Subjects</strong>
+                <div class="small text-muted">
+                  Permanently delete selected subjects
+                </div>
+              </div>
+              <span class="badge bg-danger rounded-pill">0</span>
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Bulk Apply Modal -->
+  <div
+    class="modal fade"
+    id="bulkApplyModal"
+    tabindex="-1"
+    aria-labelledby="bulkApplyModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="bulkApplyModalLabel">
+            Apply Multiple Subjects to All Classes
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <form
+          id="bulkApplyForm"
+          method="post"
+          action="{% url 'courses:bulk_apply_subjects_to_all' %}"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              This will add <strong id="selectedSubjectsCount">0</strong> subjects to all
+              classes that don't already have them.
+            </div>
+
+            <div class="mb-3">
+              <label for="bulk_default_teacher" class="form-label"
+                >Default Teacher</label
+              >
+              <select
+                class="form-select"
+                id="bulk_default_teacher"
+                name="teacher"
+              >
+                <option value="">-- No Teacher (Optional) --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">
+                  {{ teacher.user.get_full_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Optional: If selected, this teacher will be assigned to teach these subjects in all
+                classes. If no teacher is selected, you'll need to assign teachers individually later.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="bulk_skip_existing"
+                  name="skip_existing"
+                  checked
+                />
+                <label class="form-check-label" for="bulk_skip_existing">
+                  Skip classes that already have these subjects
+                </label>
+              </div>
+            </div>
+
+            <div id="selectedSubjectsInputs">
+              <!-- Hidden inputs for selected subject IDs will be added here by JavaScript -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Apply to All Classes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %} {% endblock %} {% block extra_js %}
+  <style>
+    /* Style for clickable rows */
+    .subject-row:hover {
+      background-color: rgba(13, 110, 253, 0.05);
+    }
+  </style>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Make table rows clickable
+      const subjectRows = document.querySelectorAll('.subject-row');
+      subjectRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+          // Don't navigate if user clicked on a checkbox or a link/button
+          if (e.target.type === 'checkbox' || 
+              e.target.tagName === 'A' || 
+              e.target.tagName === 'BUTTON' ||
+              e.target.closest('a') || 
+              e.target.closest('button')) {
+            return;
+          }
+          
+          // Navigate to the detail page
+          window.location.href = this.dataset.href;
+        });
+      });
+      // Search functionality
+      const searchInput = document.getElementById("subjectSearch");
+      const table = document.getElementById("subjectTable");
+
+      if (searchInput && table) {
+        searchInput.addEventListener("keyup", function () {
+          const searchTerm = searchInput.value.toLowerCase();
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+
+          for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName("td");
+            let found = false;
+
+            for (let j = 1; j < cells.length - 1; j++) {
+              // Skip checkbox and actions cells
+              if (cells[j].textContent.toLowerCase().indexOf(searchTerm) > -1) {
+                found = true;
+                break;
+              }
+            }
+
+            rows[i].style.display = found ? "" : "none";
+          }
+        });
+      }
+
+      // Filter by subject prefix
+      const filterByPrefix = document.getElementById("filterByPrefix");
+      if (filterByPrefix && table) {
+        // Extract subject prefixes from codes and populate filter dropdown
+        const rows = table
+          .getElementsByTagName("tbody")[0]
+          .getElementsByTagName("tr");
+        const prefixes = new Set();
+
+        for (let i = 0; i < rows.length; i++) {
+          const codeCell = rows[i].getElementsByTagName("td")[2];
+          const code = codeCell.textContent.trim();
+          const prefixMatch = code.match(/^([A-Z]{3,4})/); // Match first 3-4 letters of code
+          if (prefixMatch && prefixMatch[1]) {
+            prefixes.add(prefixMatch[1]);
+          }
+        }
+
+        // Sort and add options
+        Array.from(prefixes)
+          .sort()
+          .forEach((prefix) => {
+            const option = document.createElement("option");
+            option.value = prefix;
+            option.textContent = prefix;
+            filterByPrefix.appendChild(option);
+          });
+
+        // Add filter functionality
+        filterByPrefix.addEventListener("change", function () {
+          const selectedPrefix = this.value;
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+
+          for (let i = 0; i < rows.length; i++) {
+            const codeCell = rows[i].getElementsByTagName("td")[2];
+            const code = codeCell.textContent.trim();
+
+            if (selectedPrefix === "all" || code.startsWith(selectedPrefix)) {
+              rows[i].style.display = "";
+            } else {
+              rows[i].style.display = "none";
+            }
+          }
+        });
+      }
+
+      // Tab functionality
+      const allSubjectsTab = document.getElementById("all-subjects-tab");
+      const unusedSubjectsTab = document.getElementById("unused-subjects-tab");
+
+      if (allSubjectsTab && unusedSubjectsTab && table) {
+        unusedSubjectsTab.addEventListener("click", function (e) {
+          e.preventDefault();
+          allSubjectsTab.classList.remove("active");
+          unusedSubjectsTab.classList.add("active");
+
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+          for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName("td");
+            let classesCount = 0;
+            
+            // Find the classes cell (if it exists) - only for admin/teacher
+            const classesCell = Array.from(cells).find(cell =>
+              cell.querySelector(".badge") &&
+              cell.querySelector(".badge").classList.contains("bg-primary")
+            );
+            
+            if (classesCell) {
+              classesCount = parseInt(classesCell.querySelector(".badge").textContent);
+            }
+
+            if (classesCount === 0) {
+              rows[i].style.display = "";
+            } else {
+              rows[i].style.display = "none";
+            }
+          }
+        });
+
+        allSubjectsTab.addEventListener("click", function (e) {
+          e.preventDefault();
+          unusedSubjectsTab.classList.remove("active");
+          allSubjectsTab.classList.add("active");
+
+          const rows = table
+            .getElementsByTagName("tbody")[0]
+            .getElementsByTagName("tr");
+          for (let i = 0; i < rows.length; i++) {
+            rows[i].style.display = "";
+          }
+        });
+      }
+
+      // Add to Class Modal
+      const addToClassModal = document.getElementById("addToClassModal");
+      if (addToClassModal) {
+        addToClassModal.addEventListener("show.bs.modal", function (event) {
+          const button = event.relatedTarget;
+          const subjectId = button.getAttribute("data-subject-id");
+          const subjectName = button.getAttribute("data-subject-name");
+
+          document.getElementById("subjectNameForClass").textContent =
+            subjectName;
+          document.getElementById("classSubjectId").value = subjectId;
+        });
+      }
+
+      // Apply to All Classes Modal
+      const applyToAllModal = document.getElementById("applyToAllModal");
+      if (applyToAllModal) {
+        applyToAllModal.addEventListener("show.bs.modal", function (event) {
+          const button = event.relatedTarget;
+          const subjectId = button.getAttribute("data-subject-id");
+          const subjectName = button.getAttribute("data-subject-name");
+
+          document.getElementById("subjectNameForAll").textContent =
+            subjectName;
+          document.getElementById("applySubjectId").value = subjectId;
+        });
+      }
+
+      // Add to More Classes Button
+      const addNewClassBtn = document.getElementById("addNewClassBtn");
+      if (addNewClassBtn) {
+        addNewClassBtn.addEventListener("click", function () {
+          // Get the subject ID from the manageClassesModal
+          const subjectId = document
+            .getElementById("manageClassesModal")
+            .getAttribute("data-subject-id");
+          // Set it as a data attribute on the button so it's available when the addToClassModal is shown
+          this.setAttribute("data-subject-id", subjectId);
+        });
+      }
+
+      // Manage Classes Modal
+      const manageClassesModal = document.getElementById("manageClassesModal");
+      if (manageClassesModal) {
+        manageClassesModal.addEventListener("show.bs.modal", function (event) {
+          const button = event.relatedTarget;
+          const subjectId = button.getAttribute("data-subject-id");
+          const subjectName = button.getAttribute("data-subject-name");
+
+          document.getElementById("subjectNameClasses").textContent =
+            subjectName;
+
+          // Store subject ID on the modal element for later use
+          manageClassesModal.setAttribute("data-subject-id", subjectId);
+
+          // Fetch actual class data for this subject
+          fetch(`/courses/api/class-subjects/?subject_id=${subjectId}`)
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              document.getElementById("loadingClasses").classList.add("d-none");
+              document.getElementById("classesList").classList.remove("d-none");
+
+              if (!data.class_subjects || data.class_subjects.length === 0) {
+                document.getElementById("classesList").innerHTML = `
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This subject is not currently taught in any classes.
+                  </div>
+                `;
+              } else {
+                let html = '<div class="list-group">';
+                data.class_subjects.forEach((classSubject) => {
+                  html += `
+                    <div class="list-group-item">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>${classSubject.classroom_name}</strong>
+                          <br>
+                          <small class="text-muted">Teacher: ${classSubject.teacher_name}</small>
+                        </div>
+                        <div class="btn-group">
+                          <a href="/courses/class-subjects/${classSubject.id}/edit/" class="btn btn-sm btn-warning me-1">
+                            <i class="fas fa-user"></i> Change Teacher
+                          </a>
+                          <a href="/courses/class-subjects/${classSubject.id}/students/" class="btn btn-sm btn-info me-1">
+                            <i class="fas fa-users"></i> Manage Students
+                          </a>
+                          <a href="/courses/class-subjects/${classSubject.id}/delete/" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                });
+                html += "</div>";
+                document.getElementById("classesList").innerHTML = html;
+              }
+            })
+            .catch((error) => {
+              document.getElementById("loadingClasses").classList.add("d-none");
+              document.getElementById("classesList").classList.remove("d-none");
+              document.getElementById("classesList").innerHTML = `
+                <div class="alert alert-danger">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  Error loading classes: ${error.message}
+                </div>
+              `;
+              console.error("Error:", error);
+            });
+        });
+      }
+
+      // Checkbox selection for bulk actions
+      const selectAllCheckbox = document.getElementById("selectAllSubjects");
+      const subjectCheckboxes =
+        document.getElementsByClassName("subject-checkbox");
+      const bulkApplyToAll = document.getElementById("bulkApplyToAll");
+      const bulkDeleteSubjects = document.getElementById("bulkDeleteSubjects");
+
+      // Bulk Apply Modal
+      const bulkApplyModal = document.getElementById("bulkApplyModal");
+      if (bulkApplyModal) {
+        bulkApplyModal.addEventListener("show.bs.modal", function (event) {
+          // Get all checked subject checkboxes
+          const selectedCheckboxes = document.querySelectorAll(".subject-checkbox:checked");
+          const selectedCount = selectedCheckboxes.length;
+          
+          // Update the count in the modal
+          document.getElementById("selectedSubjectsCount").textContent = selectedCount;
+          
+          // Clear previous hidden inputs
+          const inputContainer = document.getElementById("selectedSubjectsInputs");
+          inputContainer.innerHTML = "";
+          
+          // Create hidden inputs for each selected subject
+          selectedCheckboxes.forEach(function(checkbox, index) {
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "subject_ids";
+            hiddenInput.value = checkbox.value;
+            inputContainer.appendChild(hiddenInput);
+          });
+        });
+      }
+      
+      if (selectAllCheckbox && subjectCheckboxes.length > 0) {
+        selectAllCheckbox.addEventListener("change", function () {
+          const isChecked = this.checked;
+          let selectedCount = 0;
+
+          for (let i = 0; i < subjectCheckboxes.length; i++) {
+            subjectCheckboxes[i].checked = isChecked;
+            if (isChecked) selectedCount++;
+          }
+
+          // Update badge counts and disabled state
+          if (bulkApplyToAll) {
+            bulkApplyToAll.disabled = selectedCount === 0;
+            bulkApplyToAll.querySelector(".badge").textContent = selectedCount;
+          }
+          if (bulkDeleteSubjects) {
+            bulkDeleteSubjects.disabled = selectedCount === 0;
+            bulkDeleteSubjects.querySelector(".badge").textContent =
+              selectedCount;
+          }
+        });
+
+        // Individual checkbox change
+        for (let i = 0; i < subjectCheckboxes.length; i++) {
+          subjectCheckboxes[i].addEventListener("change", function () {
+            let selectedCount = 0;
+            for (let j = 0; j < subjectCheckboxes.length; j++) {
+              if (subjectCheckboxes[j].checked) selectedCount++;
+            }
+
+            // Update "select all" checkbox
+            selectAllCheckbox.checked =
+              selectedCount === subjectCheckboxes.length;
+            selectAllCheckbox.indeterminate =
+              selectedCount > 0 && selectedCount < subjectCheckboxes.length;
+
+            // Update badge counts and disabled state
+            if (bulkApplyToAll) {
+              bulkApplyToAll.disabled = selectedCount === 0;
+              bulkApplyToAll.querySelector(".badge").textContent =
+                selectedCount;
+            }
+            if (bulkDeleteSubjects) {
+              bulkDeleteSubjects.disabled = selectedCount === 0;
+              bulkDeleteSubjects.querySelector(".badge").textContent =
+                selectedCount;
+            }
+          });
+        }
+      }
+    });
+  </script>
+  {% endblock %}
+</div>

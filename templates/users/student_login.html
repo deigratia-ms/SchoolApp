@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Login - Ricas School Management System{% endblock %}
+
+{% block auth_content %}
+<div class="login-container">
+    <div class="home-link">
+        <a href="{% url 'website:home' %}" class="btn btn-outline-light">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </div>
+    <div class="login-card shadow-lg border-0 rounded-lg">
+        <div class="login-header text-center p-4 bg-primary text-white rounded-top">
+            <h2 class="text-center mb-2">
+                <i class="fas fa-user-graduate fa-2x mb-3"></i><br>
+                Student Login
+            </h2>
+            <p class="text-white mb-0">Enter your Student ID and PIN to login</p>
+        </div>
+        <div class="login-body p-4">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'users:student_login' %}">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="student_id" class="form-label">Student ID</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white"><i class="fas fa-id-card"></i></span>
+                        <input type="text" class="form-control form-control-lg" id="student_id" name="student_id" placeholder="Enter your student ID" required>
+                    </div>
+                    <small class="form-text text-muted mt-1">
+                        <i class="fas fa-info-circle"></i> You can enter your ID as "STU1234", "stu1234", or just "1234"
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="pin" class="form-label">PIN (5 digits)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white"><i class="fas fa-key"></i></span>
+                        <input type="password" class="form-control form-control-lg" id="pin" name="pin" placeholder="Enter your 5-digit PIN" maxlength="5" required>
+                        <button class="btn btn-outline-secondary" type="button" id="toggle-pin">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 text-end">
+                        <a href="#" id="forgot-pin" class="text-decoration-none small">
+                            <i class="fas fa-question-circle"></i> Forgot PIN?
+                        </a>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mb-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                    </button>
+                </div>
+
+                <!-- Role Selection Buttons -->
+                <div class="text-center mb-3">
+                    <p class="text-muted mb-2">I am a:</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{% url 'users:teacher_login' %}" class="btn btn-outline-success">
+                            <i class="fas fa-chalkboard-teacher mb-1"></i><br>Teacher
+                        </a>
+                        <a href="{% url 'users:parent_login' %}" class="btn btn-outline-info">
+                            <i class="fas fa-user-friends mb-1"></i><br>Parent
+                        </a>
+
+                    </div>
+                </div>
+
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- PIN Reset Modal -->
+<div class="modal fade" id="pinResetModal" tabindex="-1" aria-labelledby="pinResetModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="pinResetModalLabel">Forgot PIN?</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>If you've forgotten your PIN, please ask your parent or teacher to help you.</p>
+                <p>Alternatively, you can request a PIN reset by entering your Student ID below:</p>
+                <form id="pin-reset-form" method="post" action="{% url 'users:request_pin_reset' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="reset_student_id" class="form-label">Student ID</label>
+                        <input type="text" class="form-control" id="reset_student_id" name="student_id" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="pin-reset-form" class="btn btn-primary">Request PIN Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // PIN visibility toggle
+        const togglePinBtn = document.getElementById('toggle-pin');
+        const pinInput = document.getElementById('pin');
+
+        if (togglePinBtn && pinInput) {
+            togglePinBtn.addEventListener('click', function() {
+                const type = pinInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                pinInput.setAttribute('type', type);
+                togglePinBtn.querySelector('i').classList.toggle('fa-eye');
+                togglePinBtn.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // Forgot PIN modal
+        const forgotPinLink = document.getElementById('forgot-pin');
+        const pinResetModal = new bootstrap.Modal(document.getElementById('pinResetModal'));
+
+        if (forgotPinLink) {
+            forgotPinLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                pinResetModal.show();
+            });
+        }
+    });
+</script>
+{% endblock %}

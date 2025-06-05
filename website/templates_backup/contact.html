@@ -1,0 +1,207 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Contact Us | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up">Contact Us</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            We're here to help! Get in touch with us for any inquiries.
+        </p>
+    </div>
+</section>
+
+<!-- Contact Information -->
+<section class="py-5">
+    <div class="container">
+        <div class="row gy-4">
+            <div class="col-md-4" data-aos="fade-up">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-map-marker-alt fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Visit Us</h5>
+                        <p class="card-text">
+                            123 School Street<br>
+                            City, State 12345<br>
+                            United States
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-phone fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Call Us</h5>
+                        <p class="card-text">
+                            Main: (123) 456-7890<br>
+                            Admissions: (123) 456-7891<br>
+                            Fax: (123) 456-7892
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-envelope fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Email Us</h5>
+                        <p class="card-text">
+                            General: info@deigratia.edu<br>
+                            Admissions: admissions@deigratia.edu<br>
+                            Support: help@deigratia.edu
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Form and Map -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row gy-4">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h2 class="card-title mb-4">Send Us a Message</h2>
+                        <form method="post">
+                            {% csrf_token %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            <div class="mb-3">
+                                {{ form.name }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.email }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.phone }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.subject }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.message }}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send Message</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <h2 class="card-title mb-4">Find Us</h2>
+                        <!-- Replace the src with your actual Google Maps embed code -->
+                        <div class="ratio ratio-4x3">
+                            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.1!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM0PCsDU5JzI0LjAiTiA3NsKwMTUnMjQuMCJX!5e0!3m2!1sen!2sus!4v1234567890" 
+                                    style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Office Hours -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Office Hours</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm" data-aos="fade-up">
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Monday - Friday</strong></td>
+                                        <td>8:00 AM - 4:00 PM</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Saturday</strong></td>
+                                        <td>9:00 AM - 1:00 PM (Admissions Only)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Sunday</strong></td>
+                                        <td>Closed</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-3 mb-0 text-muted"><small>* Hours may vary during holidays and school events</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQs -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Frequently Asked Questions</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq1">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse1">
+                                What are your school hours?
+                            </button>
+                        </h2>
+                        <div id="faqCollapse1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Our school operates Monday through Friday, 8:00 AM to 4:00 PM. Extended care options are available.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq2">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse2">
+                                How can I schedule a tour?
+                            </button>
+                        </h2>
+                        <div id="faqCollapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                You can schedule a tour by contacting our admissions office or filling out the contact form above.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq3">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse3">
+                                What age groups do you serve?
+                            </button>
+                        </h2>
+                        <div id="faqCollapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                We offer programs for children aged 18 months through 12 years, including toddler, primary, and elementary programs.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

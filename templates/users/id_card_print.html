@@ -1,0 +1,577 @@
+{% extends 'base.html' %}
+
+{% block title %}Print ID Card - School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Reset styles for printing */
+    body {
+        background-color: white;
+        margin: 0;
+        padding: 0;
+    }
+    .print-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    /* CR80 card dimensions (2.125" x 3.375" or 54.02mm x 85.77mm) in landscape */
+    .id-card-container {
+        width: 1013px; /* 3.375" * 300dpi = 1013px */
+        height: 638px; /* 2.125" * 300dpi = 638px */
+        margin: 40px auto;
+        position: relative;
+    }
+    
+    .id-card {
+        width: 1013px;
+        height: 638px;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: {{ id_card.template.background_color }};
+        color: {{ id_card.template.text_color }};
+        position: relative;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Card Header */
+    .id-card-header {
+        background-color: {{ id_card.template.header_color|default:'rgba(0,0,0,0.15)' }};
+        color: {{ id_card.template.text_color }};
+        padding: 15px 20px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        position: relative;
+        z-index: 5;
+    }
+    
+    /* Card Body - Landscape layout */
+    .id-card-body {
+        flex: 1;
+        display: flex;
+        padding: 20px;
+        position: relative;
+        {% if id_card.template.background_image %}
+        background-image: url("{{ id_card.template.background_image.url }}");
+        background-size: cover;
+        background-position: center;
+        {% endif %}
+    }
+    
+    /* Left column for photo */
+    .id-card-photo-section {
+        flex: 0 0 230px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+    }
+    
+    /* School Logo */
+    .id-card-logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        margin-bottom: 20px;
+    }
+    
+    /* User Photo */
+    .id-card-photo {
+        width: 200px;
+        height: 230px;
+        border: 4px solid rgba(255,255,255,0.5);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fc;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Right column for user info */
+    .id-card-info-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    /* User Information */
+    .id-card-info {
+        margin-top: 20px;
+    }
+    
+    .id-card-name {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        border-bottom: 2px solid rgba(255,255,255,0.3);
+        padding-bottom: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .id-card-info-item {
+        margin-bottom: 12px;
+        display: flex;
+        font-size: 16px;
+        line-height: 1.5;
+    }
+    
+    .id-card-info-label {
+        font-weight: bold;
+        min-width: 120px;
+    }
+    
+    /* Handle long text with ellipsis */
+    .id-card-info-value {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 300px;
+    }
+    
+    /* Barcode */
+    .id-card-barcode {
+        text-align: center;
+        margin-top: 20px;
+        background-color: rgba(255,255,255,0.8);
+        padding: 10px;
+        border-radius: 5px;
+    }
+    
+    /* Card Footer */
+    .id-card-footer {
+        text-align: center;
+        font-size: 13px;
+        padding: 12px;
+        background-color: {{ id_card.template.footer_color|default:'rgba(0,0,0,0.1)' }};
+        color: {{ id_card.template.text_color }};
+        border-top: 1px solid rgba(255,255,255,0.2);
+        position: relative;
+        z-index: 5;
+    }
+    
+    /* Curved design elements */
+    .curved-top-element {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 150px;
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 100% 0 100% 0 / 0 0 100% 100%;
+        z-index: 2;
+    }
+    
+    .curved-bottom-element {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 200px;
+        height: 100px;
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 100% 0 0 0;
+        z-index: 2;
+    }
+    
+    /* Styles specific to roles */
+    {% if id_card.user.is_student %}
+    .role-badge {
+        background-color: rgba(0,0,0,0.2);
+        color: {{ id_card.template.text_color }};
+        font-weight: bold;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-size: 14px;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+    {% elif id_card.user.is_teacher %}
+    .role-badge {
+        background-color: rgba(255,255,255,0.2);
+        color: {{ id_card.template.text_color }};
+        font-weight: bold;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-size: 14px;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+    {% elif id_card.user.is_parent %}
+    .role-badge {
+        background-color: rgba(255,255,255,0.15);
+        color: {{ id_card.template.text_color }};
+        font-weight: bold;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-size: 14px;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+    {% endif %}
+    
+    /* Cutting guides with CR80 dimensions */
+    .cutting-guides {
+        position: absolute;
+        top: -20px;
+        left: -20px;
+        width: 1053px; /* 1013px + 40px (20px on each side) */
+        height: 678px; /* 638px + 40px (20px on each side) */
+        border: 1px dashed #ccc;
+        z-index: -1;
+    }
+    
+    .card-dimensions {
+        position: absolute;
+        font-size: 10px;
+        color: #999;
+    }
+    
+    .dimension-width {
+        top: -18px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .dimension-height {
+        left: -18px;
+        top: 50%;
+        transform: translateY(-50%) rotate(-90deg);
+    }
+    
+    .corner-mark {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-style: solid;
+        border-width: 0;
+        border-color: #999;
+    }
+    
+    .corner-mark.top-left {
+        top: 0;
+        left: 0;
+        border-top-width: 1px;
+        border-left-width: 1px;
+    }
+    
+    .corner-mark.top-right {
+        top: 0;
+        right: 0;
+        border-top-width: 1px;
+        border-right-width: 1px;
+    }
+    
+    .corner-mark.bottom-left {
+        bottom: 0;
+        left: 0;
+        border-bottom-width: 1px;
+        border-left-width: 1px;
+    }
+    
+    .corner-mark.bottom-right {
+        bottom: 0;
+        right: 0;
+        border-bottom-width: 1px;
+        border-right-width: 1px;
+    }
+    
+    /* Print-only styles */
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .print-container {
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            max-width: none;
+        }
+        .id-card-container {
+            page-break-inside: avoid;
+            margin: 0 auto;
+        }
+        .id-card {
+            box-shadow: none;
+        }
+        .cutting-guides {
+            border: 1px solid #ccc;
+        }
+        .card-dimensions {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid print-container">
+    <!-- Print instructions and controls - hidden when printing -->
+    <div class="no-print mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Print Instructions</h6>
+                <div>
+                    <button onclick="window.print()" class="btn btn-primary">
+                        <i class="fas fa-print me-2"></i>Print ID Card
+                    </button>
+                    <a href="{% url 'users:id_card_detail' card_id=id_card.id %}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Details
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Print Setup</h5>
+                    <ol class="mb-0">
+                        <li>Use high-quality cardstock paper for best results</li>
+                        <li>In your browser's print dialog, select "No Margins" or "Minimum Margins"</li>
+                        <li>Disable headers and footers in print settings</li>
+                        <li>If printing multiple cards, cut along the cutting guides</li>
+                        <li>Recommended: laminate the ID card after printing for durability</li>
+                    </ol>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This ID card is for {{ id_card.user.get_full_name }}
+                    {% if not id_card.is_active %}
+                        (INACTIVE)
+                    {% elif id_card.expiry_date < today %}
+                        (EXPIRED)
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-center mt-3">
+                    <button onclick="window.print()" class="btn btn-lg btn-primary">
+                        <i class="fas fa-print me-2"></i>Print Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ID Card for printing -->
+    <div class="id-card-container">
+        <div class="cutting-guides">
+            <div class="corner-mark top-left"></div>
+            <div class="corner-mark top-right"></div>
+            <div class="corner-mark bottom-left"></div>
+            <div class="corner-mark bottom-right"></div>
+            
+            <!-- ID Card -->
+            <div class="id-card">
+                {% if id_card.template.use_curved_design %}
+                <!-- Top curved background for header -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 120px; background-color: {{ id_card.template.header_color|default:'rgba(0,0,0,0.2)' }}; z-index: 1;"></div>
+                
+                <!-- Bottom curved background for footer -->
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background-color: {{ id_card.template.header_color|default:'rgba(0,0,0,0.2)' }}; z-index: 1;"></div>
+                
+                <!-- Decorative curved elements -->
+                <div class="curved-top-element"></div>
+                <div class="curved-bottom-element"></div>
+                {% endif %}
+                
+                <!-- Card Header with School Name -->
+                <div class="id-card-header">
+                    <div class="school-name">
+                        {% if school_settings.logo %}
+                            <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }}" style="height: 28px; margin-right: 10px;">
+                        {% endif %}
+                        {{ school_settings.school_name|default:"Deigratia Montessory School" }}
+                    </div>
+                    <div>{{ id_card.template.header_text }}</div>
+                </div>
+                
+                <!-- Card Body - Landscape layout with photo on left, information on right -->
+                <div class="id-card-body" style="position: relative; z-index: 3;">
+                    <!-- Left Column - Photo Section -->
+                    <div class="id-card-photo-section">
+                        {% if school_settings.logo and id_card.user.is_student %}
+                            <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }}" class="id-card-logo">
+                        {% endif %}
+                        
+                        <div class="id-card-photo" style="{% if id_card.template.use_curved_design %}border: 3px solid rgba(255,255,255,0.3); border-radius: 10px;{% endif %}">
+                            {% if id_card.user.profile_picture %}
+                                <img src="{{ id_card.user.profile_picture.url }}" alt="{{ id_card.user.get_full_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-user fa-5x" style="color: rgba(0,0,0,0.2);"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column - Information Section -->
+                    <div class="id-card-info-section">
+                        <!-- Role Badge -->
+                        <div class="role-badge" style="{% if id_card.template.use_curved_design %}background: rgba(255,255,255,0.2); border-radius: 50px; padding: 5px 15px;{% endif %}">
+                            {{ id_card.user.get_role_display }}
+                        </div>
+                        
+                        <!-- User Name (Larger) -->
+                        <div class="id-card-name" style="{% if id_card.template.use_curved_design %}border-bottom: 2px solid rgba(255,255,255,0.3);{% endif %}">
+                            {{ id_card.user.get_full_name }}
+                        </div>
+                        
+                        <!-- User Information -->
+                        <div class="id-card-info">
+                            {% if id_card.user.is_student %}
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Student ID:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.student.student_id }}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Date:</div>
+                                    <div class="id-card-info-value">{% if id_card.user.student.date_of_birth %}{{ id_card.user.student.date_of_birth|date:"F d, Y" }}{% else %}N/A{% endif %}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Class:</div>
+                                    <div class="id-card-info-value">{% if id_card.user.student.grade %}{{ id_card.user.student.grade }}{% endif %} {% if id_card.user.student.section %}{{ id_card.user.student.section }}{% endif %}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Address:</div>
+                                    <div class="id-card-info-value">{% if id_card.user.student.additional_info %}{{ id_card.user.student.additional_info.address|default:"123 Anywhere St., Any City" }}{% else %}123 Anywhere St., Any City{% endif %}</div>
+                                </div>
+                            {% elif id_card.user.is_teacher %}
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Staff ID:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.teacher.employee_id }}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Department:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.teacher.department|default:"Faculty" }}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Position:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.teacher.qualification|default:"Teacher" }}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Contact:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.phone_number|default:id_card.user.email }}</div>
+                                </div>
+                            {% elif id_card.user.is_parent %}
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Parent ID:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.id }}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Relationship:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.parent.relationship|default:"Parent/Guardian" }}</div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Child:</div>
+                                    <div class="id-card-info-value">
+                                        {% for child in id_card.user.parent.children.all %}
+                                            {{ child.user.first_name }} {{ child.user.last_name }}{% if not forloop.last %}, {% endif %}
+                                        {% empty %}
+                                            N/A
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="id-card-info-item">
+                                    <div class="id-card-info-label">Contact:</div>
+                                    <div class="id-card-info-value">{{ id_card.user.phone_number|default:id_card.user.email }}</div>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Additional Information -->
+                            {% if id_card.additional_info %}
+                                {% for key, value in id_card.additional_info.items %}
+                                    <div class="id-card-info-item">
+                                        <div class="id-card-info-label">{{ key|title }}:</div>
+                                        <div class="id-card-info-value">{{ value }}</div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <!-- Valid Until Date -->
+                            <div class="id-card-info-item">
+                                <div class="id-card-info-label">Valid Until:</div>
+                                <div class="id-card-info-value">{{ id_card.expiry_date|date:"F d, Y" }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Barcode (if available) -->
+                        {% if id_card.barcode_data %}
+                            <div class="id-card-barcode">
+                                <img src="data:image/png;base64,{{ barcode_image }}" alt="Barcode">
+                                <div style="font-size: 12px; margin-top: 4px;">{{ id_card.barcode_data }}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Footer with School Info -->
+                <div class="id-card-footer">
+                    {% if id_card.template.footer_text %}
+                        {{ id_card.template.footer_text|safe }}
+                    {% else %}
+                        <div>{{ school_settings.school_name|default:"Deigratia Montessory School" }} | {{ school_settings.address|default:"123 Education Avenue, Lagos, Nigeria" }}</div>
+                        <div>Tel: {{ school_settings.phone|default:"+234-123-456-7890" }} | Email: {{ school_settings.email|default:"info@deigratia.edu.ng" }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- CR80 Dimension Indicators (only visible in preview) -->
+            <div class="card-dimensions dimension-width">3.375" (85.77mm)</div>
+            <div class="card-dimensions dimension-height">2.125" (54.02mm)</div>
+        </div>
+    </div>
+    
+    <!-- Back side of ID card (optional) -->
+    <div class="id-card-container no-print">
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">ID Card Backside (Optional)</h6>
+            </div>
+            <div class="card-body text-center">
+                <p>Need to print the backside of the ID card?</p>
+                <button class="btn btn-outline-primary" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#backsideCollapse" 
+                        aria-expanded="false" 
+                        aria-controls="backsideCollapse">
+                    <i class="fas fa-cog me-2"></i>Configure Backside
+                </button>
+                
+                <div class="collapse mt-3" id="backsideCollapse">
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="text-muted">This feature will be available in a future update.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-print when the page loads, if in print mode
+    {% if print_mode %}
+    window.addEventListener('load', function() {
+        // Give the browser a moment to fully render
+        setTimeout(function() {
+            window.print();
+        }, 500);
+    });
+    {% endif %}
+</script>
+{% endblock %}

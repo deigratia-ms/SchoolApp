@@ -1,0 +1,589 @@
+{% extends 'base.html' %}
+
+{% block title %}Quick Fee Payment - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+  .select2-container--bootstrap-5 .select2-selection {
+    height: calc(3.5rem + 2px);
+    padding: 1rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #d1d3e2;
+    border-radius: 0.35rem;
+  }
+
+  .student-info-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #4e73df;
+  }
+
+  .payment-summary {
+    background-color: #f8f9fc;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+  }
+
+  .payment-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #4e73df;
+  }
+
+  .payment-method-btn {
+    border: 2px solid #eaecf4;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .payment-method-btn:hover {
+    border-color: #4e73df;
+    background-color: #f8f9fc;
+  }
+
+  .payment-method-btn.active {
+    border-color: #4e73df;
+    background-color: #eaecf4;
+  }
+
+  .payment-method-btn i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .fee-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .fee-item:hover {
+    background-color: #f8f9fc;
+  }
+
+  .fee-item.selected {
+    border-left-color: #4e73df;
+    background-color: #eaecf4;
+  }
+
+  .fee-item .fee-amount {
+    font-weight: 700;
+  }
+
+  .fee-item .fee-balance {
+    font-weight: 700;
+    color: #e74a3b;
+  }
+
+  .fee-item .fee-status {
+    font-size: 0.8rem;
+  }
+
+  #studentSearchContainer .select2-container {
+    width: 100% !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Quick Fee Payment</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:payment_list' %}">Payments</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Quick Payment</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="row">
+    <!-- Step 1: Search for Student -->
+    <div class="col-lg-12 mb-4">
+      <div class="card shadow border-0">
+        <div class="card-header py-3 bg-gradient-primary text-white">
+          <h6 class="m-0 font-weight-bold">Step 1: Search for Student</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8 mx-auto">
+              <div id="studentSearchContainer" class="mb-3">
+                <label for="studentSearch" class="form-label">Search by Student ID or Name</label>
+                <select class="form-control" id="studentSearch" name="student">
+                  <option value="">Type to search for a student...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Select Fee -->
+    <div class="col-lg-8 mb-4" id="feeSelectionSection" style="display: none;">
+      <div class="card shadow border-0">
+        <div class="card-header py-3 bg-gradient-primary text-white">
+          <h6 class="m-0 font-weight-bold">Step 2: Select Fee to Pay</h6>
+        </div>
+        <div class="card-body">
+          <!-- Student Info -->
+          <div class="student-info-card p-3 mb-4">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <i class="fas fa-user-graduate fa-2x text-primary"></i>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h5 class="mb-0" id="studentName"></h5>
+                <p class="mb-0 text-muted">ID: <span id="studentID"></span></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fee List -->
+          <div id="feeListContainer">
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-2">Loading student fees...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Payment Details -->
+    <div class="col-lg-4 mb-4" id="paymentDetailsSection" style="display: none;">
+      <div class="card shadow border-0">
+        <div class="card-header py-3 bg-gradient-primary text-white">
+          <h6 class="m-0 font-weight-bold">Step 3: Payment Details</h6>
+        </div>
+        <div class="card-body">
+          <form id="paymentForm" method="post" action="{% url 'fees:create_payment' %}">
+            {% csrf_token %}
+
+            <!-- Hidden fields -->
+            <input type="hidden" id="student_id" name="student">
+            <input type="hidden" id="fee_id" name="fee">
+
+            <div class="payment-summary mb-4">
+              <div class="text-center mb-3">
+                <div class="text-muted mb-1">Payment Amount</div>
+                <div class="payment-amount">GHS <span id="paymentAmountDisplay">0.00</span></div>
+              </div>
+
+              <div class="row">
+                <div class="col-6">
+                  <div class="text-muted small">Fee Total</div>
+                  <div class="fw-bold">GHS <span id="feeTotalDisplay">0.00</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="text-muted small">Remaining Balance</div>
+                  <div class="fw-bold">GHS <span id="remainingBalanceDisplay">0.00</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Amount -->
+            <div class="mb-3">
+              <label for="amount" class="form-label">Amount Paid <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">GHS</span>
+                <input type="number" class="form-control" id="amount" name="amount" step="0.01" required>
+              </div>
+              <div class="form-text" id="amountHelp">Enter the exact amount being paid.</div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="mb-3">
+              <label class="form-label">Payment Method <span class="text-danger">*</span></label>
+              <div class="row g-2">
+                <div class="col-4">
+                  <div class="payment-method-btn active" data-method="CASH">
+                    <i class="fas fa-money-bill-wave d-block text-success"></i>
+                    <span>Cash</span>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="payment-method-btn" data-method="MOBILE_MONEY">
+                    <i class="fas fa-mobile-alt d-block text-primary"></i>
+                    <span>Mobile Money</span>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="payment-method-btn" data-method="BANK_TRANSFER">
+                    <i class="fas fa-university d-block text-info"></i>
+                    <span>Bank Transfer</span>
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" id="payment_method" name="payment_method" value="CASH">
+            </div>
+
+            <!-- Transaction ID -->
+            <div class="mb-3" id="transactionIdContainer" style="display: none;">
+              <label for="transaction_id" class="form-label">Transaction ID</label>
+              <input type="text" class="form-control" id="transaction_id" name="transaction_id">
+              <div class="form-text">Reference number for mobile money or bank transfer.</div>
+            </div>
+
+            <!-- Payment Date -->
+            <div class="mb-3">
+              <label for="payment_date" class="form-label">Payment Date <span class="text-danger">*</span></label>
+              <input type="datetime-local" class="form-control" id="payment_date" name="payment_date" required>
+            </div>
+
+            <!-- Received By -->
+            <div class="mb-3">
+              <label class="form-label">Received By</label>
+              <input type="text" class="form-control" value="{{ request.user.get_full_name }}" readonly>
+              <div class="form-text">Payment will be recorded as received by your account.</div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notes</label>
+              <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-check-circle me-2"></i>Record Payment
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="receiptModalLabel">Payment Successful</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <i class="fas fa-check-circle text-success fa-5x"></i>
+        </div>
+        <h4 class="mb-3">Payment Recorded Successfully!</h4>
+        <p class="mb-1">Receipt Number: <strong id="receiptNumber"></strong></p>
+        <p class="mb-3">Amount: <strong>GHS <span id="receiptAmount"></span></strong></p>
+        <div class="d-grid gap-2">
+          <a href="#" id="viewReceiptLink" class="btn btn-primary">
+            <i class="fas fa-receipt me-2"></i>View Receipt
+          </a>
+          <a href="#" id="printReceiptLink" class="btn btn-outline-primary">
+            <i class="fas fa-print me-2"></i>Print Receipt
+          </a>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-plus-circle me-2"></i>Record Another Payment
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Select2 for student search
+    $('#studentSearch').select2({
+      theme: 'bootstrap-5',
+      placeholder: 'Type student name or ID...',
+      allowClear: true,
+      minimumInputLength: 2,
+      ajax: {
+        url: '{% url "fees:api_search_students" %}',
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+          return {
+            q: params.term
+          };
+        },
+        processResults: function(data) {
+          return {
+            results: data.students.map(function(student) {
+              return {
+                id: student.id,
+                text: student.name + ' (' + student.student_id + ')',
+                student_id: student.student_id,
+                name: student.name
+              };
+            })
+          };
+        },
+        cache: true
+      }
+    });
+
+    // Set current date and time as default
+    const now = new Date();
+    const formattedDateTime = now.toISOString().slice(0, 16);
+    document.getElementById('payment_date').value = formattedDateTime;
+
+    // When student is selected
+    $('#studentSearch').on('select2:select', function(e) {
+      const studentId = e.params.data.id;
+      const studentName = e.params.data.name;
+      const studentIdNumber = e.params.data.student_id;
+
+      // Update student info
+      $('#studentName').text(studentName);
+      $('#studentID').text(studentIdNumber);
+      $('#student_id').val(studentId);
+
+      // Show fee selection section
+      $('#feeSelectionSection').show();
+
+      // Load student fees
+      loadStudentFees(studentId);
+    });
+
+    // Load student fees
+    function loadStudentFees(studentId) {
+      fetch(`{% url 'fees:api_student_fees' 0 %}`.replace('0', studentId))
+        .then(response => response.json())
+        .then(data => {
+          const feeListContainer = document.getElementById('feeListContainer');
+
+          if (data.fees.length === 0) {
+            feeListContainer.innerHTML = `
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No outstanding fees found for this student.
+              </div>
+            `;
+            return;
+          }
+
+          // Create fee list
+          let feeListHTML = `
+            <div class="list-group">
+              <div class="list-group-item bg-light">
+                <div class="row align-items-center fw-bold">
+                  <div class="col-md-4">Fee Type</div>
+                  <div class="col-md-3">Term</div>
+                  <div class="col-md-2">Amount</div>
+                  <div class="col-md-2">Balance</div>
+                  <div class="col-md-1">Status</div>
+                </div>
+              </div>
+          `;
+
+          data.fees.forEach(fee => {
+            const statusClass = fee.status === 'Paid' ? 'bg-success' :
+                              fee.status === 'Partially Paid' ? 'bg-warning' :
+                              fee.status === 'Overdue' ? 'bg-danger' : 'bg-secondary';
+
+            feeListHTML += `
+              <div class="list-group-item fee-item"
+                   data-id="${fee.id}"
+                   data-category="${fee.category}"
+                   data-term="${fee.term}"
+                   data-amount="${fee.amount}"
+                   data-paid="${fee.amount_paid}"
+                   data-balance="${fee.balance}">
+                <div class="row align-items-center">
+                  <div class="col-md-4">
+                    <strong>${fee.category}</strong>
+                  </div>
+                  <div class="col-md-3">${fee.term}</div>
+                  <div class="col-md-2 fee-amount">GHS ${fee.amount.toFixed(2)}</div>
+                  <div class="col-md-2 fee-balance">GHS ${fee.balance.toFixed(2)}</div>
+                  <div class="col-md-1">
+                    <span class="badge ${statusClass} fee-status">${fee.status}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+
+          feeListHTML += `</div>`;
+          feeListContainer.innerHTML = feeListHTML;
+
+          // Add click event to fee items
+          document.querySelectorAll('.fee-item').forEach(item => {
+            item.addEventListener('click', function() {
+              // Remove selected class from all items
+              document.querySelectorAll('.fee-item').forEach(i => i.classList.remove('selected'));
+
+              // Add selected class to clicked item
+              this.classList.add('selected');
+
+              // Get fee data
+              const feeId = this.dataset.id;
+              const feeCategory = this.dataset.category;
+              const feeTerm = this.dataset.term;
+              const feeAmount = parseFloat(this.dataset.amount);
+              const feePaid = parseFloat(this.dataset.paid);
+              const feeBalance = parseFloat(this.dataset.balance);
+
+              // Update payment form
+              $('#fee_id').val(feeId);
+              $('#feeTotalDisplay').text(feeAmount.toFixed(2));
+              $('#remainingBalanceDisplay').text(feeBalance.toFixed(2));
+
+              // Set default payment amount to balance
+              $('#amount').val(feeBalance.toFixed(2));
+              $('#paymentAmountDisplay').text(feeBalance.toFixed(2));
+
+              // Show payment details section
+              $('#paymentDetailsSection').show();
+            });
+          });
+        })
+        .catch(error => {
+          console.error('Error loading fees:', error);
+          document.getElementById('feeListContainer').innerHTML = `
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              Error loading student fees. Please try again.
+            </div>
+          `;
+        });
+    }
+
+    // Update payment amount display when amount input changes
+    $('#amount').on('input', function() {
+      const amount = parseFloat($(this).val()) || 0;
+      $('#paymentAmountDisplay').text(amount.toFixed(2));
+
+      // Validate payment amount
+      const balance = parseFloat($('#remainingBalanceDisplay').text());
+      if (amount > balance) {
+        $('#amountHelp').html('<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Amount exceeds balance. This will result in overpayment.</span>');
+      } else {
+        $('#amountHelp').text('Enter the exact amount being paid.');
+      }
+    });
+
+    // Payment method selection
+    $('.payment-method-btn').on('click', function() {
+      // Remove active class from all buttons
+      $('.payment-method-btn').removeClass('active');
+
+      // Add active class to clicked button
+      $(this).addClass('active');
+
+      // Update hidden input
+      const method = $(this).data('method');
+      $('#payment_method').val(method);
+
+      // Show/hide transaction ID field
+      if (method === 'CASH') {
+        $('#transactionIdContainer').hide();
+        $('#transaction_id').prop('required', false);
+      } else {
+        $('#transactionIdContainer').show();
+        $('#transaction_id').prop('required', true);
+      }
+    });
+
+    // Form submission
+    $('#paymentForm').on('submit', function(e) {
+      e.preventDefault();
+
+      // Format the payment date to YYYY-MM-DD format
+      const paymentDateInput = document.getElementById('payment_date');
+      if (paymentDateInput.value && paymentDateInput.value.includes('T')) {
+        // Create a hidden input with just the date part
+        const dateOnly = paymentDateInput.value.split('T')[0];
+        // Add or update a hidden field with the formatted date
+        let hiddenDateInput = document.getElementById('formatted_payment_date');
+        if (!hiddenDateInput) {
+          hiddenDateInput = document.createElement('input');
+          hiddenDateInput.type = 'hidden';
+          hiddenDateInput.name = 'payment_date';
+          hiddenDateInput.id = 'formatted_payment_date';
+          this.appendChild(hiddenDateInput);
+        }
+        hiddenDateInput.value = dateOnly;
+        // Disable the original input so it doesn't get submitted
+        paymentDateInput.disabled = true;
+      }
+
+      // Show loading state
+      const submitBtn = $(this).find('button[type="submit"]');
+      const originalText = submitBtn.html();
+      submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
+      submitBtn.prop('disabled', true);
+
+      // Submit form via AJAX
+      $.ajax({
+        url: $(this).attr('action'),
+        type: 'POST',
+        data: $(this).serialize(),
+        success: function(response) {
+          // Reset button
+          submitBtn.html(originalText);
+          submitBtn.prop('disabled', false);
+
+          // Show success modal
+          $('#receiptNumber').text(response.receipt_number);
+          $('#receiptAmount').text(response.amount);
+          $('#viewReceiptLink').attr('href', response.receipt_url);
+          $('#printReceiptLink').attr('href', response.print_url);
+
+          const receiptModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+          receiptModal.show();
+
+          // Reset form for new payment
+          resetPaymentForm();
+        },
+        error: function(xhr) {
+          // Reset button
+          submitBtn.html(originalText);
+          submitBtn.prop('disabled', false);
+
+          // Show error message
+          let errorMessage = 'An error occurred while processing the payment.';
+          if (xhr.responseJSON && xhr.responseJSON.error) {
+            errorMessage = xhr.responseJSON.error;
+          }
+
+          alert(errorMessage);
+        }
+      });
+    });
+
+    // Reset payment form
+    function resetPaymentForm() {
+      // Clear fee selection
+      document.querySelectorAll('.fee-item').forEach(i => i.classList.remove('selected'));
+
+      // Hide payment details section
+      $('#paymentDetailsSection').hide();
+
+      // Reset form fields
+      $('#fee_id').val('');
+      $('#amount').val('');
+      $('#paymentAmountDisplay').text('0.00');
+      $('#feeTotalDisplay').text('0.00');
+      $('#remainingBalanceDisplay').text('0.00');
+      $('#transaction_id').val('');
+      $('#notes').val('');
+
+      // Reset payment method
+      $('.payment-method-btn').removeClass('active');
+      $('.payment-method-btn[data-method="CASH"]').addClass('active');
+      $('#payment_method').val('CASH');
+      $('#transactionIdContainer').hide();
+    }
+  });
+</script>
+{% endblock %}

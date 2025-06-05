@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}Fee Invoice - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #invoice-section, #invoice-section * {
+      visibility: visible;
+    }
+    #invoice-section {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    .no-print {
+      display: none !important;
+    }
+  }
+  .invoice-header {
+    border-bottom: 2px solid #dee2e6;
+  }
+  .invoice-footer {
+    border-top: 2px solid #dee2e6;
+  }
+  .invoice-title {
+    color: #4e73df;
+  }
+  .table-fees th {
+    background-color: #f8f9fc;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h1 class="h3 mb-0 text-gray-800">Fee Invoice</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'fees:student_fees' student.id %}">My Fees</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Invoice</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mb-4 no-print">
+    <button onclick="window.print();" class="btn btn-primary">
+      <i class="fas fa-print me-2"></i>Print Invoice
+    </button>
+    <button onclick="generatePDF();" class="btn btn-info">
+      <i class="fas fa-file-pdf me-2"></i>Download PDF
+    </button>
+    <a href="{% url 'fees:student_fees' student.id %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-2"></i>Back to Fees
+    </a>
+  </div>
+
+  <!-- Invoice Section -->
+  <div class="card mb-4" id="invoice-section">
+    <div class="card-body">
+      <!-- Invoice Header -->
+      <div class="row invoice-header pb-4 mb-4">
+        <div class="col-md-6">
+          <div class="d-flex align-items-center mb-3">
+            <img src="{{ school_logo_url }}" alt="School Logo" class="me-3" style="max-height: 80px;">
+            <div>
+              <h4 class="mb-0">{{ school_name }}</h4>
+              <p class="text-muted mb-0">{{ school_address }}</p>
+              <p class="text-muted mb-0">{{ school_contact }}</p>
+              {% if school_email %}
+              <p class="text-muted mb-0">{{ school_email }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <h2 class="invoice-title mb-2">FEE INVOICE</h2>
+          <p class="mb-1"><strong>Invoice #:</strong> {{ invoice_number }}</p>
+          <p class="mb-1"><strong>Date:</strong> {{ today|date:"F d, Y" }}</p>
+          <p class="mb-1"><strong>Due Date:</strong> {{ student_fee.due_date|date:"F d, Y" }}</p>
+        </div>
+      </div>
+
+      <!-- Student Information -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <h5 class="mb-3">Student Information</h5>
+          <p class="mb-1"><strong>Name:</strong> {{ student.user.get_full_name }}</p>
+          <p class="mb-1"><strong>Student ID:</strong> {{ student.student_id }}</p>
+          <p class="mb-1"><strong>Class:</strong> {{ student_fee.class_fee.classroom.name }}</p>
+          <p class="mb-1"><strong>Term:</strong> {{ student_fee.class_fee.term.name }} ({{ student_fee.class_fee.term.academic_year }})</p>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-3">Parent/Guardian Information</h5>
+          {% if parent %}
+            <p class="mb-1"><strong>Name:</strong> {{ parent.user.get_full_name }}</p>
+            <p class="mb-1"><strong>Phone:</strong> {{ parent.user.phone_number|default:"N/A" }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ parent.user.email|default:"N/A" }}</p>
+          {% else %}
+            <p class="text-muted">No parent/guardian information available.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Fee Details -->
+      <div class="mb-4">
+        <h5 class="mb-3">Fee Details</h5>
+        <div class="table-responsive">
+          <table class="table table-bordered table-fees">
+            <thead>
+              <tr>
+                <th>Fee Type</th>
+                <th>Description</th>
+                <th>Amount (GHS)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ student_fee.class_fee.fee_category.name }}</td>
+                <td>{{ student_fee.class_fee.description|default:"" }}</td>
+                <td class="text-end">{{ student_fee.amount|floatformat:2 }}</td>
+              </tr>
+              {% for fee in related_fees %}
+                <tr>
+                  <td>{{ fee.class_fee.fee_category.name }}</td>
+                  <td>{{ fee.class_fee.description|default:"" }}</td>
+                  <td class="text-end">{{ fee.amount|floatformat:2 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="2" class="text-end">Total Amount:</th>
+                <th class="text-end">{{ total_amount|floatformat:2 }}</th>
+              </tr>
+              <tr>
+                <th colspan="2" class="text-end">Amount Paid:</th>
+                <th class="text-end">{{ total_paid|floatformat:2 }}</th>
+              </tr>
+              <tr>
+                <th colspan="2" class="text-end">Balance Due:</th>
+                <th class="text-end">{{ total_balance|floatformat:2 }}</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payment History -->
+      {% if payments %}
+        <div class="mb-4">
+          <h5 class="mb-3">Payment History</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-fees">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount (GHS)</th>
+                  <th>Payment Method</th>
+                  <th>Receipt #</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for payment in payments %}
+                  <tr>
+                    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                    <td class="text-end">{{ payment.amount|floatformat:2 }}</td>
+                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td>{% if payment.receipt %}{{ payment.receipt.receipt_number }}{% else %}-{% endif %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Invoice Footer -->
+      <div class="row invoice-footer pt-4 mt-4">
+        <div class="col-md-6">
+          <p class="mb-1"><strong>Terms & Conditions:</strong></p>
+          <ul class="ps-3 mb-0">
+            <li>All fees must be paid by the due date.</li>
+            <li>Late payments may incur additional charges.</li>
+            <li>This invoice is valid for 30 days from the issue date.</li>
+          </ul>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <p class="mb-1">If you have any questions concerning this invoice, please contact:</p>
+          <p class="mb-0"><strong>Finance Office:</strong> finance@ricasschool.edu.gh | +233 123 456 789</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  function generatePDF() {
+    // Get the invoice element
+    const element = document.getElementById('invoice-section');
+
+    // Clone the element to avoid modifying the original
+    const clone = element.cloneNode(true);
+
+    // Set options for PDF generation
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: '{{ invoice_number }}.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Generate PDF
+    html2pdf().set(opt).from(clone).save();
+  }
+</script>
+{% endblock %}

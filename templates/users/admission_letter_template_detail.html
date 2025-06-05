@@ -1,0 +1,173 @@
+{% extends "base.html" %} {% load static %} {% block title %}{{ template.name }}
+- Admission Letter Template{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{ template.name }}</h1>
+    <div>
+      <a
+        href="{% url 'users:admission_letter_template_update' template.id %}"
+        class="btn btn-primary btn-sm"
+      >
+        <i class="fas fa-edit mr-2"></i>Edit Template
+      </a>
+      <a
+        href="{% url 'users:admission_letter_template_list' %}"
+        class="btn btn-secondary btn-sm"
+      >
+        <i class="fas fa-list mr-2"></i>Back to List
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Template Details -->
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Template Details</h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <tr>
+                <th style="width: 150px">Status</th>
+                <td>
+                  {% if template.is_active %}
+                  <span class="badge badge-success">Active</span>
+                  {% else %}
+                  <span class="badge badge-danger">Inactive</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <th>Header Text</th>
+                <td>{{ template.header_text }}</td>
+              </tr>
+              <tr>
+                <th>Body Template</th>
+                <td>
+                  <pre
+                    class="border p-3 bg-light"
+                    style="white-space: pre-wrap"
+                  >
+{{ template.body_template }}</pre
+                  >
+                </td>
+              </tr>
+              <tr>
+                <th>Footer Text</th>
+                <td>{{ template.footer_text|default:"Not specified" }}</td>
+              </tr>
+              <tr>
+                <th>Signatory Name</th>
+                <td>{{ template.signatory_name|default:"Not specified" }}</td>
+              </tr>
+              <tr>
+                <th>Signatory Position</th>
+                <td>
+                  {{ template.signatory_position|default:"Not specified" }}
+                </td>
+              </tr>
+              <tr>
+                <th>Created At</th>
+                <td>{{ template.created_at|date:"F d, Y H:i" }}</td>
+              </tr>
+              <tr>
+                <th>Last Updated</th>
+                <td>{{ template.updated_at|date:"F d, Y H:i" }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signature and Preview -->
+    <div class="col-lg-4">
+      {% if template.signature_image %}
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Signature Image</h6>
+        </div>
+        <div class="card-body text-center">
+          <img
+            src="{{ template.signature_image.url }}"
+            alt="Signature"
+            class="img-fluid mb-3"
+            style="max-height: 100px"
+          />
+          <div>
+            <a
+              href="{{ template.signature_image.url }}"
+              target="_blank"
+              class="btn btn-sm btn-outline-primary"
+            >
+              <i class="fas fa-external-link-alt mr-1"></i>View Full Size
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Available Placeholders
+          </h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li><code>{student_name}</code> - Student's full name</li>
+            <li><code>{student_id}</code> - Student ID number</li>
+            <li><code>{grade}</code> - Admitted grade</li>
+            <li><code>{section}</code> - Class section</li>
+            <li><code>{academic_year}</code> - Academic year</li>
+            <li><code>{admission_date}</code> - Date of admission</li>
+            <li><code>{additional_info}</code> - Additional information</li>
+            <li><code>{signatory_name}</code> - Name of signatory</li>
+            <li><code>{signatory_position}</code> - Position of signatory</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Usage Statistics -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Template Usage</h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+          <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+              <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                  <div
+                    class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+                  >
+                    Total Letters Generated
+                  </div>
+                  <div class="h5 mb-0 font-weight-bold text-gray-800">
+                    {{ letters_count|default:"0" }}
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <i class="fas fa-envelope fa-2x text-gray-300"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  $(document).ready(function () {
+    // Add any JavaScript functionality here
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Delete Class Subject | Ricas School Management System{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Delete Class Subject</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'courses:class_subject_list' %}">Class Subjects</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Delete</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4 border-left-danger">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-danger">Confirm Deletion</h6>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Warning:</strong> This action cannot be undone. All data associated with this class subject will be permanently deleted.
+          </div>
+
+          <p>Are you sure you want to delete the following class subject?</p>
+          
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered">
+              <tr>
+                <th style="width: 30%">Class</th>
+                <td>
+                  {{ class_subject.classroom.name }}
+                  {% if class_subject.classroom.section %}
+                  ({{ class_subject.classroom.section }})
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <th>Subject</th>
+                <td>{{ class_subject.subject.name }} ({{ class_subject.subject.code }})</td>
+              </tr>
+              <tr>
+                <th>Teacher</th>
+                <td>{{ class_subject.teacher.user.get_full_name }}</td>
+              </tr>
+              <tr>
+                <th>Students</th>
+                <td>{{ class_subject.students.count }}</td>
+              </tr>
+            </table>
+          </div>
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'courses:class_subject_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+              <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash me-2"></i>Delete Class Subject
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Impact of Deletion</h6>
+        </div>
+        <div class="card-body">
+          <p>Deleting this class subject will remove:</p>
+          <ul>
+            <li>All student enrollments for this subject in this class</li>
+            <li>All course materials uploaded for this subject in this class</li>
+            <li>All schedules for this subject in this class</li>
+            <li>All assignments and quizzes for this subject in this class</li>
+          </ul>
+          <p class="text-danger">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            This action cannot be undone.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

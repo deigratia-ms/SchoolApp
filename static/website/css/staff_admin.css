@@ -1,0 +1,13 @@
+.executive-position-field:not(.hidden) {
+    margin-top: 10px;
+}
+
+/* Style for staff type radio buttons */
+.field-staff_type .radiolist li {
+    display: inline-block;
+    margin-right: 20px;
+}
+
+.field-staff_type .radiolist li label {
+    font-weight: normal;
+}

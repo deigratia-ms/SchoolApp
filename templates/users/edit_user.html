@@ -1,0 +1,629 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User - School Management System{% endblock %}
+
+{% block extra_css %}
+<!-- Optional: Add any additional CSS you need -->
+<style>
+    .role-fields {
+        display: none;
+    }
+    
+    .form-section {
+        background-color: #f8f9fc;
+        border-radius: 0.35rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section-title {
+        border-bottom: 1px solid #e3e6f0;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Edit User</h1>
+        <a href="{% url 'users:user_management' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to User Management
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Main Form Column -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">User Information</h6>
+                    <span class="badge bg-{{ user.is_active|yesno:'success,danger' }}">
+                        {{ user.is_active|yesno:'Active,Inactive' }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="editUserForm">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Account Type Section -->
+                        <div class="form-section mb-4">
+                            <h5 class="form-section-title">Account Type</h5>
+                            <div class="mb-3">
+                                <label class="form-label">User Role</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleAdmin" value="ADMIN"
+                                               {% if user.role == 'ADMIN' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleAdmin">
+                                            <i class="fas fa-user-shield text-danger me-1"></i> Administrator
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleTeacher" value="TEACHER"
+                                               {% if user.role == 'TEACHER' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleTeacher">
+                                            <i class="fas fa-chalkboard-teacher text-success me-1"></i> Teacher
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleStudent" value="STUDENT"
+                                               {% if user.role == 'STUDENT' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleStudent">
+                                            <i class="fas fa-user-graduate text-primary me-1"></i> Student
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleParent" value="PARENT"
+                                               {% if user.role == 'PARENT' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleParent">
+                                            <i class="fas fa-users text-info me-1"></i> Parent/Guardian
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                {% if not request.user.is_admin %}
+                                    <div class="form-text text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Only administrators can change user roles.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Basic Information -->
+                        <div class="form-section mb-4">
+                            <h5 class="form-section-title">Basic Information</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" 
+                                           value="{{ user.first_name }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" 
+                                           value="{{ user.last_name }}" required>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                           value="{{ user.email }}" required>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="profile_picture" class="form-label">Profile Picture</label>
+                                    <input class="form-control" type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                                    <div class="form-text">
+                                        Current: 
+                                        {% if user.profile_picture %}
+                                            <a href="{{ user.profile_picture.url }}" target="_blank">View current image</a>
+                                        {% else %}
+                                            No image uploaded
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Teacher-specific Fields -->
+                        <div id="teacher-fields" class="role-fields form-section mb-4" 
+                             {% if user.is_teacher %}style="display: block;"{% endif %}>
+                            <h5 class="form-section-title">Teacher Information</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="employee_id" class="form-label">Employee ID <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="employee_id" name="employee_id" 
+                                           value="{{ teacher.employee_id|default:'' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="department" class="form-label">Department <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="department" name="department" 
+                                           value="{{ teacher.department|default:'' }}">
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label for="qualification" class="form-label">Qualification</label>
+                                    <input type="text" class="form-control" id="qualification" name="qualification" 
+                                           value="{{ teacher.qualification|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Student-specific Fields -->
+                        <div id="student-fields" class="role-fields form-section mb-4" 
+                             {% if user.is_student %}style="display: block;"{% endif %}>
+                            <h5 class="form-section-title">Student Information</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="student_id" class="form-label">Student ID <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="student_id" name="student_id" 
+                                           value="{{ student.student_id|default:'' }}" readonly>
+                                    <div class="form-text">
+                                        Student ID cannot be changed after creation.
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="pin" class="form-label">PIN <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="pin" name="pin" maxlength="5" 
+                                               value="{{ student.pin|default:'' }}">
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePin">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">
+                                        5-digit PIN for student login.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                   <label for="classroom" class="form-label">Classroom</label>
+                                    <select class="form-select" id="classroom" name="classroom">
+                                        <option value="" {% if not student.grade %}selected{% endif %}>-- Select Classroom --</option>
+                                        {% for classroom in classrooms %}
+                                            <option value="{{ classroom.id }}" {% if student.grade == classroom or classroom in student.classrooms.all %}selected{% endif %}>{{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="parent_id" class="form-label">Link to Parent/Guardian</label>
+                                    <select class="form-select" id="parent_id" name="parent_id">
+                                        <option value="">No parent selected</option>
+                                        {% for parent in parents %}
+                                            <option value="{{ parent.id }}" {% if parent.id in student_parent_ids %}selected{% endif %}>
+                                                {{ parent.user.get_full_name }} ({{ parent.user.email }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Parent-specific Fields -->
+                        <div id="parent-fields" class="role-fields form-section mb-4" 
+                             {% if user.is_parent %}style="display: block;"{% endif %}>
+                            <h5 class="form-section-title">Parent/Guardian Information</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="relationship" class="form-label">Relationship <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="relationship" name="relationship">
+                                        <option value="Parent" {% if parent.relationship == 'Parent' %}selected{% endif %}>Parent</option>
+                                        <option value="Father" {% if parent.relationship == 'Father' %}selected{% endif %}>Father</option>
+                                        <option value="Mother" {% if parent.relationship == 'Mother' %}selected{% endif %}>Mother</option>
+                                        <option value="Guardian" {% if parent.relationship == 'Guardian' %}selected{% endif %}>Guardian</option>
+                                        <option value="Grandparent" {% if parent.relationship == 'Grandparent' %}selected{% endif %}>Grandparent</option>
+                                        <option value="Other" {% if parent.relationship == 'Other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="occupation" class="form-label">Occupation</label>
+                                    <input type="text" class="form-control" id="occupation" name="occupation" 
+                                           value="{{ parent.occupation|default:'' }}">
+                                </div>
+                                
+                                {% if user.is_parent %}
+                                    <div class="col-12">
+                                        <label class="form-label">Linked Children</label>
+                                        {% if parent.children.all %}
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Name</th>
+                                                            <th>Grade</th>
+                                                            <th>Section</th>
+                                                            <th style="width: 80px;">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for child in parent.children.all %}
+                                                            <tr>
+                                                                <td>{{ child.user.get_full_name }}</td>
+                                                                <td>{{ child.grade }}</td>
+                                                                <td>{{ child.section }}</td>
+                                                                <td>
+                                                                    <a href="#" class="btn btn-sm btn-outline-danger" 
+                                                                       data-child-id="{{ child.id }}" 
+                                                                       onclick="unlinkChild({{ child.id }}, '{{ child.user.get_full_name }}')">
+                                                                        <i class="fas fa-unlink"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                No children are linked to this parent yet.
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-sm btn-outline-primary mt-2">
+                                            <i class="fas fa-link me-1"></i> Link Children
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'users:user_management' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- Account Status Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Account Settings</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" form="editUserForm" 
+                               id="is_verified" name="is_verified" {% if user.is_verified %}checked{% endif %}>
+                        <label class="form-check-label" for="is_verified">
+                            Account verified
+                        </label>
+                        <div class="form-text small">
+                            If unchecked, the user will need to verify their email before login.
+                        </div>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" form="editUserForm" 
+                               id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">
+                            Account active
+                        </label>
+                        <div class="form-text small">
+                            If unchecked, the user cannot log in to the system.
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="mb-0">Account Created</h6>
+                        <span>{{ user.date_joined|date:"F j, Y" }}</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="mb-0">Last Login</h6>
+                        <span>
+                            {% if user.last_login %}
+                                {{ user.last_login|date:"F j, Y, g:i a" }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">User Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if user.is_student %}
+                            <a href="{% url 'users:generate_id_card' user.id %}" class="btn btn-info">
+                                <i class="fas fa-id-card me-2"></i>Generate ID Card
+                            </a>
+                            <a href="{% url 'users:generate_admission_letter' student.id %}" class="btn btn-primary">
+                                <i class="fas fa-file-alt me-2"></i>Generate Admission Letter
+                            </a>
+                        {% endif %}
+                        
+                        <a href="#" class="btn btn-warning" id="resetPasswordBtn">
+                            <i class="fas fa-key me-2"></i>Reset Password
+                        </a>
+                        
+                        {% if user.id != request.user.id %}
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
+                                <i class="fas fa-trash-alt me-2"></i>Delete User
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+                
+                <p>Are you sure you want to delete the user <strong>{{ user.get_full_name }}</strong>?</p>
+                <p>This will remove all user data, including:</p>
+                <ul>
+                    <li>Personal information</li>
+                    <li>Login credentials</li>
+                    <li>Associated records (grades, assignments, etc.)</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'users:delete_user' user.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetPasswordModalLabel">Reset User Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'users:reset_password' user.id %}" method="post" id="resetPasswordForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Generate a new password for <strong>{{ user.get_full_name }}</strong>.</p>
+                    
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="new_password" name="new_password" 
+                                   autocomplete="new-password" value="{{ generated_password|default:'' }}" required>
+                            <button class="btn btn-outline-secondary" type="button" id="generatePasswordBtn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            The user will be prompted to change this password on next login.
+                        </div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_reset_email" name="send_reset_email" checked>
+                        <label class="form-check-label" for="send_reset_email">
+                            Send password reset email to user
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get role radio buttons
+        const roleRadios = document.querySelectorAll('input[name="role"]');
+        
+        // Get role-specific field containers
+        const teacherFields = document.getElementById('teacher-fields');
+        const studentFields = document.getElementById('student-fields');
+        const parentFields = document.getElementById('parent-fields');
+        
+        // Add event listeners to role radio buttons (only if they're not disabled)
+        roleRadios.forEach(function(radio) {
+            if (!radio.disabled) {
+                radio.addEventListener('change', function() {
+                    // Hide all role-specific fields
+                    hideAllRoleFields();
+                    
+                    // Show fields based on selected role
+                    if (this.value === 'TEACHER') {
+                        teacherFields.style.display = 'block';
+                    } else if (this.value === 'STUDENT') {
+                        studentFields.style.display = 'block';
+                    } else if (this.value === 'PARENT') {
+                        parentFields.style.display = 'block';
+                    }
+                    
+                    // Update required fields based on role
+                    updateRequiredFields(this.value);
+                });
+            }
+        });
+        
+        // Toggle PIN visibility
+        const togglePinBtn = document.getElementById('togglePin');
+        const pinInput = document.getElementById('pin');
+        
+        if (togglePinBtn && pinInput) {
+            togglePinBtn.addEventListener('click', function() {
+                const type = pinInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                pinInput.setAttribute('type', type);
+                
+                // Toggle icon
+                const icon = this.querySelector('i');
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+        
+        // Reset Password Modal
+        const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+        const resetPasswordModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+        
+        if (resetPasswordBtn) {
+            resetPasswordBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Generate a random password
+                generateRandomPassword();
+                
+                // Show the modal
+                resetPasswordModal.show();
+            });
+        }
+        
+        // Generate Password Button
+        const generatePasswordBtn = document.getElementById('generatePasswordBtn');
+        if (generatePasswordBtn) {
+            generatePasswordBtn.addEventListener('click', generateRandomPassword);
+        }
+        
+        // Unlink Child Function (for parent-specific fields)
+        window.unlinkChild = function(childId, childName) {
+            if (confirm(`Are you sure you want to unlink ${childName} from this parent?`)) {
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{% url 'users:unlink_parent_child' %}";
+                
+                // Create CSRF token input
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                form.appendChild(csrfInput);
+                
+                // Create parent_id input
+                const parentInput = document.createElement('input');
+                parentInput.type = 'hidden';
+                parentInput.name = 'parent_id';
+                parentInput.value = "{{ parent.id|default:'' }}";
+                form.appendChild(parentInput);
+                
+                // Create child_id input
+                const childInput = document.createElement('input');
+                childInput.type = 'hidden';
+                childInput.name = 'child_id';
+                childInput.value = childId;
+                form.appendChild(childInput);
+                
+                // Append to body and submit
+                document.body.appendChild(form);
+                form.submit();
+            }
+        };
+        
+        // Helper functions
+        function hideAllRoleFields() {
+            teacherFields.style.display = 'none';
+            studentFields.style.display = 'none';
+            parentFields.style.display = 'none';
+        }
+        
+        function updateRequiredFields(role) {
+            // Reset all required fields
+            resetRequiredFields();
+            
+            // Set required fields based on role
+            if (role === 'TEACHER') {
+                document.getElementById('employee_id').required = true;
+                document.getElementById('department').required = true;
+            } else if (role === 'STUDENT') {
+                document.getElementById('student_id').required = true;
+                document.getElementById('grade').required = true;
+                document.getElementById('section').required = true;
+            } else if (role === 'PARENT') {
+                document.getElementById('relationship').required = true;
+            }
+        }
+        
+        function resetRequiredFields() {
+            // Teacher fields
+            const employeeId = document.getElementById('employee_id');
+            const department = document.getElementById('department');
+            if (employeeId) employeeId.required = false;
+            if (department) department.required = false;
+            
+            // Student fields
+            const studentId = document.getElementById('student_id');
+            const grade = document.getElementById('grade');
+            const section = document.getElementById('section');
+            if (studentId) studentId.required = false;
+            if (grade) grade.required = false;
+            if (section) section.required = false;
+            
+            // Parent fields
+            const relationship = document.getElementById('relationship');
+            if (relationship) relationship.required = false;
+        }
+        
+        function generateRandomPassword() {
+            // Generate a random password with 10 characters (letters, numbers, and symbols)
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*_-+=';
+            let password = '';
+            for (let i = 0; i < 10; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            // Set the password in the input field
+            document.getElementById('new_password').value = password;
+        }
+    });
+</script>
+{% endblock %}

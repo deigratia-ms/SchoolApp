@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Card: {{ report_card.student.user.get_full_name }} - {{ report_card.term }} {{ report_card.academic_year }} | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Student Report Card</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'assignments:report_card_list' %}">Report Cards</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ report_card.student.user.get_full_name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            {% if report_card and report_card.id %}
+                <a href="{% url 'assignments:print_report_card' report_card.id %}" class="btn btn-primary" target="_blank">
+                    <i class="fas fa-print me-2"></i>Print Report
+                </a>
+                <a href="{% url 'assignments:export_report_card' report_card.id 'pdf' %}" class="btn btn-danger" target="_blank">
+                    <i class="fas fa-file-pdf me-2"></i>Export PDF
+                </a>
+                <a href="{% url 'assignments:export_report_card' report_card.id 'excel' %}" class="btn btn-success" target="_blank">
+                    <i class="fas fa-file-excel me-2"></i>Export Excel
+                </a>
+                {% if user.is_admin or user.is_teacher %}
+                    <a href="{% url 'assignments:generate_report_card' report_card.student.id %}" class="btn btn-warning">
+                        <i class="fas fa-sync-alt me-2"></i>Regenerate
+                    </a>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Report card not found
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Report Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {{ report_card.term }} {{ report_card.academic_year }} Report Card
+            </h6>
+        </div>
+        <div class="card-body">
+            <!-- School Logo and Header -->
+            <div class="row mb-4 border-bottom pb-4">
+                <div class="col-md-2 text-center">
+                    <img src="{{ MEDIA_URL }}school_logo.png" alt="School Logo" class="img-fluid mb-2" style="max-height: 100px;" onerror="this.src='https://via.placeholder.com/100x100?text=School+Logo'">
+                </div>
+                <div class="col-md-8 text-center">
+                    <h2 class="font-weight-bold mb-0">Ricas School Management System</h2>
+                    <p class="lead">Student Academic Report</p>
+                    <p>{{ report_card.term }} - {{ report_card.academic_year }} Academic Year</p>
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="text-muted small">
+                        <div>Report Generated:</div>
+                        <div>{{ report_card.generated_date|date:"F d, Y" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Information -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-header py-2">
+                            <h6 class="m-0 font-weight-bold text-primary">Student Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                {% if report_card.student.user.profile_picture %}
+                                <img src="{{ report_card.student.user.profile_picture.url }}" class="img-profile rounded-circle mb-2" width="120" height="120">
+                                {% else %}
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 120px; height: 120px;">
+                                    <span class="h3">{{ report_card.student.user.get_initials }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-xs text-muted">Full Name</div>
+                                <div class="font-weight-bold">{{ report_card.student.user.get_full_name }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-xs text-muted">Student ID</div>
+                                <div>{{ report_card.student.id_number }}</div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-xs text-muted">Class</div>
+                                <div>{{ report_card.student.classroom.name }} {% if report_card.student.classroom.section %}({{ report_card.student.classroom.section }}){% endif %}</div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-xs text-muted">Date of Birth</div>
+                                <div>{{ report_card.student.date_of_birth|date:"F d, Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Summary -->
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-header py-2">
+                            <h6 class="m-0 font-weight-bold text-primary">Attendance Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col">
+                                    <div class="h4 mb-0 font-weight-bold text-success">{{ report_card.days_present }}</div>
+                                    <div class="text-xs text-muted">Days Present</div>
+                                </div>
+                                <div class="col">
+                                    <div class="h4 mb-0 font-weight-bold text-danger">{{ report_card.days_absent }}</div>
+                                    <div class="text-xs text-muted">Days Absent</div>
+                                </div>
+                                <div class="col">
+                                    <div class="h4 mb-0 font-weight-bold text-warning">{{ report_card.days_late }}</div>
+                                    <div class="text-xs text-muted">Days Late</div>
+                                </div>
+                            </div>
+
+                            <!-- Attendance chart -->
+                            <div class="mb-3">
+                                {% load custom_filters %}
+{% with total_days=report_card.days_present|add:report_card.days_absent|add:report_card.days_late %}
+                                {% if total_days > 0 %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ report_card.days_present|multiply:100|divide:total_days }}%;" aria-valuenow="{{ report_card.days_present }}" aria-valuemin="0" aria-valuemax="{{ total_days }}">
+                                        {{ report_card.days_present|multiply:100|divide:total_days|floatformat:1 }}%
+                                    </div>
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ report_card.days_late|multiply:100|divide:total_days }}%;" aria-valuenow="{{ report_card.days_late }}" aria-valuemin="0" aria-valuemax="{{ total_days }}">
+                                        {{ report_card.days_late|multiply:100|divide:total_days|floatformat:1 }}%
+                                    </div>
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ report_card.days_absent|multiply:100|divide:total_days }}%;" aria-valuenow="{{ report_card.days_absent }}" aria-valuemin="0" aria-valuemax="{{ total_days }}">
+                                        {{ report_card.days_absent|multiply:100|divide:total_days|floatformat:1 }}%
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info text-center">No attendance data available</div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+
+                            <div class="text-center">
+                                <a href="{% url 'attendance:student_record' report_card.student.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-history me-1"></i> View Full Attendance History
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Summary -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header py-2">
+                            <h6 class="m-0 font-weight-bold text-primary">Academic Performance</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center mb-4">
+                                <div class="col-md-4 text-center">
+                                    <div class="h5 mb-0">Overall Average</div>
+                                    <div class="display-4 font-weight-bold mb-0 {% if report_card.average_score >= 80 %}text-success{% elif report_card.average_score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                        {{ report_card.average_score|floatformat:1 }}%
+                                    </div>
+
+                                    <!-- Letter Grade -->
+                                    <div class="badge bg-primary p-2 mt-2 font-weight-bold" style="font-size: 1rem;">
+                                        {% if report_card.average_score >= 90 %}A+
+                                        {% elif report_card.average_score >= 85 %}A
+                                        {% elif report_card.average_score >= 80 %}A-
+                                        {% elif report_card.average_score >= 75 %}B+
+                                        {% elif report_card.average_score >= 70 %}B
+                                        {% elif report_card.average_score >= 65 %}B-
+                                        {% elif report_card.average_score >= 60 %}C+
+                                        {% elif report_card.average_score >= 55 %}C
+                                        {% elif report_card.average_score >= 50 %}C-
+                                        {% elif report_card.average_score >= 45 %}D+
+                                        {% elif report_card.average_score >= 40 %}D
+                                        {% else %}F
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="col-md-8">
+                                    <!-- Performance Chart -->
+                                    <div style="height: 200px;">
+                                        <canvas id="performance-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <h6 class="font-weight-bold">Teacher's Comment</h6>
+                                <div class="p-3 bg-light rounded">
+                                    {% if report_card.teacher_comments %}
+                                        {{ report_card.teacher_comments|linebreaks }}
+                                    {% else %}
+                                        <p class="text-muted">No teacher comments provided.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject Grades -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Subject Grades</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr class="bg-light">
+                                    <th>Subject</th>
+                                    <th>Teacher</th>
+                                    <th class="text-center">Assignments</th>
+                                    <th class="text-center">Quizzes</th>
+                                    <th class="text-center">Tests</th>
+                                    <th class="text-center">Final Exam</th>
+                                    <th class="text-center">Grade</th>
+                                    <th class="text-center">Letter Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if subject_grades %}
+                                    {% for subject in subject_grades %}
+                                    <tr>
+                                        <td>{{ subject.name }}</td>
+                                        <td>{{ subject.teacher }}</td>
+                                        <td class="text-center">{{ subject.assignment_grade|floatformat:1 }}%</td>
+                                        <td class="text-center">{{ subject.quiz_grade|floatformat:1 }}%</td>
+                                        <td class="text-center">{{ subject.test_grade|floatformat:1 }}%</td>
+                                        <td class="text-center">{{ subject.exam_grade|floatformat:1 }}%</td>
+                                        <td class="text-center font-weight-bold {% if subject.final_grade >= 80 %}text-success{% elif subject.final_grade >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ subject.final_grade|floatformat:1 }}%
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge {% if subject.letter_grade == 'A+' or subject.letter_grade == 'A' or subject.letter_grade == 'A-' %}bg-success{% elif subject.letter_grade == 'B+' or subject.letter_grade == 'B' or subject.letter_grade == 'B-' %}bg-info{% elif subject.letter_grade == 'C+' or subject.letter_grade == 'C' or subject.letter_grade == 'C-' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ subject.letter_grade }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="8" class="text-center">No subject grades available for this term.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Assessment -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Learning Skills & Work Habits</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th>Skill</th>
+                                            <th class="text-center">Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if skills_assessment %}
+                                            {% for skill in skills_assessment %}
+                                            <tr>
+                                                <td>{{ skill.name }}</td>
+                                                <td class="text-center">
+                                                    {% if skill.rating == 'E' %}
+                                                    <span class="badge bg-success">Excellent</span>
+                                                    {% elif skill.rating == 'G' %}
+                                                    <span class="badge bg-info">Good</span>
+                                                    {% elif skill.rating == 'S' %}
+                                                    <span class="badge bg-warning">Satisfactory</span>
+                                                    {% elif skill.rating == 'N' %}
+                                                    <span class="badge bg-danger">Needs Improvement</span>
+                                                    {% else %}
+                                                    <span class="text-muted">Not Assessed</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td>Responsibility</td>
+                                                <td class="text-center"><span class="text-muted">Not Assessed</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Organization</td>
+                                                <td class="text-center"><span class="text-muted">Not Assessed</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Independent Work</td>
+                                                <td class="text-center"><span class="text-muted">Not Assessed</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Collaboration</td>
+                                                <td class="text-center"><span class="text-muted">Not Assessed</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Initiative</td>
+                                                <td class="text-center"><span class="text-muted">Not Assessed</span></td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Additional Comments</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6 class="font-weight-bold">Class Teacher's Comments</h6>
+                                <div class="p-3 bg-light rounded">
+                                    {% if class_teacher_comments %}
+                                        {{ class_teacher_comments|linebreaks }}
+                                    {% else %}
+                                        <p class="text-muted">No class teacher comments provided.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <h6 class="font-weight-bold">Principal's Comments</h6>
+                                <div class="p-3 bg-light rounded">
+                                    {% if principal_comments %}
+                                        {{ principal_comments|linebreaks }}
+                                    {% else %}
+                                        <p class="text-muted">No principal comments provided.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grading Scale Reference -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Grading Scale Reference</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th>Letter Grade</th>
+                                            <th>Percentage Range</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="badge bg-success">A+</span></td>
+                                            <td>90-100%</td>
+                                            <td>Excellent</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-success">A</span></td>
+                                            <td>85-89%</td>
+                                            <td>Excellent</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-success">A-</span></td>
+                                            <td>80-84%</td>
+                                            <td>Excellent</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-info">B+</span></td>
+                                            <td>75-79%</td>
+                                            <td>Good</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-info">B</span></td>
+                                            <td>70-74%</td>
+                                            <td>Good</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-info">B-</span></td>
+                                            <td>65-69%</td>
+                                            <td>Good</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th>Letter Grade</th>
+                                            <th>Percentage Range</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="badge bg-warning">C+</span></td>
+                                            <td>60-64%</td>
+                                            <td>Satisfactory</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-warning">C</span></td>
+                                            <td>55-59%</td>
+                                            <td>Satisfactory</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-warning">C-</span></td>
+                                            <td>50-54%</td>
+                                            <td>Satisfactory</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-danger">D+</span></td>
+                                            <td>45-49%</td>
+                                            <td>Needs Improvement</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-danger">D</span></td>
+                                            <td>40-44%</td>
+                                            <td>Needs Improvement</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-danger">F</span></td>
+                                            <td>0-39%</td>
+                                            <td>Failing</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="row mt-5">
+                <div class="col-md-4 text-center">
+                    <div class="border-top border-dark pt-3 w-75 mx-auto">
+                        <div>Class Teacher's Signature</div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="border-top border-dark pt-3 w-75 mx-auto">
+                        <div>Principal's Signature</div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="border-top border-dark pt-3 w-75 mx-auto">
+                        <div>Parent's Signature</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Performance chart
+        const ctx = document.getElementById('performance-chart').getContext('2d');
+
+        // Sample data for chart (in a real implementation, this would be passed from the view)
+        const subjectLabels = [];
+        const subjectGrades = [];
+
+        {% for subject in subject_grades %}
+            subjectLabels.push("{{ subject.name }}");
+            subjectGrades.push({{ subject.final_grade }});
+        {% endfor %}
+
+        // Use sample data if no real data is available
+        if (subjectLabels.length === 0) {
+            const sampleLabels = ['Mathematics', 'English', 'Science', 'History', 'Art'];
+            const sampleGrades = [85, 78, 92, 65, 88];
+
+            sampleLabels.forEach(label => subjectLabels.push(label));
+            sampleGrades.forEach(grade => subjectGrades.push(grade));
+        }
+
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: subjectLabels,
+                datasets: [{
+                    label: 'Subject Performance',
+                    data: subjectGrades,
+                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

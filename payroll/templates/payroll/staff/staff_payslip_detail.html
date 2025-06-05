@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payslip Details - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <h1 class="h3 mb-3 mb-md-0">Payslip Details</h1>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'payroll:staff_download_payslip' payslip.id %}" class="btn btn-success">
+        <i class="fas fa-download me-2"></i>Download PDF
+      </a>
+      <a href="{% url 'payroll:staff_payslips' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Payslips
+      </a>
+    </div>
+  </div>
+
+  <!-- Payslip Information -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payslip Information</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Payslip Number:</th>
+                  <td>{{ payslip.payslip_number }}</td>
+                </tr>
+                <tr>
+                  <th>Period:</th>
+                  <td>{{ payslip.payroll.period.name }}</td>
+                </tr>
+                <tr>
+                  <th>Generated On:</th>
+                  <td>{{ payslip.generated_at|date:"M d, Y" }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Gross Salary:</th>
+                  <td>GH₵ {{ payslip.payroll.gross_salary|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Total Deductions:</th>
+                  <td>GH₵ {{ payslip.payroll.total_deductions|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Net Salary:</th>
+                  <td>GH₵ {{ payslip.payroll.net_salary|floatformat:2|intcomma }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payslip Preview -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payslip Preview</h6>
+        </div>
+        <div class="card-body">
+          <div class="payslip-container p-4 border">
+            <!-- Payslip Header -->
+            <div class="text-center mb-4">
+              {% if school_settings.logo %}
+                <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }} Logo" class="img-fluid mb-3" style="max-height: 100px;">
+              {% endif %}
+              <h3 class="mb-1">{{ school_settings.school_name|default:"Ricas School Management System" }}</h3>
+              <p class="mb-1">{{ school_settings.address|default:"" }}</p>
+              <p class="mb-1">Tel: {{ school_settings.phone|default:"" }} | Email: {{ school_settings.email|default:"" }}</p>
+              <h4 class="mt-3 border-bottom pb-2">PAYSLIP</h4>
+            </div>
+
+            <!-- Employee Information -->
+            <div class="row mb-4">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <div class="table-responsive">
+                  <table class="table table-sm table-borderless">
+                    <tr>
+                      <th style="width: 40%">Employee Name:</th>
+                      <td>{{ payslip.payroll.staff_salary.user.get_full_name }}</td>
+                    </tr>
+                    <tr>
+                      <th>Employee ID:</th>
+                      <td>{{ payslip.payroll.staff_salary.user.id }}</td>
+                    </tr>
+                    <tr>
+                      <th>Designation:</th>
+                      <td>{{ payslip.payroll.staff_salary.role.name|default:"Not Assigned" }}</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="table-responsive">
+                  <table class="table table-sm table-borderless">
+                    <tr>
+                      <th style="width: 40%">Payslip No:</th>
+                      <td>{{ payslip.payslip_number }}</td>
+                    </tr>
+                    <tr>
+                      <th>Pay Period:</th>
+                      <td>{{ payslip.payroll.period.name }}</td>
+                    </tr>
+                    <tr>
+                      <th>Payment Date:</th>
+                      <td>{{ payslip.payroll.payment.payment_date|date:"M d, Y"|default:"-" }}</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Earnings and Deductions -->
+            <div class="row mb-4">
+              <div class="col-md-6 mb-4 mb-md-0">
+                <div class="card">
+                  <div class="card-header bg-light">
+                    <h5 class="mb-0">Earnings</h5>
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <tr>
+                          <td>Basic Salary</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.base_salary|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                          <td>Transport Allowance</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.transport_allowance|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                          <td>Housing Allowance</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.housing_allowance|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                          <td>Other Allowances</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.other_allowances|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr class="table-active fw-bold">
+                          <td>Gross Earnings</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.gross_salary|floatformat:2|intcomma }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card">
+                  <div class="card-header bg-light">
+                    <h5 class="mb-0">Deductions</h5>
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <tr>
+                          <td>SSNIT Contribution</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.ssnit_deduction|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                          <td>Income Tax</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.tax_deduction|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% if payslip.payroll.other_deductions > 0 %}
+                          <tr>
+                            <td>Other Deductions</td>
+                            <td class="text-end">GH₵ {{ payslip.payroll.other_deductions|floatformat:2|intcomma }}</td>
+                          </tr>
+                        {% endif %}
+                        <tr class="table-active fw-bold">
+                          <td>Total Deductions</td>
+                          <td class="text-end">GH₵ {{ payslip.payroll.total_deductions|floatformat:2|intcomma }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Net Pay -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="card bg-light">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6 mb-2 mb-md-0">
+                        <h5>Net Pay: <span class="fw-bold">GH₵ {{ payslip.payroll.net_salary|floatformat:2|intcomma }}</span></h5>
+                      </div>
+                      <div class="col-md-6 text-md-end">
+                        <h5 class="text-break">Amount in Words: <span class="fw-bold fst-italic">{{ amount_in_words }}</span></h5>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="row">
+              <div class="col-12">
+                <div class="mt-4 pt-4 border-top">
+                  <div class="row">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                      <div class="signature-section mt-4">
+                        <div style="border-bottom: 1px solid #000; width: 200px; margin-bottom: 5px;"></div>
+                        <p class="mb-0">{{ school_settings.principal_name|default:"Principal" }}</p>
+                        <p class="mb-0 small">Principal</p>
+                      </div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                      <p class="mb-0">Generated on: {{ payslip.generated_at|date:"M d, Y H:i" }}</p>
+                      <p class="mb-0 small mt-3">This is a computer-generated payslip.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

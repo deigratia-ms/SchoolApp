@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Materials | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Learning Materials Management</h1>
+            <p class="text-muted">Manage all your course materials in one place</p>
+
+            <div class="mt-2">
+                <a href="{% url 'courses:manage_materials' %}?draft=yes" class="btn btn-outline-warning btn-sm me-2">
+                    <i class="fas fa-pencil-alt me-1"></i>My Drafts
+                </a>
+                <a href="{% url 'courses:manage_materials' %}?draft=no" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-check-circle me-1"></i>Published Materials
+                </a>
+            </div>
+        </div>
+        <a href="{% url 'courses:create_material' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Material
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Manage Materials</h6>
+        </div>
+        <div class="card-body bg-light p-3 border-bottom">
+            <form method="get" class="row g-3">
+                <!-- Class Filter -->
+                <div class="col-md-3">
+                    <label for="class" class="form-label small">Class</label>
+                    <select class="form-select form-select-sm" id="class" name="class">
+                        <option value="">All Classes</option>
+                        {% for classroom in classrooms %}
+                        <option value="{{ classroom.id }}" {% if selected_class == classroom.id|stringformat:'s' %}selected{% endif %}>
+                            {{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Subject Filter -->
+                <div class="col-md-3">
+                    <label for="subject" class="form-label small">Subject</label>
+                    <select class="form-select form-select-sm" id="subject" name="subject">
+                        <option value="">All Subjects</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if selected_subject == subject.id|stringformat:'s' %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Type Filter -->
+                <div class="col-md-3">
+                    <label for="type" class="form-label small">Material Type</label>
+                    <select class="form-select form-select-sm" id="type" name="type">
+                        <option value="" {% if selected_type == '' %}selected{% endif %}>All Types</option>
+                        <option value="notes" {% if selected_type == 'notes' %}selected{% endif %}>Notes</option>
+                        <option value="files" {% if selected_type == 'files' %}selected{% endif %}>Files</option>
+                        <option value="pdf" {% if selected_type == 'pdf' %}selected{% endif %}>PDF</option>
+                        <option value="doc" {% if selected_type == 'doc' %}selected{% endif %}>Word</option>
+                        <option value="ppt" {% if selected_type == 'ppt' %}selected{% endif %}>PowerPoint</option>
+                        <option value="other" {% if selected_type == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+
+                <!-- Draft Filter -->
+                <div class="col-md-3">
+                    <label for="draft" class="form-label small">Status</label>
+                    <select class="form-select form-select-sm" id="draft" name="draft">
+                        <option value="" {% if selected_draft == '' %}selected{% endif %}>All Status</option>
+                        <option value="yes" {% if selected_draft == 'yes' %}selected{% endif %}>Drafts Only</option>
+                        <option value="no" {% if selected_draft == 'no' %}selected{% endif %}>Published Only</option>
+                    </select>
+                </div>
+
+                <!-- Filter Buttons -->
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary btn-sm me-2">
+                        <i class="fas fa-filter me-1"></i>Apply Filters
+                    </button>
+                    <a href="{% url 'courses:manage_materials' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Subject</th>
+                            <th>Class</th>
+                            <th>Type</th>
+                            <th>Uploaded</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for material in materials %}
+                        <tr>
+                            <td>
+                                {{ material.title }}
+                                {% if material.is_draft %}<span class="badge bg-warning ms-2" data-bs-toggle="tooltip" title="This material is only visible to you and administrators">Draft</span>{% endif %}
+                            </td>
+                            <td>{{ material.class_subject.subject.name }}</td>
+                            <td>{{ material.class_subject.classroom.name }}</td>
+                            <td>
+                                {% if material.has_content %}<span class="badge bg-info me-1">Notes</span>{% endif %}
+                                {% if material.has_file %}
+                                    {% if material.file.name|lower|slice:"-3:" == 'pdf' %}
+                                        <span class="badge bg-danger">PDF</span>
+                                    {% elif material.file.name|lower|slice:"-3:" == 'doc' or material.file.name|lower|slice:"-4:" == 'docx' %}
+                                        <span class="badge bg-primary">Word</span>
+                                    {% elif material.file.name|lower|slice:"-3:" == 'ppt' or material.file.name|lower|slice:"-4:" == 'pptx' %}
+                                        <span class="badge bg-warning">PowerPoint</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Other</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ material.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'courses:material_detail' material.id %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'courses:edit_material' material.id %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-secondary btn-sm delete-material-btn" data-material-id="{{ material.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% if material.has_file %}
+                                    <a href="{{ material.file.url }}" class="btn btn-primary btn-sm" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include the delete confirmation modal -->
+{% include 'courses/includes/delete_material_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#dataTable').DataTable({
+            "order": [[4, "desc"]], // Order by upload date by default
+            "pageLength": 25, // Show 25 entries by default
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            "language": {
+                "emptyTable": "No materials found with the current filters. Try changing your filters or create a new material."
+            }
+        });
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+
+    // Delete functionality
+    function confirmDelete(materialId) {
+        const form = document.getElementById('deleteMaterialForm');
+        form.action = `/courses/materials/${materialId}/delete/`;
+        $('#deleteMaterialModal').modal('show');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteButtons = document.querySelectorAll('.delete-material-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                confirmDelete(this.dataset.materialId);
+            });
+        });
+    });
+</script>
+{% endblock %}

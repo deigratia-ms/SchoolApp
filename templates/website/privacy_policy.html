@@ -1,0 +1,203 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Privacy Policy content styling */
+    .privacy-policy-content {
+        max-width: 100%;
+    }
+
+    .privacy-policy-content h1,
+    .privacy-policy-content h2,
+    .privacy-policy-content h3,
+    .privacy-policy-content h4,
+    .privacy-policy-content h5,
+    .privacy-policy-content h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .privacy-policy-content p {
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+    .privacy-policy-content ul,
+    .privacy-policy-content ol {
+        margin-bottom: 1rem;
+        padding-left: 2rem;
+    }
+
+    .privacy-policy-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .privacy-policy-content table {
+        width: 100%;
+        margin-bottom: 1rem;
+        border-collapse: collapse;
+    }
+
+    .privacy-policy-content table, .privacy-policy-content th, .privacy-policy-content td {
+        border: 1px solid #dee2e6;
+    }
+
+    .privacy-policy-content th, .privacy-policy-content td {
+        padding: 0.75rem;
+        vertical-align: top;
+    }
+
+    .privacy-policy-content th {
+        background-color: #f8f9fa;
+    }
+
+    /* Make sure content doesn't overflow */
+    .privacy-policy-content img {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+{% endblock %}
+
+{% block title %}Privacy Policy | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+{% if privacy_hero and privacy_hero.image %}
+<!-- Use privacy hero image if available -->
+<section class="hero-banner" style="background-image: url('{{ privacy_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ privacy_hero.title|default:"Privacy Policy" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ privacy_hero.content|default:"Our commitment to protecting your privacy and personal information." }}
+        </p>
+    </div>
+</section>
+{% elif contact_hero and contact_hero.image %}
+<!-- Use contact hero image as fallback -->
+<section class="hero-banner" style="background-image: url('{{ contact_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ privacy_hero.title|default:"Privacy Policy" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ privacy_hero.content|default:"Our commitment to protecting your privacy and personal information." }}
+        </p>
+    </div>
+</section>
+{% else %}
+<!-- Fallback to color background if no images available -->
+<section class="py-5 bg-primary-teal text-white text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-4" data-aos="fade-up">Privacy Policy</h1>
+                <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                    Our commitment to protecting your privacy and personal information.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Privacy Policy Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4 p-lg-5">
+                        {% if privacy_content and privacy_content.content %}
+                            <div class="privacy-policy-content">
+                                {{ privacy_content.content|safe }}
+                            </div>
+                        {% else %}
+                            <div class="privacy-policy-content">
+                                <h2 class="mb-4">Privacy Policy</h2>
+                                <p class="text-muted">Last updated: January 1, 2023</p>
+
+                                <h4 class="mt-5 mb-3">1. Introduction</h4>
+                                <p>Deigratia Montessori School ("we," "our," or "us") is committed to protecting the privacy and security of your personal information. This Privacy Policy describes how we collect, use, and disclose personal information that we collect from you or that you provide to us through our website, school management system, and other services.</p>
+
+                                <h4 class="mt-5 mb-3">2. Information We Collect</h4>
+                                <p>We collect several types of information from and about users of our services, including:</p>
+                                <ul>
+                                    <li><strong>Personal Information:</strong> This includes names, email addresses, telephone numbers, postal addresses, and other information that can be used to identify you or your child.</li>
+                                    <li><strong>Educational Information:</strong> This includes academic records, attendance, assessment results, and other educational data.</li>
+                                    <li><strong>Health Information:</strong> This includes medical conditions, allergies, immunization records, and other health-related information necessary for the safety and well-being of students.</li>
+                                    <li><strong>Financial Information:</strong> This includes payment information, billing addresses, and other financial data related to school fees and payments.</li>
+                                    <li><strong>Technical Information:</strong> This includes IP addresses, browser types, device information, and other data collected through cookies and similar technologies.</li>
+                                </ul>
+
+                                <h4 class="mt-5 mb-3">3. How We Collect Information</h4>
+                                <p>We collect information through various channels, including:</p>
+                                <ul>
+                                    <li>Direct interactions with our website, applications, and services</li>
+                                    <li>Enrollment and registration forms</li>
+                                    <li>Communication with our staff</li>
+                                    <li>Automated technologies such as cookies and similar tracking technologies</li>
+                                </ul>
+
+                                <h4 class="mt-5 mb-3">4. How We Use Your Information</h4>
+                                <p>We use the information we collect for various purposes, including:</p>
+                                <ul>
+                                    <li>Providing and managing educational services</li>
+                                    <li>Communicating with parents, students, and staff</li>
+                                    <li>Processing payments and managing financial accounts</li>
+                                    <li>Ensuring the safety and well-being of students</li>
+                                    <li>Improving our services and website functionality</li>
+                                    <li>Complying with legal obligations</li>
+                                </ul>
+
+                                <h4 class="mt-5 mb-3">5. Disclosure of Your Information</h4>
+                                <p>We may disclose personal information that we collect or that you provide:</p>
+                                <ul>
+                                    <li>To our service providers and partners who perform services on our behalf</li>
+                                    <li>To comply with legal obligations, such as responding to court orders or legal processes</li>
+                                    <li>To protect the rights, property, or safety of our school, students, or others</li>
+                                    <li>With your consent or at your direction</li>
+                                </ul>
+
+                                <h4 class="mt-5 mb-3">6. Data Security</h4>
+                                <p>We have implemented measures designed to secure your personal information from accidental loss and from unauthorized access, use, alteration, and disclosure. However, the transmission of information via the internet is not completely secure, and we cannot guarantee the security of your personal information transmitted to our website.</p>
+
+                                <h4 class="mt-5 mb-3">7. Your Rights</h4>
+                                <p>Depending on your location, you may have certain rights regarding your personal information, including:</p>
+                                <ul>
+                                    <li>The right to access your personal information</li>
+                                    <li>The right to correct inaccurate or incomplete information</li>
+                                    <li>The right to request deletion of your personal information</li>
+                                    <li>The right to restrict or object to processing of your personal information</li>
+                                    <li>The right to data portability</li>
+                                </ul>
+
+                                <h4 class="mt-5 mb-3">8. Children's Privacy</h4>
+                                <p>We are committed to protecting the privacy of children. Our services are primarily directed to parents and guardians, and we only collect personal information about children with the consent of their parents or guardians.</p>
+
+                                <h4 class="mt-5 mb-3">9. Changes to Our Privacy Policy</h4>
+                                <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.</p>
+
+                                <h4 class="mt-5 mb-3">10. Contact Information</h4>
+                                <p>If you have any questions or concerns about our Privacy Policy or our data practices, please contact us at:</p>
+                                <address>
+                                    <strong>Deigratia Montessori School</strong><br>
+                                    Privacy Office<br>
+                                    {{ site_settings.address|default:"123 School Street, City, State, ZIP" }}<br>
+                                    Email: {{ site_settings.contact_email|default:"privacy@deigratia.edu" }}<br>
+                                    Phone: {{ site_settings.contact_phone|default:"(123) 456-7890" }}
+                                </address>
+                            </div>
+                        {% endif %}
+
+                        <div class="text-center mt-5">
+                            <p class="text-muted">If you have any questions about our Privacy Policy, please <a href="{% url 'website:contact' %}">contact us</a>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

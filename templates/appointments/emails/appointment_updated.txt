@@ -1,0 +1,24 @@
+Dear {{ appointment.parent.user.get_full_name }},
+
+Your appointment has been updated. Here are the current details:
+
+Appointment Details:
+- Date: {{ appointment.time_slot.date|date:"l, F j, Y" }}
+- Time: {{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}
+- Location: {{ school_address }}
+- Purpose: {{ appointment.purpose }}
+- Status: {{ appointment.get_status_display }}
+
+{% if changes %}
+Changes Made:
+{% for change in changes %}
+- {{ change }}
+{% endfor %}
+{% endif %}
+
+If you did not request this change or have any questions, please contact us immediately.
+
+To view your appointment details, visit: {{ appointment_url }}
+
+Best regards,
+{{ school_name }} Team

@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Question - {{ assignment.title }} - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Add Question to Quiz</h1>
+        <div>
+            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Quiz
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Question Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="questionForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="question_text" class="form-label">Question Text <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="question_text" name="question_text" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="question_type" class="form-label">Question Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="question_type" name="question_type" required>
+                                    <option value="MCQ">Multiple Choice</option>
+                                    <option value="SHORT">Short Answer</option>
+                                    <option value="LONG">Long Answer</option>
+                                    <option value="FILE">File Upload</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="points" class="form-label">Points <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="points" name="points" min="1" value="1" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="show_feedback" name="show_feedback" checked>
+                                <label class="form-check-label" for="show_feedback">
+                                    Show feedback to students after submission
+                                </label>
+                            </div>
+                            <small class="text-muted">When checked, students will see if their answers were correct after submission.</small>
+                        </div>
+                        
+                        <!-- Multiple Choice Options -->
+                        <div id="mcq-options" class="mb-3">
+                            <hr>
+                            <h6 class="mb-3">Answer Choices</h6>
+                            
+                            <div id="choices-container">
+                                <!-- Initial choice fields -->
+                                <div class="choice-item mb-3">
+                                    <div class="input-group">
+                                        <div class="input-group-text">
+                                            <input type="radio" name="correct_choice" value="0" required>
+                                        </div>
+                                        <input type="text" class="form-control" name="choice_text[]" placeholder="Enter choice option" required>
+                                        <button type="button" class="btn btn-outline-danger remove-choice" disabled>
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="choice-item mb-3">
+                                    <div class="input-group">
+                                        <div class="input-group-text">
+                                            <input type="radio" name="correct_choice" value="1" required>
+                                        </div>
+                                        <input type="text" class="form-control" name="choice_text[]" placeholder="Enter choice option" required>
+                                        <button type="button" class="btn btn-outline-danger remove-choice" disabled>
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" id="add-choice" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus"></i> Add Another Choice
+                            </button>
+                            
+                            <small class="text-muted d-block mt-2">Select the radio button next to the correct answer.</small>
+                        </div>
+                        
+                        <!-- Short Answer Settings -->
+                        <div id="short-answer-options" class="mb-3" style="display:none;">
+                            <hr>
+                            <h6 class="mb-3">Short Answer Settings</h6>
+                            <div class="mb-3">
+                                <label for="expected_answer" class="form-label">Expected Answer (optional)</label>
+                                <input type="text" class="form-control" id="expected_answer" name="expected_answer" placeholder="Enter the expected answer for reference">
+                                <small class="text-muted">This will be used for manual grading reference only.</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Long Answer Settings -->
+                        <div id="long-answer-options" class="mb-3" style="display:none;">
+                            <hr>
+                            <h6 class="mb-3">Long Answer Settings</h6>
+                            <div class="mb-3">
+                                <label for="grading_notes" class="form-label">Grading Notes (optional)</label>
+                                <textarea class="form-control" id="grading_notes" name="grading_notes" rows="2" placeholder="Enter notes for grading this question"></textarea>
+                                <small class="text-muted">These notes will be visible only to you when grading.</small>
+                            </div>
+                        </div>
+                        
+                        <!-- File Upload Settings -->
+                        <div id="file-upload-options" class="mb-3" style="display:none;">
+                            <hr>
+                            <h6 class="mb-3">File Upload Settings</h6>
+                            <div class="mb-3">
+                                <label for="allowed_file_types" class="form-label">Allowed File Types (optional)</label>
+                                <input type="text" class="form-control" id="allowed_file_types" name="allowed_file_types" placeholder="E.g. pdf,doc,docx,jpg">
+                                <small class="text-muted">Comma-separated list of allowed file extensions.</small>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Question
+                            </button>
+                            <button type="submit" name="save_and_add" value="1" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Save & Add Another
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quiz Information</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Quiz:</strong> {{ assignment.title }}</p>
+                    <p><strong>Class:</strong> {{ assignment.class_subject.classroom.name }} {% if assignment.class_subject.classroom.section %}({{ assignment.class_subject.classroom.section }}){% endif %}</p>
+                    <p><strong>Subject:</strong> {{ assignment.class_subject.subject.name }}</p>
+                    <p><strong>Due Date:</strong> {{ assignment.due_date|date:"M d, Y - h:i A" }}</p>
+                    
+                    <hr>
+                    
+                    <h6 class="font-weight-bold">Current Questions</h6>
+                    {% if current_questions %}
+                        <ol>
+                            {% for question in current_questions %}
+                                <li>{{ question.question_text|truncatechars:50 }}</li>
+                            {% endfor %}
+                        </ol>
+                    {% else %}
+                        <p class="text-muted">No questions added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Help</h6>
+                </div>
+                <div class="card-body">
+                    <h6>Question Types</h6>
+                    <ul class="small">
+                        <li><strong>Multiple Choice:</strong> Students select one answer from a list of options.</li>
+                        <li><strong>Short Answer:</strong> Students enter a brief text response.</li>
+                        <li><strong>Long Answer:</strong> Students enter a detailed text response.</li>
+                        <li><strong>File Upload:</strong> Students upload a file as their answer.</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Feedback Option</h6>
+                    <p class="small">When enabled, students will see whether their answers were correct immediately after submitting the quiz. Disable this option if you don't want students to see the correct answers right away.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Show/hide question type specific options
+        $('#question_type').change(function() {
+            const questionType = $(this).val();
+            
+            // Hide all option sections
+            $('#mcq-options, #short-answer-options, #long-answer-options, #file-upload-options').hide();
+            
+            // Toggle required attribute for MCQ fields based on question type
+            if (questionType === 'MCQ') {
+                $('#mcq-options').show();
+                // Make MCQ fields required
+                $('input[name="correct_choice"]').prop('required', true);
+                $('input[name="choice_text[]"]').prop('required', true);
+            } else {
+                // Remove required attribute from MCQ fields when not using MCQ
+                $('input[name="correct_choice"]').prop('required', false);
+                $('input[name="choice_text[]"]').prop('required', false);
+            }
+            
+            // Show appropriate section based on question type
+            if (questionType === 'SHORT') {
+                $('#short-answer-options').show();
+            } else if (questionType === 'LONG') {
+                $('#long-answer-options').show();
+            } else if (questionType === 'FILE') {
+                $('#file-upload-options').show();
+            }
+        });
+        
+        // Add new choice option for MCQ
+        let choiceCounter = 2; // Start with 2 since we already have 2 initial choices
+        
+        $('#add-choice').click(function() {
+            const newChoice = `
+                <div class="choice-item mb-3">
+                    <div class="input-group">
+                        <div class="input-group-text">
+                            <input type="radio" name="correct_choice" value="${choiceCounter}" required>
+                        </div>
+                        <input type="text" class="form-control" name="choice_text[]" placeholder="Enter choice option" required>
+                        <button type="button" class="btn btn-outline-danger remove-choice">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            $('#choices-container').append(newChoice);
+            choiceCounter++;
+            
+            // Enable all remove buttons if we have more than 2 choices
+            if (choiceCounter > 2) {
+                $('.remove-choice').prop('disabled', false);
+            }
+        });
+        
+        // Remove choice option
+        $(document).on('click', '.remove-choice', function() {
+            $(this).closest('.choice-item').remove();
+            choiceCounter--;
+            
+            // Disable all remove buttons if we only have 2 choices left
+            if (choiceCounter <= 2) {
+                $('.remove-choice').prop('disabled', true);
+            }
+            
+            // Re-index radio buttons
+            $('.choice-item').each(function(index) {
+                $(this).find('input[type="radio"]').val(index);
+            });
+        });
+        
+        // Form validation
+        $('#questionForm').submit(function(e) {
+            const questionType = $('#question_type').val();
+            
+            // Basic validation for all question types
+            if (!$('#question_text').val().trim()) {
+                e.preventDefault();
+                alert('Please enter a question text.');
+                return;
+            }
+            
+            if (!$('#points').val() || parseInt($('#points').val()) < 1) {
+                e.preventDefault();
+                alert('Please enter a valid number of points (minimum 1).');
+                return;
+            }
+            
+            // Question type specific validation
+            if (questionType === 'MCQ') {
+                // Check if a correct answer is selected for MCQ
+                if (!$('input[name="correct_choice"]:checked').length) {
+                    e.preventDefault();
+                    alert('Please select the correct answer for your multiple choice question.');
+                    return;
+                }
+                
+                // Check if all choice fields are filled
+                let emptyChoices = false;
+                $('input[name="choice_text[]"]').each(function() {
+                    if (!$(this).val().trim()) {
+                        emptyChoices = true;
+                        return false;
+                    }
+                });
+                
+                if (emptyChoices) {
+                    e.preventDefault();
+                    alert('Please fill in all choice options.');
+                    return;
+                }
+            }
+            
+            // If we get here, form is valid - add loading state to buttons
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        });
+    });
+</script>
+{% endblock %}

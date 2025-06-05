@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payslips - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Payslips</h1>
+    <div>
+      <a href="{% url 'payroll:admin_dashboard' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Form -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+          <form method="get" class="row g-3">
+            <div class="col-md-3">
+              <label for="period" class="form-label">Payroll Period</label>
+              <select name="period" id="period" class="form-select">
+                <option value="">All Periods</option>
+                {% for period in periods %}
+                  <option value="{{ period.id }}" {% if selected_period == period.id|stringformat:"i" %}selected{% endif %}>
+                    {{ period.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="staff" class="form-label">Staff Member</label>
+              <select name="staff" id="staff" class="form-select">
+                <option value="">All Staff</option>
+                {% for staff in staff_with_salary %}
+                  <option value="{{ staff.user.id }}" {% if selected_staff == staff.user.id|stringformat:"i" %}selected{% endif %}>
+                    {{ staff.user.get_full_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="emailed" class="form-label">Emailed</label>
+              <select name="emailed" id="emailed" class="form-select">
+                <option value="">All</option>
+                <option value="true" {% if selected_emailed == 'true' %}selected{% endif %}>Yes</option>
+                <option value="false" {% if selected_emailed == 'false' %}selected{% endif %}>No</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="month" class="form-label">Month</label>
+              <select name="month" id="month" class="form-select">
+                <option value="">All Months</option>
+                {% for month_num, month_name in months %}
+                  <option value="{{ month_num }}" {% if selected_month == month_num|stringformat:"i" %}selected{% endif %}>
+                    {{ month_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter me-2"></i>Filter
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payslips List -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payslips</h6>
+        </div>
+        <div class="card-body">
+          {% if payslips %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Payslip Number</th>
+                    <th>Staff Name</th>
+                    <th>Period</th>
+                    <th>Generated On</th>
+                    <th>Net Salary</th>
+                    <th>Emailed</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payslip in payslips %}
+                    <tr>
+                      <td>{{ payslip.payslip_number }}</td>
+                      <td>{{ payslip.payroll.staff_salary.user.get_full_name }}</td>
+                      <td>{{ payslip.payroll.period.name }}</td>
+                      <td>{{ payslip.generated_at|date:"M d, Y" }}</td>
+                      <td>GH₵ {{ payslip.payroll.net_salary|floatformat:2|intcomma }}</td>
+                      <td>
+                        {% if payslip.is_emailed %}
+                          <span class="badge bg-success">Yes</span>
+                        {% else %}
+                          <span class="badge bg-danger">No</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <a href="{% url 'payroll:payslip_detail' payslip.id %}" class="btn btn-sm btn-primary">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        {% if payslip.pdf_file %}
+                          <a href="{% url 'payroll:download_payslip' payslip.id %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-download"></i>
+                          </a>
+                        {% endif %}
+                        {% if not payslip.is_emailed %}
+                          <a href="{% url 'payroll:email_payslip' payslip.id %}" class="btn btn-sm btn-info">
+                            <i class="fas fa-envelope"></i>
+                          </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if payslips.has_other_pages %}
+              <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  {% if payslips.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_emailed %}&emailed={{ selected_emailed }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payslips.previous_page_number }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_emailed %}&emailed={{ selected_emailed }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                  
+                  {% for i in payslips.paginator.page_range %}
+                    {% if payslips.number == i %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > payslips.number|add:'-3' and i < payslips.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_emailed %}&emailed={{ selected_emailed }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}">{{ i }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                  
+                  {% if payslips.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payslips.next_page_number }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_emailed %}&emailed={{ selected_emailed }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payslips.paginator.num_pages }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_staff %}&staff={{ selected_staff }}{% endif %}{% if selected_emailed %}&emailed={{ selected_emailed }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No payslips found for the selected filters.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

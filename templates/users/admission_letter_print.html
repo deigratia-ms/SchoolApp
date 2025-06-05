@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}Print Admission Letter - School Management System{% endblock %}
+
+{% block extra_head %}
+<style>
+  @media print {
+    /* Hide navigation elements when printing */
+    .navbar,
+    .sidebar,
+    .footer,
+    .no-print,
+    .btn {
+      display: none !important;
+    }
+
+    /* Full page content */
+    .content-wrapper {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Reset Bootstrap container for better print layout */
+    .container-fluid {
+      width: 100%;
+      max-width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Letter styling */
+    .letter-container {
+      padding: 0.5in;
+      margin: 0;
+      width: 8.5in;
+      max-width: 100%;
+    }
+
+    /* Show page breaks properly */
+    .page-break {
+      page-break-before: always;
+    }
+
+    /* Letter-specific styling */
+    .letter-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .letter-body {
+      margin: 2rem 0;
+      line-height: 1.5;
+    }
+
+    /* Prevent URL display */
+    a:after {
+      content: "" !important;
+    }
+
+    /* For best print layout */
+    body {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+  }
+
+  /* Non-print styles */
+  .letter-container {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+
+  .letter-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .letter-header .school-name {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .letter-header .school-address {
+    font-size: 0.875rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+  }
+
+  .letter-header .school-contact {
+    font-size: 0.875rem;
+    color: #555;
+  }
+
+  .letter-ref {
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .letter-date {
+    text-align: right;
+    margin-bottom: 1.5rem;
+  }
+
+  .letter-body {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    text-align: justify;
+  }
+
+  .letter-body p {
+    margin-bottom: 1rem;
+  }
+
+  .letter-signature {
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .letter-signature .signature-image {
+    max-height: 60px;
+    margin-bottom: 0.5rem;
+  }
+
+  .letter-signature .signatory-name {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+  }
+
+  .letter-signature .signatory-title {
+    font-style: italic;
+    color: #555;
+  }
+
+  .school-logo {
+    max-height: 80px;
+    max-width: 80px;
+    margin-bottom: 1rem;
+  }
+
+  .letter-footer {
+    font-size: 0.75rem;
+    color: #777;
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ddd;
+  }
+
+  /* Print controls */
+  .print-controls {
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Print Controls - Only visible on screen -->
+  <div class="print-controls no-print">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3">Admission Letter</h1>
+      <div>
+        <a
+          href="{% url 'users:admission_letter_detail' letter_id=letter.id %}"
+          class="btn btn-secondary me-2"
+        >
+          <i class="fas fa-arrow-left"></i> Back to Details
+        </a>
+        <button onclick="window.print();" class="btn btn-primary">
+          <i class="fas fa-print me-2"></i>Print Letter
+        </button>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      Ready to print. Click the button above or use your browser's print
+      function (Ctrl+P / Cmd+P).
+    </div>
+  </div>
+
+  <!-- Admission Letter -->
+  <div class="letter-container">
+    <!-- Letter Header -->
+    <div class="letter-header">
+      <div class="row align-items-center">
+        <div class="col-2 text-center">
+          {% if school_settings.logo %}
+          <img
+            src="{{ school_settings.logo.url }}"
+            alt="{{ school_settings.school_name }} Logo"
+            class="school-logo"
+          />
+          {% else %}
+          <i class="fas fa-school fa-3x text-primary"></i>
+          {% endif %}
+        </div>
+        <div class="col-8 text-center">
+          <div class="school-name">
+            {{ school_settings.school_name|default:"School Management System" }}
+          </div>
+          <div class="school-address">
+            {{ school_settings.address|default:"School Address" }}
+          </div>
+          <div class="school-contact">
+            {% if school_settings.phone %}Tel: {{ school_settings.phone }}{% endif %}
+            {% if school_settings.email %} | Email: {{ school_settings.email }}{% endif %}
+            {% if school_settings.website %} | {{ school_settings.website }}{% endif %}
+          </div>
+        </div>
+        <div class="col-2">
+          <!-- Placeholder for balance -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Reference Number & Date -->
+    <div class="row">
+      <div class="col-6">
+        <div class="letter-ref">
+          <strong>Reference:</strong> {{ letter.reference_number }}
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="letter-date">
+          <strong>Date:</strong> {{ letter.created_at|date:"F d, Y" }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Letter Body -->
+    <div class="letter-body">{{ processed_body|safe }}</div>
+
+    <!-- Login Credentials -->
+    <div class="credentials-box">
+      <h4>Important: Student Login Information</h4>
+      <div class="credentials-details">
+        <div>
+          <strong>Student ID:</strong>
+          <span>{{ letter.student.student_id }}</span>
+        </div>
+        <div>
+          <strong>PIN:</strong>
+          <span>{{ letter.student.pin }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signature -->
+    <div class="letter-signature">
+      {% if letter.template.signature_image %}
+      <img
+        src="{{ letter.template.signature_image.url }}"
+        alt="Signature"
+        class="signature-image"
+      />
+      {% endif %}
+      <div class="signatory-name">
+        {{ letter.template.signatory_name|default:"School Principal" }}
+      </div>
+      <div class="signatory-title">
+        {{ letter.template.signatory_position|default:"Principal" }}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="letter-footer">
+      {% if letter.template.footer_text %}
+        {{ letter.template.footer_text }}
+      {% else %}
+        This is an official document from {{ school_settings.school_name|default:"School Management System" }}. Please keep this letter for your records.
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Auto-print script when in print mode -->
+{% if print_mode %}
+<script>
+  window.onload = function () {
+    setTimeout(function () {
+      window.print();
+    }, 1000);
+  };
+</script>
+{% endif %}
+{% endblock content %}

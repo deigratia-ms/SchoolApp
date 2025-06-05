@@ -1,0 +1,933 @@
+{% extends 'base.html' %} {% block title %}Generate ID Card - School Management
+System{% endblock %} {% block extra_css %}
+<style>
+  /* CR80 card preview styles */
+  .preview-card {
+    width: 380px; /* Scaled down proportionally from 1013px */
+    height: 240px; /* Scaled down proportionally from 638px */
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .preview-header {
+    background-color: rgba(0,0,0,0.15);
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+  
+  .preview-body {
+    flex: 1;
+    display: flex;
+    padding: 10px;
+    background-color: white;
+  }
+  
+  /* Left column for photo */
+  .preview-photo-section {
+    width: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 10px;
+  }
+  
+  .preview-logo {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 8px;
+  }
+  
+  .preview-photo {
+    width: 80px;
+    height: 100px;
+    background-color: #f8f9fc;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Right column for info */
+  .preview-info-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .preview-info {
+    margin-top: 5px;
+  }
+  
+  .preview-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+  }
+  
+  .preview-info-item {
+    margin-bottom: 4px;
+    display: flex;
+    font-size: 12px;
+  }
+  
+  .preview-info-label {
+    font-weight: bold;
+    min-width: 60px;
+  }
+  
+  /* Footer */
+  .preview-footer {
+    padding: 6px;
+    text-align: center;
+    font-size: 10px;
+    background-color: rgba(0,0,0,0.1);
+    border-top: 1px solid rgba(255,255,255,0.2);
+  }
+  
+  /* Role badge */
+  .preview-role-badge {
+    background-color: rgba(0,0,0,0.2);
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    margin-bottom: 5px;
+  }
+  
+  /* CR80 indicator */
+  .cr80-indicator {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+  }
+  .user-search-results {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+  }
+  .user-search-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f1f1;
+  }
+  .user-search-item:hover {
+    background-color: #f8f9fc;
+  }
+  .user-search-item .user-info {
+    display: flex;
+    align-items: center;
+  }
+  .user-search-item .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
+  .selected-user {
+    background-color: #f8f9fc;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 15px;
+  }
+  .selected-user-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .selected-user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
+  .additional-fields {
+    display: none;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Generate ID Card</h1>
+    <div>
+      <a
+        href="{% url 'users:id_card_batch_generate' %}"
+        class="btn btn-outline-primary me-2"
+      >
+        <i class="fas fa-layer-group me-2"></i>Batch Generate
+      </a>
+      <a href="{% url 'users:id_card_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to ID Cards
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Card Generation Form -->
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">ID Card Information</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" id="generateForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+              <h5 class="mb-3">User Selection</h5>
+              <div class="position-relative">
+                <div class="mb-3">
+                  <label for="userSearch" class="form-label"
+                    >Search User <span class="text-danger">*</span></label
+                  >
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="userSearch"
+                      placeholder="Search by name, ID, email, or phone..."
+                      autocomplete="off"
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="searchButton"
+                    >
+                      <i class="fas fa-search"></i>
+                    </button>
+                  </div>
+                  <div class="form-text">
+                    Type at least 3 characters to search for users
+                  </div>
+                </div>
+
+                <div class="user-search-results" id="searchResults">
+                  <!-- Search results will be populated here -->
+                </div>
+              </div>
+
+              <input type="hidden" id="user_id" name="user_id" required />
+
+              <div
+                id="selectedUserContainer"
+                class="selected-user"
+                style="display: none"
+              >
+                <div class="selected-user-header">
+                  <div
+                    class="selected-user-avatar bg-primary"
+                    id="selectedUserAvatar"
+                  >
+                    JD
+                  </div>
+                  <div>
+                    <h6 id="selectedUserName" class="mb-1">
+                      {{ user.full_name }}
+                    </h6>
+                    <div class="text-muted small" id="selectedUserRole">
+                      {{ user.get_role_display }}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger ms-auto"
+                    id="clearUserButton"
+                  >
+                    <i class="fas fa-times"></i> Clear
+                  </button>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-2">
+                      <strong>Email:</strong>
+                      <span id="selectedUserEmail">{{ user.email }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-2">
+                      <strong>ID:</strong>
+                      <span id="selectedUserId">{{ user.user_id }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4" id="cardTemplateSection" style="display: none">
+              <h5 class="mb-3">Card Template</h5>
+              <div class="mb-3">
+                <label for="template_id" class="form-label"
+                  >Select Template <span class="text-danger">*</span></label
+                >
+                <select
+                  class="form-select"
+                  id="template_id"
+                  name="template_id"
+                  required
+                >
+                  <option value="" selected disabled>
+                    Choose a template...
+                  </option>
+                  {% for template in templates %} {% if template.is_active %}
+                  <option
+                    value="{{ template.id }}"
+                    data-role="{{ template.role }}"
+                  >
+                    {{ template.name }} ({{ template.get_role_display }})
+                  </option>
+                  {% endif %} {% endfor %}
+                </select>
+                <div class="form-text">
+                  Select a template matching the user's role
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4" id="cardDetailsSection" style="display: none">
+              <h5 class="mb-3">Card Details</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="issue_date" class="form-label"
+                    >Issue Date <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="issue_date"
+                    name="issue_date"
+                    value="{{ today|date:'Y-m-d' }}"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="expiry_date" class="form-label"
+                    >Expiry Date <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="expiry_date"
+                    name="expiry_date"
+                    value="{{ next_year|date:'Y-m-d' }}"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4" id="additionalInfoSection" style="display: none">
+              <h5
+                class="mb-3 d-flex justify-content-between align-items-center"
+              >
+                Additional Information
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  id="addFieldButton"
+                >
+                  <i class="fas fa-plus me-1"></i> Add Field
+                </button>
+              </h5>
+              <div class="mb-3">
+                <label for="barcode_data" class="form-label"
+                  >Barcode Data</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="barcode_data"
+                  name="barcode_data"
+                  placeholder="Enter data to encode in barcode"
+                />
+                <div class="form-text">
+                  Optional. Leave empty for no barcode. Typically contains the
+                  user ID or card number.
+                </div>
+              </div>
+
+              <div id="additionalFieldsContainer">
+                <!-- Additional fields will be added here -->
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+              <a
+                href="{% url 'users:id_card_list' %}"
+                class="btn btn-outline-secondary"
+                >Cancel</a
+              >
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="generateButton"
+                disabled
+              >
+                <i class="fas fa-id-card me-2"></i>Generate ID Card
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="col-lg-4" id="previewSection" style="display: none">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Card Preview</h6>
+        </div>
+        <div class="card-body">
+          <div class="cr80-indicator">CR80 Standard (2.125" × 3.375") - Landscape</div>
+          <div class="preview-card" id="previewCardContainer">
+            <!-- Header with school name and card title -->
+            <div class="preview-header" id="previewHeader">
+              <div class="school-name">
+                {% if school_settings.logo %}
+                <img src="{{ school_settings.logo.url }}" alt="School Logo" style="height: 18px; margin-right: 5px;">
+                {% endif %}
+                {{ school_settings.school_name|default:"School Name" }}
+              </div>
+              <div>SCHOOL ID CARD</div>
+            </div>
+            
+            <!-- Card Body - Landscape layout -->
+            <div class="preview-body" id="previewBody">
+              <!-- Left Column - Photo Section -->
+              <div class="preview-photo-section">
+                <img src="{{ school_settings.logo.url|default:'#' }}" alt="School Logo" class="preview-logo">
+                <div class="preview-photo" id="previewPhoto">
+                  <i class="fas fa-user fa-2x text-muted"></i>
+                </div>
+              </div>
+              
+              <!-- Right Column - Information Section -->
+              <div class="preview-info-section">
+                <!-- Role Badge -->
+                <div class="preview-role-badge" id="previewRole">Student</div>
+                
+                <!-- Name -->
+                <div class="preview-name" id="previewName">John Doe</div>
+                
+                <!-- User Info -->
+                <div class="preview-info">
+                  <div class="preview-info-item">
+                    <div class="preview-info-label">ID:</div>
+                    <div id="previewID">STU12345</div>
+                  </div>
+                  
+                  <div class="preview-info-item" id="previewClassItem">
+                    <div class="preview-info-label">Class:</div>
+                    <div>Grade 10</div>
+                  </div>
+                  
+                  <div class="preview-info-item" id="previewDeptItem" style="display: none;">
+                    <div class="preview-info-label">Dept:</div>
+                    <div>Math</div>
+                  </div>
+                  
+                  <div class="preview-info-item" id="previewChildItem" style="display: none;">
+                    <div class="preview-info-label">Child:</div>
+                    <div>Jane Doe</div>
+                  </div>
+                  
+                  <div class="preview-info-item">
+                    <div class="preview-info-label">Valid:</div>
+                    <div id="previewExpiry">Dec 31, 2025</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Footer with contact info -->
+            <div class="preview-footer">
+              {{ school_settings.school_name|default:"School Name" }} | {{ school_settings.phone|default:"123-456-7890" }}
+            </div>
+          </div>
+
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            This is a simplified preview. The actual ID card will include all
+            information and match the selected template style.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Field Modal -->
+<div
+  class="modal fade"
+  id="addFieldModal"
+  tabindex="-1"
+  aria-labelledby="addFieldModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addFieldModalLabel">Add Custom Field</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="fieldName" class="form-label">Field Name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="fieldName"
+            placeholder="e.g., Blood Group, Emergency Contact"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="fieldValue" class="form-label">Field Value</label>
+          <input type="text" class="form-control" id="fieldValue" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" id="saveFieldButton">
+          Add Field
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Elements
+    const userSearchInput = document.getElementById("userSearch");
+    const searchButton = document.getElementById("searchButton");
+    const searchResults = document.getElementById("searchResults");
+    const userIdInput = document.getElementById("user_id");
+    const selectedUserContainer = document.getElementById(
+      "selectedUserContainer"
+    );
+    const clearUserButton = document.getElementById("clearUserButton");
+    const cardTemplateSection = document.getElementById("cardTemplateSection");
+    const cardDetailsSection = document.getElementById("cardDetailsSection");
+    const additionalInfoSection = document.getElementById(
+      "additionalInfoSection"
+    );
+    const previewSection = document.getElementById("previewSection");
+    const templateSelect = document.getElementById("template_id");
+    const generateButton = document.getElementById("generateButton");
+    const addFieldButton = document.getElementById("addFieldButton");
+    const saveFieldButton = document.getElementById("saveFieldButton");
+    const additionalFieldsContainer = document.getElementById(
+      "additionalFieldsContainer"
+    );
+    const expiryDateInput = document.getElementById("expiry_date");
+
+    // Preview elements
+    const previewHeader = document.getElementById("previewHeader");
+    const previewName = document.getElementById("previewName");
+    const previewID = document.getElementById("previewID");
+    const previewRole = document.getElementById("previewRole");
+    const previewExpiry = document.getElementById("previewExpiry");
+    const previewPhoto = document.getElementById("previewPhoto");
+
+    // Mock user search - in a real app, this would be an AJAX call to the server
+    function searchUsers(query) {
+      // This is a mock function - in production, you'd make an AJAX call here
+      // Show search results container
+      searchResults.style.display = "block";
+
+      // Show loading state
+      searchResults.innerHTML =
+        '<div class="p-3 text-center"><i class="fas fa-spinner fa-spin me-2"></i> Searching...</div>';
+      searchResults.style.display = "block";
+
+      // Fetch user data from the server - use 'q' parameter as that's what the API expects
+      fetch(`/users/api/users/search/?q=${encodeURIComponent(query)}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          searchResults.innerHTML = "";
+
+          // If no results found
+          if (data.length === 0) {
+            searchResults.innerHTML =
+              '<div class="p-3 text-center text-muted">No users found</div>';
+            return;
+          }
+
+          // Process each user in the results
+          data.forEach((user) => {
+            const userElement = document.createElement("div");
+            userElement.classList.add("user-search-item");
+            userElement.dataset.id = user.user_id;
+            userElement.dataset.role = user.role;
+            userElement.dataset.email = user.email || "";
+            userElement.dataset.userid = user.username || user.user_id;
+
+            // Use the initials from API or generate from name
+            const initials =
+              user.initials ||
+              (user.full_name
+                ? user.full_name
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("")
+                    .substring(0, 2)
+                    .toUpperCase()
+                : user.first_name && user.last_name
+                ? (user.first_name[0] + user.last_name[0]).toUpperCase()
+                : "??");
+
+            const displayName =
+              user.full_name ||
+              `${user.first_name || ""} ${user.last_name || ""}`.trim();
+            const roleDisplay = user.role_display || getRoleDisplay(user.role);
+
+            userElement.innerHTML = `
+              <div class="user-info">
+                <div class="user-avatar bg-primary">${initials}</div>
+                <div>
+                  <div>${displayName}</div>
+                  <small class="text-muted">${roleDisplay}</small>
+                </div>
+              </div>
+            `;
+            userElement.addEventListener("click", function () {
+              selectUser(this);
+            });
+            searchResults.appendChild(userElement);
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching user data:", error);
+          searchResults.innerHTML = `
+            <div class="p-3 text-center text-danger">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              Error searching users. Please try again.
+            </div>`;
+        });
+
+      // Add click handlers for the results
+      document.querySelectorAll(".user-search-item").forEach((item) => {
+        item.addEventListener("click", function () {
+          selectUser(this);
+        });
+      });
+    }
+
+    // Select a user from search results
+    function selectUser(userElement) {
+      const userId = userElement.dataset.id;
+      const userName =
+        userElement.querySelector(".user-info div div").textContent;
+      const userRole = userElement.dataset.role;
+      const userEmail = userElement.dataset.email;
+      const userIdValue = userElement.dataset.userid;
+
+      // Set form value
+      userIdInput.value = userId;
+
+      // Update selected user display
+      document.getElementById("selectedUserName").textContent = userName;
+      document.getElementById("selectedUserRole").textContent =
+        getRoleDisplay(userRole);
+      document.getElementById("selectedUserEmail").textContent = userEmail;
+      document.getElementById("selectedUserId").textContent = userIdValue;
+
+      // Set avatar initials
+      const nameParts = userName.split(" ");
+      const initials =
+        nameParts.length > 1
+          ? nameParts[0][0] + nameParts[1][0]
+          : nameParts[0][0];
+      document.getElementById("selectedUserAvatar").textContent = initials;
+
+      // Show the selected user container
+      selectedUserContainer.style.display = "block";
+
+      // Hide search results
+      searchResults.style.display = "none";
+
+      // Clear search input
+      userSearchInput.value = "";
+
+      // Show template section with appropriate templates
+      cardTemplateSection.style.display = "block";
+
+      // Filter templates by role
+      filterTemplatesByRole(userRole);
+
+      // Update preview
+      updatePreview(userName, userIdValue, getRoleDisplay(userRole));
+    }
+
+    // Filter templates by user role
+    function filterTemplatesByRole(role) {
+      const options = templateSelect.querySelectorAll("option");
+
+      // First, disable all options except the placeholder
+      for (let i = 1; i < options.length; i++) {
+        const option = options[i];
+        const templateRole = option.getAttribute("data-role");
+
+        if (templateRole === role) {
+          option.style.display = "";
+          option.disabled = false;
+        } else {
+          option.style.display = "none";
+          option.disabled = true;
+        }
+      }
+
+      // Reset selection
+      templateSelect.selectedIndex = 0;
+    }
+
+    // Convert role code to display text
+    function getRoleDisplay(roleCode) {
+      const roleMap = {
+        ADMIN: "Administrator",
+        TEACHER: "Teacher",
+        STUDENT: "Student",
+        PARENT: "Parent",
+      };
+      return roleMap[roleCode] || roleCode;
+    }
+
+    // Update preview with role-specific styling
+    function updatePreview(name, id, role) {
+      // Set basic info
+      previewName.textContent = name;
+      previewID.textContent = id;
+      previewRole.textContent = role;
+      
+      // Get the role code by finding the role that matches the display text
+      const roleCode = Object.keys(roleMap).find(key => roleMap[key] === role);
+      
+      // Update expiry date in preview
+      const expiry = new Date(expiryDateInput.value);
+      previewExpiry.textContent = expiry.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+      
+      // Update role-specific fields and styling
+      const previewCard = document.getElementById('previewCardContainer');
+      const previewClassItem = document.getElementById('previewClassItem');
+      const previewDeptItem = document.getElementById('previewDeptItem');
+      const previewChildItem = document.getElementById('previewChildItem');
+      
+      // Hide all role-specific items first
+      previewClassItem.style.display = 'none';
+      previewDeptItem.style.display = 'none';
+      previewChildItem.style.display = 'none';
+      
+      // Show appropriate items and set styling based on role
+      if (roleCode === 'STUDENT' || role === 'Student') {
+        previewCard.style.backgroundColor = '#3498db'; // Blue
+        previewCard.style.color = '#FFFFFF';
+        previewClassItem.style.display = 'flex';
+      } else if (roleCode === 'TEACHER' || role === 'Teacher') {
+        previewCard.style.backgroundColor = '#27ae60'; // Green
+        previewCard.style.color = '#FFFFFF';
+        previewDeptItem.style.display = 'flex';
+      } else if (roleCode === 'PARENT' || role === 'Parent') {
+        previewCard.style.backgroundColor = '#8e44ad'; // Purple
+        previewCard.style.color = '#FFFFFF';
+        previewChildItem.style.display = 'flex';
+      } else if (roleCode === 'ADMIN' || role === 'Administrator') {
+        previewCard.style.backgroundColor = '#e74c3c'; // Red
+        previewCard.style.color = '#FFFFFF';
+      }
+      
+      // Show preview section
+      previewSection.style.display = "block";
+    }
+
+    // Add a custom field
+    function addCustomField(name, value) {
+      // Create a unique ID for the field
+      const fieldId = "additional_" + name.toLowerCase().replace(/\s+/g, "_");
+
+      // Create field HTML
+      const fieldHtml = `
+                <div class="mb-3 additional-field">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="${fieldId}" class="form-label">${name}</label>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-field">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <input type="text" class="form-control" id="${fieldId}" name="${fieldId}" value="${value}">
+                </div>
+            `;
+
+      // Add to container
+      additionalFieldsContainer.insertAdjacentHTML("beforeend", fieldHtml);
+
+      // Add removal handler
+      additionalFieldsContainer
+        .querySelector(".additional-field:last-child .remove-field")
+        .addEventListener("click", function () {
+          this.closest(".additional-field").remove();
+        });
+    }
+
+    // Event listeners
+    userSearchInput.addEventListener("input", function () {
+      if (this.value.length >= 3) {
+        searchUsers(this.value);
+      } else {
+        searchResults.style.display = "none";
+      }
+    });
+
+    searchButton.addEventListener("click", function () {
+      if (userSearchInput.value.length >= 3) {
+        searchUsers(userSearchInput.value);
+      }
+    });
+
+    clearUserButton.addEventListener("click", function () {
+      // Clear selected user
+      userIdInput.value = "";
+      selectedUserContainer.style.display = "none";
+      cardTemplateSection.style.display = "none";
+      cardDetailsSection.style.display = "none";
+      additionalInfoSection.style.display = "none";
+      previewSection.style.display = "none";
+      generateButton.disabled = true;
+    });
+
+    templateSelect.addEventListener("change", function () {
+      if (this.value) {
+        // Show card details and additional info sections
+        cardDetailsSection.style.display = "block";
+        additionalInfoSection.style.display = "block";
+
+        // Update template in preview
+        const selectedOption = this.options[this.selectedIndex];
+        previewHeader.textContent = selectedOption.textContent
+          .split(" (")[0]
+          .toUpperCase();
+
+        // Enable generate button
+        generateButton.disabled = false;
+      } else {
+        // Hide sections
+        cardDetailsSection.style.display = "none";
+        additionalInfoSection.style.display = "none";
+
+        // Disable generate button
+        generateButton.disabled = true;
+      }
+    });
+
+    expiryDateInput.addEventListener("change", function () {
+      // Update expiry date in preview
+      const expiry = new Date(this.value);
+      previewExpiry.textContent = expiry.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    });
+
+    // Add field button
+    addFieldButton.addEventListener("click", function () {
+      // Show modal
+      const modal = new bootstrap.Modal(
+        document.getElementById("addFieldModal")
+      );
+      modal.show();
+    });
+
+    // Save field button
+    saveFieldButton.addEventListener("click", function () {
+      const fieldName = document.getElementById("fieldName").value.trim();
+      const fieldValue = document.getElementById("fieldValue").value.trim();
+
+      if (fieldName) {
+        addCustomField(fieldName, fieldValue);
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("addFieldModal")
+        );
+        modal.hide();
+
+        // Clear fields
+        document.getElementById("fieldName").value = "";
+        document.getElementById("fieldValue").value = "";
+      }
+    });
+
+    // Prevent form submission when pressing Enter in search field
+    userSearchInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (this.value.length >= 3) {
+          searchUsers(this.value);
+        }
+      }
+    });
+
+    // Close search results when clicking elsewhere
+    document.addEventListener("click", function (e) {
+      if (
+        !searchResults.contains(e.target) &&
+        e.target !== userSearchInput &&
+        e.target !== searchButton
+      ) {
+        searchResults.style.display = "none";
+      }
+    });
+  });
+</script>
+{% endblock %}

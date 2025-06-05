@@ -1,0 +1,621 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Attendance Overview - School Management System{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" rel="stylesheet" />
+<style>
+    .attendance-stats-card {
+        transition: all 0.3s;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .attendance-stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 24px;
+    }
+    .class-attendance-row {
+        transition: all 0.2s;
+    }
+    .class-attendance-row:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    .trend-chart-container {
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Attendance Overview</h1>
+            <p class="mb-0 text-muted">Comprehensive view of attendance across all classes</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+            <a href="{% url 'attendance:home' %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-cog mr-2"></i>Attendance Management
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Attendance Data</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="dateRange" class="form-label">Date Range</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="dateRange" name="date_range" 
+                               value="{{ start_date|date:'Y-m-d' }} - {{ end_date|date:'Y-m-d' }}" />
+                        <input type="hidden" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" />
+                        <input type="hidden" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" />
+                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
+                    </button>
+                    <a href="{% url 'dashboard:admin_attendance_overview' %}" class="btn btn-outline-secondary ml-2">
+                        <i class="fas fa-redo mr-2"></i>Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-stats-card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Overall Attendance Rate</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ overall_attendance_rate }}%</div>
+                            <div class="text-xs text-muted mt-2">School-wide average</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-primary-light text-primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-stats-card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Present</div>
+                            {% with total_present=0 %}
+                                {% for class_id, data in attendance_data.items %}
+                                    {% with total_present=total_present|add:data.present_count %}{% endwith %}
+                                {% endfor %}
+                                <div class="h3 mb-0 font-weight-bold text-gray-800">{{ total_present }}</div>
+                            {% endwith %}
+                            <div class="text-xs text-muted mt-2">Total present records</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-success-light text-success">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-stats-card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Absent</div>
+                            {% with total_absent=0 %}
+                                {% for class_id, data in attendance_data.items %}
+                                    {% with total_absent=total_absent|add:data.absent_count %}{% endwith %}
+                                {% endfor %}
+                                <div class="h3 mb-0 font-weight-bold text-gray-800">{{ total_absent }}</div>
+                            {% endwith %}
+                            <div class="text-xs text-muted mt-2">Total absent records</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-warning-light text-warning">
+                                <i class="fas fa-user-times"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card attendance-stats-card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Classes</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ classes.count }}</div>
+                            <div class="text-xs text-muted mt-2">With attendance records</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stats-icon bg-info-light text-info">
+                                <i class="fas fa-school"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Attendance Trend Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Daily Attendance Trend</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" id="viewModeToggle">
+                            <i class="fas fa-chart-line mr-1"></i>Line/Bar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="trend-chart-container">
+                        <canvas id="dailyAttendanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer small text-muted">
+                    Showing data from {{ start_date|date:"M d, Y" }} to {{ end_date|date:"M d, Y" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Top Classes by Attendance -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Classes by Attendance</h6>
+                </div>
+                <div class="card-body">
+                    {% if top_classes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Class</th>
+                                        <th>Rate</th>
+                                        <th>Students</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for class_data in top_classes %}
+                                    <tr class="class-attendance-row">
+                                        <td>{{ class_data.class_name }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 mr-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ class_data.attendance_rate }}%"></div>
+                                                </div>
+                                                <span>{{ class_data.attendance_rate }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ class_data.total_students }}</td>
+                                        <td>
+                                            <a href="{% url 'dashboard:admin_class_attendance' class_id=forloop.counter %}" class="btn btn-sm btn-outline-primary">Details</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-chart-line fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="text-muted">No attendance data available</h5>
+                            <p class="text-muted small">Try adjusting your date range or checking if attendance has been recorded.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Classes with Low Attendance -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Classes Needing Attention</h6>
+                </div>
+                <div class="card-body">
+                    {% if bottom_classes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Class</th>
+                                        <th>Rate</th>
+                                        <th>Students</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for class_data in bottom_classes %}
+                                    <tr class="class-attendance-row">
+                                        <td>{{ class_data.class_name }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 mr-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-{{ class_data.attendance_rate|floatformat:0|less_than:75|yesno:'danger,warning,success' }}" role="progressbar" style="width: {{ class_data.attendance_rate }}%"></div>
+                                                </div>
+                                                <span>{{ class_data.attendance_rate }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ class_data.total_students }}</td>
+                                        <td>
+                                            <a href="{% url 'dashboard:admin_class_attendance' class_id=forloop.counter %}" class="btn btn-sm btn-outline-primary">Details</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-check-circle fa-3x text-success"></i>
+                            </div>
+                            <h5 class="text-muted">All classes have good attendance</h5>
+                            <p class="text-muted small">Great job! There are no classes with attendance concerns.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Attendance Comparison -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Class Attendance Comparison</h6>
+                    <div>
+                        <a href="{% url 'dashboard:admin_attendance_reports' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-file-alt mr-1"></i>Generate Reports
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Students</th>
+                                    <th>School Days</th>
+                                    <th>Present</th>
+                                    <th>Absent</th>
+                                    <th>Late</th>
+                                    <th>Excused</th>
+                                    <th>Attendance Rate</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for classroom in classes %}
+                                {% with data=attendance_data|get_item:classroom.id %}
+                                <tr>
+                                    <td>{{ data.class_name }}</td>
+                                    <td>{{ data.total_students }}</td>
+                                    <td>{{ data.school_days }}</td>
+                                    <td><span class="badge bg-success text-white">{{ data.present_count }}</span></td>
+                                    <td><span class="badge bg-danger text-white">{{ data.absent_count }}</span></td>
+                                    <td><span class="badge bg-warning text-white">{{ data.late_count }}</span></td>
+                                    <td><span class="badge bg-info text-white">{{ data.excused_count }}</span></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 mr-2" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ data.attendance_rate|floatformat:0|less_than:75|yesno:'danger,warning,success' }}" role="progressbar" style="width: {{ data.attendance_rate }}%"></div>
+                                            </div>
+                                            <span>{{ data.attendance_rate }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'dashboard:admin_class_attendance' class_id=classroom.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                            <a href="{% url 'attendance:records' %}?classroom={{ classroom.id }}" class="btn btn-sm btn-outline-secondary">Records</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script>
+    // Date range picker initialization
+    $(function() {
+        $('#dateRange').daterangepicker({
+            opens: 'left',
+            startDate: moment('{{ start_date|date:"Y-m-d" }}'),
+            endDate: moment('{{ end_date|date:"Y-m-d" }}'),
+            locale: {
+                format: 'YYYY-MM-DD'
+            },
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+               'This Academic Year': [moment().month() < 7 ? moment().subtract(1, 'year').month(7).startOf('month') : moment().month(7).startOf('month'), moment().month() < 6 ? moment().month(6).endOf('month') : moment().add(1, 'year').month(6).endOf('month')]
+            }
+        }, function(start, end) {
+            $('#start_date').val(start.format('YYYY-MM-DD'));
+            $('#end_date').val(end.format('YYYY-MM-DD'));
+        });
+    });
+
+    // Daily Attendance Chart
+    const dailyLabels = {{ daily_labels|safe }};
+    const dailyAttendanceRates = {{ daily_attendance_rates|safe }};
+    
+    const ctx = document.getElementById('dailyAttendanceChart').getContext('2d');
+    let dailyAttendanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailyLabels,
+            datasets: [{
+                label: 'Attendance Rate (%)',
+                data: dailyAttendanceRates,
+                tension: 0.3,
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    },
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Attendance Rate (%)'
+                    },
+                    ticks: {
+                        maxTicksLimit: 5,
+                        padding: 10,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255, 255, 255)",
+                    bodyColor: "#858796",
+                    titleMarginBottom: 10,
+                    titleColor: '#6e707e',
+                    titleFont: {
+                        size: 14
+                    },
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    intersect: false,
+                    mode: 'index',
+                    caretPadding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Attendance: ' + context.raw + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Toggle between line and bar chart
+    let chartType = 'line';
+    document.getElementById('viewModeToggle').addEventListener('click', function() {
+        if (chartType === 'line') {
+            chartType = 'bar';
+        } else {
+            chartType = 'line';
+        }
+        
+        // Destroy current chart
+        dailyAttendanceChart.destroy();
+        
+        // Create new chart with the same data but different type
+        dailyAttendanceChart = new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Attendance Rate (%)',
+                    data: dailyAttendanceRates,
+                    backgroundColor: chartType === 'line' ? 'rgba(78, 115, 223, 0.05)' : 'rgba(78, 115, 223, 0.7)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    pointRadius: chartType === 'line' ? 3 : 0,
+                    pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointBorderColor: 'rgba(78, 115, 223, 1)',
+                    pointHoverRadius: chartType === 'line' ? 5 : 0,
+                    pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                    pointHitRadius: chartType === 'line' ? 10 : 0,
+                    pointBorderWidth: chartType === 'line' ? 2 : 0,
+                    tension: chartType === 'line' ? 0.3 : 0,
+                    fill: chartType === 'line',
+                    borderWidth: chartType === 'line' ? 1 : 0
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 25,
+                        top: 25,
+                        bottom: 0
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        },
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 7
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Attendance Rate (%)'
+                        },
+                        ticks: {
+                            maxTicksLimit: 5,
+                            padding: 10,
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        grid: {
+                            color: "rgb(234, 236, 244)",
+                            zeroLineColor: "rgb(234, 236, 244)",
+                            drawBorder: false,
+                            borderDash: [2],
+                            zeroLineBorderDash: [2]
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: "rgb(255, 255, 255)",
+                        bodyColor: "#858796",
+                        titleMarginBottom: 10,
+                        titleColor: '#6e707e',
+                        titleFont: {
+                            size: 14
+                        },
+                        borderColor: '#dddfeb',
+                        borderWidth: 1,
+                        xPadding: 15,
+                        yPadding: 15,
+                        displayColors: false,
+                        intersect: false,
+                        mode: 'index',
+                        caretPadding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Attendance: ' + context.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    // Create a filter function for the template (hacky but works)
+    Object.defineProperties(Number.prototype, {
+        'less_than': { value: function(n) { return this < n; } }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Quiz - Step 3: Review & Publish - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-step {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .step {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        position: relative;
+    }
+
+    .step.active {
+        font-weight: bold;
+        color: #4e73df;
+    }
+
+    .step.completed .step-number {
+        background-color: #1cc88a;
+        color: white;
+    }
+
+    .step.active .step-number {
+        background-color: #4e73df;
+        color: white;
+    }
+
+    .step-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 50%;
+        background-color: #e2e3e5;
+        margin-bottom: 5px;
+    }
+
+    .step:not(:last-child):after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        right: -50%;
+        width: 100%;
+        height: 2px;
+        background-color: #e2e3e5;
+        z-index: -1;
+    }
+
+    .step.active:not(:last-child):after,
+    .step.completed:not(:last-child):after {
+        background-color: #4e73df;
+    }
+
+    .summary-card {
+        border-left: 4px solid #4e73df;
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+
+    .summary-card h5 {
+        color: #4e73df;
+        margin-bottom: 10px;
+    }
+
+    .summary-card .label {
+        font-weight: 600;
+        color: #5a5c69;
+    }
+
+    .summary-card .value {
+        color: #3a3b45;
+    }
+
+    .question-preview {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        padding: 15px;
+    }
+
+    .question-preview .question-number {
+        font-weight: 600;
+        color: #4e73df;
+        margin-bottom: 10px;
+    }
+
+    .question-preview .question-text {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+    }
+
+    .question-preview .choice {
+        padding: 8px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        background-color: #f8f9fa;
+    }
+
+    .question-preview .choice.correct {
+        background-color: rgba(28, 200, 138, 0.1);
+        border-left: 3px solid #1cc88a;
+    }
+
+    .publish-options {
+        background-color: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create Quiz</h1>
+        <div>
+            <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Assignments
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+        <div class="step completed">
+            <div class="step-number">1</div>
+            <div>Quiz Settings</div>
+        </div>
+        <div class="step completed">
+            <div class="step-number">2</div>
+            <div>Question Bank</div>
+        </div>
+        <div class="step active">
+            <div class="step-number">3</div>
+            <div>Review & Publish</div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Step 3: Review & Publish</h6>
+        </div>
+        <div class="card-body">
+            <!-- Quiz Summary -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="summary-card">
+                        <h5>Quiz Details</h5>
+                        <div class="row mb-2">
+                            <div class="col-4 label">Title:</div>
+                            <div class="col-8 value">{{ quiz.title }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4 label">Class & Subject:</div>
+                            <div class="col-8 value">{{ quiz.class_subject.classroom.name }} - {{ quiz.class_subject.subject.name }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4 label">Due Date:</div>
+                            <div class="col-8 value">{{ quiz.due_date|date:"F j, Y g:i A" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4 label">Instructions:</div>
+                            <div class="col-8 value">{{ quiz.description|default:"No instructions provided" }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="summary-card">
+                        <h5>Quiz Configuration</h5>
+                        <div class="row mb-2">
+                            <div class="col-6 label">Total Questions:</div>
+                            <div class="col-6 value">{{ quiz.questions.count }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6 label">Questions to Display:</div>
+                            <div class="col-6 value">{{ quiz.questions_to_display|default:"All" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6 label">Time Limit:</div>
+                            <div class="col-6 value">{% if quiz.time_limit %}{{ quiz.time_limit }} minutes{% else %}No time limit{% endif %}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6 label">Attempt Limit:</div>
+                            <div class="col-6 value">{% if quiz.attempt_limit == 0 %}Unlimited{% else %}{{ quiz.attempt_limit }} attempt{{ quiz.attempt_limit|pluralize }}{% endif %}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6 label">Shuffle Questions:</div>
+                            <div class="col-6 value">{% if quiz.randomize_questions %}Yes{% else %}No{% endif %}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6 label">Shuffle Answers:</div>
+                            <div class="col-6 value">{% if quiz.randomize_choices %}Yes{% else %}No{% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Preview -->
+            <h5 class="mt-4 mb-3">Question Preview ({{ quiz.questions.count }})</h5>
+
+            {% if quiz.questions.count > 0 %}
+                <div class="accordion" id="questionAccordion">
+                    {% for question in quiz.questions.all %}
+                        <div class="accordion-item mb-3">
+                            <h2 class="accordion-header" id="heading{{ question.id }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ question.id }}" aria-expanded="false" aria-controls="collapse{{ question.id }}">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <div>
+                                            <span class="me-2">Question {{ forloop.counter }}:</span>
+                                            {{ question.question_text|truncatechars:100 }}
+                                        </div>
+                                        <span class="badge bg-primary ms-2">{{ question.get_question_type_display }}</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ question.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ question.id }}" data-bs-parent="#questionAccordion">
+                                <div class="accordion-body">
+                                    <div class="question-preview">
+                                        <div class="question-text">{{ question.question_text }}</div>
+
+                                        {% if question.image %}
+                                            <img src="{{ question.image.url }}" alt="Question image" class="img-fluid mb-3" style="max-height: 200px;">
+                                        {% endif %}
+
+                                        {% if question.question_type == 'MCQ' %}
+                                            <div class="choices-list">
+                                                {% for choice in question.choices.all %}
+                                                    <div class="choice {% if choice.is_correct %}correct{% endif %}">
+                                                        {{ choice.choice_text }}
+                                                        {% if choice.is_correct %}
+                                                            <span class="badge bg-success float-end">Correct</span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% elif question.question_type == 'TF' %}
+                                            <div class="choices-list">
+                                                {% for choice in question.choices.all %}
+                                                    <div class="choice {% if choice.is_correct %}correct{% endif %}">
+                                                        {{ choice.choice_text }}
+                                                        {% if choice.is_correct %}
+                                                            <span class="badge bg-success float-end">Correct</span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% elif question.question_type == 'SHORT' %}
+                                            <div class="alert alert-light">
+                                                <strong>Expected Answer:</strong> {{ question.notes|default:"No answer provided" }}
+                                            </div>
+                                        {% endif %}
+
+                                        {% if question.tags %}
+                                            <div class="mt-2">
+                                                <strong>Tags:</strong>
+                                                {% for tag in question.get_tag_list %}
+                                                    <span class="badge bg-secondary">{{ tag }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> No questions added yet. Please go back to the Question Bank step to add questions.
+                </div>
+            {% endif %}
+
+            <!-- Publish Options -->
+            <div class="publish-options">
+                <h5 class="mb-3">Ready to Publish?</h5>
+
+                <form method="post" id="publish-form">
+                    {% csrf_token %}
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="publish_action" id="save_draft" value="draft" checked>
+                        <label class="form-check-label" for="save_draft">
+                            <strong>Save as Draft</strong> - Save the quiz but don't make it visible to students yet.
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="publish_action" id="publish_now" value="publish">
+                        <label class="form-check-label" for="publish_now">
+                            <strong>Publish Now</strong> - Make the quiz immediately available to students.
+                        </label>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Students will be able to see and take the quiz once it's published.
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'assignments:quiz_questions' quiz.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Questions
+                        </a>
+
+                        <div>
+                            <button type="submit" name="action" value="save" class="btn btn-success" {% if quiz.questions.count == 0 %}disabled{% endif %}>
+                                <i class="fas fa-save"></i> Save Quiz
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Form submission
+        $('#publish-form').submit(function() {
+            const action = $('input[name="publish_action"]:checked').val();
+
+            if (action === 'publish') {
+                return confirm('Are you sure you want to publish this quiz? Students will be able to see and take it immediately.');
+            }
+
+            return true;
+        });
+    });
+</script>
+{% endblock %}

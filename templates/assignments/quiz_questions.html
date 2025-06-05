@@ -1,0 +1,656 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Quiz - Step 2: Question Bank - Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-step {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .step {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        position: relative;
+    }
+
+    .step.active {
+        font-weight: bold;
+        color: #4e73df;
+    }
+
+    .step.completed .step-number {
+        background-color: #1cc88a;
+        color: white;
+    }
+
+    .step.active .step-number {
+        background-color: #4e73df;
+        color: white;
+    }
+
+    .step-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 50%;
+        background-color: #e2e3e5;
+        margin-bottom: 5px;
+    }
+
+    .step:not(:last-child):after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        right: -50%;
+        width: 100%;
+        height: 2px;
+        background-color: #e2e3e5;
+        z-index: -1;
+    }
+
+    .step.active:not(:last-child):after,
+    .step.completed:not(:last-child):after {
+        background-color: #4e73df;
+    }
+
+    .question-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .question-card .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        padding: 15px;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .question-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+    .choice-item {
+        padding: 8px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+    }
+
+    .choice-item.correct {
+        background-color: rgba(28, 200, 138, 0.1);
+        border-left: 3px solid #1cc88a;
+    }
+
+    .csv-upload-area {
+        border: 2px dashed #d1d3e2;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .csv-upload-area:hover {
+        border-color: #4e73df;
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+
+    .csv-upload-area.dragover {
+        border-color: #1cc88a;
+        background-color: rgba(28, 200, 138, 0.1);
+    }
+
+    .progress {
+        height: 10px;
+        margin-top: 15px;
+    }
+
+    .upload-log {
+        max-height: 200px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 15px;
+    }
+
+    .upload-log .error {
+        color: #e74a3b;
+    }
+
+    .upload-log .success {
+        color: #1cc88a;
+    }
+
+    .tab-content {
+        padding: 20px 0;
+    }
+
+    .nav-tabs .nav-link {
+        font-weight: 600;
+    }
+
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create Quiz</h1>
+        <div>
+            <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Assignments
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+        <div class="step completed">
+            <div class="step-number">1</div>
+            <div>Quiz Settings</div>
+        </div>
+        <div class="step active">
+            <div class="step-number">2</div>
+            <div>Question Bank</div>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div>Review & Publish</div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Step 2: Question Bank</h6>
+        </div>
+        <div class="card-body">
+            <!-- Quiz Info Summary -->
+            <div class="alert alert-info">
+                <h5 class="alert-heading">{{ quiz.title }}</h5>
+                <p class="mb-0">{{ quiz.class_subject.classroom.name }} - {{ quiz.class_subject.subject.name }}</p>
+                <p class="mb-0">Due: {{ quiz.due_date|date:"F j, Y g:i A" }}</p>
+                <p class="mb-0">Questions: {{ quiz.questions.count }} ({{ quiz.questions_to_display|default:"All" }} will be shown to students)</p>
+            </div>
+
+            <!-- Tabs for different question creation methods -->
+            <ul class="nav nav-tabs" id="questionTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" id="create-tab" data-bs-toggle="tab" href="#create" role="tab" aria-controls="create" aria-selected="true">
+                        <i class="fas fa-plus-circle"></i> Create Questions
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="import-tab" data-bs-toggle="tab" href="#import" role="tab" aria-controls="import" aria-selected="false">
+                        <i class="fas fa-file-import"></i> Import from CSV
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="questionTabsContent">
+                <!-- Create Questions Tab -->
+                <div class="tab-pane fade show active" id="create" role="tabpanel" aria-labelledby="create-tab">
+                    <form method="post" id="question-form" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_question">
+
+                        <div class="form-step">
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label for="question_text" class="form-label">Question Text <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="question_text" name="question_text" rows="3" required></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="question_type" class="form-label">Question Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="question_type" name="question_type" required>
+                                        <option value="MCQ">Multiple Choice</option>
+                                        <option value="TF">True/False</option>
+                                        <option value="SHORT">Short Answer</option>
+                                    </select>
+
+                                    <div class="mt-3">
+                                        <label for="points" class="form-label">Points <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="points" name="points" min="1" value="1" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label for="tags" class="form-label">Tags (comma-separated)</label>
+                                    <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g., Math, Fractions, Easy">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="image" class="form-label">Image (optional)</label>
+                                    <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                                </div>
+                            </div>
+
+                            <!-- Multiple Choice Options -->
+                            <div id="mcq-options" class="mt-4">
+                                <label class="form-label">Answer Choices <span class="text-danger">*</span></label>
+                                <div id="choices-container">
+                                    <div class="choice-item mb-3">
+                                        <div class="input-group">
+                                            <div class="input-group-text">
+                                                <input type="radio" name="correct_choice" value="0" required checked>
+                                            </div>
+                                            <input type="text" class="form-control" name="choice_text[]" placeholder="Enter choice option" required>
+                                        </div>
+                                    </div>
+                                    <div class="choice-item mb-3">
+                                        <div class="input-group">
+                                            <div class="input-group-text">
+                                                <input type="radio" name="correct_choice" value="1" required>
+                                            </div>
+                                            <input type="text" class="form-control" name="choice_text[]" placeholder="Enter choice option" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button" id="add-choice" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus"></i> Add Another Choice
+                                </button>
+                            </div>
+
+                            <!-- True/False Options -->
+                            <div id="tf-options" class="mt-4" style="display: none;">
+                                <label class="form-label">Select Correct Answer <span class="text-danger">*</span></label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tf_answer" id="tf_true" value="true" checked>
+                                    <label class="form-check-label" for="tf_true">True</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tf_answer" id="tf_false" value="false">
+                                    <label class="form-check-label" for="tf_false">False</label>
+                                </div>
+                            </div>
+
+                            <!-- Short Answer Options -->
+                            <div id="short-options" class="mt-4" style="display: none;">
+                                <label for="correct_answer" class="form-label">Correct Answer (for grading reference)</label>
+                                <input type="text" class="form-control" id="correct_answer" name="correct_answer" placeholder="Enter the expected answer">
+                                <div class="form-text">This will be used as a reference for grading but won't be shown to students.</div>
+                            </div>
+
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-plus-circle"></i> Add Question
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Import from CSV Tab -->
+                <div class="tab-pane fade" id="import" role="tabpanel" aria-labelledby="import-tab">
+                    <div class="form-step">
+                        <div class="mb-4">
+                            <h5>Import Questions from CSV</h5>
+                            <p>Upload a CSV file with your questions. The file should have the following columns:</p>
+                            <ul>
+                                <li><strong>Question</strong> - The question text</li>
+                                <li><strong>Option A, Option B, Option C, Option D</strong> - The answer choices</li>
+                                <li><strong>Correct Answer</strong> - The letter of the correct answer (A, B, C, D) or TRUE/FALSE</li>
+                                <li><strong>Type</strong> - MCQ for multiple choice, TF for true/false</li>
+                                <li><strong>Tags</strong> - Optional comma-separated tags</li>
+                                <li><strong>Image URL</strong> - Optional URL to an image</li>
+                            </ul>
+                            <a href="{% static 'assignments/quiz_template.csv' %}" class="btn btn-sm btn-outline-primary" download>
+                                <i class="fas fa-download"></i> Download CSV Template
+                            </a>
+                        </div>
+
+                        <form method="post" id="csv-upload-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="import_csv">
+
+                            <div class="csv-upload-area" id="drop-area">
+                                <i class="fas fa-file-csv fa-3x mb-3 text-primary"></i>
+                                <h5>Drag & Drop CSV File Here</h5>
+                                <p>or</p>
+                                <input type="file" id="csv-file" name="csv_file" accept=".csv" class="d-none">
+                                <button type="button" id="browse-button" class="btn btn-primary">Browse Files</button>
+                                <div class="mt-2 text-muted" id="file-name"></div>
+
+                                <div class="progress d-none" id="upload-progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="upload-log d-none" id="upload-log">
+                                <h6>Upload Results:</h6>
+                                <div id="log-content"></div>
+                            </div>
+
+                            <div class="mt-3 text-end">
+                                <button type="submit" id="upload-button" class="btn btn-success" disabled>
+                                    <i class="fas fa-upload"></i> Upload and Import
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Questions -->
+            <div class="mt-4">
+                <h5>Questions ({{ quiz.questions.count }})</h5>
+
+                {% if quiz.questions.count > 0 %}
+                    <div id="questions-container">
+                        {% for question in quiz.questions.all %}
+                            <div class="question-card" id="question-{{ question.id }}">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-primary">{{ question.get_question_type_display }}</span>
+                                        <span class="ms-2">{{ question.points }} point{{ question.points|pluralize }}</span>
+                                        {% if question.tags %}
+                                            <span class="ms-2">
+                                                {% for tag in question.get_tag_list %}
+                                                    <span class="badge bg-secondary">{{ tag }}</span>
+                                                {% endfor %}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="question-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-danger delete-question" data-question-id="{{ question.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">{{ question.question_text }}</p>
+
+                                    {% if question.image %}
+                                        <img src="{{ question.image.url }}" alt="Question image" class="img-fluid mb-3" style="max-height: 200px;">
+                                    {% endif %}
+
+                                    {% if question.question_type == 'MCQ' %}
+                                        <div class="choices-list">
+                                            {% for choice in question.choices.all %}
+                                                <div class="choice-item {% if choice.is_correct %}correct{% endif %}">
+                                                    {{ choice.choice_text }}
+                                                    {% if choice.is_correct %}
+                                                        <span class="badge bg-success float-end">Correct</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% elif question.question_type == 'TF' %}
+                                        <div class="choices-list">
+                                            {% for choice in question.choices.all %}
+                                                <div class="choice-item {% if choice.is_correct %}correct{% endif %}">
+                                                    {{ choice.choice_text }}
+                                                    {% if choice.is_correct %}
+                                                        <span class="badge bg-success float-end">Correct</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% elif question.question_type == 'SHORT' %}
+                                        <div class="alert alert-light">
+                                            <strong>Expected Answer:</strong> {{ question.notes|default:"No answer provided" }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> No questions added yet. Add questions using the form above.
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'assignments:quiz_settings' quiz.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Settings
+                </a>
+                <a href="{% url 'assignments:quiz_review' quiz.id %}" class="btn btn-primary {% if quiz.questions.count == 0 %}disabled{% endif %}">
+                    <i class="fas fa-arrow-right"></i> Next: Review & Publish
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        let choiceCounter = 2;
+
+        // Toggle question type options
+        $('#question_type').change(function() {
+            const questionType = $(this).val();
+
+            // Hide all option sections
+            $('#mcq-options, #tf-options, #short-options').hide();
+
+            // Show the appropriate section based on question type
+            if (questionType === 'MCQ') {
+                $('#mcq-options').show();
+            } else if (questionType === 'TF') {
+                $('#tf-options').show();
+            } else if (questionType === 'SHORT') {
+                $('#short-options').show();
+            }
+        });
+
+        // Add new choice option
+        $('#add-choice').click(function() {
+            const newChoice = `
+                <div class="choice-item mb-3">
+                    <div class="input-group">
+                        <div class="input-group-text">
+                            <input type="radio" name="correct_choice" value="${choiceCounter}" required>
+                        </div>
+                        <input type="text" class="form-control" name="choice_text[]" placeholder="Enter choice option" required>
+                        <button type="button" class="btn btn-outline-danger remove-choice">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            $('#choices-container').append(newChoice);
+            choiceCounter++;
+        });
+
+        // Remove choice option
+        $(document).on('click', '.remove-choice', function() {
+            $(this).closest('.choice-item').remove();
+        });
+
+        // CSV file upload handling
+        $('#browse-button').click(function() {
+            $('#csv-file').click();
+        });
+
+        $('#csv-file').change(function() {
+            const fileName = $(this).val().split('\\').pop();
+            if (fileName) {
+                $('#file-name').text(fileName);
+                $('#upload-button').prop('disabled', false);
+            } else {
+                $('#file-name').text('');
+                $('#upload-button').prop('disabled', true);
+            }
+        });
+
+        // Drag and drop functionality
+        const dropArea = document.getElementById('drop-area');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('dragover');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('dragover');
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                    $('#csv-file')[0].files = files;
+                    $('#file-name').text(file.name);
+                    $('#upload-button').prop('disabled', false);
+                } else {
+                    alert('Please upload a CSV file.');
+                }
+            }
+        }
+
+        // Delete question
+        $(document).on('click', '.delete-question', function() {
+            const questionId = $(this).data('question-id');
+            if (confirm('Are you sure you want to delete this question?')) {
+                $.ajax({
+                    url: '{% url "assignments:delete_question" %}',
+                    type: 'POST',
+                    data: {
+                        'question_id': questionId,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $(`#question-${questionId}`).fadeOut(300, function() {
+                                $(this).remove();
+                                // Update question count
+                                const count = $('#questions-container .question-card').length;
+                                $('h5:contains("Questions")').text(`Questions (${count})`);
+
+                                // Disable next button if no questions
+                                if (count === 0) {
+                                    $('a[href*="quiz_review"]').addClass('disabled');
+                                }
+                            });
+                        } else {
+                            alert('Error deleting question: ' + response.error);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while deleting the question.');
+                    }
+                });
+            }
+        });
+
+        // CSV upload form submission
+        $('#csv-upload-form').submit(function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            // Show progress bar
+            $('#upload-progress').removeClass('d-none');
+
+            $.ajax({
+                url: '{% url "assignments:import_questions" quiz.id %}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            $('#upload-progress .progress-bar').css('width', percent + '%');
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function(response) {
+                    // Show upload log
+                    $('#upload-log').removeClass('d-none');
+                    $('#log-content').empty();
+
+                    if (response.success) {
+                        $('#log-content').append(`<p class="success"><i class="fas fa-check-circle"></i> Successfully imported ${response.imported_count} questions.</p>`);
+
+                        // Reload the page to show the new questions
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        $('#log-content').append(`<p class="error"><i class="fas fa-exclamation-circle"></i> ${response.error}</p>`);
+
+                        if (response.errors) {
+                            response.errors.forEach(function(error) {
+                                $('#log-content').append(`<p class="error">Row ${error.row}: ${error.message}</p>`);
+                            });
+                        }
+                    }
+                },
+                error: function() {
+                    $('#upload-log').removeClass('d-none');
+                    $('#log-content').html('<p class="error"><i class="fas fa-exclamation-circle"></i> An error occurred during upload.</p>');
+                },
+                complete: function() {
+                    // Reset form
+                    $('#csv-file').val('');
+                    $('#file-name').text('');
+                    $('#upload-button').prop('disabled', true);
+
+                    // Complete progress bar
+                    $('#upload-progress .progress-bar').css('width', '100%');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+
+{% block title %}Fees Management Dashboard | Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet" />
+<style>
+  .stat-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+  }
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .payment-item {
+    transition: all 0.2s;
+  }
+  .payment-item:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Fees Management Dashboard</h1>
+      <p class="text-muted mb-0">
+        {% if current_term %}
+        Current Term: {{ current_term.name }} ({{ current_term.academic_year }})
+        {% else %}
+        No active term set
+        {% endif %}
+      </p>
+    </div>
+    <div>
+      <a href="{% url 'fees:term_list' %}" class="btn btn-outline-primary me-2">
+        <i class="fas fa-calendar-alt me-2"></i>Manage Terms
+      </a>
+      <div class="btn-group">
+        <button
+          type="button"
+          class="btn btn-primary dropdown-toggle"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <i class="fas fa-plus me-2"></i>Quick Actions
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <a class="dropdown-item" href="{% url 'fees:create_class_fee' %}">
+              <i class="fas fa-money-bill-wave me-2"></i>Add New Fee
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'fees:create_payment' %}">
+              <i class="fas fa-cash-register me-2"></i>Record Payment
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'fees:generate_student_fees' %}">
+              <i class="fas fa-users me-2"></i>Generate Student Fees
+            </a>
+          </li>
+          <li><hr class="dropdown-divider" /></li>
+          <li>
+            <a class="dropdown-item" href="{% url 'fees:fee_reports' %}">
+              <i class="fas fa-chart-bar me-2"></i>View Reports
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card h-100 border-left-primary">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Expected Fees
+              </div>
+              <div class="h5 mb-0 font-weight-bold">GHS {{ total_expected|floatformat:2 }}</div>
+            </div>
+            <div class="stat-icon bg-primary-light text-primary">
+              <i class="fas fa-money-bill-wave"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card h-100 border-left-success">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Collected
+              </div>
+              <div class="h5 mb-0 font-weight-bold">GHS {{ total_collected|floatformat:2 }}</div>
+            </div>
+            <div class="stat-icon bg-success-light text-success">
+              <i class="fas fa-check-circle"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card h-100 border-left-danger">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                Outstanding Balance
+              </div>
+              <div class="h5 mb-0 font-weight-bold">GHS {{ total_outstanding|floatformat:2 }}</div>
+            </div>
+            <div class="stat-icon bg-danger-light text-danger">
+              <i class="fas fa-exclamation-circle"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card stat-card h-100 border-left-warning">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Collection Rate
+              </div>
+              <div class="row no-gutters align-items-center">
+                <div class="col-auto">
+                  <div class="h5 mb-0 mr-3 font-weight-bold">{{ collection_rate|floatformat:1 }}%</div>
+                </div>
+                <div class="col">
+                  <div class="progress progress-sm mr-2">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ collection_rate }}%" 
+                         aria-valuenow="{{ collection_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="stat-icon bg-warning-light text-warning">
+              <i class="fas fa-percentage"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts and Tables Row -->
+  <div class="row">
+    <!-- Collection by Category Chart -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold">Fee Collection by Category</h6>
+          <a href="{% url 'fees:category_list' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-cog me-1"></i>Manage Categories
+          </a>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="position: relative; height:300px;">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold">Recent Payments</h6>
+          <a href="{% url 'fees:payment_list' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-list me-1"></i>View All
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Student</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for payment in recent_payments %}
+                <tr class="payment-item">
+                  <td>
+                    <a href="{% url 'fees:student_fees' payment.student_fee.student.id %}">
+                      {{ payment.student_fee.student.user.get_full_name }}
+                    </a>
+                    <div class="small text-muted">ID: {{ payment.student_fee.student.student_id }}</div>
+                  </td>
+                  <td>GHS {{ payment.amount|floatformat:2 }}</td>
+                  <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                  <td>
+                    {% if payment.payment_method == 'CASH' %}
+                      <span class="badge bg-success">Cash</span>
+                    {% elif payment.payment_method == 'MOBILE_MONEY' %}
+                      <span class="badge bg-primary">Mobile Money</span>
+                    {% elif payment.payment_method == 'BANK_TRANSFER' %}
+                      <span class="badge bg-info">Bank Transfer</span>
+                    {% elif payment.payment_method == 'CHEQUE' %}
+                      <span class="badge bg-warning text-dark">Cheque</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Other</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-3">No recent payments</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outstanding Fees Row -->
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold">Students with Outstanding Fees</h6>
+          <a href="{% url 'fees:outstanding_fees_report' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-file-alt me-1"></i>Full Report
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>Fee Category</th>
+                  <th>Amount</th>
+                  <th>Paid</th>
+                  <th>Balance</th>
+                  <th>Due Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for fee in students_with_balance %}
+                <tr>
+                  <td>
+                    <a href="{% url 'fees:student_fees' fee.student.id %}">
+                      {{ fee.student.user.get_full_name }}
+                    </a>
+                    <div class="small text-muted">ID: {{ fee.student.student_id }}</div>
+                  </td>
+                  <td>{{ fee.class_fee.classroom.name }}</td>
+                  <td>{{ fee.class_fee.fee_category.name }}</td>
+                  <td>GHS {{ fee.amount|floatformat:2 }}</td>
+                  <td>GHS {{ fee.amount_paid|floatformat:2 }}</td>
+                  <td>
+                    <span class="badge bg-warning text-dark">
+                      GHS {{ fee.balance|floatformat:2 }}
+                    </span>
+                  </td>
+                  <td>
+                    {{ fee.due_date|date:"M d, Y" }}
+                    {% if fee.due_date < today %}
+                    <span class="badge bg-danger">Overdue</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group">
+                      <a
+                        href="{% url 'fees:create_payment' %}?student_fee={{ fee.id }}"
+                        class="btn btn-sm btn-success"
+                        title="Record Payment"
+                      >
+                        <i class="fas fa-cash-register"></i>
+                      </a>
+                      <a
+                        href="{% url 'fees:student_fee_detail' fee.id %}"
+                        class="btn btn-sm btn-info"
+                        title="View Details"
+                      >
+                        <i class="fas fa-eye"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="8" class="text-center py-3">No outstanding fees</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Category Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+      type: 'bar',
+      data: {
+        labels: [
+          {% for stat in category_stats %}
+            '{{ stat.category.name }}',
+          {% endfor %}
+        ],
+        datasets: [
+          {
+            label: 'Expected',
+            data: [
+              {% for stat in category_stats %}
+                {{ stat.expected }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(78, 115, 223, 0.8)',
+            borderColor: 'rgba(78, 115, 223, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Collected',
+            data: [
+              {% for stat in category_stats %}
+                {{ stat.collected }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(28, 200, 138, 0.8)',
+            borderColor: 'rgba(28, 200, 138, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Amount (GHS)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Fee Category'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top'
+          },
+          title: {
+            display: true,
+            text: 'Fee Collection by Category'
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Appointment Details - {{ system_settings.school_name|default:"School Appointment System" }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>Appointment Details
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Back to Dashboard Button -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <a href="{% url 'dashboard:index' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Appointment Status -->
+                        <div class="col-12 mb-4">
+                            <div class="d-flex justify-content-center">
+                                <div class="badge {% if appointment.status == 'confirmed' %}bg-success{% elif appointment.status == 'pending' %}bg-warning{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} p-3 fs-5">
+                                    {{ appointment.get_status_display }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date and Time -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-clock me-2 text-primary"></i>Date & Time
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>Date:</strong> {{ appointment.time_slot.date|date:"l, F j, Y" }}<br>
+                                        <strong>Time:</strong> {{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parent Information -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-user me-2 text-primary"></i>Parent Information
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>Name:</strong> {{ appointment.parent.user.get_full_name }}<br>
+                                        <strong>Email:</strong> {{ appointment.parent.user.email }}<br>
+                                        <strong>Phone:</strong> {{ appointment.parent.phone_number }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Meeting Purpose -->
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-info-circle me-2 text-primary"></i>Purpose of Meeting
+                                    </h5>
+                                    <p class="card-text">{{ appointment.purpose }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="col-12">
+                            <div class="d-flex justify-content-center">
+                                {% if appointment.status != 'cancelled' and appointment.time_slot.date >= today %}
+                                    <form method="post" action="{% url 'appointments:cancel_appointment' appointment.id %}"
+                                          onsubmit="return confirm('Are you sure you want to cancel this appointment?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-times me-2"></i>Cancel Appointment
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

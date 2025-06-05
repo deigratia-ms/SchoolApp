@@ -1,0 +1,408 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Gallery | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-banner" style="background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');">
+    <div class="hero-content text-center">
+        <h1 class="mb-3" data-aos="fade-up">School Gallery</h1>
+        <p class="lead mb-0" data-aos="fade-up" data-aos-delay="100">
+            Experience the vibrant life at Deigratia Montessori through our photo gallery
+        </p>
+    </div>
+</section>
+
+<style>
+    .hero-banner {
+        height: 40vh;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        color: white;
+        text-align: center;
+    }
+
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+        padding: 0 1rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .hero-content h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+        .hero-banner {
+            height: 30vh;
+        }
+
+        .hero-content h1 {
+            font-size: 2rem;
+        }
+
+        .hero-content .lead {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<!-- Gallery Categories -->
+<section class="py-4">
+    <div class="container">
+        <div class="row justify-content-center mb-4">
+            <div class="col-12 text-center">
+                <div class="gallery-filter-container">
+                    <a href="{% url 'website:gallery' %}" class="filter-chip {% if not request.GET.category %}active{% endif %}">
+                        <span>All</span>
+                    </a>
+                    {% for category in categories %}
+                    <a href="?category={{ category }}" class="filter-chip {% if request.GET.category == category %}active{% endif %}">
+                        <span>{{ category|title }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Grid -->
+        <div class="gallery-grid">
+            {% for image in galleries %}
+            <div class="gallery-item-wrapper" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:50 }}">
+                <div class="gallery-card">
+                    <div class="gallery-image-container">
+                        <img src="{{ image.image.url }}" alt="{{ image.title }}">
+                    </div>
+                    <div class="gallery-content">
+                        <h5>{{ image.title }}</h5>
+                        {% if image.description %}
+                        <p class="gallery-description">{{ image.description|truncatechars:100 }}</p>
+                        {% endif %}
+                        <span class="gallery-category">{{ image.category|title }}</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-gallery">
+                <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                <h4>No Images Available</h4>
+                <p>Please check back later for updates to our gallery.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Gallery pagination" class="mt-4">
+            <div class="pagination-container">
+                {% if page_obj.has_previous %}
+                <a class="pagination-btn prev" href="?page={{ page_obj.previous_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" aria-label="Previous">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                {% else %}
+                <span class="pagination-btn prev disabled">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </span>
+                {% endif %}
+
+                <div class="pagination-numbers">
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <span class="pagination-number active">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a class="pagination-number" href="?page={{ num }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">{{ num }}</a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
+                {% if page_obj.has_next %}
+                <a class="pagination-btn next" href="?page={{ page_obj.next_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" aria-label="Next">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% else %}
+                <span class="pagination-btn next disabled">
+                    Next <i class="fas fa-chevron-right"></i>
+                </span>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
+
+        <style>
+            .pagination-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .pagination-btn {
+                display: inline-flex;
+                align-items: center;
+                padding: 8px 16px;
+                background-color: #f5f5f5;
+                border-radius: 50px;
+                color: #333;
+                text-decoration: none;
+                transition: all 0.2s ease;
+                font-size: 0.9rem;
+            }
+
+            .pagination-btn.prev i {
+                margin-right: 8px;
+            }
+
+            .pagination-btn.next i {
+                margin-left: 8px;
+            }
+
+            .pagination-btn:hover {
+                background-color: #e0e0e0;
+            }
+
+            .pagination-btn.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .pagination-numbers {
+                display: flex;
+                gap: 8px;
+            }
+
+            .pagination-number {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background-color: #f5f5f5;
+                color: #333;
+                text-decoration: none;
+                transition: all 0.2s ease;
+            }
+
+            .pagination-number:hover {
+                background-color: #e0e0e0;
+            }
+
+            .pagination-number.active {
+                background-color: var(--bs-primary);
+                color: white;
+            }
+
+            @media (max-width: 576px) {
+                .pagination-container {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+            }
+        </style>
+    </div>
+</section>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="galleryModal" tabindex="-1" aria-labelledby="galleryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <img src="" id="galleryModalImage" class="img-fluid" alt="Gallery Image">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Mobile-first gallery styles */
+.gallery-filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.filter-chip {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 50px;
+    background-color: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.filter-chip.active {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.filter-chip:hover {
+    background-color: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+.filter-chip.active:hover {
+    background-color: var(--bs-primary);
+}
+
+/* Gallery grid */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 2rem;
+}
+
+.gallery-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background-color: white;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.gallery-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+}
+
+.gallery-image-container {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+}
+
+.gallery-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.gallery-card:hover .gallery-image-container img {
+    transform: scale(1.05);
+}
+
+.gallery-content {
+    padding: 16px;
+}
+
+.gallery-content h5 {
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.gallery-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+.gallery-category {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: #f0f0f0;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.empty-gallery {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 1rem;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+}
+
+/* Modal styles */
+#galleryModal .modal-content {
+    background-color: transparent;
+    border: none;
+}
+
+#galleryModal .btn-close {
+    background-color: white;
+    opacity: 1;
+    padding: 0.5rem;
+    margin: 1rem;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Tablet and up */
+@media (min-width: 576px) {
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .gallery-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .gallery-image-container {
+        height: 240px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gallery item click handler
+    const galleryCards = document.querySelectorAll('.gallery-card');
+    const modalImage = document.getElementById('galleryModalImage');
+
+    galleryCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const imgSrc = this.querySelector('.gallery-image-container img').getAttribute('src');
+            modalImage.setAttribute('src', imgSrc);
+            const modal = new bootstrap.Modal(document.getElementById('galleryModal'));
+            modal.show();
+        });
+    });
+
+    // Add lazy loading to images
+    const galleryImages = document.querySelectorAll('.gallery-image-container img');
+    galleryImages.forEach(img => {
+        img.setAttribute('loading', 'lazy');
+    });
+});
+</script>
+{% endblock %}

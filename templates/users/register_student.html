@@ -1,0 +1,232 @@
+{% extends 'base.html' %} {% block title %}Register New Student | Ricas School
+Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Register New Student</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'dashboard:index' %}">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{% url 'users:user_management' %}">User Management</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">
+            Register Student
+          </li>
+        </ol>
+      </nav>
+    </div>
+    <a href="{% url 'users:user_management' %}" class="btn btn-primary">
+      <i class="fas fa-arrow-left me-2"></i>Back to User Management
+    </a>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        Student Registration Form
+      </h6>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="alert alert-info mb-4">
+          <i class="fas fa-info-circle mr-2"></i>
+          If you leave Student ID or PIN blank, they will be automatically
+          generated.
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-lg-6">
+            <h5 class="text-dark">Basic Information</h5>
+            <hr />
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="first_name" class="form-label">First Name *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="first_name"
+                  name="first_name"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label for="last_name" class="form-label">Last Name *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="last_name"
+                  name="last_name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="profile_picture" class="form-label"
+                >Profile Picture</label
+              >
+              <input
+                type="file"
+                class="form-control"
+                id="profile_picture"
+                name="profile_picture"
+                accept="image/*"
+              />
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <h5 class="text-dark">Student Information</h5>
+            <hr />
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="student_id" class="form-label">Student ID</label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="student_id"
+                    name="student_id"
+                    placeholder="Auto-generate if blank"
+                  />
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    id="generateID"
+                  >
+                    <i class="fas fa-sync"></i>
+                  </button>
+                </div>
+                <div class="form-text text-muted">
+                  Leave blank to auto-generate
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="pin" class="form-label">PIN</label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="pin"
+                    name="pin"
+                    placeholder="Auto-generate if blank"
+                  />
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    id="generatePIN"
+                  >
+                    <i class="fas fa-sync"></i>
+                  </button>
+                </div>
+                <div class="form-text text-muted">
+                  Leave blank to auto-generate
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="classroom" class="form-label">Classroom *</label>
+                <select class="form-select" id="classroom" name="classroom" required>
+                    <option value="" selected disabled>-- Select a Classroom --</option>
+                    {% for classroom in classrooms %}
+                        <option value="{{ classroom.id }}">{{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="parent_id" class="form-label">Link to Parent</label>
+                <select class="form-select" id="parent_id" name="parent_id">
+                    <option value="">-- No Parent Selected --</option>
+                    {% for parent in parents %}
+                        <option value="{{ parent.id }}">{{ parent.user.get_full_name }} ({{ parent.user.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="date_of_birth" class="form-label"
+                >Date of Birth</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="date_of_birth"
+                name="date_of_birth"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="address" class="form-label">Address</label>
+              <textarea
+                class="form-control"
+                id="address"
+                name="address"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-end">
+          <button type="reset" class="btn btn-secondary me-2">Reset</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Register Student
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Generate student ID
+    const generateIDBtn = document.getElementById("generateID");
+    if (generateIDBtn) {
+      generateIDBtn.addEventListener("click", function () {
+        const prefix = "STU";
+        const random = Math.floor(10000 + Math.random() * 90000); // 5-digit number
+        document.getElementById("student_id").value = `${prefix}${random}`;
+      });
+    }
+
+    // Generate PIN
+    const generatePINBtn = document.getElementById("generatePIN");
+    if (generatePINBtn) {
+      generatePINBtn.addEventListener("click", function () {
+        const pin = Math.floor(10000 + Math.random() * 90000); // 5-digit number
+        document.getElementById("pin").value = pin;
+      });
+    }
+
+    // Initialize Select2 for dropdown if available
+    if (typeof $.fn.select2 !== "undefined") {
+      $("#parent_id").select2({
+        placeholder: "Select a parent",
+        allowClear: true,
+      });
+    }
+  });
+</script>
+{% endblock %}

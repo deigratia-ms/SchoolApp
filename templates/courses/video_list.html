@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Videos | Ricas School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .video-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr); /* Default 2 columns for mobile */
+        padding: 1rem;
+    }
+
+    /* Tablet */
+    @media (min-width: 768px) {
+        .video-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    /* Desktop */
+    @media (min-width: 992px) {
+        .video-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    .video-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.2s;
+        height: 100%;
+    }
+
+    .video-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .video-thumbnail {
+        position: relative;
+        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    }
+
+    .video-thumbnail iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+    .video-info {
+        padding: 0.75rem;
+    }
+
+    .video-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .video-meta {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .video-actions {
+        padding: 0.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    .video-actions .btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Enhanced Filter Section Styles */
+    .filter-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-header {
+        background: transparent !important;
+        border-bottom: 2px solid #e3e6f0;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-header h6 {
+        color: #4a5568;
+        font-size: 1.1rem;
+    }
+
+    .filter-select {
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem;
+        font-size: 0.95rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .filter-select:hover, .filter-select:focus {
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-button {
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .filter-button:hover {
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Friendly Page Header -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-lg bg-light">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <div class="mb-3 mb-md-0">
+                            <h1 class="h3 mb-0 text-primary">
+                                <i class="fas fa-film text-danger me-2"></i> My Learning Videos 📹
+                            </h1>
+                            <p class="text-muted mb-0">Watch fun videos to help you learn!</p>
+                        </div>
+                        {% if user.role == 'ADMIN' or user.role == 'TEACHER' %}
+                        <a href="{% url 'courses:create_video' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus-circle me-2"></i>Add New Video
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Search Bar (Mobile-friendly) -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="input-group">
+                <span class="input-group-text bg-primary text-white border-0">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control form-control-lg border-0 shadow-sm" 
+                       id="videoSearch" placeholder="Find a video..." aria-label="Search videos">
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Filter Section -->
+    <div class="filter-section">
+        <div class="filter-header">
+            <h6 class="m-0 fw-bold d-flex align-items-center">
+                <i class="fas fa-sliders-h me-2"></i> Filter Videos
+            </h6>
+        </div>
+        
+        <form method="get" class="row g-3">
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">
+                    <i class="fas fa-tag text-primary"></i>
+                    Video Type
+                </label>
+                <select class="form-select filter-select" id="type_filter" name="type">
+                    <option value="">All Videos</option>
+                    <option value="general">For Everyone 🌍</option>
+                    <option value="subject">Class Specific 🎒</option>
+                </select>
+            </div>
+
+            {% if user.role == 'ADMIN' or user.role == 'PARENT' %}
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">
+                    <i class="fas fa-chalkboard text-primary"></i>
+                    Class
+                </label>
+                <select class="form-select filter-select" id="class_filter" name="class">
+                    <option value="">All Classes</option>
+                    <!-- Will be populated with JavaScript -->
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">
+                    <i class="fas fa-book text-primary"></i>
+                    Subject
+                </label>
+                <select class="form-select filter-select" id="subject_filter" name="subject">
+                    <option value="">All Subjects</option>
+                    <!-- Will be populated with JavaScript -->
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end mb-3">
+                <button type="submit" class="btn btn-primary filter-button me-2">
+                    <i class="fas fa-check me-1"></i> Apply
+                </button>
+                <a href="{% url 'courses:video_list' %}" class="btn btn-outline-secondary filter-button">
+                    <i class="fas fa-redo me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Kid-Friendly Videos Grid -->
+    <div class="video-grid">
+        {% for video in videos %}
+        <div class="video-card">
+            <div class="video-thumbnail">
+                {% if 'youtube.com' in video.youtube_url %}
+                    {% with video_id=video.youtube_url|slice:"32:" %}
+                    <iframe
+                        src="https://www.youtube.com/embed/{{ video_id }}"
+                        title="{{ video.title }}"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                    ></iframe>
+                    {% endwith %}
+                {% elif 'youtu.be' in video.youtube_url %}
+                    {% with video_id=video.youtube_url|slice:"17:" %}
+                    <iframe
+                        src="https://www.youtube.com/embed/{{ video_id }}"
+                        title="{{ video.title }}"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                    ></iframe>
+                    {% endwith %}
+                {% endif %}
+            </div>
+            <div class="video-info">
+                <h5 class="video-title">{{ video.title }}</h5>
+                <div class="video-meta">
+                    {% if not video.is_general %}
+                    <div class="d-flex gap-1 mb-2">
+                        <span class="badge bg-primary">{{ video.class_subject.subject.name }}</span>
+                        <span class="badge bg-secondary">{{ video.class_subject.classroom.name }}</span>
+                    </div>
+                    {% endif %}
+                    <small class="text-muted">Added {{ video.created_at|date:"M d, Y" }}</small>
+                </div>
+            </div>
+            <div class="video-actions">
+                <a href="{% url 'courses:video_detail' video.id %}" class="btn btn-primary w-100">
+                    <i class="fas fa-play-circle me-1"></i> Watch Now
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-video fa-3x mb-3 text-muted"></i>
+            <h4>No Videos Available</h4>
+            <p class="text-muted">There are no educational videos available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Enhanced search functionality
+        const searchInput = document.getElementById("videoSearch");
+        const videosContainer = document.querySelector(".video-grid");
+
+        if (searchInput && videosContainer) {
+            searchInput.addEventListener("keyup", function () {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const videoItems = videosContainer.getElementsByClassName("video-card");
+                let resultsFound = false;
+
+                for (let i = 0; i < videoItems.length; i++) {
+                    const item = videoItems[i];
+                    const title = item.querySelector(".video-title").textContent.toLowerCase();
+                    
+                    if (title.includes(searchTerm)) {
+                        item.style.display = "";
+                        resultsFound = true;
+                    } else {
+                        item.style.display = "none";
+                    }
+                }
+                
+                // Check if no results and show friendly message
+                let noResultsEl = document.getElementById("noSearchResults");
+                
+                if (!resultsFound && searchTerm.length > 0) {
+                    if (!noResultsEl) {
+                        noResultsEl = document.createElement("div");
+                        noResultsEl.id = "noSearchResults";
+                        noResultsEl.className = "col-12 mt-4";
+                        noResultsEl.innerHTML = `
+                            <div class="card shadow-sm rounded-lg py-4">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                    <h4 class="text-primary">No videos found for "${searchTerm}" 🔍</h4>
+                                    <p class="text-muted">Try searching with different words or clear the search to see all videos.</p>
+                                </div>
+                            </div>
+                        `;
+                        videosContainer.appendChild(noResultsEl);
+                    } else {
+                        noResultsEl.querySelector("h4").innerHTML = `No videos found for "${searchTerm}" 🔍`;
+                        noResultsEl.style.display = "";
+                    }
+                } else if (noResultsEl) {
+                    noResultsEl.style.display = "none";
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,378 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Frequently Asked Questions | Deigratia Montessori School{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+{% if faq_hero and faq_hero.image %}
+<section class="hero-banner" style="background-image: url('{{ faq_hero.image.url }}'); height: 350px;">
+    <div class="hero-content">
+        <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ faq_hero.title|default:"Frequently Asked Questions" }}</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+            {{ faq_hero.content|default:"Find answers to common questions about our school, programs, and policies." }}
+        </p>
+    </div>
+</section>
+{% else %}
+<section class="py-5 bg-primary-teal text-white text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-4" data-aos="fade-up">Frequently Asked Questions</h1>
+                <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
+                    Find answers to common questions about our school, programs, and policies.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- FAQ Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- FAQ Categories -->
+                <ul class="nav nav-pills mb-5 justify-content-center" id="faqTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
+                            All Questions
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admissions-tab" data-bs-toggle="pill" data-bs-target="#admissions" type="button" role="tab" aria-controls="admissions" aria-selected="false">
+                            Admissions
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="academics-tab" data-bs-toggle="pill" data-bs-target="#academics" type="button" role="tab" aria-controls="academics" aria-selected="false">
+                            Academics
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="school-life-tab" data-bs-toggle="pill" data-bs-target="#school-life" type="button" role="tab" aria-controls="school-life" aria-selected="false">
+                            School Life
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="parents-tab" data-bs-toggle="pill" data-bs-target="#parents" type="button" role="tab" aria-controls="parents" aria-selected="false">
+                            For Parents
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Search Box -->
+                <div class="row justify-content-center mb-5">
+                    <div class="col-lg-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="faqSearch" placeholder="Search FAQs...">
+                            <button class="btn btn-primary" type="button" id="faqSearchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Content -->
+                <div class="tab-content" id="faqTabsContent">
+                    <!-- All Questions Tab -->
+                    <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                        <div class="accordion" id="accordionAllFAQs">
+                            {% if faqs %}
+                                {% for faq in faqs %}
+                                <div class="accordion-item faq-item" data-category="{{ faq.page }}" data-search-text="{{ faq.question|lower }}">
+                                    <h2 class="accordion-header" id="heading{{ faq.id }}">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
+                                            {{ faq.question }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ faq.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ faq.id }}" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            {{ faq.answer|safe }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Default FAQs if none are in the database -->
+                                <div class="accordion-item faq-item" data-category="admissions" data-search-text="how do i apply for admission">
+                                    <h2 class="accordion-header" id="headingOne">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                            How do I apply for admission to Deigratia Montessori School?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>To apply for admission, please visit our <a href="{% url 'website:admissions' %}">Admissions page</a> and complete the online application form. After submitting your application, our admissions team will contact you to schedule a school tour and student assessment.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item faq-item" data-category="admissions" data-search-text="what are the age requirements">
+                                    <h2 class="accordion-header" id="headingTwo">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                            What are the age requirements for each program?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>Our programs are designed for specific age groups:</p>
+                                            <ul>
+                                                <li><strong>Toddler Program:</strong> 18 months to 3 years</li>
+                                                <li><strong>Primary Program:</strong> 3 to 6 years</li>
+                                                <li><strong>Elementary Program:</strong> 6 to 12 years</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item faq-item" data-category="academics" data-search-text="what is montessori method">
+                                    <h2 class="accordion-header" id="headingThree">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                            What is the Montessori method of education?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>The Montessori method is an educational approach developed by Dr. Maria Montessori that emphasizes independence, freedom within limits, and respect for a child's natural psychological, physical, and social development. Key principles include:</p>
+                                            <ul>
+                                                <li>Child-centered learning</li>
+                                                <li>Mixed-age classrooms</li>
+                                                <li>Specialized educational materials</li>
+                                                <li>Uninterrupted work periods</li>
+                                                <li>Freedom of movement and choice</li>
+                                                <li>Trained Montessori teachers</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item faq-item" data-category="academics" data-search-text="curriculum different from traditional schools">
+                                    <h2 class="accordion-header" id="headingFour">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                            How is your curriculum different from traditional schools?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>Our Montessori curriculum differs from traditional education in several ways:</p>
+                                            <ul>
+                                                <li>We focus on individualized learning paths rather than standardized instruction</li>
+                                                <li>Students learn through hands-on experiences with specialized materials</li>
+                                                <li>Children progress at their own pace rather than following rigid grade-level expectations</li>
+                                                <li>We emphasize the development of the whole child—intellectual, physical, social, and emotional</li>
+                                                <li>Our mixed-age classrooms foster peer learning and leadership skills</li>
+                                                <li>We integrate subjects rather than teaching them in isolation</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item faq-item" data-category="school-life" data-search-text="school hours schedule">
+                                    <h2 class="accordion-header" id="headingFive">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                                            What are the school hours?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>Our regular school hours are:</p>
+                                            <ul>
+                                                <li><strong>Morning Drop-off:</strong> 7:30 AM - 8:15 AM</li>
+                                                <li><strong>School Day:</strong> 8:15 AM - 3:00 PM</li>
+                                                <li><strong>After-School Program:</strong> 3:00 PM - 6:00 PM (additional fee applies)</li>
+                                            </ul>
+                                            <p>Half-day options are available for the Toddler and Primary programs.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item faq-item" data-category="parents" data-search-text="parent involvement">
+                                    <h2 class="accordion-header" id="headingSix">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                                            How can parents be involved in the school community?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>We encourage parent involvement in various ways:</p>
+                                            <ul>
+                                                <li>Joining our Parent-Teacher Association (PTA)</li>
+                                                <li>Volunteering for school events and activities</li>
+                                                <li>Attending parent education workshops and seminars</li>
+                                                <li>Participating in parent-teacher conferences</li>
+                                                <li>Supporting classroom activities and field trips</li>
+                                                <li>Sharing cultural experiences or professional expertise</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item faq-item" data-category="parents" data-search-text="communication with teachers">
+                                    <h2 class="accordion-header" id="headingSeven">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+                                            How do parents communicate with teachers?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseSeven" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>We offer multiple channels for parent-teacher communication:</p>
+                                            <ul>
+                                                <li>Our school management system with secure messaging</li>
+                                                <li>Scheduled parent-teacher conferences (twice per year)</li>
+                                                <li>Weekly classroom newsletters</li>
+                                                <li>Email communication for non-urgent matters</li>
+                                                <li>Phone calls for urgent matters</li>
+                                                <li>In-person meetings by appointment</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item faq-item" data-category="admissions" data-search-text="tuition fees financial aid">
+                                    <h2 class="accordion-header" id="headingEight">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEight" aria-expanded="false" aria-controls="collapseEight">
+                                            What are the tuition fees and is financial aid available?
+                                        </button>
+                                    </h2>
+                                    <div id="collapseEight" class="accordion-collapse collapse" aria-labelledby="headingEight" data-bs-parent="#accordionAllFAQs">
+                                        <div class="accordion-body">
+                                            <p>Tuition fees vary by program and are updated annually. Please visit our <a href="{% url 'website:admissions' %}">Admissions page</a> for current tuition information.</p>
+                                            <p>We offer financial aid to qualifying families based on demonstrated need. The application process for financial aid begins in January for the following academic year. Please contact our Admissions Office for more information about our financial aid program.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Category-specific tabs -->
+                    <div class="tab-pane fade" id="admissions" role="tabpanel" aria-labelledby="admissions-tab">
+                        <div class="accordion" id="accordionAdmissions">
+                            <!-- This will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="academics" role="tabpanel" aria-labelledby="academics-tab">
+                        <div class="accordion" id="accordionAcademics">
+                            <!-- This will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="school-life" role="tabpanel" aria-labelledby="school-life-tab">
+                        <div class="accordion" id="accordionSchoolLife">
+                            <!-- This will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="parents" role="tabpanel" aria-labelledby="parents-tab">
+                        <div class="accordion" id="accordionParents">
+                            <!-- This will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="text-center mt-5 p-4 bg-light rounded" data-aos="fade-up">
+                    <h4>Didn't Find Your Answer?</h4>
+                    <p>If you couldn't find the information you're looking for, please don't hesitate to contact us.</p>
+                    <a href="{% url 'website:contact' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-envelope me-2"></i>Contact Us
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter FAQs by category
+    function filterFAQsByCategory() {
+        const allFAQs = document.querySelectorAll('.faq-item');
+
+        // Clone FAQs to category-specific tabs
+        allFAQs.forEach(faq => {
+            const category = faq.dataset.category;
+            let targetAccordion;
+
+            if (category === 'admissions') {
+                targetAccordion = document.getElementById('accordionAdmissions');
+            } else if (category === 'academics') {
+                targetAccordion = document.getElementById('accordionAcademics');
+            } else if (category === 'events') {
+                targetAccordion = document.getElementById('accordionSchoolLife');
+            } else if (category === 'contact') {
+                targetAccordion = document.getElementById('accordionParents');
+            }
+
+            if (targetAccordion) {
+                const clone = faq.cloneNode(true);
+                // Update IDs to avoid duplicates
+                const headingId = clone.querySelector('.accordion-header').id;
+                const collapseId = clone.querySelector('.accordion-collapse').id;
+                const newHeadingId = headingId + '-' + category;
+                const newCollapseId = collapseId + '-' + category;
+
+                clone.querySelector('.accordion-header').id = newHeadingId;
+                clone.querySelector('.accordion-collapse').id = newCollapseId;
+                clone.querySelector('.accordion-button').setAttribute('data-bs-target', '#' + newCollapseId);
+                clone.querySelector('.accordion-button').setAttribute('aria-controls', newCollapseId);
+                clone.querySelector('.accordion-collapse').setAttribute('aria-labelledby', newHeadingId);
+
+                // Set parent accordion
+                if (category === 'admissions') {
+                    clone.querySelector('.accordion-collapse').setAttribute('data-bs-parent', '#accordionAdmissions');
+                } else if (category === 'academics') {
+                    clone.querySelector('.accordion-collapse').setAttribute('data-bs-parent', '#accordionAcademics');
+                } else if (category === 'events') {
+                    clone.querySelector('.accordion-collapse').setAttribute('data-bs-parent', '#accordionSchoolLife');
+                } else if (category === 'contact') {
+                    clone.querySelector('.accordion-collapse').setAttribute('data-bs-parent', '#accordionParents');
+                }
+
+                targetAccordion.appendChild(clone);
+            }
+        });
+    }
+
+    // Search functionality
+    function setupSearch() {
+        const searchInput = document.getElementById('faqSearch');
+        const searchButton = document.getElementById('faqSearchBtn');
+
+        function performSearch() {
+            const searchText = searchInput.value.toLowerCase();
+            const allFAQs = document.querySelectorAll('.faq-item');
+
+            allFAQs.forEach(faq => {
+                const faqText = faq.dataset.searchText;
+                if (faqText.includes(searchText) || searchText === '') {
+                    faq.style.display = 'block';
+                } else {
+                    faq.style.display = 'none';
+                }
+            });
+
+            // Switch to All tab when searching
+            document.getElementById('all-tab').click();
+        }
+
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        });
+    }
+
+    // Initialize
+    filterFAQsByCategory();
+    setupSearch();
+});
+</script>
+{% endblock %}

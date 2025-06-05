@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}ID Cards - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">ID Cards</h1>
+        <div class="btn-group">
+            <a href="{% url 'users:id_card_generate' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Generate ID Card
+            </a>
+            <a href="{% url 'users:id_card_batch_generate' %}" class="btn btn-outline-primary">
+                <i class="fas fa-layer-group me-2"></i>Batch Generate
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="role" class="form-label">User Role</label>
+                    <select class="form-select" id="role" name="role">
+                        <option value="" {% if not role_filter %}selected{% endif %}>All Roles</option>
+                        <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Admin</option>
+                        <option value="TEACHER" {% if role_filter == 'TEACHER' %}selected{% endif %}>Teacher</option>
+                        <option value="STUDENT" {% if role_filter == 'STUDENT' %}selected{% endif %}>Student</option>
+                        <option value="PARENT" {% if role_filter == 'PARENT' %}selected{% endif %}>Parent</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="template" class="form-label">Template</label>
+                    <select class="form-select" id="template" name="template">
+                        <option value="" {% if not template_filter %}selected{% endif %}>All Templates</option>
+                        {% for template in templates %}
+                            <option value="{{ template.id }}" {% if template_filter == template.id|stringformat:"s" %}selected{% endif %}>{{ template.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ search_query|default:'' }}" placeholder="Name, ID, Card Number...">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Apply Filters</button>
+                        <a href="{% url 'users:id_card_list' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ID Cards List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All ID Cards</h6>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i>Export as PDF</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i>Export as CSV</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if id_cards %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Card Number</th>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Template</th>
+                                <th>Issue Date</th>
+                                <th>Expiry Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for id_card in id_cards %}
+                                <tr>
+                                    <td>{{ id_card.card_number }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if id_card.user.profile_picture %}
+                                                <img src="{{ id_card.user.profile_picture.url }}" 
+                                                     class="rounded-circle me-2" 
+                                                     width="32" height="32" 
+                                                     alt="{{ id_card.user.get_full_name }}">
+                                            {% else %}
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                     style="width: 32px; height: 32px">
+                                                    {{ id_card.user.first_name|first }}{{ id_card.user.last_name|first }}
+                                                </div>
+                                            {% endif %}
+                                            {{ id_card.user.get_full_name }}
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-info">{{ id_card.user.get_role_display }}</span></td>
+                                    <td>{{ id_card.template.name }}</td>
+                                    <td>{{ id_card.issue_date|date:"M d, Y" }}</td>
+                                    <td>{{ id_card.expiry_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if id_card.is_active %}
+                                            {% if id_card.expiry_date < today %}
+                                                <span class="badge bg-danger">Expired</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'users:id_card_detail' card_id=id_card.id %}" class="btn btn-info btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'users:id_card_print' card_id=id_card.id %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-warning btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#regenerateModal" 
+                                                    data-id="{{ id_card.id }}"
+                                                    data-user="{{ id_card.user.get_full_name }}">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteModal" 
+                                                    data-id="{{ id_card.id }}"
+                                                    data-user="{{ id_card.user.get_full_name }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-id-card fa-4x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No ID cards found</h5>
+                    <p class="text-muted">Generate ID cards for users using the available templates.</p>
+                    <div class="mt-3">
+                        <a href="{% url 'users:id_card_generate' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Generate ID Card
+                        </a>
+                        <a href="{% url 'users:id_card_template_list' %}" class="btn btn-outline-primary ms-2">
+                            <i class="fas fa-cog me-2"></i>Manage Templates
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Tips -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Quick Tips</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Managing ID Cards</h6>
+                    <p class="small">View, print, or regenerate ID cards for users. Inactive or expired cards are automatically highlighted.</p>
+                </div>
+                <div class="col-md-4">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Batch Generation</h6>
+                    <p class="small">Generate ID cards in bulk for multiple users using the same template and expiry date.</p>
+                </div>
+                <div class="col-md-4">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Templates</h6>
+                    <p class="small">Create and manage multiple templates for different roles or purposes.</p>
+                    <a href="{% url 'users:id_card_template_list' %}" class="btn btn-sm btn-outline-primary">Manage Templates</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regenerate ID Card Modal -->
+<div class="modal fade" id="regenerateModal" tabindex="-1" aria-labelledby="regenerateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regenerateModalLabel">Regenerate ID Card</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to regenerate the ID card for <strong id="regenerateUserName"></strong>?</p>
+                <p>This will create a new card number and issue date, but maintain the same template and user information.</p>
+                <form id="regenerateForm" method="post" action="">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="expiry_date" class="form-label">New Expiry Date</label>
+                        <input type="date" class="form-control" id="expiry_date" name="expiry_date" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="regenerateForm" class="btn btn-warning">Regenerate</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete ID Card Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete ID Card</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete the ID card for <strong id="deleteUserName"></strong>?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone.</p>
+                <form id="deleteForm" method="post" action="">
+                    {% csrf_token %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="deleteForm" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle regenerate modal
+        const regenerateModal = document.getElementById('regenerateModal');
+        if (regenerateModal) {
+            regenerateModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const idCardId = button.getAttribute('data-id');
+                const userName = button.getAttribute('data-user');
+                
+                const regenerateForm = document.getElementById('regenerateForm');
+                const regenerateUserName = document.getElementById('regenerateUserName');
+                
+                regenerateForm.action = `/users/id-cards/${idCardId}/regenerate/`;
+                regenerateUserName.textContent = userName;
+                
+                // Set default expiry date to one year from now
+                const expiryDate = document.getElementById('expiry_date');
+                const nextYear = new Date();
+                nextYear.setFullYear(nextYear.getFullYear() + 1);
+                expiryDate.valueAsDate = nextYear;
+            });
+        }
+        
+        // Handle delete modal
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const idCardId = button.getAttribute('data-id');
+                const userName = button.getAttribute('data-user');
+                
+                const deleteForm = document.getElementById('deleteForm');
+                const deleteUserName = document.getElementById('deleteUserName');
+                
+                deleteForm.action = `/users/id-cards/${idCardId}/delete/`;
+                deleteUserName.textContent = userName;
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}Assignment Submissions - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Assignment Submissions</h1>
+        {% if filter_assignment %}
+            <a href="{% url 'assignments:assignment_detail' filter_assignment.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Assignment
+            </a>
+        {% else %}
+            <a href="{% url 'assignments:assignment_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Assignments
+            </a>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% if filter_assignment %}
+                            Submissions for: {{ filter_assignment.title }}
+                        {% else %}
+                            All Submissions
+                        {% endif %}
+                    </h6>
+                    <div>
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Filter
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                                <li><a class="dropdown-item" href="?status=all">All Submissions</a></li>
+                                <li><a class="dropdown-item" href="?status=graded">Graded</a></li>
+                                <li><a class="dropdown-item" href="?status=pending">Pending</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="?status=ontime">On Time</a></li>
+                                <li><a class="dropdown-item" href="?status=late">Late</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if submissions %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="submissionsTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        {% if not filter_assignment %}
+                                        <th>Assignment</th>
+                                        {% endif %}
+                                        <th>Submitted</th>
+                                        <th>Status</th>
+                                        <th>Score</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for submission in submissions %}
+                                        <tr class="{% if submission.submission_date > submission.assignment.due_date %}table-warning{% endif %}">
+                                            <td>
+                                                {{ submission.student.user.get_full_name|default:submission.student.user.username }}
+                                                <small class="text-muted d-block">ID: {{ submission.student.student_id }}</small>
+                                            </td>
+                                            {% if not filter_assignment %}
+                                            <td>
+                                                <a href="{% url 'assignments:assignment_detail' submission.assignment.id %}">
+                                                    {{ submission.assignment.title }}
+                                                </a>
+                                                <small class="text-muted d-block">
+                                                    {{ submission.assignment.class_subject.classroom.name }}
+                                                    {% if submission.assignment.class_subject.classroom.section %}
+                                                        ({{ submission.assignment.class_subject.classroom.section }})
+                                                    {% endif %}
+                                                    - {{ submission.assignment.class_subject.subject.name }}
+                                                </small>
+                                            </td>
+                                            {% endif %}
+                                            <td>
+                                                {{ submission.submission_date|date:"M d, Y - h:i A" }}
+                                                {% if submission.submission_date > submission.assignment.due_date %}
+                                                    <span class="badge bg-warning ms-1">Late</span>
+                                                {% endif %}
+                                                <small class="text-muted d-block">
+                                                    Due: {{ submission.assignment.due_date|date:"M d, Y - h:i A" }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                {% if submission.is_graded %}
+                                                    <span class="badge bg-success">Graded</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if submission.is_graded %}
+                                                    {{ submission.score }}/{{ submission.assignment.max_score }}
+                                                {% else %}
+                                                    <span class="text-muted">Not graded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if submission %}
+                                            <div class="btn-group">
+                                                <a href="{% url 'assignments:submission_detail' submission.id %}" class="btn btn-info btn-sm">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if not submission.is_graded %}
+                                                    <a href="{% url 'assignments:grade_submission' submission.id %}" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-check"></i> Grade
+                                                    </a>
+                                                {% else %}
+                                                    <a href="{% url 'assignments:grade_submission' submission.id %}" class="btn btn-warning btn-sm">
+                                                        <i class="fas fa-edit"></i> Update Grade
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-inbox fa-4x text-gray-300"></i>
+                            </div>
+                            <p>No submissions found.</p>
+                            {% if filter_assignment %}
+                                <p class="text-muted">No students have submitted this assignment yet.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if filter_assignment %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Assignment Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Total Students:</div>
+                        <div>{{ student_count }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Submitted:</div>
+                        <div>{{ submission_count }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Graded:</div>
+                        <div>{{ graded_count }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>Pending:</div>
+                        <div>{{ pending_count }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <div>Late Submissions:</div>
+                        <div>{{ late_count }}</div>
+                    </div>
+                    
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ submission_percent }}%" aria-valuenow="{{ submission_percent }}" aria-valuemin="0" aria-valuemax="100">{{ submission_percent }}%</div>
+                    </div>
+                    
+                    {% if not_submitted > 0 %}
+                    <div class="mt-4">
+                        <h6>Students who haven't submitted:</h6>
+                        <ul class="list-group small">
+                            {% for student in not_submitted_students %}
+                            <li class="list-group-item">
+                                {{ student.user.get_full_name|default:student.user.username }}
+                                <small class="text-muted">({{ student.student_id }})</small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Grade Distribution</h6>
+                </div>
+                <div class="card-body">
+                    {% if graded_count > 0 %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <div>Average Score:</div>
+                                    <div>{{ average_score|floatformat:1 }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <div>Highest Score:</div>
+                                    <div>{{ highest_score }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <div>Lowest Score:</div>
+                                    <div>{{ lowest_score }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="gradeDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No grades have been given yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#submissionsTable').DataTable({
+            order: [[2, 'desc']] // Order by submission date, newest first
+        });
+        
+        {% if filter_assignment and graded_count > 0 %}
+        // Grade distribution chart
+        const ctx = document.getElementById('gradeDistributionChart').getContext('2d');
+        const gradeDistributionChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ grade_ranges|safe }},
+                datasets: [{
+                    label: 'Number of Students',
+                    data: {{ grade_distribution|safe }},
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(255, 159, 64, 0.2)',
+                        'rgba(255, 99, 132, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

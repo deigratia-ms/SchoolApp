@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Class Fee - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Class Fee</h1>
+    <a href="{% url 'fees:class_fee_list' %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+      <i class="fas fa-arrow-left fa-sm text-white-50 me-2"></i>Back to Class Fees
+    </a>
+  </div>
+
+  <!-- Content Row -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Class Fee Details</h6>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            
+            <!-- Term Selection -->
+            <div class="mb-3">
+              <label for="term" class="form-label">Term <span class="text-danger">*</span></label>
+              <select class="form-select" id="term" name="term" required>
+                <option value="">Select Term</option>
+                {% for term in terms %}
+                  <option value="{{ term.id }}">{{ term.name }} ({{ term.academic_year }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Class Selection -->
+            <div class="mb-3">
+              <label for="classroom" class="form-label">Class <span class="text-danger">*</span></label>
+              <select class="form-select" id="classroom" name="classroom" required>
+                <option value="">Select Class</option>
+                {% for classroom in classrooms %}
+                  <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Fee Category Selection -->
+            <div class="mb-3">
+              <label for="fee_category" class="form-label">Fee Type <span class="text-danger">*</span></label>
+              <select class="form-select" id="fee_category" name="fee_category" required>
+                <option value="">Select Fee Type</option>
+                {% for category in fee_categories %}
+                  <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Amount -->
+            <div class="mb-3">
+              <label for="amount" class="form-label">Amount (GHS) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" required>
+            </div>
+            
+            <!-- Due Date -->
+            <div class="mb-3">
+              <label for="due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="due_date" name="due_date" required>
+            </div>
+            
+            <!-- Description -->
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+              <div class="form-text">Optional: Add any additional details about this fee.</div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'fees:class_fee_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+              <button type="submit" class="btn btn-primary">Create Fee</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Help</h6>
+        </div>
+        <div class="card-body">
+          <h5>Creating a Class Fee</h5>
+          <p>A class fee is a fee that applies to all students in a specific class for a specific term.</p>
+          
+          <h6>Required Fields:</h6>
+          <ul>
+            <li><strong>Term:</strong> The academic term this fee applies to</li>
+            <li><strong>Class:</strong> The class this fee applies to</li>
+            <li><strong>Fee Type:</strong> The category of fee (e.g., Tuition, Books)</li>
+            <li><strong>Amount:</strong> The fee amount in Ghana Cedis</li>
+            <li><strong>Due Date:</strong> When the fee must be paid by</li>
+          </ul>
+          
+          <p>After creating a class fee, you'll have the option to generate individual student fees based on this class fee.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set default due date to 30 days from now
+    const today = new Date();
+    const thirtyDaysLater = new Date(today);
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    
+    // Format date as YYYY-MM-DD
+    const formattedDate = thirtyDaysLater.toISOString().split('T')[0];
+    document.getElementById('due_date').value = formattedDate;
+  });
+</script>
+{% endblock %}

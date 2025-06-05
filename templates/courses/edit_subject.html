@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Subject: {{ subject.name }} | Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Edit Subject: {{ subject.name }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'courses:subject_list' %}">Subjects</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'courses:subject_detail' subject_id=subject.id %}">{{ subject.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Subject Information</h6>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" id="editSubjectForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ subject.name }}" required>
+                            <div class="form-text">The name of the subject, e.g., "Mathematics"</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Subject Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="code" name="code" value="{{ subject.code }}" required>
+                            <div class="form-text">A unique code for the subject, e.g., "MATH101"</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4">{{ subject.description }}</textarea>
+                            <div class="form-text">A brief description of what this subject covers</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Class Assignment</label>
+                            <div class="card">
+                                <div class="card-header py-2">
+                                    <div class="form-check">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            id="select_all_classes"
+                                        />
+                                        <label class="form-check-label fw-bold" for="select_all_classes">
+                                            Select All Classes
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body" style="max-height: 250px; overflow-y: auto;">
+                                    <div class="row">
+                                        {% for classroom in classrooms %}
+                                        <div class="col-md-6 col-lg-4 mb-2">
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input class-checkbox"
+                                                    type="checkbox"
+                                                    id="class_{{ classroom.id }}"
+                                                    name="selected_classes"
+                                                    value="{{ classroom.id }}"
+                                                    {% if classroom.id in assigned_class_ids %}checked{% endif %}
+                                                />
+                                                <label class="form-check-label" for="class_{{ classroom.id }}">
+                                                    {{ classroom.name }}{% if classroom.section %} ({{ classroom.section }}){% endif %}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="col-12">
+                                            <div class="alert alert-info mb-0">
+                                                No classes found in the system. Please create classes first.
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text">
+                                Select which classes this subject should be assigned to. Existing class associations will be updated.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="teacher_selection_container">
+                            <label for="teacher" class="form-label">
+                                Default Teacher <small>(optional)</small>
+                            </label>
+                            <select class="form-select" id="teacher" name="teacher">
+                                <option value="">-- Select Teacher --</option>
+                                {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">
+                                    {{ teacher.user.get_full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                You can select a default teacher for newly added classes. Existing class-teacher assignments won't be changed.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'courses:subject_detail' subject_id=subject.id %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" id="saveBtn" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Edit Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <p>When editing a subject, please keep in mind:</p>
+                    <ul>
+                        <li>The <strong>Name</strong> should be clear and descriptive.</li>
+                        <li>The <strong>Subject Code</strong> must be unique across all subjects.</li>
+                        <li>Provide a detailed <strong>Description</strong> to help students and parents understand what the subject covers.</li>
+                    </ul>
+                    <p>Once saved, these changes will apply to all classes where this subject is taught.</p>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">What's Next?</h6>
+                </div>
+                <div class="card-body">
+                    <p>After editing this subject, you might want to:</p>
+                    <ul>
+                        <li><a href="{% url 'courses:create_class_subject' %}">Assign this subject to a class</a></li>
+                        <li><button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#addToMoreClassesModal">Add this subject to multiple classes</button></li>
+                        <li>Create course materials for this subject</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add validation and loading state for the form
+        const form = document.getElementById('editSubjectForm');
+        const saveBtn = document.getElementById('saveBtn');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Get the form fields
+                const name = document.getElementById('name').value.trim();
+                const code = document.getElementById('code').value.trim();
+                const nameField = document.getElementById('name');
+                const codeField = document.getElementById('code');
+                
+                // Reset any previous validation styling
+                nameField.classList.remove('is-invalid');
+                codeField.classList.remove('is-invalid');
+                
+                // Validate name field
+                if (!name) {
+                    e.preventDefault();
+                    nameField.classList.add('is-invalid');
+                    
+                    // Show validation error
+                    const existingErrorMsg = nameField.nextElementSibling;
+                    if (existingErrorMsg && existingErrorMsg.classList.contains('invalid-feedback')) {
+                        existingErrorMsg.remove();
+                    }
+                    
+                    const errorMsg = document.createElement('div');
+                    errorMsg.classList.add('invalid-feedback');
+                    errorMsg.textContent = 'Subject name is required.';
+                    nameField.after(errorMsg);
+                    nameField.focus();
+                    return false;
+                }
+                
+                // Validate code field
+                if (!code) {
+                    e.preventDefault();
+                    codeField.classList.add('is-invalid');
+                    
+                    // Show validation error
+                    const existingErrorMsg = codeField.nextElementSibling;
+                    if (existingErrorMsg && existingErrorMsg.classList.contains('invalid-feedback')) {
+                        existingErrorMsg.remove();
+                    }
+                    
+                    const errorMsg = document.createElement('div');
+                    errorMsg.classList.add('invalid-feedback');
+                    errorMsg.textContent = 'Subject code is required.';
+                    codeField.after(errorMsg);
+                    codeField.focus();
+                    return false;
+                }
+                
+                // If validation passes, show loading state
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+                    saveBtn.disabled = true;
+                }
+                
+                // Disable all form inputs during submission
+                const formInputs = form.querySelectorAll('input, textarea, button');
+                formInputs.forEach(input => {
+                    if (input !== saveBtn) {
+                        input.setAttribute('readonly', true);
+                        if (input.tagName === 'BUTTON') {
+                            input.disabled = true;
+                        }
+                    }
+                });
+                
+                // Form is valid, let it submit
+                return true;
+            });
+        }
+        
+        // Handle "Select All" checkbox for classes
+        const selectAllCheckbox = document.getElementById("select_all_classes");
+        const classCheckboxes = document.querySelectorAll(".class-checkbox");
+        
+        if (selectAllCheckbox && classCheckboxes.length > 0) {
+            // Check initial state
+            let allChecked = true;
+            classCheckboxes.forEach(checkbox => {
+                if (!checkbox.checked) allChecked = false;
+            });
+            selectAllCheckbox.checked = allChecked;
+            
+            // Select All functionality
+            selectAllCheckbox.addEventListener("change", function() {
+                const isChecked = this.checked;
+                classCheckboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+            });
+            
+            // Update "Select All" based on individual selections
+            classCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener("change", function() {
+                    let allChecked = true;
+                    classCheckboxes.forEach(cb => {
+                        if (!cb.checked) allChecked = false;
+                    });
+                    selectAllCheckbox.checked = allChecked;
+                    
+                    // Show indeterminate state when some but not all are selected
+                    selectAllCheckbox.indeterminate = !allChecked && 
+                        Array.from(classCheckboxes).some(cb => cb.checked);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

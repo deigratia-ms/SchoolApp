@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payrolls - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Payrolls</h1>
+    <div>
+      <a href="{% url 'payroll:generate_payroll' %}" class="btn btn-primary">
+        <i class="fas fa-file-invoice-dollar me-2"></i>Generate Payroll
+      </a>
+      <a href="{% url 'payroll:admin_dashboard' %}" class="btn btn-outline-primary ms-2">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Form -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+          <form method="get" class="row g-3">
+            <div class="col-md-4">
+              <label for="period" class="form-label">Payroll Period</label>
+              <select name="period" id="period" class="form-select">
+                <option value="">All Periods</option>
+                {% for period in periods %}
+                  <option value="{{ period.id }}" {% if selected_period == period.id|stringformat:"i" %}selected{% endif %}>
+                    {{ period.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="status" class="form-label">Status</label>
+              <select name="status" id="status" class="form-select">
+                <option value="">All Statuses</option>
+                {% for status_code, status_name in status_choices %}
+                  <option value="{{ status_code }}" {% if selected_status == status_code %}selected{% endif %}>
+                    {{ status_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="search" class="form-label">Search</label>
+              <input type="text" class="form-control" id="search" name="search" placeholder="Search by name" value="{{ search_query }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter me-2"></i>Filter
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="row mb-4">
+    <div class="col-xl-4 col-md-4 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Gross Salary
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_gross|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-4 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                Total Deductions
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_deductions|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-minus-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-4 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Net Salary
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_net|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payrolls List -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payrolls</h6>
+        </div>
+        <div class="card-body">
+          {% if payrolls %}
+            <!-- Bulk Actions -->
+            <div class="mb-3">
+              <form id="bulk-action-form" method="post" action="{% url 'payroll:bulk_actions' %}">
+                {% csrf_token %}
+                <div class="row">
+                  <div class="col-md-4">
+                    <select name="bulk_action" id="bulk-action" class="form-select">
+                      <option value="">-- Select Bulk Action --</option>
+                      <option value="approve">Approve Selected</option>
+                      <option value="pay">Create Payment for Selected</option>
+                      <option value="generate_payslip">Generate Payslips for Selected</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary" id="apply-bulk-action">Apply</button>
+                  </div>
+                  <div class="col-md-6 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="select-all">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="deselect-all">Deselect All</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th width="40px"><input type="checkbox" id="check-all" class="form-check-input"></th>
+                    <th>Staff Name</th>
+                    <th>Period</th>
+                    <th>Gross Salary</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payroll in payrolls %}
+                    <tr>
+                      <td>
+                        <input type="checkbox" name="payroll_ids[]" value="{{ payroll.id }}" class="form-check-input payroll-checkbox">
+                      </td>
+                      <td>{{ payroll.staff_salary.user.get_full_name }}</td>
+                      <td>{{ payroll.period.name }}</td>
+                      <td>GH₵ {{ payroll.gross_salary|floatformat:2|intcomma }}</td>
+                      <td>GH₵ {{ payroll.total_deductions|floatformat:2|intcomma }}</td>
+                      <td>GH₵ {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                      <td>
+                        {% if payroll.status == 'DRAFT' %}
+                          <span class="badge bg-secondary">Draft</span>
+                        {% elif payroll.status == 'PENDING' %}
+                          <span class="badge bg-warning">Pending</span>
+                        {% elif payroll.status == 'APPROVED' %}
+                          <span class="badge bg-info">Approved</span>
+                        {% elif payroll.status == 'PAID' %}
+                          <span class="badge bg-success">Paid</span>
+                        {% elif payroll.status == 'CANCELLED' %}
+                          <span class="badge bg-danger">Cancelled</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ payroll.payment_status|safe }}
+                      </td>
+                      <td>
+                        <a href="{% url 'payroll:payroll_detail' payroll.id %}" class="btn btn-sm btn-primary">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        {% if payroll.status == 'PENDING' %}
+                          <a href="{% url 'payroll:approve_payroll' payroll.id %}" class="btn btn-sm btn-info">
+                            <i class="fas fa-check"></i>
+                          </a>
+                          <a href="{% url 'payroll:cancel_payroll' payroll.id %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-times"></i>
+                          </a>
+                        {% elif payroll.status == 'APPROVED' %}
+                          <a href="{% url 'payroll:create_payment' payroll.id %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-money-bill-wave"></i>
+                          </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if payrolls.has_other_pages %}
+              <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  {% if payrolls.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payrolls.previous_page_number }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+
+                  {% for i in payrolls.paginator.page_range %}
+                    {% if payrolls.number == i %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > payrolls.number|add:'-3' and i < payrolls.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ i }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if payrolls.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payrolls.next_page_number }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payrolls.paginator.num_pages }}{% if selected_period %}&period={{ selected_period }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No payrolls found. <a href="{% url 'payroll:generate_payroll' %}" class="alert-link">Generate a new payroll</a>.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle check all checkbox
+    const checkAllBox = document.getElementById('check-all');
+    const payrollCheckboxes = document.querySelectorAll('.payroll-checkbox');
+
+    if (checkAllBox) {
+      checkAllBox.addEventListener('change', function() {
+        payrollCheckboxes.forEach(checkbox => {
+          checkbox.checked = checkAllBox.checked;
+        });
+      });
+    }
+
+    // Handle select all button
+    const selectAllBtn = document.getElementById('select-all');
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener('click', function() {
+        payrollCheckboxes.forEach(checkbox => {
+          checkbox.checked = true;
+        });
+        if (checkAllBox) checkAllBox.checked = true;
+      });
+    }
+
+    // Handle deselect all button
+    const deselectAllBtn = document.getElementById('deselect-all');
+    if (deselectAllBtn) {
+      deselectAllBtn.addEventListener('click', function() {
+        payrollCheckboxes.forEach(checkbox => {
+          checkbox.checked = false;
+        });
+        if (checkAllBox) checkAllBox.checked = false;
+      });
+    }
+
+    // Validate form before submission
+    const bulkActionForm = document.getElementById('bulk-action-form');
+    if (bulkActionForm) {
+      bulkActionForm.addEventListener('submit', function(e) {
+        const action = document.getElementById('bulk-action').value;
+        const checkedBoxes = document.querySelectorAll('.payroll-checkbox:checked');
+
+        if (action === '') {
+          e.preventDefault();
+          alert('Please select an action to perform.');
+          return false;
+        }
+
+        if (checkedBoxes.length === 0) {
+          e.preventDefault();
+          alert('Please select at least one payroll record.');
+          return false;
+        }
+
+        // Confirm bulk action
+        if (!confirm(`Are you sure you want to ${action} the selected payrolls?`)) {
+          e.preventDefault();
+          return false;
+        }
+
+        return true;
+      });
+    }
+  });
+</script>
+{% endblock %}

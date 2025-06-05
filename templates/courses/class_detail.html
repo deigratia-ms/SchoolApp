@@ -1,0 +1,626 @@
+{% extends 'base.html' %}
+{% block title %}{{ classroom.name }} Details | Ricas School Management System{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">
+        {{ classroom.name }}{% if classroom.section %} ({{ classroom.section }}){% endif %}
+      </h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'courses:class_list' %}">Classes</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">
+            {{ classroom.name }}
+          </li>
+        </ol>
+      </nav>
+    </div>
+    <div>
+      {% if is_admin %}
+      <a href="{% url 'courses:edit_class' classroom.id %}" class="btn btn-warning me-2">
+        <i class="fas fa-edit me-1"></i>Edit Class
+      </a>
+      <a href="{% url 'courses:delete_class' classroom.id %}" class="btn btn-danger">
+        <i class="fas fa-trash me-1"></i>Delete Class
+      </a>
+      {% endif %}
+      
+      {% if is_class_teacher %}
+      <a href="{% url 'attendance:take_attendance' %}?class_id={{ classroom.id }}" class="btn btn-primary ms-2">
+        <i class="fas fa-user-check me-1"></i>Mark Attendance
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Class Overview Card -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow border-left-primary">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                  <div class="icon-circle bg-primary">
+                    <i class="fas fa-school text-white"></i>
+                  </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                  <div class="small text-gray-500">Class Details</div>
+                  <div class="font-weight-bold">
+                    {{ classroom.name }}{% if classroom.section %} ({{ classroom.section }}){% endif %}
+                    {% if classroom.grade_level %}<span class="ms-2 badge bg-info">Grade {{ classroom.grade_level }}</span>{% endif %}
+                  </div>
+                  <div class="small">Capacity: {{ classroom.capacity }} students</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                  <div class="icon-circle bg-success">
+                    <i class="fas fa-chalkboard-teacher text-white"></i>
+                  </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                  <div class="small text-gray-500">Class Teacher</div>
+                  <div class="font-weight-bold">
+                    {% if classroom.class_teacher %}
+                      {{ classroom.class_teacher.user.get_full_name }}
+                      {% if request.user.teacher_profile == classroom.class_teacher %}
+                        <span class="badge bg-success">You</span>
+                      {% endif %}
+                      {% if is_admin %}
+                        <button class="btn btn-sm btn-outline-primary ms-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#assignClassTeacherModal">
+                          Change
+                        </button>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">Not assigned</span>
+                      {% if is_admin %}
+                        <button class="btn btn-sm btn-outline-primary ms-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#assignClassTeacherModal">
+                          Assign
+                        </button>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+                  <div class="small">Created on {{ classroom.created_at|date:"M j, Y" }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                  <div class="icon-circle bg-info">
+                    <i class="fas fa-info-circle text-white"></i>
+                  </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                  <div class="small text-gray-500">Summary</div>
+                  <div>
+                    <span class="badge bg-primary p-2 mb-1">{{ subjects|length }} Subjects</span>
+                    <span class="badge bg-secondary p-2 mb-1">{{ classroom.students.count }} Students</span>
+                  </div>
+                  <div class="small">
+                    {% if is_admin %}
+                      <a href="#subjectsSection" class="text-primary">Manage subjects and teachers</a>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Row -->
+  <div class="row">
+    <!-- Students Section -->
+    <div class="col-xl-4 col-lg-5 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-user-graduate me-2"></i>Students
+          </h6>
+          {% if is_admin or is_class_teacher %}
+            {% if subjects %}
+              <a href="{% url 'courses:manage_class_students' subjects.0.id %}?next=class_detail" class="btn btn-sm btn-primary">
+                <i class="fas fa-user-plus me-1"></i>Manage Students
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
+        <div class="card-body">
+          {% if classroom.students.exists %}
+            <div class="table-responsive">
+              <table class="table table-hover table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 5%">#</th>
+                    <th style="width: 65%">Student Name</th>
+                    <th style="width: 30%">ID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for student in classroom.students.all %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="avatar-sm bg-secondary rounded-circle text-white me-2 d-flex align-items-center justify-content-center">
+                            {{ student.user.first_name|slice:":1" }}
+                          </div>
+                          <a href="{% url 'courses:student_detail' student.id %}">{{ student.user.get_full_name }}</a>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary">{{ student.student_id }}</span>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            {% if classroom.students.count > 10 %}
+              <div class="text-center mt-3">
+                <a href="#" class="btn btn-sm btn-outline-primary">
+                  View All {{ classroom.students.count }} Students
+                </a>
+              </div>
+            {% endif %}
+          {% else %}
+            <div class="text-center py-5">
+              <i class="fas fa-user-graduate fa-4x mb-4 text-muted"></i>
+              <h5 class="text-muted">No students enrolled</h5>
+              <p class="text-muted mb-4">Enroll students to this class</p>
+              
+                {% if is_admin or is_class_teacher %}
+                {% if subjects %}
+                  <a href="{% url 'courses:manage_class_students' subjects.0.id %}?next=class_detail" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-1"></i>Add Students
+                  </a>
+                {% else %}
+                  <p class="text-muted">Add a subject first to enable student enrollment</p>
+                {% endif %}
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Subjects & Teachers Section -->
+    <div class="col-xl-8 col-lg-7 mb-4">
+      <div class="card shadow" id="subjectsSection">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-book me-2"></i>Subjects & Teachers
+          </h6>
+          {% if is_admin %}
+          <a href="{% url 'courses:create_class_subject' %}?classroom={{ classroom.id }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus-circle me-1"></i>Add Subject to Class
+          </a>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          {% if subjects %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 5%">#</th>
+                    <th style="width: 30%">Subject</th>
+                    <th style="width: 35%">Teacher</th>
+                    <th style="width: 30%" class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for subject in subjects %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>
+                        <strong>{{ subject.name }}</strong>
+                      </td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          {% if subject.teacher %}
+                            <div class="avatar-sm bg-primary rounded-circle text-white me-2 d-flex align-items-center justify-content-center">
+                              {{ subject.teacher|slice:":1" }}
+                            </div>
+                            <div>
+                              {{ subject.teacher }}
+                              {% if request.user.teacher_profile.user.get_full_name == subject.teacher %}
+                                <span class="badge bg-success">You</span>
+                              {% endif %}
+                            </div>
+                          {% else %}
+                            <span class="text-muted">
+                              <i class="fas fa-user-slash me-1"></i>Not assigned
+                            </span>
+                          {% endif %}
+                          
+                          {% if is_admin %}
+                            <button class="btn btn-sm btn-outline-primary ms-2" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#assignTeacherModal"
+                                    data-subject-id="{{ subject.id }}"
+                                    data-subject-name="{{ subject.name }}"
+                                    onclick="prepareTeacherAssignment({{ subject.id }}, '{{ subject.name }}')">
+                              {% if subject.teacher %}Change{% else %}Assign{% endif %}
+                            </button>
+                          {% endif %}
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <div class="btn-group" role="group">
+                          <a href="{% url 'courses:class_subject_detail' subject.id %}" class="btn btn-sm btn-info" title="View Details">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          
+                          {% if is_admin %}
+                            <a href="{% url 'courses:edit_class_subject' subject.id %}" class="btn btn-sm btn-warning" title="Edit Subject">
+                              <i class="fas fa-edit"></i>
+                            </a>
+                            
+                            <a href="{% url 'courses:manage_class_students' subject.id %}" class="btn btn-sm btn-primary" title="Manage Students">
+                              <i class="fas fa-users"></i>
+                            </a>
+                            
+                            <a href="{% url 'courses:delete_class_subject' subject.id %}" class="btn btn-sm btn-danger" title="Delete Subject">
+                              <i class="fas fa-trash"></i>
+                            </a>
+                          {% endif %}
+                          
+                          {% if request.user.role == 'TEACHER' and request.user.teacher_profile.user.get_full_name == subject.teacher %}
+                            <div class="dropdown">
+                              <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" 
+                                      id="dropdownMenuButton-{{ subject.id }}" data-bs-toggle="dropdown" 
+                                      aria-expanded="false">
+                                More
+                              </button>
+                              <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-{{ subject.id }}">
+                                <li>
+                                  <a class="dropdown-item" 
+                                     href="{% url 'assignments:create_assignment' %}?class_subject={{ subject.id }}&type=HOMEWORK">
+                                    <i class="fas fa-tasks me-2"></i>Add Assignment
+                                  </a>
+                                </li>
+                                <li>
+                                  <a class="dropdown-item" 
+                                     href="{% url 'assignments:create_assignment' %}?class_subject={{ subject.id }}&type=QUIZ">
+                                    <i class="fas fa-question-circle me-2"></i>Add Quiz
+                                  </a>
+                                </li>
+                                <li>
+                                  <a class="dropdown-item" 
+                                     href="{% url 'assignments:create_assignment' %}?class_subject={{ subject.id }}&type=TEST">
+                                    <i class="fas fa-clipboard-check me-2"></i>Add Test
+                                  </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                  <a class="dropdown-item" 
+                                     href="{% url 'courses:create_material' %}?class_subject={{ subject.id }}">
+                                    <i class="fas fa-file-alt me-2"></i>Add Material
+                                  </a>
+                                </li>
+                                <li>
+                                  <a class="dropdown-item" 
+                                     href="{% url 'courses:create_video' %}?class_subject={{ subject.id }}">
+                                    <i class="fas fa-video me-2"></i>Add Video
+                                  </a>
+                                </li>
+                              </ul>
+                            </div>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Note:</strong> When a student is assigned to this class, they are automatically registered for all subjects taught in this class.
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <i class="fas fa-book fa-4x mb-4 text-muted"></i>
+              <h5 class="text-muted">No subjects assigned to this class yet</h5>
+              <p class="text-muted mb-4">Add subjects to this class to get started</p>
+              
+              {% if is_admin %}
+                <a href="{% url 'courses:create_class_subject' %}" class="btn btn-primary">
+                  <i class="fas fa-plus-circle me-1"></i>Add Subject to Class
+                </a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Recent Activity Row -->
+  <div class="row">
+    <!-- Recent Assignments -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-tasks me-2"></i>Recent Assignments
+          </h6>
+          <a href="{% url 'assignments:assignment_list' %}?class_id={{ classroom.id }}" class="btn btn-sm btn-outline-primary">
+            View All
+          </a>
+        </div>
+        <div class="card-body">
+          <div class="list-group assignment-list">
+            <!-- This would be populated with actual assignments -->
+            <div class="text-center py-4">
+              <i class="fas fa-tasks fa-3x mb-3 text-muted"></i>
+              <p class="text-muted">Assignments will appear here</p>
+              
+              {% if request.user.role == 'TEACHER' and subjects %}
+                <a href="{% url 'assignments:create_assignment' %}?class_subject={{ subjects.0.id }}" 
+                   class="btn btn-sm btn-primary">
+                  <i class="fas fa-plus-circle me-1"></i>Create Assignment
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Recent Materials -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-file-alt me-2"></i>Course Materials
+          </h6>
+          <a href="{% url 'courses:material_list' %}?class_id={{ classroom.id }}" class="btn btn-sm btn-outline-primary">
+            View All
+          </a>
+        </div>
+        <div class="card-body">
+          <div class="list-group materials-list">
+            <!-- This would be populated with actual materials -->
+            <div class="text-center py-4">
+              <i class="fas fa-file-alt fa-3x mb-3 text-muted"></i>
+              <p class="text-muted">Course materials will appear here</p>
+              
+              {% if request.user.role == 'TEACHER' and subjects %}
+                <a href="{% url 'courses:create_material' %}?class_subject={{ subjects.0.id }}" 
+                   class="btn btn-sm btn-primary">
+                  <i class="fas fa-plus-circle me-1"></i>Add Material
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Attendance Overview -->
+    <div class="col-lg-4 col-md-12 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-calendar-check me-2"></i>Attendance Overview
+          </h6>
+          {% if is_class_teacher %}
+            <a href="{% url 'attendance:take_attendance' %}?class_id={{ classroom.id }}" class="btn btn-sm btn-primary">
+              <i class="fas fa-user-check me-1"></i>Mark Attendance
+            </a>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <div class="text-center py-4">
+            <i class="fas fa-calendar-alt fa-3x mb-3 text-muted"></i>
+            <p class="text-muted">Attendance summary will appear here</p>
+            
+            {% if is_class_teacher %}
+              <a href="{% url 'attendance:records' %}?class_id={{ classroom.id }}" class="btn btn-sm btn-info">
+                <i class="fas fa-list me-1"></i>View Records
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Teacher Modal -->
+{% if is_admin %}
+<div class="modal fade" id="assignTeacherModal" tabindex="-1" aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="assignTeacherModalLabel">Assign Teacher to Subject</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="assignTeacherForm" method="post" action="{% url 'courses:edit_class_subject' 0 %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" id="subjectIdInput" name="class_subject_id" value="">
+          <input type="hidden" name="next" value="class_detail">
+          
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <span id="assignTeacherInfo">Select a teacher to teach this subject</span>
+          </div>
+          
+          <div class="mb-3">
+            <label for="teacherSelect" class="form-label">Teacher</label>
+            <select class="form-select" id="teacherSelect" name="teacher" required>
+              <option value="">-- Select Teacher --</option>
+              {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">{{ teacher.user.get_full_name }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Select the teacher who will teach this subject</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Teacher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+  </div>
+</div>
+
+<!-- Assign Teacher Modal -->
+{% if is_admin %}
+<div class="modal fade" id="assignTeacherModal" tabindex="-1" aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="assignTeacherModalLabel">Assign Teacher to Subject</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="assignTeacherForm" method="post" action="{% url 'courses:edit_class_subject' 0 %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" id="subjectIdInput" name="class_subject_id" value="">
+          <input type="hidden" name="next" value="class_detail">
+          
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <span id="assignTeacherInfo">Select a teacher to teach this subject</span>
+          </div>
+          
+          <div class="mb-3">
+            <label for="teacherSelect" class="form-label">Teacher</label>
+            <select class="form-select" id="teacherSelect" name="teacher" required>
+              <option value="">-- Select Teacher --</option>
+              {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">{{ teacher.user.get_full_name }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Select the teacher who will teach this subject</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Teacher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Assign Class Teacher Modal (for admins) -->
+{% if is_admin %}
+<div class="modal fade" id="assignClassTeacherModal" tabindex="-1" aria-labelledby="assignClassTeacherModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="assignClassTeacherModalLabel">Assign Class Teacher</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'courses:assign_class_teacher' classroom.id %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" name="next" value="class_detail">
+          
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Select a teacher to assign as the class teacher for {{ classroom.name }}.
+          </div>
+          
+          <div class="mb-3">
+            <label for="classTeacherSelect" class="form-label">Teacher</label>
+            <select class="form-select" id="classTeacherSelect" name="class_teacher" required>
+              <option value="">-- Select Teacher --</option>
+              {% for teacher in teachers %}
+                <option value="{{ teacher.id }}" {% if classroom.class_teacher == teacher %}selected{% endif %}>
+                  {{ teacher.user.get_full_name }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">
+              Select the teacher to be assigned as the class teacher.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Teacher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Helper function to prepare the Assign Teacher modal
+  function prepareTeacherAssignment(subjectId, subjectName) {
+    document.getElementById('subjectIdInput').value = subjectId;
+    document.getElementById('assignTeacherForm').action = "{% url 'courses:edit_class_subject' 0 %}".replace('0', subjectId);
+    document.getElementById('assignTeacherInfo').textContent = `Select a teacher to teach ${subjectName}`;
+    document.getElementById('assignTeacherModalLabel').textContent = `Assign Teacher to ${subjectName}`;
+  }
+
+  // Add a function to set the class ID and action for the class teacher modal
+    function prepareClassTeacherAssignment(classId) {
+        document.getElementById('classIdInput').value = classId;
+    }
+  
+  // CSS styles for visual elements
+  document.addEventListener('DOMContentLoaded', function() {
+    // Style for the avatar circles
+    const avatarStyle = `
+      .avatar-sm {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      
+      .icon-circle {
+        height: 3rem;
+        width: 3rem;
+        border-radius: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+      }
+      
+      .icon-circle i {
+        font-size: 1.5rem;
+      }
+    `;
+    
+    const styleEl = document.createElement('style');
+    styleEl.textContent = avatarStyle;
+    document.head.appendChild(styleEl);
+  });
+</script>
+{% endblock %}

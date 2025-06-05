@@ -1,0 +1,2929 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Ricas School Management System{% endblock %}</title>
+
+     <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous" />
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer"
+    />
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet" />
+
+    <style>
+      :root {
+        --primary-color: #0a2351;
+        --secondary-color: #051a3f;
+        --accent-color: #4cc9f0;
+        --success-color: #4caf50;
+        --warning-color: #ff9800;
+        --danger-color: #f44336;
+        --light-color: #f8f9fa;
+        --dark-color: #212529;
+        --sidebar-width: 250px;
+        --sidebar-collapsed-width: 70px;
+        --header-height: 60px;
+      }
+
+      /* Base theme variables */
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #f5f7fb;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Theme styles */
+      body.theme-dark {
+        background-color: #212529;
+        color: #e9ecef;
+      }
+
+      body.theme-dark .card,
+      body.theme-dark .header,
+      body.theme-dark .dropdown-menu {
+        background-color: #343a40;
+        color: #e9ecef;
+      }
+
+      body.theme-dark .card-header {
+        background-color: #343a40;
+        border-bottom-color: #495057;
+        color: #e9ecef;
+      }
+
+      body.theme-dark .table,
+      body.theme-dark .table th,
+      body.theme-dark .table td {
+        color: #e9ecef;
+      }
+
+      body.theme-dark .table th {
+        background-color: #343a40;
+      }
+
+      body.theme-dark .table td {
+        background-color: #495057;
+      }
+
+      body.theme-dark .table tbody tr:nth-of-type(odd) td {
+        background-color: #3e444a;
+      }
+
+      body.theme-dark .card-body {
+        color: #e9ecef;
+      }
+
+      body.theme-dark .form-control,
+      body.theme-dark .form-select {
+        background-color: #495057;
+        border-color: #6c757d;
+        color: #e9ecef;
+      }
+
+      body.theme-light {
+        background-color: #ffffff;
+        color: #212529;
+      }
+
+      body.theme-light .card {
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Color schemes */
+      body.color-blue .sidebar {
+        background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+      }
+
+      body.color-green .sidebar {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      }
+
+      body.color-green .btn-primary {
+        background-color: #2ecc71;
+        border-color: #27ae60;
+      }
+
+      body.color-green .btn-primary:hover {
+        background-color: #27ae60;
+        border-color: #239a55;
+      }
+
+      body.color-purple .sidebar {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+      }
+
+      body.color-purple .btn-primary {
+        background-color: #9b59b6;
+        border-color: #8e44ad;
+      }
+
+      body.color-purple .btn-primary:hover {
+        background-color: #8e44ad;
+        border-color: #763c94;
+      }
+
+      body.color-red .sidebar {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      }
+
+      body.color-red .btn-primary {
+        background-color: #e74c3c;
+        border-color: #c0392b;
+      }
+
+      body.color-red .btn-primary:hover {
+        background-color: #c0392b;
+        border-color: #a93226;
+      }
+
+      body.color-orange .sidebar {
+        background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+      }
+
+      body.color-orange .btn-primary {
+        background-color: #f39c12;
+        border-color: #d35400;
+      }
+
+      body.color-orange .btn-primary:hover {
+        background-color: #d35400;
+        border-color: #ba4a00;
+      }
+
+      body.color-teal .sidebar {
+        background: linear-gradient(135deg,rgb(30, 121, 102) 0%,rgb(29, 109, 93) 100%);
+      }
+
+      body.color-teal .btn-primary {
+        background-color:rgb(30, 114, 97);
+        border-color:rgb(26, 114, 96);
+      }
+
+      body.color-teal .btn-primary:hover {
+        background-color:rgb(34, 124, 106);
+        border-color:rgb(25, 124, 104);
+      }
+
+      /* Black color scheme - very dark theme */
+      body.color-black .sidebar {
+        background: linear-gradient(135deg,rgba(49, 48, 48, 0.99) 0%, #121212 100%);
+      }
+
+      body.color-black .btn-primary {
+        background-color: #000000;
+        border-color:rgb(51, 49, 49);
+      }
+
+      body.color-black .btn-primary:hover {
+        background-color:rgb(51, 49, 49);
+        border-color: #000000;
+      }
+
+      /* Pink color scheme - kid-friendly theme */
+      body.color-pink .sidebar {
+        background: linear-gradient(135deg,rgb(145, 54, 99) 0%,rgb(156, 63, 113) 63, 118) 100%);
+      }
+
+      body.color-pink .btn-primary {
+        background-color:rgb(146, 51, 99);
+        border-color: #ff1493;
+      }
+
+      body.color-pink .btn-primary:hover {
+        background-color: #ff1493;
+        border-color: #ff69b4;
+      }
+
+      /* Navy color scheme - from the image */
+      body.color-navy .sidebar {
+        background: white;
+        color: #0a2351;
+      }
+
+      body.color-navy .sidebar-header h3,
+      body.color-navy .logo-small {
+        color: #0a2351;
+      }
+
+      body.color-navy .menu-item,
+      body.color-navy .sidebar-heading {
+        color: #0a2351;
+      }
+
+      body.color-navy .menu-item:hover,
+      body.color-navy .menu-item.active {
+        background-color: rgba(10, 35, 81, 0.1);
+        color: #0a2351;
+      }
+
+      body.color-navy .btn-primary {
+        background-color: #0a2351;
+        border-color: #051a3f;
+        color: white;
+      }
+
+      body.color-navy .btn-primary:hover {
+        background-color: #051a3f;
+        border-color: #031230;
+        color: white;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: var(--sidebar-width);
+        background: #0a2351;
+        color: white;
+        transition: all 0.3s;
+        z-index: 1000;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+      }
+
+      .sidebar.collapsed {
+        width: var(--sidebar-collapsed-width);
+      }
+
+      .sidebar-header {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .sidebar-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .sidebar.collapsed .sidebar-header h3 {
+        display: none;
+      }
+
+      .logo-small {
+        display: none;
+        font-size: 1.5rem;
+        color: white;
+      }
+
+      .sidebar.collapsed .logo-small {
+        display: block;
+      }
+
+      .sidebar-menu {
+        padding: 15px 0;
+      }
+
+      .sidebar-section {
+        margin-bottom: 15px;
+      }
+
+      .sidebar-heading {
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      /* Hide sidebar heading text when collapsed */
+      .sidebar.collapsed .sidebar-heading span {
+        display: none;
+      }
+
+      /* Center the icon when collapsed */
+      .sidebar.collapsed .sidebar-heading i {
+        margin-right: 0;
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+      }
+
+      .sidebar-subheading {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        margin-top: 10px;
+      }
+
+      .menu-item {
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+
+      .menu-subitem {
+        padding: 8px 15px 8px 25px;
+        font-size: 0.9rem;
+      }
+
+      .menu-item:hover,
+      .menu-item.active {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+
+      .menu-item i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+      }
+
+      .sidebar.collapsed .menu-item span {
+        display: none;
+      }
+
+      .sidebar.collapsed .menu-item i {
+        margin-right: 0;
+        margin-left: 5px;
+      }
+
+      .content-wrapper {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        transition: all 0.3s;
+      }
+
+      .sidebar.collapsed ~ .content-wrapper {
+        margin-left: var(--sidebar-collapsed-width);
+      }
+
+      .header {
+        height: var(--header-height);
+        background-color: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        position: sticky;
+        top: 0;
+        z-index: 999;
+      }
+
+      .header-toggle {
+        cursor: pointer;
+        margin-right: 20px;
+        font-size: 1.5rem;
+        color: var(--dark-color);
+      }
+
+      .user-dropdown {
+        margin-left: auto;
+      }
+
+      .main-content {
+        padding: 20px;
+        min-height: calc(100vh - var(--header-height));
+      }
+
+      /* Content container for better layout */
+      .content-container {
+        width: 100%;
+      }
+
+      /* Center content on larger screens */
+      @media (min-width: 1400px) {
+        .content-container {
+          max-width: 1320px;
+          margin: 0 auto;
+        }
+
+        .main-content > .container-fluid {
+          max-width: 1320px;
+          margin: 0 auto;
+        }
+
+        .main-content > .container {
+          max-width: 1140px;
+        }
+      }
+
+      @media (min-width: 1200px) and (max-width: 1399px) {
+        .content-container {
+          max-width: 1140px;
+          margin: 0 auto;
+        }
+      }
+
+      @media (min-width: 992px) and (max-width: 1199px) {
+        .content-container {
+          max-width: 960px;
+          margin: 0 auto;
+        }
+      }
+
+      .card {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+
+      .card-header {
+        background-color: white;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        font-weight: 600;
+      }
+
+      .card-body {
+        padding: 1.25rem;
+      }
+
+      /* Improve text readability */
+      .card-body p {
+        line-height: 1.6;
+        margin-bottom: 1rem;
+      }
+
+      /* Limit paragraph width for better readability on large screens */
+      @media (min-width: 1200px) {
+        .card-body p {
+          max-width: 800px;
+        }
+      }
+
+      .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+      }
+
+      .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+      }
+
+      .table {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: var(--dark-color);
+      }
+
+      .table th {
+        font-weight: 600;
+        background-color: #f8f9fa;
+      }
+
+      .badge {
+        padding: 0.4em 0.6em;
+        font-size: 0.75em;
+        font-weight: 500;
+      }
+
+      .badge-primary {
+        background-color: var(--primary-color);
+      }
+
+      .badge-success {
+        background-color: var(--success-color);
+      }
+
+      .badge-warning {
+        background-color: var(--warning-color);
+      }
+
+      .badge-danger {
+        background-color: var(--danger-color);
+      }
+
+      .dropdown-menu {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1050;
+      }
+
+      /* User dropdown specific styles */
+      .user-dropdown {
+        position: relative;
+      }
+
+      .user-dropdown .dropdown-menu {
+        position: absolute;
+        right: 0;
+        left: auto;
+        top: 100%;
+        margin-top: 0.5rem;
+      }
+
+      .user-dropdown .dropdown-toggle {
+        cursor: pointer;
+      }
+
+      /* Notification dropdown styles */
+      .notification-dropdown {
+        position: relative;
+      }
+
+      .notification-dropdown .nav-link {
+        color: var(--dark-color);
+        padding: 0.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+      }
+
+      .notification-dropdown .nav-link:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .notification-badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.4rem;
+      }
+
+      .notification-menu {
+        width: 320px;
+        padding: 0;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .dropdown-header {
+        padding: 0.75rem 1rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .notification-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f1f1;
+        transition: background-color 0.2s;
+      }
+
+      .notification-item:hover {
+        background-color: #f8f9fa;
+      }
+
+      .notification-item.unread {
+        background-color: rgba(13, 110, 253, 0.05);
+      }
+
+      .notification-item .notification-title {
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .notification-item .notification-text {
+        font-size: 0.8125rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+      }
+
+      .notification-item .notification-time {
+        font-size: 0.75rem;
+        color: #adb5bd;
+      }
+
+      .notification-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+      }
+
+      .notification-icon.primary {
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+      }
+
+      .notification-icon.success {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+      }
+
+      .notification-icon.warning {
+        background-color: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+      }
+
+      .notification-icon.danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+      }
+
+      .notification-icon.info {
+        background-color: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+      }
+
+      .notification-empty {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: #6c757d;
+      }
+
+      /* School logo and home icon styles */
+      .school-logo-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .school-logo {
+        transition: transform 0.2s ease;
+      }
+
+      .school-logo:hover {
+        transform: scale(1.05);
+      }
+
+      .home-icon-container a {
+        color: var(--primary-color);
+        transition: color 0.2s ease;
+      }
+
+      .home-icon-container a:hover {
+        color: var(--accent-color);
+      }
+
+      /* Adjust header layout */
+      .header {
+        display: flex;
+        align-items: center;
+      }
+
+      .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--secondary-color) 100%
+        );
+        position: relative;
+      }
+
+      .home-link {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+      }
+
+      .home-link .btn {
+        border-radius: 50px;
+        padding: 8px 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .home-link .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .login-card {
+        width: 400px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      .login-header {
+        background-color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .login-body {
+        padding: 30px;
+        background-color: white;
+      }
+
+      /* Student dashboard specific styles */
+      .subject-dropdown {
+        border-radius: 10px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .subject-dropdown:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .subject-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+      }
+
+      /* Parent dashboard specific styles */
+      .child-selector {
+        margin-bottom: 20px;
+      }
+
+      .child-card {
+        cursor: pointer;
+        border-radius: 10px;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+      }
+
+      .child-card.active {
+        border-color: var(--primary-color);
+      }
+
+      .child-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Widget styles */
+      .widget {
+        margin-bottom: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .widget-small {
+        height: 150px;
+      }
+
+      .widget-medium {
+        height: 300px;
+      }
+
+      .widget-large {
+        height: 450px;
+      }
+
+      /* Responsive styles */
+      @media (max-width: 768px) {
+        .sidebar {
+          margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .sidebar.show {
+          margin-left: 0;
+        }
+
+        .content-wrapper {
+          margin-left: 0;
+        }
+
+        .sidebar.show ~ .content-wrapper {
+          margin-left: var(--sidebar-width);
+        }
+
+        /* Mobile table improvements */
+        .mobile-responsive-table {
+          display: block;
+          width: 100%;
+        }
+
+        .mobile-responsive-table thead {
+          display: none; /* Hide table headers on mobile */
+        }
+
+        .mobile-responsive-table tbody {
+          display: block;
+          width: 100%;
+        }
+
+        .mobile-responsive-table tr {
+          display: block;
+          margin-bottom: 20px;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          padding: 12px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          background-color: #fff;
+        }
+
+        .mobile-responsive-table td {
+          display: flex;
+          flex-direction: column;
+          border: none;
+          padding: 10px 0;
+          text-align: left;
+          position: relative;
+          margin-bottom: 5px;
+          border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .mobile-responsive-table td:last-child {
+          border-bottom: none;
+        }
+
+        .mobile-responsive-table td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: #6c757d;
+          margin-bottom: 5px;
+          font-size: 0.85rem;
+        }
+
+        /* Style for values in responsive tables */
+        .mobile-responsive-table td span.table-value {
+          font-weight: 500;
+        }
+
+        /* Improve form card layouts on mobile */
+        .card-body {
+          padding: 15px;
+        }
+
+        /* Better dropdown handling for mobile */
+        .dropdown-menu {
+          position: absolute !important;
+          left: auto !important;
+          right: 0 !important;
+          z-index: 1050 !important;
+        }
+
+        /* Make buttons in tables more mobile-friendly */
+        .table td .btn {
+          padding: 0.375rem 0.75rem;
+          margin-right: 5px;
+          margin-bottom: 8px;
+          min-width: 38px;
+        }
+
+        /* Make action button groups stack better on mobile */
+        .actions-col {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding-top: 5px !important;
+        }
+
+        /* Make mobile cards more attractive */
+        @media (max-width: 576px) {
+          .card {
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+          }
+
+          .card-header {
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border-bottom: none;
+          }
+
+          .card-header h6 {
+            color: white;
+            margin: 0;
+          }
+
+          .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 600;
+          }
+
+          .form-control-static {
+            padding: 5px 0;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+          }
+        }
+
+        /* Card group improvements for mobile */
+        .card-deck .card,
+        .row .col-md-3 .card {
+          margin-bottom: 15px;
+        }
+      }
+
+      /* Utility class for responsive tables */
+      .table-mobile-responsive td {
+        white-space: normal;
+      }
+
+      /* Global table header styling fixes - Force white text on all table headers */
+      .table thead th,
+      .table-dark thead th,
+      .table-dark th,
+      .dataTables_wrapper .dataTables_scrollHead .table thead th,
+      .dataTables_wrapper .dataTables_scrollHead .table-dark thead th,
+      .dataTables_wrapper .dataTables_scrollHead th,
+      .dataTables_wrapper thead th,
+      table thead th,
+      table.dataTable thead th {
+        background-color: #212529 !important;
+        color: #ffffff !important;
+        border-color: #32383e !important;
+        font-weight: 600;
+        vertical-align: middle;
+      }
+
+      /* Ensure table headers are visible on all screen sizes */
+      @media (max-width: 991.98px) {
+        .table thead th,
+        .table-dark thead th,
+        .table-dark th,
+        .dataTables_wrapper .dataTables_scrollHead .table thead th,
+        .dataTables_wrapper .dataTables_scrollHead .table-dark thead th,
+        .dataTables_wrapper .dataTables_scrollHead th,
+        .dataTables_wrapper thead th,
+        table thead th,
+        table.dataTable thead th {
+          background-color: #212529 !important;
+          color: #ffffff !important;
+          border-color: #32383e !important;
+          font-size: 0.875rem;
+          padding: 0.75rem 0.5rem;
+        }
+      }
+
+      /* Desktop table improvements */
+      @media (min-width: 992px) {
+        .table thead th,
+        .table-dark thead th {
+          text-transform: uppercase;
+          font-size: 0.875rem;
+          letter-spacing: 0.5px;
+          padding: 1rem 0.75rem;
+        }
+
+        .table-hover tbody tr:hover {
+          background-color: rgba(0, 123, 255, 0.05);
+        }
+      }
+
+      /* Utility classes for showing/hiding content based on screen size */
+      @media (max-width: 576px) {
+        .mobile-hidden {
+          display: none !important;
+        }
+      }
+
+      @media (min-width: 577px) {
+        .mobile-only {
+          display: none !important;
+        }
+      }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="{% if preferences %}theme-{{ preferences.theme }} color-{{ preferences.color_scheme }}{% endif %}">
+    {% if user.is_authenticated and not hide_sidebar %}
+    <div
+      class="sidebar {% if preferences.sidebar_collapsed %}collapsed{% endif %}"
+      id="sidebar"
+    >
+      <div class="sidebar-header">
+        <h3>Ricas SMS</h3>
+        <div class="logo-small">R</div>
+      </div>
+      <div class="sidebar-menu">
+        <!-- Admin Sidebar -->
+        {% if user.is_admin %}
+        <!-- Dashboard -->
+        <a
+          href="{% url 'dashboard:admin_dashboard' %}"
+          class="menu-item {% if request.path == '/dashboard/admin/' %}active{% endif %}"
+        >
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <!-- User Management Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#userSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-users me-2"></i>
+              <span>User Management</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="userSubmenu">
+            <a
+              href="{% url 'users:user_management' %}"
+              class="menu-item menu-subitem {% if '/users/user-management/' in request.path and not '?role=' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-users-cog"></i>
+              <span>All Users</span>
+            </a>
+            <a
+              href="{% url 'users:create_user' %}"
+              class="menu-item menu-subitem {% if '/users/create/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-plus"></i>
+              <span>Register User</span>
+            </a>
+            <a
+              href="{% url 'users:student_management' %}"
+              class="menu-item menu-subitem {% if '/users/student-management/' in request.path or '/users/user-management/?role=STUDENT' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-graduate"></i>
+              <span>Students</span>
+            </a>
+            <a
+              href="{% url 'users:teacher_management' %}"
+              class="menu-item menu-subitem {% if '/users/teacher-management/' in request.path or '/users/user-management/?role=TEACHER' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-chalkboard-teacher"></i>
+              <span>Teachers</span>
+            </a>
+            <a
+              href="{% url 'users:parent_management' %}"
+              class="menu-item menu-subitem {% if '/users/parent-management/' in request.path or '/users/user-management/?role=PARENT' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-friends"></i>
+              <span>Parents</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Classes and Subjects Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#classesSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-school me-2"></i>
+              <span>Classes & Subjects</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="classesSubmenu">
+            <a
+              href="{% url 'courses:class_list' %}"
+              class="menu-item menu-subitem {% if '/courses/classes/' in request.path and not '/create/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-school"></i>
+              <span>All Classes</span>
+            </a>
+            <a
+              href="{% url 'courses:create_class' %}"
+              class="menu-item menu-subitem {% if '/courses/classes/create/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-plus-circle"></i>
+              <span>Add Class</span>
+            </a>
+            <a
+              href="{% url 'courses:subject_list' %}"
+              class="menu-item menu-subitem {% if '/courses/subjects/' in request.path and not '/create/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-book"></i>
+              <span>All Subjects</span>
+            </a>
+            <a
+              href="{% url 'courses:create_subject' %}"
+              class="menu-item menu-subitem {% if '/courses/subjects/create/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-plus-circle"></i>
+              <span>Add Subject</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Assignments Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#assignmentsSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-tasks me-2"></i>
+              <span>Assignments</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="assignmentsSubmenu">
+            <a
+              href="{% url 'assignments:assignment_list' %}"
+              class="menu-item menu-subitem {% if '/assignments/list/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-list"></i>
+              <span>All Assignments</span>
+            </a>
+            <a
+              href="{% url 'assignments:create_assignment' %}"
+              class="menu-item menu-subitem {% if '/assignments/create/' in request.path and not '?type=quiz' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-plus-circle"></i>
+              <span>Create Assignment</span>
+            </a>
+            <a
+              href="{% url 'assignments:create_assignment' %}?type=quiz"
+              class="menu-item menu-subitem {% if '/assignments/create/' in request.path and '?type=quiz' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-question-circle"></i>
+              <span>Create Quiz</span>
+            </a>
+            <a
+              href="{% url 'assignments:gradebook' %}"
+              class="menu-item menu-subitem {% if '/assignments/gradebook/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-star"></i>
+              <span>Enter Grades</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Appointment System Section -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#appointmentSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-calendar-check me-2"></i>
+              <span>Appointment System</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="appointmentSubmenu">
+            <a
+              href="{% url 'appointments:admin_dashboard' %}"
+              class="menu-item menu-subitem {% if '/appointments/admin/' in request.path and not '/appointments/admin/appointments/' in request.path and not '/appointments/admin/time-slots/' in request.path and not '/appointments/admin/settings/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-tachometer-alt"></i>
+              <span>Dashboard</span>
+            </a>
+            <a
+              href="{% url 'appointments:appointment_list' %}"
+              class="menu-item menu-subitem {% if '/appointments/admin/appointments/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-calendar-alt"></i>
+              <span>All Appointments</span>
+            </a>
+            <a
+              href="{% url 'appointments:manage_time_slots' %}"
+              class="menu-item menu-subitem {% if '/appointments/admin/time-slots/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-clock"></i>
+              <span>Time Slots</span>
+            </a>
+            <a
+              href="{% url 'appointments:manage_settings' %}"
+              class="menu-item menu-subitem {% if '/appointments/admin/settings/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-cog"></i>
+              <span>Settings</span>
+            </a>
+            <a
+              href="{% url 'appointments:create_appointment' %}"
+              class="menu-item menu-subitem {% if '/appointments/admin/create/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-plus-circle"></i>
+              <span>Create Appointment</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Fees Management Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#feesSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-money-bill-wave me-2"></i>
+              <span>Fees Management</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="feesSubmenu">
+            <a
+              href="{% url 'fees:admin_dashboard' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/' in request.path and not '/categories/' in request.path and not '/class-fees/' in request.path and not '/payments/' in request.path and not '/reports/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-tachometer-alt"></i>
+              <span>Dashboard</span>
+            </a>
+            <a
+              href="{% url 'fees:category_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/categories/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-tags"></i>
+              <span>Fee Categories</span>
+            </a>
+            <a
+              href="{% url 'fees:class_fee_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/class-fees/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-money-check"></i>
+              <span>Class Fees</span>
+            </a>
+            <a
+              href="{% url 'fees:student_fee_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/student-fees/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-graduate"></i>
+              <span>Student Fees</span>
+            </a>
+            <a
+              href="{% url 'fees:payment_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/payments/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-cash-register"></i>
+              <span>Payments</span>
+            </a>
+            <a
+              href="{% url 'fees:fee_reports' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/reports/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-chart-bar"></i>
+              <span>Reports</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Payroll Management Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#payrollSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-money-check-alt me-2"></i>
+              <span>Payroll Management</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="payrollSubmenu">
+            <a
+              href="{% url 'payroll:admin_dashboard' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/' in request.path and not '/staff-salaries/' in request.path and not '/staff-roles/' in request.path and not '/deductions/' in request.path and not '/periods/' in request.path and not '/payrolls/' in request.path and not '/payments/' in request.path and not '/payslips/' in request.path and not '/reports/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-tachometer-alt"></i>
+              <span>Dashboard</span>
+            </a>
+            <a
+              href="{% url 'payroll:staff_salary_list' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/staff-salaries/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-tie"></i>
+              <span>Staff Salaries</span>
+            </a>
+            <a
+              href="{% url 'payroll:staff_role_list' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/staff-roles/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-tag"></i>
+              <span>Staff Roles</span>
+            </a>
+            <a
+              href="{% url 'payroll:deduction_list' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/deductions/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-minus-circle"></i>
+              <span>Deductions</span>
+            </a>
+            <a
+              href="{% url 'payroll:payroll_period_list' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/periods/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-calendar-alt"></i>
+              <span>Payroll Periods</span>
+            </a>
+            <a
+              href="{% url 'payroll:payroll_list' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/payrolls/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-invoice-dollar"></i>
+              <span>Payrolls</span>
+            </a>
+            <a
+              href="{% url 'payroll:payment_list' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/payments/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-hand-holding-usd"></i>
+              <span>Payments</span>
+            </a>
+            <a
+              href="{% url 'payroll:payslip_list' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/payslips/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-alt"></i>
+              <span>Payslips</span>
+            </a>
+            <a
+              href="{% url 'payroll:monthly_salary_report' %}"
+              class="menu-item menu-subitem {% if '/payroll/admin/reports/monthly/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-chart-bar"></i>
+              <span>Monthly Reports</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Reports Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#reportsSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-file-alt me-2"></i>
+              <span>Reports</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="reportsSubmenu">
+            <a
+              href="{% url 'assignments:report_card_list' %}"
+              class="menu-item menu-subitem {% if '/assignments/report-cards/' in request.path and not '/generate/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-alt"></i>
+              <span>View Report Cards</span>
+            </a>
+            {% if user.is_admin %}
+            <a
+              href="{% url 'assignments:generate_report_cards' %}"
+              class="menu-item menu-subitem {% if '/assignments/report-cards/generate/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-medical"></i>
+              <span>Generate Report Cards</span>
+            </a>
+            {% endif %}
+            <a
+              href="{% url 'dashboard:admin_report_insights' %}"
+              class="menu-item menu-subitem {% if '/dashboard/admin/report-insights/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-chart-pie"></i>
+              <span>Report Insights</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Fees Management Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#feesSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-money-bill-wave me-2"></i>
+              <span>Fees Management</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="feesSubmenu">
+            <a
+              href="{% url 'fees:admin_dashboard' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/' in request.path and not '/categories/' in request.path and not '/terms/' in request.path and not '/class-fees/' in request.path and not '/student-fees/' in request.path and not '/payments/' in request.path and not '/reports/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-tachometer-alt"></i>
+              <span>Fees Dashboard</span>
+            </a>
+            <a
+              href="{% url 'fees:category_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/categories/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-tags"></i>
+              <span>Fee Categories</span>
+            </a>
+            <a
+              href="{% url 'fees:term_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/terms/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-calendar-alt"></i>
+              <span>Academic Terms</span>
+            </a>
+            <a
+              href="{% url 'fees:class_fee_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/class-fees/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-money-check"></i>
+              <span>Class Fees</span>
+            </a>
+            <a
+              href="{% url 'fees:student_fee_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/student-fees/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-graduate"></i>
+              <span>Student Fees</span>
+            </a>
+            <a
+              href="{% url 'fees:payment_list' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/payments/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-cash-register"></i>
+              <span>Payments</span>
+            </a>
+            <a
+              href="{% url 'fees:fee_reports' %}"
+              class="menu-item menu-subitem {% if '/fees/admin/reports/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-chart-bar"></i>
+              <span>Fee Reports</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Administration Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#adminSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-cogs me-2"></i>
+              <span>Administration</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="adminSubmenu">
+            <a
+              href="{% url 'dashboard:admin_attendance_overview' %}"
+              class="menu-item menu-subitem {% if '/dashboard/admin/attendance/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-check"></i>
+              <span>Attendance Tracking</span>
+            </a>
+            <a
+              href="{% url 'dashboard:admin_performance_overview' %}"
+              class="menu-item menu-subitem {% if '/dashboard/admin/performance/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-chart-line"></i>
+              <span>Academic Performance</span>
+            </a>
+            <a
+              href="{% url 'dashboard:admin_student_promotion' %}"
+              class="menu-item menu-subitem {% if '/dashboard/admin/students/promotion/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-graduation-cap"></i>
+              <span>Student Promotion</span>
+            </a>
+            <a
+              href="{% url 'dashboard:admin_grading_scales' %}"
+              class="menu-item menu-subitem {% if '/dashboard/admin/grading/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-sliders-h"></i>
+              <span>Grading Scales</span>
+            </a>
+            <a
+              href="{% url 'dashboard:admin_assessment_weights' %}"
+              class="menu-item menu-subitem {% if '/dashboard/admin/assessment-weights/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-balance-scale"></i>
+              <span>Assessment Weights</span>
+            </a>
+
+          </div>
+        </div>
+
+        <!-- Documents Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#docsSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-file-pdf me-2"></i>
+              <span>Documents</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="docsSubmenu">
+            <a
+              href="{% url 'users:id_card_list' %}"
+              class="menu-item menu-subitem {% if '/users/id-cards/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-id-card"></i>
+              <span>ID Cards</span>
+            </a>
+            <a
+              href="{% url 'users:admission_letter_list' %}"
+              class="menu-item menu-subitem {% if '/users/admission-letters/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-alt"></i>
+              <span>Admission Letters</span>
+            </a>
+            <a
+              href="{% url 'courses:material_list' %}"
+              class="menu-item menu-subitem {% if '/courses/materials/' in request.path and not 'create' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-pdf"></i>
+              <span>Course Materials</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Communications Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#commsSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-comments me-2"></i>
+              <span>Communications</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="commsSubmenu">
+            <a
+              href="{% url 'communications:event_list' %}"
+              class="menu-item menu-subitem {% if '/communications/events/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-calendar-alt"></i>
+              <span>Events</span>
+            </a>
+            <a
+              href="{% url 'communications:notification_list' %}"
+              class="menu-item menu-subitem {% if '/communications/notifications/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-bell"></i>
+              <span>Notifications {% if unread_notifications_count > 0 %}<span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>{% endif %}</span>
+            </a>
+            <a
+              href="{% url 'communications:message_list' %}"
+              class="menu-item menu-subitem {% if '/communications/messages/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-envelope"></i>
+              <span>Messages {% if unread_messages_count > 0 %}<span class="badge bg-danger rounded-pill">{{ unread_messages_count }}</span>{% endif %}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <a
+          href="{% url 'users:school_settings' %}"
+          class="menu-item {% if '/users/school-settings/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+
+        <!-- Teacher Sidebar -->
+        {% elif user.is_teacher %}
+        <a
+          href="{% url 'dashboard:teacher_dashboard' %}"
+          class="menu-item {% if request.path == '/dashboard/teacher/' %}active{% endif %}"
+        >
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <!-- Classes Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#classesSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-chalkboard me-2"></i>
+              <span>Classes</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="classesSubmenu">
+            <!-- Display unique classrooms -->
+            {% if unique_classrooms %}
+              {% for classroom in unique_classrooms %}
+                <a href="{% url 'courses:class_detail' class_id=classroom.id %}"
+                   class="menu-item menu-subitem {% if request.path == '/courses/classes/'|add:classroom.id|add:'/' %}active{% endif %}">
+                  <!-- Display crown icon if teacher is class teacher -->
+                  {% if classroom in class_teacher_of %}
+                    <i class="fas fa-crown text-warning"></i>
+                  {% else %}
+                    <i class="fas fa-book"></i>
+                  {% endif %}
+                  <span>
+                    {{ classroom.name }}
+                    {% if classroom.section %}
+                      {{ classroom.section }}
+                    {% endif %}
+                  </span>
+                </a>
+              {% endfor %}
+            {% endif %}
+
+            <!-- Show message if no classes are assigned -->
+            {% if not unique_classrooms %}
+              <div class="menu-item menu-subitem text-muted">
+                <i class="fas fa-info-circle"></i>
+                <span>No classes assigned</span>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Teaching Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#teachingSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-book-open me-2"></i>
+              <span>Teaching</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="teachingSubmenu">
+            <a
+              href="{% url 'assignments:assignment_list' %}"
+              class="menu-item menu-subitem {% if '/assignments/' in request.path and 'create' not in request.path and 'grade' not in request.path and 'report-cards' not in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-clipboard-list"></i>
+              <span>Assignments</span>
+            </a>
+            <a
+              href="{% url 'assignments:create_assignment' %}"
+              class="menu-item menu-subitem {% if '/assignments/create/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-plus-circle"></i>
+              <span>Create Assignment</span>
+            </a>
+            <a
+              href="{% url 'courses:material_list' %}"
+              class="menu-item menu-subitem {% if '/courses/materials/' in request.path and 'create' not in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-alt"></i>
+              <span>Course Materials</span>
+            </a>
+            <a
+              href="{% url 'courses:video_list' %}"
+              class="menu-item menu-subitem {% if '/courses/videos/' in request.path and 'create' not in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-video"></i>
+              <span>Videos</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Assessment Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#assessmentSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-star me-2"></i>
+              <span>Assessment</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="assessmentSubmenu">
+            <a
+              href="{% url 'assignments:gradebook' %}"
+              class="menu-item menu-subitem {% if '/assignments/gradebook/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-chart-line"></i>
+              <span>Grades</span>
+            </a>
+            <a
+              href="{% url 'assignments:enter_term_grades' %}"
+              class="menu-item menu-subitem {% if '/assignments/enter-term-grades/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-pencil-alt"></i>
+              <span>Enter Grade</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Administration Section with submenu -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex justify-content-between align-items-center submenu-toggle" data-bs-toggle="collapse" data-bs-target="#teacherAdminSubmenu" aria-expanded="false">
+            <div>
+              <i class="fas fa-tasks me-2"></i>
+              <span>Administration</span>
+            </div>
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="collapse sidebar-submenu" id="teacherAdminSubmenu">
+            <a
+              href="{% url 'attendance:take_attendance' %}"
+              class="menu-item menu-subitem {% if '/attendance/take/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-user-check"></i>
+              <span>Attendance</span>
+            </a>
+            <a
+              href="{% url 'communications:message_list' %}"
+              class="menu-item menu-subitem {% if '/communications/messages/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-envelope"></i>
+              <span>Messages {% if unread_messages_count > 0 %}<span class="badge bg-danger rounded-pill">{{ unread_messages_count }}</span>{% endif %}</span>
+            </a>
+            <a
+              href="{% url 'payroll:staff_payslips' %}"
+              class="menu-item menu-subitem {% if '/payroll/staff/payslips/' in request.path %}active{% endif %}"
+            >
+              <i class="fas fa-file-invoice"></i>
+              <span>My Payslips</span>
+            </a>
+            <a
+              href="{% url 'payroll:staff_payment_history' %}"
+              class="menu-item menu-subitem {% if request.resolver_match.url_name == 'staff_payment_history' %}active{% endif %}"
+            >
+              <i class="fas fa-history"></i>
+              <span>Payment History</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Student Sidebar -->
+        {% elif user.is_student %}
+        <a
+          href="{% url 'dashboard:student_dashboard' %}"
+          class="menu-item {% if request.path == '/dashboard/student/' %}active{% endif %}"
+        >
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Dashboard</span>
+        </a>
+        <a
+          href="{% url 'courses:subject_list' %}"
+          class="menu-item {% if '/courses/subjects/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-book"></i>
+          <span>Subjects</span>
+        </a>
+        <a
+          href="{% url 'assignments:student_assignments' %}"
+          class="menu-item {% if '/assignments/my-assignments/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-tasks"></i>
+          <span>Assignments</span>
+          <span id="assignment-badge" class="badge bg-danger rounded-pill ms-1" style="display: none;"></span>
+        </a>
+        <a
+          href="{% url 'fees:student_fees' user.student_profile.id %}"
+          class="menu-item {% if '/fees/student/' in request.path and not '/payment-history/' in request.path and not '/invoice/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>My Fees</span>
+        </a>
+        <a
+          href="{% url 'fees:student_payment_history' user.student_profile.id %}"
+          class="menu-item {% if '/fees/student/' in request.path and '/payment-history/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-money-check-alt"></i>
+          <span>Payment History</span>
+        </a>
+        <a
+          href="{% url 'courses:material_list' %}"
+          class="menu-item {% if '/courses/materials/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-file-alt"></i>
+          <span>Course Materials</span>
+          <span id="material-badge" class="badge bg-danger rounded-pill ms-1" style="display: none;"></span>
+        </a>
+        <a
+          href="{% url 'courses:video_list' %}"
+          class="menu-item {% if '/courses/videos/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-video"></i>
+          <span>Videos</span>
+          <span id="quiz-badge" class="badge bg-danger rounded-pill ms-1" style="display: none;"></span>
+        </a>
+        <a
+          href="{% url 'assignments:student_grades' %}"
+          class="menu-item {% if '/assignments/my-grades/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-chart-line"></i>
+          <span>Grades</span>
+        </a>
+        <a
+          href="{% url 'attendance:my_attendance' %}"
+          class="menu-item {% if '/attendance/my-attendance/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-calendar-check"></i>
+          <span>Attendance</span>
+        </a>
+        <a
+          href="{% url 'communications:message_list' %}"
+          class="menu-item {% if '/communications/messages/' in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-envelope"></i>
+          <span>Messages</span>
+        </a>
+
+        <!-- Parent Sidebar -->
+        {% elif user.is_parent %}
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex align-items-center">
+            <i class="fas fa-home me-2"></i>
+            <span>Parent Portal</span>
+          </div>
+          <a
+            href="{% url 'dashboard:parent_dashboard' %}"
+            class="menu-item {% if request.path == '/dashboard/parent/' and not 'child_id' in request.GET %}active{% endif %}"
+          >
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="{% url 'communications:message_list' %}"
+            class="menu-item {% if '/communications/messages/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-envelope"></i>
+            <span>Messages</span>
+          </a>
+          <a
+            href="{% url 'communications:announcement_list' %}"
+            class="menu-item {% if '/communications/announcements/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-bullhorn"></i>
+            <span>Announcements</span>
+          </a>
+          <a
+            href="{% url 'communications:event_list' %}"
+            class="menu-item {% if '/communications/events/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-calendar-alt"></i>
+            <span>School Events</span>
+          </a>
+        </div>
+
+        <!-- Include the children list and quick links -->
+        {% include 'dashboard/includes/parent_sidebar_children.html' %}
+
+        <!-- Additional Parent Links -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex align-items-center">
+            <i class="fas fa-cog me-2"></i>
+            <span>Other</span>
+          </div>
+          <a
+            href="{% url 'assignments:report_card_list' %}"
+            class="menu-item {% if '/assignments/report-cards/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-file-alt"></i>
+            <span>Report Cards</span>
+          </a>
+          <a
+            href="{% url 'fees:student_payment_history' user.parent_profile.children.first.id %}"
+            class="menu-item {% if '/fees/student/' in request.path and '/payment-history/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-money-check-alt"></i>
+            <span>Payment History</span>
+          </a>
+          <a
+            href="{% url 'fees:student_fees' user.parent_profile.children.first.id %}"
+            class="menu-item {% if '/fees/student/' in request.path and not '/payment-history/' in request.path and not '/invoice/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>Fee Invoices</span>
+          </a>
+          <a
+            href="{% url 'appointments:parent_dashboard' %}"
+            class="menu-item {% if '/appointments/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-calendar-check"></i>
+            <span>Appointments</span>
+          </a>
+        </div>
+
+        <!-- Staff Sidebar (Non-teaching staff) -->
+        {% elif user.is_non_teaching_staff %}
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex align-items-center">
+            <i class="fas fa-id-card-alt me-2"></i>
+            <span>Staff Portal</span>
+          </div>
+          <a
+            href="{% url 'dashboard:staff_dashboard' %}"
+            class="menu-item {% if request.path == '/dashboard/staff/' %}active{% endif %}"
+          >
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="{% url 'payroll:staff_payslips' %}"
+            class="menu-item {% if '/payroll/staff/payslips/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>My Payslips</span>
+          </a>
+          <a
+            href="{% url 'communications:message_list' %}"
+            class="menu-item {% if '/communications/messages/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-envelope"></i>
+            <span>Messages</span>
+          </a>
+          <a
+            href="{% url 'communications:announcement_list' %}"
+            class="menu-item {% if '/communications/announcements/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-bullhorn"></i>
+            <span>Announcements</span>
+          </a>
+          <a
+            href="{% url 'communications:event_list' %}"
+            class="menu-item {% if '/communications/events/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-calendar-alt"></i>
+            <span>School Events</span>
+          </a>
+        </div>
+
+        <!-- Accountant-specific menu items -->
+        {% if user.is_accountant %}
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex align-items-center">
+            <i class="fas fa-money-bill-wave me-2"></i>
+            <span>Finance Management</span>
+          </div>
+          <a
+            href="{% url 'payroll:payroll_list' %}"
+            class="menu-item {% if '/payroll/admin/payrolls/' in request.path and not '/generate/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-money-check"></i>
+            <span>Payroll Management</span>
+          </a>
+          <a
+            href="{% url 'payroll:staff_salary_list' %}"
+            class="menu-item {% if '/payroll/admin/staff-salaries/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-users"></i>
+            <span>Staff Salaries</span>
+          </a>
+          <a
+            href="{% url 'payroll:payment_list' %}"
+            class="menu-item {% if '/payroll/admin/payments/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-credit-card"></i>
+            <span>Payment Records</span>
+          </a>
+          <a
+            href="{% url 'fees:student_fee_list' %}"
+            class="menu-item {% if '/fees/admin/student-fees/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-user-graduate"></i>
+            <span>Student Fees</span>
+          </a>
+          <a
+            href="{% url 'fees:payment_list' %}"
+            class="menu-item {% if '/fees/admin/payments/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-cash-register"></i>
+            <span>Fee Payments</span>
+          </a>
+          <a
+            href="{% url 'fees:fee_reports' %}"
+            class="menu-item {% if '/fees/admin/reports/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-chart-bar"></i>
+            <span>Financial Reports</span>
+          </a>
+        </div>
+        {% endif %}
+
+        <!-- Secretary/Receptionist-specific menu items -->
+        {% if user.is_secretary or user.is_receptionist %}
+        <div class="sidebar-section">
+          <div class="sidebar-heading px-3 py-2 d-flex align-items-center">
+            <i class="fas fa-tasks me-2"></i>
+            <span>Administrative</span>
+          </div>
+          <a
+            href="{% url 'users:student_list' %}"
+            class="menu-item {% if '/users/students/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-user-graduate"></i>
+            <span>Student Directory</span>
+          </a>
+          <a
+            href="{% url 'users:teacher_list' %}"
+            class="menu-item {% if '/users/teachers/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>Staff Directory</span>
+          </a>
+          <a
+            href="{% url 'communications:create_announcement' %}"
+            class="menu-item {% if '/communications/announcements/create/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-bullhorn"></i>
+            <span>Create Announcement</span>
+          </a>
+          <a
+            href="{% url 'communications:create_event' %}"
+            class="menu-item {% if '/communications/events/create/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-calendar-plus"></i>
+            <span>Create Event</span>
+          </a>
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="header">
+        <div class="header-toggle" id="sidebar-toggle">
+          <i class="fas fa-bars"></i>
+        </div>
+
+        <!-- School Logo -->
+        {% if site_settings and site_settings.school_logo %}
+        <div class="school-logo-container ms-3">
+          <a href="{% url 'website:home' %}" title="Go to School Website">
+            <img src="{{ site_settings.school_logo.url }}" alt="School Logo" class="school-logo" style="height: 40px; max-width: 180px; object-fit: contain;">
+          </a>
+        </div>
+        {% endif %}
+
+        <div class="ms-auto d-flex align-items-center">
+          <!-- Home Icon -->
+          <div class="home-icon-container mx-3">
+            <a href="{% url 'website:home' %}" class="nav-link" title="Go to School Website">
+              <i class="fas fa-home fa-lg"></i>
+            </a>
+          </div>
+
+          <!-- Notification Icon with Dropdown -->
+          <div class="notification-dropdown dropdown me-3 position-relative">
+            <a
+              class="nav-link position-relative notification-toggle"
+              href="javascript:void(0);"
+              id="notificationDropdown"
+              role="button"
+              onclick="toggleNotificationDropdown(event)"
+              aria-expanded="false"
+              aria-haspopup="true"
+            >
+              <i class="fas fa-bell fa-lg"></i>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" style="display: none;">0</span>
+            </a>
+            <div class="dropdown-menu notification-menu shadow-lg" aria-labelledby="notificationDropdown">
+              <div class="dropdown-header d-flex justify-content-between align-items-center py-2 px-3 border-bottom">
+                <h6 class="m-0 fw-bold">Notifications</h6>
+                <a href="{% url 'communications:mark_all_notifications_read' %}" class="text-decoration-none small text-primary">
+                  <i class="fas fa-check-double me-1"></i>Mark all as read
+                </a>
+              </div>
+              <div class="notification-list py-1" style="max-height: 300px; overflow-y: auto;">
+                <!-- Notifications will be loaded here via JavaScript -->
+                <div class="text-center py-4 loading-indicator">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="text-muted small mt-2 mb-0">Loading notifications...</p>
+                </div>
+              </div>
+              <div class="dropdown-divider m-0"></div>
+              <a class="dropdown-item text-center py-2 bg-light" href="{% url 'communications:notification_list' %}">
+                <i class="fas fa-list-ul me-1"></i> View all notifications
+              </a>
+            </div>
+          </div>
+
+        <!-- User Dropdown -->
+        <div class="user-dropdown dropdown position-relative">
+          <a
+            class="nav-link dropdown-toggle user-toggle"
+            href="javascript:void(0);"
+            id="userDropdown"
+            role="button"
+            onclick="toggleUserDropdown(event)"
+            aria-expanded="false"
+            aria-haspopup="true"
+          >
+            {% if user.profile_picture %}
+            <img
+              src="{{ user.profile_picture.url }}"
+              alt="{{ user.username }}"
+              class="rounded-circle"
+              width="32"
+              height="32"
+            />
+            {% else %}
+            <i class="fas fa-user-circle fa-lg"></i>
+            {% endif %}
+            <span class="ms-2 d-none d-md-inline">{{ user.get_full_name|default:user.username }}</span>
+          </a>
+          <ul
+            class="dropdown-menu shadow-lg"
+            aria-labelledby="userDropdown"
+          >
+            <li class="dropdown-header border-bottom py-2 px-3">
+              <div class="d-flex align-items-center">
+                {% if user.profile_picture %}
+                <img
+                  src="{{ user.profile_picture.url }}"
+                  alt="{{ user.username }}"
+                  class="rounded-circle me-2"
+                  width="40"
+                  height="40"
+                />
+                {% else %}
+                <div class="user-icon-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                  <span>{{ user.first_name.0 }}{{ user.last_name.0 }}</span>
+                </div>
+                {% endif %}
+                <div>
+                  <h6 class="mb-0">{{ user.get_full_name }}</h6>
+                  <small class="text-muted">{{ user.email }}</small>
+                </div>
+              </div>
+            </li>
+            <li>
+              <a class="dropdown-item py-2" href="{% url 'users:profile' %}">
+                <i class="fas fa-user me-2 text-primary"></i>Profile
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item py-2" href="{% url 'dashboard:preferences' %}">
+                <i class="fas fa-cog me-2 text-primary"></i>Preferences
+              </a>
+            </li>
+            <li><hr class="dropdown-divider m-0" /></li>
+            <li>
+              <a class="dropdown-item py-2 text-danger" href="{% url 'users:logout' %}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+        </div> <!-- Close the ms-auto d-flex container -->
+      </div>
+
+      <div class="main-content">
+        <div class="content-container">
+          {% if messages %} {% for message in messages %}
+          <div
+            class="alert alert-{{ message.tags }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"
+            ></button>
+          </div>
+          {% endfor %} {% endif %}
+
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+    {% else %} {% block auth_content %}{% endblock %} {% endif %}
+
+    <!-- Bootstrap JS is already loaded in the head section -->
+
+    <style>
+      /* Additional styles for the improved sidebar */
+      .sidebar-heading.submenu-toggle {
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .sidebar-heading.submenu-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .sidebar-submenu {
+        transition: max-height 0.3s ease-in-out;
+      }
+
+      /* Active sidebar submenu styles */
+      .sidebar-heading.active {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+
+      /* Navy color scheme specific submenu styles */
+      body.color-navy .sidebar-heading.submenu-toggle:hover {
+        background-color: rgba(10, 35, 81, 0.1);
+      }
+
+      body.color-navy .sidebar-heading.active {
+        background-color: rgba(10, 35, 81, 0.1);
+      }
+
+      /* Hide the plus/minus icon when sidebar is collapsed */
+      .sidebar.collapsed .sidebar-heading.submenu-toggle i:last-child {
+        display: none;
+      }
+
+      /* Notification dropdown styles */
+      .notification-toggle {
+        position: relative;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+      }
+
+      .notification-toggle:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .notification-badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.4rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      .notification-menu {
+        width: 320px;
+        max-width: 90vw;
+        padding: 0;
+        border: none;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        left: auto !important;
+        transform: none !important;
+        margin-top: 0.5rem !important;
+      }
+
+      .notification-item {
+        transition: background-color 0.2s ease;
+        border-left: 3px solid transparent;
+      }
+
+      .notification-item:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+      }
+
+      .notification-item.unread {
+        background-color: rgba(13, 110, 253, 0.05);
+        border-left: 3px solid var(--bs-primary);
+      }
+
+      .notification-item.unread:hover {
+        background-color: rgba(13, 110, 253, 0.08);
+      }
+
+      .notification-icon-wrapper {
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+      }
+
+      .notification-icon-wrapper i {
+        font-size: 0.8rem;
+      }
+
+      .notification-title {
+        font-size: 0.9rem;
+        line-height: 1.3;
+        margin-bottom: 0.2rem;
+      }
+
+      .notification-text {
+        font-size: 0.85rem;
+        line-height: 1.4;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .notification-time {
+        font-size: 0.75rem;
+      }
+
+      .notification-badge-new {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+      }
+
+      .notification-empty {
+        color: #6c757d;
+      }
+
+      /* User dropdown styles */
+      .user-toggle {
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+      }
+
+      .user-toggle:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .user-dropdown .dropdown-menu {
+        padding: 0;
+        border: none;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        width: 280px;
+        max-width: 90vw;
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        left: auto !important;
+        transform: none !important;
+        margin-top: 0.5rem !important;
+      }
+
+      .user-dropdown .dropdown-item {
+        padding: 0.6rem 1rem;
+        transition: all 0.2s ease;
+      }
+
+      .user-dropdown .dropdown-item:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+      }
+
+      .user-dropdown .dropdown-header {
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+
+      .user-icon-placeholder {
+        font-size: 1rem;
+        font-weight: 500;
+      }
+
+      /* Mobile optimizations for dropdowns */
+      @media (max-width: 576px) {
+        .notification-menu, .user-dropdown .dropdown-menu {
+          position: fixed !important;
+          top: 60px !important;
+          left: 0 !important;
+          right: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          border-radius: 0 !important;
+          max-height: calc(100vh - 60px);
+          transform: none !important;
+          margin-top: 0 !important;
+        }
+
+        .notification-list {
+          max-height: calc(100vh - 120px) !important;
+        }
+
+        .user-dropdown .dropdown-menu {
+          max-height: calc(100vh - 60px);
+          overflow-y: auto;
+        }
+      }
+    </style>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Initialize all dropdowns
+        const dropdownElementList = document.querySelectorAll('.dropdown-toggle');
+        const dropdownList = [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl));
+
+        // User dropdown is now handled by the toggleUserDropdown function
+
+        // Setup sidebar submenu behavior
+        const submenuToggles = document.querySelectorAll('.submenu-toggle');
+        let currentOpenSubmenu = null;
+
+        // Function to update icon (plus/minus)
+        function updateSubmenuIcon(toggle, isOpen) {
+          const icon = toggle.querySelector('i:last-child');
+          if (icon) {
+            if (isOpen) {
+              icon.classList.remove('fa-plus');
+              icon.classList.add('fa-minus');
+              toggle.classList.add('active');
+            } else {
+              icon.classList.remove('fa-minus');
+              icon.classList.add('fa-plus');
+              toggle.classList.remove('active');
+            }
+          }
+        }
+
+        // Initially check if any submenu should be open based on active items
+        submenuToggles.forEach(toggle => {
+          const targetId = toggle.getAttribute('data-bs-target');
+          const targetElement = document.querySelector(targetId);
+
+          // Check if this submenu contains the active page
+          if (targetElement && targetElement.querySelector('.active')) {
+            // Open this submenu and update its icon
+            const bsCollapse = new bootstrap.Collapse(targetElement, { toggle: true });
+            updateSubmenuIcon(toggle, true);
+            currentOpenSubmenu = targetElement;
+          }
+
+          // Add click handlers to each toggle
+          toggle.addEventListener('click', function(e) {
+            // Get the target submenu
+            const targetId = this.getAttribute('data-bs-target');
+            const targetElement = document.querySelector(targetId);
+
+            // Check if this submenu is already open
+            const isOpen = targetElement.classList.contains('show');
+
+            // If another submenu is open and this one is being opened, close the other
+            if (currentOpenSubmenu && currentOpenSubmenu !== targetElement && !isOpen) {
+              // Find the toggle for the currently open submenu
+              const otherToggle = document.querySelector(`[data-bs-target="#${currentOpenSubmenu.id}"]`);
+              // Close it and update its icon
+              bootstrap.Collapse.getInstance(currentOpenSubmenu).hide();
+              updateSubmenuIcon(otherToggle, false);
+            }
+
+            // Update current submenu reference and icon
+            if (!isOpen) {
+              currentOpenSubmenu = targetElement;
+              updateSubmenuIcon(this, true);
+            } else {
+              currentOpenSubmenu = null;
+              updateSubmenuIcon(this, false);
+            }
+          });
+        });
+
+        // Periodically update notification and message counts
+        function updateCounts() {
+                // Only run if user is authenticated (sidebar exists)
+                if (document.getElementById("sidebar")) {
+                    // Get notification counts via AJAX
+                    fetch("/communications/api/notifications/count/")
+                      .then(response => response.json())
+                      .then(data => {
+                        // Update header notification badge
+                        const headerNotificationBadge = document.querySelector('.notification-badge');
+                        if (headerNotificationBadge) {
+                            if (data.count > 0) {
+                                headerNotificationBadge.textContent = data.count;
+                                headerNotificationBadge.style.display = 'inline-block';
+                            } else {
+                                headerNotificationBadge.style.display = 'none';
+                            }
+                        }
+
+                        // Find notification badges in sidebar by targeting the specific menu item with fa-bell icon
+                        const notificationIconEl = document.querySelector('.menu-item i.fa-bell');
+                        if (notificationIconEl) {
+                            // Add null check before calling closest
+                            try {
+                                const notificationItem = notificationIconEl.closest('.menu-item');
+                                if (notificationItem) {
+                                    const notificationBadge = notificationItem.querySelector('.badge');
+                                    if (notificationBadge) {
+                                        if (data.count > 0) {
+                                            notificationBadge.textContent = data.count;
+                                            notificationBadge.style.display = 'inline';
+                                        } else {
+                                            notificationBadge.style.display = 'none';
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                console.log("Error updating notification badge:", e);
+                            }
+                        }
+                      })
+                      .catch(error => console.error("Error updating notification count:", error));
+
+                    // Get message counts via AJAX if the message menu exists
+                    const messageIconEl = document.querySelector('.menu-item i.fa-envelope');
+                    if (messageIconEl) {
+                      fetch("/communications/api/messages/count/")
+                        .then(response => response.json())
+                        .then(data => {
+                            const messageItem = messageIconEl.closest('.menu-item');
+                            if (messageItem) {
+                                const messageBadge = messageItem.querySelector('.badge');
+                                if (messageBadge) {
+                                    if (data.count > 0) {
+                                        messageBadge.textContent = data.count;
+                                        messageBadge.style.display = 'inline';
+                                    } else {
+                                        messageBadge.style.display = 'none';
+                                    }
+                                }
+                            }
+                        })
+                        .catch(error => console.error("Error updating message count:", error));
+                    }
+                  }
+        }
+
+        // Update category-specific notification counts for students
+        function updateCategoryNotifications() {
+          // Only run for student accounts
+          const assignmentBadge = document.getElementById('assignment-badge');
+          const materialBadge = document.getElementById('material-badge');
+          const quizBadge = document.getElementById('quiz-badge');
+
+          if (assignmentBadge && materialBadge && quizBadge) {
+            // Fetch assignment notifications
+            fetch("/communications/api/notifications/assignments/count/")
+              .then(response => response.json())
+              .then(data => {
+                if (data.count > 0) {
+                  assignmentBadge.textContent = data.count;
+                  assignmentBadge.style.display = 'inline';
+                } else {
+                  assignmentBadge.style.display = 'none';
+                }
+              })
+              .catch(error => console.error("Error updating assignment notifications:", error));
+
+            // Fetch material notifications
+            fetch("/communications/api/notifications/materials/count/")
+              .then(response => response.json())
+              .then(data => {
+                if (data.count > 0) {
+                  materialBadge.textContent = data.count;
+                  materialBadge.style.display = 'inline';
+                } else {
+                  materialBadge.style.display = 'none';
+                }
+              })
+              .catch(error => console.error("Error updating material notifications:", error));
+
+            // Fetch quiz notifications
+            fetch("/communications/api/notifications/quizzes/count/")
+              .then(response => response.json())
+              .then(data => {
+                if (data.count > 0) {
+                  quizBadge.textContent = data.count;
+                  quizBadge.style.display = 'inline';
+                } else {
+                  quizBadge.style.display = 'none';
+                }
+              })
+              .catch(error => console.error("Error updating quiz notifications:", error));
+          }
+        }
+
+        // Update all counts immediately when page loads
+        updateCounts();
+        updateCategoryNotifications();
+
+        // Then update all counts every 30 seconds
+        setInterval(() => {
+          updateCounts();
+          updateCategoryNotifications();
+        }, 30000);
+        // Sidebar toggle
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const sidebar = document.getElementById("sidebar");
+
+        if (sidebarToggle && sidebar) {
+          sidebarToggle.addEventListener("click", function () {
+            // Check if we're on mobile view
+            if (window.innerWidth <= 768) {
+              sidebar.classList.toggle("show");
+            } else {
+              sidebar.classList.toggle("collapsed");
+
+              // Save preference via AJAX only in desktop mode
+              // Just toggle the visual state without saving to preferences
+              // This allows user to collapse/expand sidebar during their session
+              // without changing their default preference setting in the database
+              console.log("Sidebar toggled visually only");
+            }
+          });
+        }
+
+        // Handle window resize to reset sidebar state
+        window.addEventListener('resize', function() {
+          if (window.innerWidth > 768 && sidebar) {
+            sidebar.classList.remove("show");
+          }
+        });
+
+        // Notification preferences handling
+        {% if preferences %}
+        // Store notification preferences in local storage for use by JS components
+        const notificationPreferences = {
+          email: {% if preferences.email_notifications %}true{% else %}false{% endif %},
+          assignment: {% if preferences.assignment_notifications %}true{% else %}false{% endif %},
+          message: {% if preferences.message_notifications %}true{% else %}false{% endif %},
+          grade: {% if preferences.grade_notifications %}true{% else %}false{% endif %},
+          attendance: {% if preferences.attendance_notifications %}true{% else %}false{% endif %}
+        };
+
+        localStorage.setItem('notificationPreferences', JSON.stringify(notificationPreferences));
+
+        // Apply theme settings
+        const theme = "{{ preferences.theme }}";
+        const colorScheme = "{{ preferences.color_scheme }}";
+
+        // Add to data attributes for easy access in other components
+        document.body.dataset.theme = theme;
+        document.body.dataset.colorScheme = colorScheme;
+        {% endif %}
+      });
+
+      // Toggle user dropdown function
+      function toggleUserDropdown(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const dropdownToggle = document.getElementById('userDropdown');
+        const dropdownMenu = document.querySelector('.user-dropdown .dropdown-menu');
+
+        if (dropdownMenu) {
+          // Close notification dropdown if open
+          const notificationMenu = document.querySelector('.notification-dropdown .dropdown-menu');
+          if (notificationMenu && notificationMenu.classList.contains('show')) {
+            notificationMenu.classList.remove('show');
+            document.getElementById('notificationDropdown').setAttribute('aria-expanded', 'false');
+
+            // Remove notification dropdown event listeners
+            document.removeEventListener('click', closeNotificationDropdown);
+            document.removeEventListener('keydown', handleEscapeKey);
+
+            // Remove scroll lock for mobile
+            if (window.innerWidth <= 576) {
+              document.body.style.overflow = '';
+            }
+          }
+
+          // Toggle dropdown visibility
+          const isCurrentlyOpen = dropdownMenu.classList.contains('show');
+
+          if (isCurrentlyOpen) {
+            // Close dropdown
+            dropdownMenu.classList.remove('show');
+            dropdownToggle.setAttribute('aria-expanded', 'false');
+
+            // Remove click outside listener
+            document.removeEventListener('click', closeUserDropdown);
+
+            // Remove escape key listener
+            document.removeEventListener('keydown', handleUserEscapeKey);
+          } else {
+            // Open dropdown
+            dropdownMenu.classList.add('show');
+            dropdownToggle.setAttribute('aria-expanded', 'true');
+
+            // Add click outside listener
+            document.addEventListener('click', closeUserDropdown);
+
+            // Add escape key listener
+            document.addEventListener('keydown', handleUserEscapeKey);
+          }
+        }
+      }
+
+      // Close user dropdown when clicking outside
+      function closeUserDropdown(event) {
+        if (!event.target.closest('.user-dropdown')) {
+          const dropdownMenu = document.querySelector('.user-dropdown .dropdown-menu');
+          const dropdownToggle = document.getElementById('userDropdown');
+
+          if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+            dropdownMenu.classList.remove('show');
+            dropdownToggle.setAttribute('aria-expanded', 'false');
+
+            // Remove event listeners
+            document.removeEventListener('click', closeUserDropdown);
+            document.removeEventListener('keydown', handleUserEscapeKey);
+          }
+        }
+      }
+
+      // Handle escape key press to close user dropdown
+      function handleUserEscapeKey(event) {
+        if (event.key === 'Escape') {
+          const dropdownMenu = document.querySelector('.user-dropdown .dropdown-menu');
+          const dropdownToggle = document.getElementById('userDropdown');
+
+          if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+            dropdownMenu.classList.remove('show');
+            dropdownToggle.setAttribute('aria-expanded', 'false');
+
+            // Remove event listeners
+            document.removeEventListener('click', closeUserDropdown);
+            document.removeEventListener('keydown', handleUserEscapeKey);
+          }
+        }
+      }
+
+      // Toggle notification dropdown function
+      function toggleNotificationDropdown(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const dropdownToggle = document.getElementById('notificationDropdown');
+        const dropdownMenu = document.querySelector('.notification-dropdown .dropdown-menu');
+
+        if (dropdownMenu) {
+          // Close user dropdown if open
+          const userMenu = document.querySelector('.user-dropdown .dropdown-menu');
+          if (userMenu && userMenu.classList.contains('show')) {
+            userMenu.classList.remove('show');
+          }
+
+          // Toggle dropdown visibility
+          const isCurrentlyOpen = dropdownMenu.classList.contains('show');
+
+          if (isCurrentlyOpen) {
+            // Close dropdown
+            dropdownMenu.classList.remove('show');
+            dropdownToggle.setAttribute('aria-expanded', 'false');
+
+            // Remove click outside listener
+            document.removeEventListener('click', closeNotificationDropdown);
+
+            // Remove escape key listener
+            document.removeEventListener('keydown', handleEscapeKey);
+          } else {
+            // Open dropdown
+            dropdownMenu.classList.add('show');
+            dropdownToggle.setAttribute('aria-expanded', 'true');
+
+            // Fetch notifications
+            fetchNotifications();
+
+            // Add click outside listener
+            document.addEventListener('click', closeNotificationDropdown);
+
+            // Add escape key listener
+            document.addEventListener('keydown', handleEscapeKey);
+
+            // Add scroll lock for mobile
+            if (window.innerWidth <= 576) {
+              document.body.style.overflow = 'hidden';
+            }
+          }
+        }
+      }
+
+      // Close notification dropdown when clicking outside
+      function closeNotificationDropdown(event) {
+        if (!event.target.closest('.notification-dropdown')) {
+          const dropdownMenu = document.querySelector('.notification-dropdown .dropdown-menu');
+          const dropdownToggle = document.getElementById('notificationDropdown');
+
+          if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+            dropdownMenu.classList.remove('show');
+            dropdownToggle.setAttribute('aria-expanded', 'false');
+
+            // Remove scroll lock for mobile
+            if (window.innerWidth <= 576) {
+              document.body.style.overflow = '';
+            }
+
+            // Remove event listeners
+            document.removeEventListener('click', closeNotificationDropdown);
+            document.removeEventListener('keydown', handleEscapeKey);
+          }
+        }
+      }
+
+      // Handle escape key press to close dropdown
+      function handleEscapeKey(event) {
+        if (event.key === 'Escape') {
+          const dropdownMenu = document.querySelector('.notification-dropdown .dropdown-menu');
+          const dropdownToggle = document.getElementById('notificationDropdown');
+
+          if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+            dropdownMenu.classList.remove('show');
+            dropdownToggle.setAttribute('aria-expanded', 'false');
+
+            // Remove scroll lock for mobile
+            if (window.innerWidth <= 576) {
+              document.body.style.overflow = '';
+            }
+
+            // Remove event listeners
+            document.removeEventListener('click', closeNotificationDropdown);
+            document.removeEventListener('keydown', handleEscapeKey);
+          }
+        }
+      }
+
+      // Fetch notifications for the dropdown
+      function fetchNotifications() {
+        const notificationList = document.querySelector('.notification-list');
+        const loadingIndicator = document.querySelector('.notification-list .loading-indicator');
+
+        if (notificationList && loadingIndicator) {
+          // Show loading indicator
+          loadingIndicator.style.display = 'block';
+
+          // Clear existing notifications except loading indicator
+          const existingItems = notificationList.querySelectorAll('.notification-item, .notification-empty');
+          existingItems.forEach(item => item.remove());
+
+          // Fetch notifications from API
+          fetch('/communications/api/notifications/list/')
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              // Hide loading indicator
+              loadingIndicator.style.display = 'none';
+
+              // Check if we have notifications
+              if (data.notifications && data.notifications.length > 0) {
+                // Add each notification to the list
+                data.notifications.forEach(notification => {
+                  const notificationItem = createNotificationItem(notification);
+                  loadingIndicator.insertAdjacentHTML('beforebegin', notificationItem);
+                });
+              } else {
+                // Show empty state
+                loadingIndicator.insertAdjacentHTML('beforebegin', `
+                  <div class="notification-empty text-center py-4 px-3">
+                    <div class="empty-icon-container mb-3">
+                      <i class="fas fa-bell-slash fa-2x text-muted"></i>
+                    </div>
+                    <h6 class="mb-1">No new notifications</h6>
+                    <p class="text-muted small mb-0">You're all caught up!</p>
+                  </div>
+                `);
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching notifications:', error);
+              loadingIndicator.style.display = 'none';
+              loadingIndicator.insertAdjacentHTML('beforebegin', `
+                <div class="notification-empty text-center py-4 px-3">
+                  <div class="empty-icon-container mb-3">
+                    <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                  </div>
+                  <h6 class="mb-1">Couldn't load notifications</h6>
+                  <p class="text-muted small mb-0">Please try again later</p>
+                  <button class="btn btn-sm btn-outline-primary mt-2" onclick="fetchNotifications()">
+                    <i class="fas fa-sync-alt me-1"></i>Retry
+                  </button>
+                </div>
+              `);
+            });
+        }
+      }
+
+      // Create HTML for a notification item
+      function createNotificationItem(notification) {
+        // Determine icon based on notification type
+        let iconClass = 'fas fa-bell';
+        let bgColorClass = 'bg-primary';
+
+        switch(notification.type) {
+          case 'Assignment':
+            iconClass = 'fas fa-file-alt';
+            bgColorClass = 'bg-primary';
+            break;
+          case 'Quiz':
+            iconClass = 'fas fa-question-circle';
+            bgColorClass = 'bg-warning';
+            break;
+          case 'Grade':
+            iconClass = 'fas fa-chart-line';
+            bgColorClass = 'bg-success';
+            break;
+          case 'Attendance':
+            iconClass = 'fas fa-calendar-check';
+            bgColorClass = 'bg-info';
+            break;
+          case 'Message':
+            iconClass = 'fas fa-envelope';
+            bgColorClass = 'bg-primary';
+            break;
+          case 'Announcement':
+            iconClass = 'fas fa-bullhorn';
+            bgColorClass = 'bg-warning';
+            break;
+          case 'Event':
+            iconClass = 'fas fa-calendar-day';
+            bgColorClass = 'bg-info';
+            break;
+          default:
+            iconClass = 'fas fa-bell';
+            bgColorClass = 'bg-primary';
+        }
+
+        // Create the HTML
+        return `
+          <a href="/communications/notifications/${notification.id}/mark-read/" class="notification-item px-2 py-2 d-block text-decoration-none border-bottom ${!notification.is_read ? 'unread' : ''}">
+            <div class="d-flex align-items-start">
+              <div class="notification-icon-wrapper me-2 rounded-circle ${bgColorClass} d-flex align-items-center justify-content-center">
+                <i class="${iconClass} text-white"></i>
+              </div>
+              <div class="flex-grow-1 notification-content">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="notification-title fw-bold text-dark">${notification.title}</div>
+                  ${!notification.is_read ? '<span class="badge bg-danger rounded-pill ms-1 notification-badge-new">New</span>' : ''}
+                </div>
+                <div class="notification-text text-muted small">${notification.message}</div>
+                <div class="notification-time text-muted small fst-italic mt-1">
+                  <i class="far fa-clock me-1"></i>${notification.created_at}
+                </div>
+              </div>
+            </div>
+          </a>
+        `;
+      }
+
+      // Get CSRF cookie
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              );
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

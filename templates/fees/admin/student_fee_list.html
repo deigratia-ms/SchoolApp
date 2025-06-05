@@ -1,0 +1,642 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Fees - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Student Fees</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Student Fees</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-2">
+          <label for="term" class="form-label">Term</label>
+          <select name="term" id="term" class="form-select">
+            <option value="">All Terms</option>
+            {% for term_option in terms %}
+              <option value="{{ term_option.id }}" {% if selected_term == term_option.id|stringformat:"i" %}selected{% endif %}>
+                {{ term_option.name }} ({{ term_option.academic_year }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="classroom" class="form-label">Class</label>
+          <select name="classroom" id="classroom" class="form-select">
+            <option value="">All Classes</option>
+            {% for classroom in classrooms %}
+              <option value="{{ classroom.id }}" {% if selected_classroom == classroom.id|stringformat:"i" %}selected{% endif %}>
+                {{ classroom.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="fee_category" class="form-label">Fee Type</label>
+          <select name="fee_category" id="fee_category" class="form-select">
+            <option value="">All Fee Types</option>
+            {% for category in fee_categories %}
+              <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="status" class="form-label">Status</label>
+          <select name="status" id="status" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="PENDING" {% if selected_status == "PENDING" %}selected{% endif %}>Pending</option>
+            <option value="PARTIALLY_PAID" {% if selected_status == "PARTIALLY_PAID" %}selected{% endif %}>Partially Paid</option>
+            <option value="PAID" {% if selected_status == "PAID" %}selected{% endif %}>Paid</option>
+            <option value="WAIVED" {% if selected_status == "WAIVED" %}selected{% endif %}>Waived</option>
+            <option value="OVERDUE" {% if selected_status == "OVERDUE" %}selected{% endif %}>Overdue</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="search" class="form-label">Search</label>
+          <input type="text" class="form-control" id="search" name="search" placeholder="Name or ID" value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-2"></i>Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mb-4">
+    <a href="{% url 'fees:class_fee_list' %}" class="btn btn-primary">
+      <i class="fas fa-money-bill-wave me-2"></i>Manage Class Fees
+    </a>
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
+      <i class="fas fa-tasks me-2"></i>Bulk Update
+    </button>
+    <button type="button" class="btn btn-info" id="exportFeesBtn">
+      <i class="fas fa-file-export me-2"></i>Export
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Fees
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_amount|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Amount Paid
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_paid|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                Outstanding Balance
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                GHS {{ total_balance|default:"0.00"|floatformat:2 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Collection Rate
+              </div>
+              <div class="row no-gutters align-items-center">
+                <div class="col-auto">
+                  <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ collection_rate|default:"0"|floatformat:1 }}%</div>
+                </div>
+                <div class="col">
+                  <div class="progress progress-sm mr-2">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ collection_rate|default:0 }}%"
+                         aria-valuenow="{{ collection_rate|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-percentage fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Fees Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Student Fees</h6>
+      <div class="dropdown no-arrow">
+        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+          <div class="dropdown-header">Actions:</div>
+          <a class="dropdown-item" href="{% url 'fees:payment_list' %}">View Payments</a>
+          <a class="dropdown-item" href="{% url 'fees:class_fee_list' %}">Manage Class Fees</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="{% url 'fees:outstanding_fees_report' %}">Outstanding Fees Report</a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if student_fees %}
+        <div class="table-responsive">
+          <table class="table table-bordered" id="studentFeesTable" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Fee Type</th>
+                <th>Term</th>
+                <th>Amount</th>
+                <th>Paid</th>
+                <th>Balance</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fee in student_fees %}
+                <tr>
+                  <td>
+                    <div>{{ fee.student.user.get_full_name }}</div>
+                    <small class="text-muted">ID: {{ fee.student.student_id }}</small>
+                  </td>
+                  <td>{{ fee.class_fee.classroom.name }}</td>
+                  <td>{{ fee.class_fee.fee_category.name }}</td>
+                  <td>{{ fee.class_fee.term.name }} ({{ fee.class_fee.term.academic_year }})</td>
+                  <td>GHS {{ fee.amount|floatformat:2 }}</td>
+                  <td>GHS {{ fee.amount_paid|floatformat:2 }}</td>
+                  <td>GHS {{ fee.balance|floatformat:2 }}</td>
+                  <td>
+                    {{ fee.due_date|date:"M d, Y" }}
+                    {% if fee.due_date < today and fee.status != 'PAID' and fee.status != 'WAIVED' %}
+                      <span class="badge bg-danger">Overdue</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if fee.status == 'PAID' %}
+                      <span class="badge bg-success">Paid</span>
+                    {% elif fee.status == 'PARTIALLY_PAID' %}
+                      <span class="badge bg-warning text-dark">Partially Paid</span>
+                    {% elif fee.status == 'OVERDUE' %}
+                      <span class="badge bg-danger">Overdue</span>
+                    {% elif fee.status == 'WAIVED' %}
+                      <span class="badge bg-info">Waived</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group">
+                      <a href="{% url 'fees:create_payment' %}?student_fee={{ fee.id }}" class="btn btn-sm btn-success" title="Record Payment">
+                        <i class="fas fa-cash-register"></i>
+                      </a>
+                      <button type="button" class="btn btn-sm btn-info edit-fee"
+                              data-id="{{ fee.id }}"
+                              data-amount="{{ fee.amount }}"
+                              data-due-date="{{ fee.due_date|date:'Y-m-d' }}"
+                              data-status="{{ fee.status }}"
+                              data-waiver-reason="{{ fee.waiver_reason|default:'' }}">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <a href="{% url 'fees:student_fee_invoice' fee.student.id fee.id %}" class="btn btn-sm btn-primary" title="View Invoice">
+                        <i class="fas fa-file-invoice"></i>
+                      </a>
+                      <a href="{% url 'fees:student_payment_history' fee.student.id %}?fee={{ fee.id }}" class="btn btn-sm btn-secondary" title="Payment History">
+                        <i class="fas fa-history"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if student_fees.has_other_pages %}
+          <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+              {% if student_fees.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page=1{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ student_fees.previous_page_number }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+
+              {% for i in paginator.page_range %}
+                {% if student_fees.number == i %}
+                  <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                {% elif i > student_fees.number|add:'-3' and i < student_fees.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ i }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if student_fees.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ student_fees.next_page_number }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ paginator.num_pages }}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No student fees found matching your criteria.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Edit Student Fee Modal -->
+<div class="modal fade" id="editFeeModal" tabindex="-1" aria-labelledby="editFeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="editFeeForm" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editFeeModalLabel">Edit Student Fee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_amount" class="form-label">Amount (GHS) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="edit_amount" name="amount" step="0.01" min="0" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="edit_due_date" name="due_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_status" class="form-label">Status <span class="text-danger">*</span></label>
+            <select class="form-select" id="edit_status" name="status" required>
+              <option value="PENDING">Pending</option>
+              <option value="PARTIALLY_PAID">Partially Paid</option>
+              <option value="PAID">Paid</option>
+              <option value="WAIVED">Waived</option>
+              <option value="OVERDUE">Overdue</option>
+            </select>
+          </div>
+          <div class="mb-3" id="waiver_reason_container">
+            <label for="edit_waiver_reason" class="form-label">Waiver Reason</label>
+            <textarea class="form-control" id="edit_waiver_reason" name="waiver_reason" rows="3"></textarea>
+            <small class="form-text text-muted">Required if status is set to "Waived"</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Fee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Update Modal -->
+<div class="modal fade" id="bulkUpdateModal" tabindex="-1" aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'fees:bulk_update_fees' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="bulkUpdateModalLabel">Bulk Update Fees</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="bulk_term" class="form-label">Term <span class="text-danger">*</span></label>
+            <select class="form-select" id="bulk_term" name="term" required>
+              <option value="">Select Term</option>
+              {% for term in terms %}
+                <option value="{{ term.id }}" {% if term.is_current %}selected{% endif %}>
+                  {{ term.name }} ({{ term.academic_year }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="bulk_classroom" class="form-label">Class</label>
+            <select class="form-select" id="bulk_classroom" name="classroom">
+              <option value="">All Classes</option>
+              {% for classroom in classrooms %}
+                <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="bulk_fee_category" class="form-label">Fee Type</label>
+            <select class="form-select" id="bulk_fee_category" name="fee_category">
+              <option value="">All Fee Types</option>
+              {% for category in fee_categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="bulk_action" class="form-label">Action <span class="text-danger">*</span></label>
+            <select class="form-select" id="bulk_action" name="action" required>
+              <option value="">Select Action</option>
+              <option value="update_due_date">Update Due Date</option>
+              <option value="mark_as_overdue">Mark as Overdue</option>
+              <option value="waive_fees">Waive Fees</option>
+            </select>
+          </div>
+          <div class="mb-3" id="bulk_due_date_container" style="display: none;">
+            <label for="bulk_due_date" class="form-label">New Due Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="bulk_due_date" name="due_date">
+          </div>
+          <div class="mb-3" id="bulk_waiver_reason_container" style="display: none;">
+            <label for="bulk_waiver_reason" class="form-label">Waiver Reason <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="bulk_waiver_reason" name="waiver_reason" rows="3"></textarea>
+          </div>
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>This action will affect all student fees matching the selected criteria.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Apply Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Fee Modal -->
+<div class="modal fade" id="editFeeModal" tabindex="-1" aria-labelledby="editFeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="editFeeForm" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editFeeModalLabel">Edit Student Fee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_amount" class="form-label">Amount (GHS) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="edit_amount" name="amount" step="0.01" min="0" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="edit_due_date" name="due_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_status" class="form-label">Status <span class="text-danger">*</span></label>
+            <select class="form-select" id="edit_status" name="status" required>
+              <option value="PENDING">Pending</option>
+              <option value="PARTIALLY_PAID">Partially Paid</option>
+              <option value="PAID">Paid</option>
+              <option value="WAIVED">Waived</option>
+              <option value="OVERDUE">Overdue</option>
+            </select>
+          </div>
+          <div class="mb-3" id="waiver_reason_container" style="display: none;">
+            <label for="edit_waiver_reason" class="form-label">Waiver Reason <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="edit_waiver_reason" name="waiver_reason" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Fee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#studentFeesTable').DataTable({
+      order: [[7, 'asc'], [8, 'desc']],
+      pageLength: 25,
+      dom: 'Bfrtip',
+      buttons: [
+        'copy', 'excel', 'pdf'
+      ]
+    });
+
+    // Toggle waiver reason field based on status
+    $('#edit_status').on('change', function() {
+      if (this.value === 'WAIVED') {
+        $('#waiver_reason_container').show();
+        $('#edit_waiver_reason').attr('required', true);
+      } else {
+        $('#waiver_reason_container').hide();
+        $('#edit_waiver_reason').attr('required', false);
+      }
+    });
+
+    // Toggle bulk action fields
+    $('#bulk_action').on('change', function() {
+      if (this.value === 'update_due_date') {
+        $('#bulk_due_date_container').show();
+        $('#bulk_due_date').attr('required', true);
+        $('#bulk_waiver_reason_container').hide();
+        $('#bulk_waiver_reason').attr('required', false);
+      } else if (this.value === 'waive_fees') {
+        $('#bulk_due_date_container').hide();
+        $('#bulk_due_date').attr('required', false);
+        $('#bulk_waiver_reason_container').show();
+        $('#bulk_waiver_reason').attr('required', true);
+      } else {
+        $('#bulk_due_date_container').hide();
+        $('#bulk_due_date').attr('required', false);
+        $('#bulk_waiver_reason_container').hide();
+        $('#bulk_waiver_reason').attr('required', false);
+      }
+    });
+
+    // Edit Fee - using event delegation for better compatibility
+    $(document).on('click', '.edit-fee', function() {
+      console.log('Edit fee button clicked');
+      const id = $(this).data('id');
+      const amount = $(this).data('amount');
+      const dueDate = $(this).data('due-date');
+      const status = $(this).data('status');
+      const waiverReason = $(this).data('waiver-reason');
+
+      console.log('Edit fee data:', { id, amount, dueDate, status, waiverReason });
+
+      $('#edit_amount').val(amount);
+      $('#edit_due_date').val(dueDate);
+      $('#edit_status').val(status);
+      $('#edit_waiver_reason').val(waiverReason);
+
+      // Show/hide waiver reason field based on status
+      if (status === 'WAIVED') {
+        $('#waiver_reason_container').show();
+        $('#edit_waiver_reason').attr('required', true);
+      } else {
+        $('#waiver_reason_container').hide();
+        $('#edit_waiver_reason').attr('required', false);
+      }
+
+      $('#editFeeForm').attr('action', "{% url 'fees:edit_student_fee' 0 %}".replace('0', id));
+      $('#editFeeModal').modal('show');
+    });
+
+    // Also add direct event listeners as a fallback
+    document.querySelectorAll('.edit-fee').forEach(button => {
+      button.addEventListener('click', function(e) {
+        console.log('Edit fee button clicked (direct)');
+        try {
+          const id = this.getAttribute('data-id');
+          const amount = this.getAttribute('data-amount');
+          const dueDate = this.getAttribute('data-due-date');
+          const status = this.getAttribute('data-status');
+          const waiverReason = this.getAttribute('data-waiver-reason') || '';
+
+          console.log('Edit fee data (direct):', { id, amount, dueDate, status, waiverReason });
+
+          document.getElementById('edit_amount').value = amount;
+          document.getElementById('edit_due_date').value = dueDate;
+          document.getElementById('edit_status').value = status;
+          document.getElementById('edit_waiver_reason').value = waiverReason;
+
+          // Show/hide waiver reason field based on status
+          if (status === 'WAIVED') {
+            document.getElementById('waiver_reason_container').style.display = 'block';
+            document.getElementById('edit_waiver_reason').setAttribute('required', 'true');
+          } else {
+            document.getElementById('waiver_reason_container').style.display = 'none';
+            document.getElementById('edit_waiver_reason').removeAttribute('required');
+          }
+
+          const form = document.getElementById('editFeeForm');
+          form.action = "{% url 'fees:edit_student_fee' 0 %}".replace('0', id);
+
+          // Show modal using Bootstrap 5 API
+          const modal = new bootstrap.Modal(document.getElementById('editFeeModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error handling edit fee button click:', error);
+        }
+      });
+    });
+
+    // Export Fees
+    $('#exportFeesBtn').on('click', function(e) {
+      e.preventDefault();
+
+      // Get current filter parameters
+      const term = $('#term').val();
+      const classroom = $('#classroom').val();
+      const feeCategory = $('#fee_category').val();
+      const status = $('#status').val();
+      const search = $('#search').val();
+
+      // Build export URL with filters
+      let exportUrl = "{% url 'fees:student_fee_export' %}?";
+      if (term) exportUrl += `term=${term}&`;
+      if (classroom) exportUrl += `classroom=${classroom}&`;
+      if (feeCategory) exportUrl += `fee_category=${feeCategory}&`;
+      if (status) exportUrl += `status=${status}&`;
+      if (search) exportUrl += `search=${search}&`;
+
+      window.location.href = exportUrl;
+    });
+  });
+</script>
+{% endblock %}

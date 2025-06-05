@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Reset Student PIN</h2>
+<form method="post">
+    {% csrf_token %}
+    <label for="student_id">Student ID:</label>
+    <input type="text" id="student_id" name="student_id" required>
+    <button type="submit">Reset PIN</button>
+</form>
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

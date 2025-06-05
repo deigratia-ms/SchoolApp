@@ -1,0 +1,564 @@
+{% extends 'base.html' %} {% block title %}Teacher Dashboard - Ricas School
+Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Teacher Dashboard</h1>
+    <div>
+      <a
+        href="{% url 'assignments:create_assignment' %}"
+        class="btn btn-primary"
+      >
+        <i class="fas fa-plus me-2"></i>Create Assignment
+      </a>
+    </div>
+  </div>
+
+  <!-- Teacher Info -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body d-flex">
+          <div class="me-3">
+            {% if user.profile_picture %}
+            <img
+              src="{{ user.profile_picture.url }}"
+              alt="{{ user.get_full_name }}"
+              class="rounded-circle"
+              width="80"
+              height="80"
+            />
+            {% else %}
+            <div
+              class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white"
+              style="width: 80px; height: 80px"
+            >
+              <span class="display-6"
+                >{{ user.first_name|first }}{{ user.last_name|first }}</span
+              >
+            </div>
+            {% endif %}
+          </div>
+          <div>
+            <h5 class="card-title mb-1">{{ user.get_full_name }}</h5>
+            <p class="card-text mb-1">
+              <span class="badge bg-info">{{ teacher.department }}</span>
+            </p>
+            <p class="card-text">
+              <small class="text-muted">ID: {{ teacher.employee_id }}</small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="row">
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <div class="display-4 text-primary mb-2">
+                {{ assigned_classes|length }}
+              </div>
+              <div class="text-muted">Assigned Classes</div>
+            </div>
+            <div class="card-footer bg-transparent text-center">
+              <a href="#assigned-classes" class="text-decoration-none">
+                <i class="fas fa-chalkboard me-1"></i>View Classes
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <div class="display-4 text-success mb-2">
+                {{ recent_assignments|length }}
+              </div>
+              <div class="text-muted">Recent Assignments</div>
+            </div>
+            <div class="card-footer bg-transparent text-center">
+              <a href="#assignments" class="text-decoration-none">
+                <i class="fas fa-tasks me-1"></i>View Assignments
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <div class="display-4 text-warning mb-2">
+                {{ recent_submissions|length }}
+              </div>
+              <div class="text-muted">Pending Grades</div>
+            </div>
+            <div class="card-footer bg-transparent text-center">
+              <a href="#submissions" class="text-decoration-none">
+                <i class="fas fa-clipboard-check me-1"></i>Grade Submissions
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Quick Actions</h5>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-md-3 col-sm-6 mb-3">
+              <a
+                href="{% url 'assignments:create_assignment' %}"
+                class="btn btn-outline-primary w-100 py-3"
+                {% if is_subject_teacher %}title="Only class teachers can create assignments"{% endif %}
+              >
+                <i class="fas fa-clipboard-list fa-2x mb-2"></i><br />
+                Create Assignment
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+              <a href="{% url 'assignments:enter_term_grades' %}" class="btn btn-outline-success w-100 py-3">
+                <i class="fas fa-table fa-2x mb-2"></i><br />
+                Enter Grades
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+              <a href="{% url 'assignments:gradebook' %}" class="btn btn-outline-info w-100 py-3">
+                <i class="fas fa-chart-bar fa-2x mb-2"></i><br />
+                View Gradebook
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+              <a
+                href="{% url 'courses:create_material' %}"
+                class="btn btn-outline-info w-100 py-3"
+              >
+                <i class="fas fa-file-upload fa-2x mb-2"></i><br />
+                Upload Material
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+              <a
+                href="{% url 'communications:event_list' %}"
+                class="btn btn-outline-warning w-100 py-3"
+              >
+                <i class="fas fa-calendar-alt fa-2x mb-2"></i><br />
+                View Events
+              </a>
+            </div>
+            {% if not is_subject_teacher %}
+            <div class="col-md-3 col-sm-6 mb-3">
+              <a
+                href="{% url 'attendance:take_attendance' %}"
+                class="btn btn-outline-warning w-100 py-3"
+              >
+                <i class="fas fa-user-check fa-2x mb-2"></i><br />
+                Take Attendance
+              </a>
+            </div>
+            {% else %}
+            <div class="col-md-3 col-sm-6 mb-3">
+              <a
+                href="{% url 'attendance:records' %}"
+                class="btn btn-outline-secondary w-100 py-3"
+              >
+                <i class="fas fa-list-alt fa-2x mb-2"></i><br />
+                View Attendance
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Assigned Classes -->
+    <div class="col-md-7 mb-4">
+      <div class="card" id="assigned-classes">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">My Classes & Subjects</h5>
+          <a
+            href="{% url 'courses:class_subject_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          {% if assigned_classes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Subject</th>
+                            <th>Students</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_subject in assigned_classes %}
+                            <tr>
+                                <td>
+                                    {{ class_subject.classroom.name }}
+                                    {% if class_subject.classroom.section %}
+                                        ({{ class_subject.classroom.section }})
+                                    {% endif %}
+                                </td>
+                                <td>{{ class_subject.subject.name }}</td>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        {{ class_subject.students.count }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'courses:class_subject_detail' class_subject.id %}"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'courses:create_material' %}?class_subject={{ class_subject.id }}"
+                                           class="btn btn-sm btn-outline-success"
+                                           title="Upload Materials">
+                                            <i class="fas fa-file-upload"></i>
+                                        </a>
+                                        <a href="{% url 'assignments:create_assignment' %}?class_subject={{ class_subject.id }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           title="Create Assignment">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                You have not been assigned any classes or subjects yet.
+            </div>
+        {% endif %}
+        </div>
+      </div>
+
+      <!-- Class Teacher Responsibilities -->
+      {% if class_teacher_of %}
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">Class Teacher Responsibilities</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Students</th>
+                  <th>Today's Attendance</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in class_teacher_of %}
+                <tr>
+                  <td>
+                    {{ item.classroom.name }} {% if item.classroom.section %}({{ item.classroom.section }}){% endif %}
+                  </td>
+                  <td>
+                    {{ item.student_count }}
+                  </td>
+                  <td>
+                    {% for record in today_attendance %}
+                        {% if record.classroom == item.classroom %}
+                            <span class="badge bg-success">Taken</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    {% empty %}
+                        <span class="badge bg-warning">Pending</span>
+                    {% endfor %}
+                  </td>
+                  <td>
+                    <a
+                      href="{% url 'courses:class_detail' class_id=item.classroom.id %}"
+                      class="btn btn-sm btn-outline-primary"
+                      title="View Class"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a
+                      href="{% url 'attendance:take_class_attendance' classroom_id=item.classroom.id %}"
+                      class="btn btn-sm btn-outline-warning"
+                      title="Take Attendance"
+                    >
+                      <i class="fas fa-user-check"></i>
+                    </a>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-info report-access-btn"
+                      title="Generate Report"
+                      data-bs-toggle="modal"
+                      data-bs-target="#reportAccessDeniedModal"
+                    >
+                      <i class="fas fa-file-alt"></i>
+                    </button>
+                    <a
+                      href="{% url 'communications:create_event' %}?target_class={{ item.classroom.id }}"
+                      class="btn btn-sm btn-outline-success"
+                      title="Create Class Event"
+                    >
+                      <i class="fas fa-calendar-plus"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center">
+                    You are not a class teacher for any class
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-5">
+      <!-- Recent Submissions to Grade -->
+      <div class="card mb-4" id="submissions">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Submissions to Grade</h5>
+          <a
+            href="{% url 'assignments:submission_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for submission in recent_submissions %}
+            <a
+              href="{% url 'assignments:grade_submission' submission_id=submission.id %}"
+              class="list-group-item list-group-item-action"
+            >
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">
+                  {{ submission.student.user.get_full_name }}
+                </h6>
+                <small>{{ submission.submission_date|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">{{ submission.assignment.title }}</p>
+              <small>
+                <span class="badge bg-primary"
+                  >{{ submission.assignment.class_subject.subject.name }}</span
+                >
+                <span class="badge bg-secondary"
+                  >{{ submission.assignment.class_subject.classroom.name
+                  }}</span
+                >
+              </small>
+            </a>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No pending submissions to grade</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Events -->
+      <div class="card mb-4" id="events">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Upcoming Events</h5>
+          <a
+            href="{% url 'communications:event_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for event in upcoming_events %}
+            <a
+              href="{% url 'communications:event_detail' event_id=event.id %}"
+              class="list-group-item list-group-item-action"
+            >
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ event.title }}</h6>
+                <small>{{ event.start_date|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">
+                {% if event.end_date %}
+                  {{ event.start_date|date:"g:i A" }} - {{ event.end_date|date:"g:i A" }}
+                {% else %}
+                  {{ event.start_date|date:"g:i A" }}
+                {% endif %}
+              </p>
+              <small>
+                {% if event.is_school_wide %}
+                  <span class="badge bg-primary">School-wide</span>
+                {% endif %}
+                {% if event.location %}
+                  <span class="badge bg-info">{{ event.location }}</span>
+                {% endif %}
+                {% if event.is_virtual %}
+                  <span class="badge bg-success">Virtual</span>
+                {% endif %}
+              </small>
+            </a>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No upcoming events</p>
+              <a
+                href="{% url 'communications:create_event' %}"
+                class="btn btn-sm btn-primary"
+                >Create Event</a
+              >
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Assignments -->
+      <div class="card mb-4" id="assignments">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Recent Assignments</h5>
+          <a
+            href="{% url 'assignments:assignment_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for assignment in recent_assignments %}
+            <a
+              href="{% url 'assignments:assignment_detail' assignment_id=assignment.id %}"
+              class="list-group-item list-group-item-action"
+            >
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ assignment.title }}</h6>
+                <small>{{ assignment.created_at|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">
+                Due: {{ assignment.due_date|date:"M d, Y g:i A" }}
+              </p>
+              <small>
+                <span class="badge bg-primary"
+                  >{{ assignment.class_subject.subject.name }}</span
+                >
+                <span class="badge bg-secondary"
+                  >{{ assignment.class_subject.classroom.name }}</span
+                >
+                <span
+                  class="badge bg-{% if assignment.assignment_type == 'HOMEWORK' %}info{% elif assignment.assignment_type == 'QUIZ' %}success{% elif assignment.assignment_type == 'TEST' %}warning{% else %}danger{% endif %}"
+                >
+                  {{ assignment.get_assignment_type_display }}
+                </span>
+              </small>
+            </a>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No assignments created yet</p>
+              <a
+                href="{% url 'assignments:create_assignment' %}"
+                class="btn btn-sm btn-primary"
+                >Create First Assignment</a
+              >
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Announcements -->
+      <div class="card">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Recent Announcements</h5>
+          <a
+            href="{% url 'communications:announcement_list' %}"
+            class="btn btn-sm btn-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            {% for announcement in recent_announcements %}
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ announcement.title }}</h6>
+                <small>{{ announcement.created_at|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">{{ announcement.content|truncatechars:100 }}</p>
+              <small>
+                <span class="badge bg-secondary"
+                  >{{ announcement.get_target_type_display }}</span
+                >
+                <span class="badge bg-primary"
+                  >From: {{ announcement.created_by.get_full_name }}</span
+                >
+              </small>
+            </div>
+            {% empty %}
+            <div class="text-center py-3">
+              <p class="text-muted">No announcements yet</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Report Access Denied Modal -->
+<div class="modal fade" id="reportAccessDeniedModal" tabindex="-1" aria-labelledby="reportAccessDeniedModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="reportAccessDeniedModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>Access Restricted
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-4">
+          <i class="fas fa-lock fa-4x text-danger mb-3"></i>
+          <h5>Permission Denied</h5>
+        </div>
+        <p>Only administrators are authorized to generate report cards.</p>
+        <p>please contact the school administrator If needed.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

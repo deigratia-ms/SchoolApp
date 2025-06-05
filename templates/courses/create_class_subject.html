@@ -1,0 +1,284 @@
+{% extends 'base.html' %} {% block title %}Assign Subject to Class | Ricas
+School Management System{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Assign Subject to Class</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'courses:class_subject_list' %}">Class Subjects</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Create</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Assignment Information</h6>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="classroom" class="form-label"
+                >Class <span class="text-danger">*</span></label
+              >
+              <select class="form-select" id="classroom" name="classroom" required>
+                <option value="">-- Select Class --</option>
+                {% for classroom in classrooms %}
+                <option value="{{ classroom.id }}">
+                  {{ classroom.name }}{% if classroom.section %} ({{ classroom.section }}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Select the class to which you want to assign a subject.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="subject" class="form-label"
+                >Subject <span class="text-danger">*</span></label
+              >
+              <select class="form-select" id="subject" name="subject" required>
+                <option value="">-- Select Subject --</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">
+                  {{ subject.name }} ({{ subject.code }})
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Select the subject you want to assign to the selected class.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="teacher" class="form-label"
+                >Teacher <span class="text-danger">*</span></label
+              >
+              <select class="form-select" id="teacher" name="teacher" required>
+                <option value="">-- Select Teacher --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">
+                  {{ teacher.user.get_full_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Assign a teacher who will teach this subject to this class.
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a
+                href="{% url 'courses:class_subject_list' %}"
+                class="btn btn-secondary me-md-2"
+                >Cancel</a
+              >
+              <button type="submit" class="btn btn-primary">
+                Create Assignment
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">Instructions</h6>
+        </div>
+        <div class="card-body">
+          <p>Please fill in the form to assign a subject to a class:</p>
+          <ul>
+            <li>Select a <strong>Class</strong> from the dropdown list.</li>
+            <li>
+              Choose a <strong>Subject</strong> to be taught in this class.
+            </li>
+            <li>
+              Assign a <strong>Teacher</strong> who will teach this subject to
+              this class.
+            </li>
+          </ul>
+          <p>
+            Each combination of class and subject must be unique. A subject can
+            be taught in multiple classes, but each class-subject combination
+            can only be created once.
+          </p>
+        </div>
+      </div>
+
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold">What's Next?</h6>
+        </div>
+        <div class="card-body">
+          <p>After creating a class-subject assignment, you'll need to:</p>
+          <ol>
+            <li>Add students to this class-subject.</li>
+            <li>Create a schedule for when this subject will be taught.</li>
+            <li>Have the assigned teacher upload course materials.</li>
+            <li>Create assignments and quizzes for this subject.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  $(document).ready(function () {
+    // First, let's check what's available
+    const classroomSelect = document.getElementById("classroom");
+    const subjectSelect = document.getElementById("subject");
+    const teacherSelect = document.getElementById("teacher");
+
+    console.log("DOM ready - checking dropdown contents");
+    console.log(
+      "Classrooms:",
+      classroomSelect ? classroomSelect.options.length : "Not found",
+      classroomSelect
+        ? Array.from(classroomSelect.options).map((o) => o.text)
+        : []
+    );
+    console.log(
+      "Subjects:",
+      subjectSelect ? subjectSelect.options.length : "Not found",
+      subjectSelect ? Array.from(subjectSelect.options).map((o) => o.text) : []
+    );
+    console.log(
+      "Teachers:",
+      teacherSelect ? teacherSelect.options.length : "Not found",
+      teacherSelect ? Array.from(teacherSelect.options).map((o) => o.text) : []
+    );
+
+    // Force native selects to be visible immediately, with basic styling
+    if (classroomSelect) {
+      classroomSelect.style.display = "block";
+      classroomSelect.classList.add("form-control");
+    }
+    if (subjectSelect) {
+      subjectSelect.style.display = "block";
+      subjectSelect.classList.add("form-control");
+    }
+    if (teacherSelect) {
+      teacherSelect.style.display = "block";
+      teacherSelect.classList.add("form-control");
+    }
+
+    // Initialize Select2 with a delay to ensure everything is loaded
+    setTimeout(function () {
+      try {
+        if (typeof $.fn.select2 !== "undefined") {
+          console.log("Initializing Select2 for dropdowns");
+
+          // Initialize with more robust options
+          $("#classroom").select2({
+            placeholder: "-- Select Class --",
+            allowClear: true,
+            width: "100%",
+            dropdownParent: $("#classroom").parent(),
+            escapeMarkup: function (markup) {
+              return markup;
+            },
+          });
+
+          $("#subject").select2({
+            placeholder: "-- Select Subject --",
+            allowClear: true,
+            width: "100%",
+            dropdownParent: $("#subject").parent(),
+            escapeMarkup: function (markup) {
+              return markup;
+            },
+          });
+
+          $("#teacher").select2({
+            placeholder: "-- Select Teacher --",
+            allowClear: true,
+            width: "100%",
+            dropdownParent: $("#teacher").parent(),
+            escapeMarkup: function (markup) {
+              return markup;
+            },
+          });
+
+          // Explicitly open and close the dropdowns to force rendering
+          $("#classroom").select2("open");
+          $("#classroom").select2("close");
+          $("#subject").select2("open");
+          $("#subject").select2("close");
+          $("#teacher").select2("open");
+          $("#teacher").select2("close");
+
+          console.log("Select2 initialization complete");
+        } else {
+          console.log("Select2 not available, using native selects");
+        }
+      } catch (e) {
+        console.error("Error initializing Select2:", e);
+      }
+    }, 500);
+
+    // Form validation and submission handler
+    $("#classSubjectForm").on("submit", function (e) {
+      const classroomId = $("#classroom").val();
+      const subjectId = $("#subject").val();
+      const teacherId = $("#teacher").val();
+
+      // Validate all required fields
+      if (!classroomId || !subjectId || !teacherId) {
+        e.preventDefault();
+
+        // Show validation error with better UX than an alert
+        let errorMessage = "Please complete all required fields:";
+        if (!classroomId) errorMessage += "\n- Select a classroom";
+        if (!subjectId) errorMessage += "\n- Select a subject";
+        if (!teacherId) errorMessage += "\n- Select a teacher";
+
+        // Add an error message to the form
+        const errorDiv = $("<div>")
+          .addClass("alert alert-danger mt-3")
+          .html(
+            "<strong>Error:</strong> " + errorMessage.replace(/\n/g, "<br>")
+          );
+
+        // Remove any existing error messages first
+        $(".alert-danger").remove();
+        $(this).prepend(errorDiv);
+
+        return false;
+      }
+
+      // Show loading state
+      const submitBtn = $(this).find("button[type='submit']");
+      const originalText = submitBtn.html();
+      submitBtn.html(
+        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...'
+      );
+      submitBtn.prop("disabled", true);
+
+      // Disable all form elements during submission
+      $(this)
+        .find("select, input, button")
+        .not(submitBtn)
+        .prop("disabled", true);
+
+      // Add a hidden field to track form submission
+      $(this).append(
+        '<input type="hidden" name="form_submitted" value="true">'
+      );
+
+      return true;
+    });
+  });
+</script>
+{% endblock %}

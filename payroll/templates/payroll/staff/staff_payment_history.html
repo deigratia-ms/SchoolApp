@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Payment History - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">My Payment History</h1>
+    <div>
+      <a href="{% url 'payroll:staff_dashboard' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Payroll Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Form -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+          <form method="get" class="row g-3">
+            <div class="col-md-4">
+              <label for="year" class="form-label">Year</label>
+              <select name="year" id="year" class="form-select">
+                {% for year_option in years %}
+                  <option value="{{ year_option }}" {% if selected_year == year_option|stringformat:"i" %}selected{% endif %}>
+                    {{ year_option }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="month" class="form-label">Month</label>
+              <select name="month" id="month" class="form-select">
+                <option value="">All Months</option>
+                {% for month_num, month_name in months %}
+                  <option value="{{ month_num }}" {% if selected_month == month_num|stringformat:"i" %}selected{% endif %}>
+                    {{ month_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter me-2"></i>Apply Filters
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Total Gross ({{ selected_year }})
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_gross|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                Total Deductions ({{ selected_year }})
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_deductions|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-minus-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                Total Net ({{ selected_year }})
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_net|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Paid ({{ selected_year }})
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">GH₵ {{ total_paid|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Breakdown -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Monthly Breakdown ({{ selected_year }})</h6>
+        </div>
+        <div class="card-body">
+          {% if monthly_breakdown %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Gross Salary</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Paid Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for month_data in monthly_breakdown %}
+                    <tr>
+                      <td>{{ month_data.month }}</td>
+                      <td>GH₵ {{ month_data.gross|floatformat:2|intcomma }}</td>
+                      <td>GH₵ {{ month_data.deductions|floatformat:2|intcomma }}</td>
+                      <td>GH₵ {{ month_data.net|floatformat:2|intcomma }}</td>
+                      <td>GH₵ {{ month_data.paid|floatformat:2|intcomma }}</td>
+                      <td>
+                        {% if month_data.paid >= month_data.net %}
+                          <span class="badge bg-success">Fully Paid</span>
+                        {% elif month_data.paid > 0 %}
+                          <span class="badge bg-warning">Partially Paid</span>
+                        {% else %}
+                          <span class="badge bg-danger">Unpaid</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No monthly data available for {{ selected_year }}.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment History -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payment History</h6>
+        </div>
+        <div class="card-body">
+          {% if payments %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Period</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Transaction ID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payment in payments %}
+                    <tr>
+                      <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                      <td>{{ payment.payroll.period.name }}</td>
+                      <td>GH₵ {{ payment.amount|floatformat:2|intcomma }}</td>
+                      <td>
+                        {% if payment.payment_method == 'CASH' %}
+                          <span class="badge bg-success">Cash</span>
+                        {% elif payment.payment_method == 'BANK_TRANSFER' %}
+                          <span class="badge bg-primary">Bank Transfer</span>
+                        {% elif payment.payment_method == 'MOBILE_MONEY' %}
+                          <span class="badge bg-info">Mobile Money</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ payment.get_payment_method_display }}</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ payment.transaction_id|default:"-" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if payments.has_other_pages %}
+              <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  {% if payments.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payments.previous_page_number }}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+
+                  {% for i in payments.paginator.page_range %}
+                    {% if payments.number == i %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% elif i > payments.number|add:'-3' and i < payments.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}">{{ i }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if payments.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payments.next_page_number }}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ payments.paginator.num_pages }}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No payment history available for the selected filters.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

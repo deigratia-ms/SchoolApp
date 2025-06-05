@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Payslips - Ricas School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">My Payslips</h1>
+    <div>
+      <a href="{% url 'payroll:staff_dashboard' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Payroll Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Salary Information -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">My Salary Information</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Name:</th>
+                  <td>{{ staff_salary.user.get_full_name }}</td>
+                </tr>
+                <tr>
+                  <th>Role:</th>
+                  <td>{{ staff_salary.role.name|default:"Not Assigned" }}</td>
+                </tr>
+                <tr>
+                  <th>Base Salary:</th>
+                  <td>GH₵ {{ staff_salary.base_salary|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Transport Allowance:</th>
+                  <td>GH₵ {{ staff_salary.transport_allowance|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Housing Allowance:</th>
+                  <td>GH₵ {{ staff_salary.housing_allowance|floatformat:2|intcomma }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="40%">Other Allowances:</th>
+                  <td>GH₵ {{ staff_salary.other_allowances|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>SSNIT Contribution:</th>
+                  <td>GH₵ {{ staff_salary.ssnit_contribution|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Tax Rate:</th>
+                  <td>{{ staff_salary.tax_rate }}%</td>
+                </tr>
+                <tr>
+                  <th>Gross Salary:</th>
+                  <td>GH₵ {{ staff_salary.gross_salary|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th>Net Salary:</th>
+                  <td>GH₵ {{ staff_salary.net_salary|floatformat:2|intcomma }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payslips -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">My Payslips</h6>
+        </div>
+        <div class="card-body">
+          {% if payslips %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Payslip Number</th>
+                    <th>Period</th>
+                    <th>Amount</th>
+                    <th>Generated On</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payslip in payslips %}
+                    <tr>
+                      <td>{{ payslip.payslip_number }}</td>
+                      <td>{{ payslip.payroll.period.name }}</td>
+                      <td>GH₵ {{ payslip.payroll.net_salary|floatformat:2|intcomma }}</td>
+                      <td>{{ payslip.generated_at|date:"M d, Y" }}</td>
+                      <td>
+                        <a href="{% url 'payroll:staff_payslip_detail' payslip.id %}" class="btn btn-sm btn-primary">
+                          <i class="fas fa-eye"></i> View
+                        </a>
+                        {% if payslip.pdf_file %}
+                          <a href="{% url 'payroll:staff_download_payslip' payslip.id %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-download"></i> Download
+                          </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No payslips available yet.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment History -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payment History</h6>
+        </div>
+        <div class="card-body">
+          {% if payrolls %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Gross Salary</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payroll in payrolls %}
+                    <tr>
+                      <td>{{ payroll.period.name }}</td>
+                      <td>GH₵ {{ payroll.gross_salary|floatformat:2|intcomma }}</td>
+                      <td>GH₵ {{ payroll.total_deductions|floatformat:2|intcomma }}</td>
+                      <td>GH₵ {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                      <td>
+                        {% if payroll.status == 'PAID' %}
+                          <span class="badge bg-success">Paid</span>
+                        {% elif payroll.status == 'APPROVED' %}
+                          <span class="badge bg-info">Approved</span>
+                        {% elif payroll.status == 'PENDING' %}
+                          <span class="badge bg-warning">Pending</span>
+                        {% elif payroll.status == 'CANCELLED' %}
+                          <span class="badge bg-danger">Cancelled</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ payroll.get_status_display }}</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No payment history available yet.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
