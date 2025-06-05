@@ -1209,7 +1209,7 @@ def bulk_generate_payslips(request, payrolls):
                     if school_settings.phone or school_settings.email:
                         elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
             else:
-                elements.append(Paragraph('<b>Ricas School Management System</b>', styles['Center']))
+                elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 
             elements.append(Spacer(1, 0.5*inch))
             elements.append(Paragraph('<b>PAYSLIP</b>', styles['Center']))
@@ -1549,7 +1549,7 @@ def generate_payslip(request, payroll_id):
                     if school_settings.phone or school_settings.email:
                         elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
             else:
-                elements.append(Paragraph('<b>Ricas School Management System</b>', styles['Center']))
+                elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 
             elements.append(Spacer(1, 0.5*inch))
             elements.append(Paragraph('<b>PAYSLIP</b>', styles['Center']))
@@ -1769,7 +1769,7 @@ def download_payslip(request, payslip_id):
                     if school_settings.phone or school_settings.email:
                         elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
             else:
-                elements.append(Paragraph('<b>Ricas School Management System</b>', styles['Center']))
+                elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 
             elements.append(Spacer(1, 0.5*inch))
             elements.append(Paragraph('<b>PAYSLIP</b>', styles['Center']))
@@ -1968,7 +1968,7 @@ def email_payslip(request, payslip_id):
                     if school_settings.phone or school_settings.email:
                         elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
             else:
-                elements.append(Paragraph('<b>Ricas School Management System</b>', styles['Center']))
+                elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 
             elements.append(Spacer(1, 0.5*inch))
             elements.append(Paragraph('<b>PAYSLIP</b>', styles['Center']))

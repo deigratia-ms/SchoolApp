@@ -2155,7 +2155,7 @@ def print_report(request, report_id):
         'report': report,
         'report_data': report.data,
         'print_mode': True,
-        'school_name': 'Ricas School Management System'  # You may want to get this from settings
+        'school_name': 'Deigratia Montessori School'  # You may want to get this from settings
     }
     
     return render(request, 'attendance/print_report.html', context)

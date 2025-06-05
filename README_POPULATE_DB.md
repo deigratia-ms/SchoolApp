@@ -1,6 +1,6 @@
 # Deigratia Montessori School - Database Population Guide
 
-This script populates the database with comprehensive sample data for testing all functionalities of the Ricas School Management System.
+This script populates the database with comprehensive sample data for testing all functionalities of the Deigratia Montessori School.
 
 ## How to Run the Script
 

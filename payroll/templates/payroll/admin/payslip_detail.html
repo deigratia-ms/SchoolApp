@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}Payslip Details - Ricas School Management System{% endblock %}
+{% block title %}Payslip Details - Deigratia Montessori School{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -123,7 +123,7 @@
               {% if school_settings.logo %}
                 <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }} Logo" class="img-fluid mb-3" style="max-height: 100px;">
               {% endif %}
-              <h3 class="mb-1">{{ school_settings.school_name|default:"Ricas School Management System" }}</h3>
+              <h3 class="mb-1">{{ school_settings.school_name|default:"Deigratia Montessori School" }}</h3>
               <p class="mb-1">{{ school_settings.address|default:"" }}</p>
               <p class="mb-1">Tel: {{ school_settings.phone|default:"" }} | Email: {{ school_settings.email|default:"" }}</p>
               <h4 class="mt-3 border-bottom pb-2">PAYSLIP</h4>

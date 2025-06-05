@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Report Card: {{ report_card.student.user.get_full_name }} - {{ report_card.term }} {{ report_card.academic_year }} | Ricas School Management System{% endblock %}
+{% block title %}Report Card: {{ report_card.student.user.get_full_name }} - {{ report_card.term }} {{ report_card.academic_year }} | Deigratia Montessori School{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -54,7 +54,7 @@
                     <img src="{{ MEDIA_URL }}school_logo.png" alt="School Logo" class="img-fluid mb-2" style="max-height: 100px;" onerror="this.src='https://via.placeholder.com/100x100?text=School+Logo'">
                 </div>
                 <div class="col-md-8 text-center">
-                    <h2 class="font-weight-bold mb-0">Ricas School Management System</h2>
+                    <h2 class="font-weight-bold mb-0">Deigratia Montessori School</h2>
                     <p class="lead">Student Academic Report</p>
                     <p>{{ report_card.term }} - {{ report_card.academic_year }} Academic Year</p>
                 </div>

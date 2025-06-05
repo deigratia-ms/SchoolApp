@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Report Card: {{ report_card.student.user.get_full_name }} - {{ report_card.term }} {{ report_card.academic_year }} | Ricas School Management System{% endblock %}
+{% block title %}Report Card: {{ report_card.student.user.get_full_name }} - {{ report_card.term }} {{ report_card.academic_year }} | Deigratia Montessori School{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -45,7 +45,7 @@
             <!-- School & Report Info -->
             <div class="text-center mb-4">
                 <img src="{{ school_logo_url|default:'#' }}" alt="School Logo" class="mb-3" width="120">
-                <h3 class="mb-1">Ricas School Management System</h3>
+                <h3 class="mb-1">Deigratia Montessori School</h3>
                 <p class="text-muted">123 Education Street, Knowledge City</p>
                 <h4 class="mt-3 text-primary">STUDENT PROGRESS REPORT</h4>
                 <p class="text-muted">{{ report_card.term }} - {{ report_card.academic_year }}</p>
@@ -265,7 +265,7 @@
             <div class="text-center mt-5 mb-3">
                 <p class="text-muted small">
                     This report card was generated on {{ report_card.generated_date|date:"F d, Y" }}.<br>
-                    Ricas School Management System &copy; {{ report_card.academic_year }}
+                    Deigratia Montessori School &copy; {{ report_card.academic_year }}
                 </p>
             </div>
         </div>

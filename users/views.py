@@ -407,7 +407,7 @@ def school_settings(request):
     if not settings:
         # Create new settings with defaults
         settings = SchoolSettings.objects.create(
-            school_name="Ricas School Management System",  # Default name
+            school_name="Deigratia Montessori School",  # Default name
             # Include default SMTP settings
             smtp_host='smtp.gmail.com',
             smtp_port=587,
@@ -453,7 +453,7 @@ def school_settings(request):
             messages.info(request, 'Settings were updated with default values.')
 
     if request.method == 'POST':
-        settings.school_name = request.POST.get('school_name') or 'Ricas School Management System'
+        settings.school_name = request.POST.get('school_name') or 'Deigratia Montessori School'
         settings.address = request.POST.get('address')
         settings.phone = request.POST.get('phone')
 
@@ -1529,7 +1529,7 @@ def register_teacher(request):
             try:
                 # Get school settings for email details
                 school_settings = SchoolSettings.objects.first()
-                school_name = school_settings.school_name if school_settings else "Ricas School Management System"
+                school_name = school_settings.school_name if school_settings else "Deigratia Montessori School"
 
                 # Prepare welcome email content
                 subject = f"Welcome to {school_name}"
