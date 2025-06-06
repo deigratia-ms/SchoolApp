@@ -41,7 +41,13 @@ urlpatterns = [
     
     # PIN Reset for students
     path('request-pin-reset/', views.request_pin_reset, name='request_pin_reset'),
-   
+      
+    
+    # Admin
+    # path('my-admin/', views.admin_login, name='admin_login'),
+    # path('my-admin/dashboard/', views.admin_dashboard, name='admin_dashboard_home'),
+
+
     
     # Admin
     path('my-admin/', views.admin_login, name='admin_login'),
