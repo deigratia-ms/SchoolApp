@@ -127,8 +127,7 @@
 
                             <!-- Attendance chart -->
                             <div class="mb-3">
-                                {% load custom_filters %}
-{% with total_days=report_card.days_present|add:report_card.days_absent|add:report_card.days_late %}
+                                {% with total_days=report_card.days_present|add:report_card.days_absent|add:report_card.days_late %}
                                 {% if total_days > 0 %}
                                 <div class="progress" style="height: 20px;">
                                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ report_card.days_present|multiply:100|divide:total_days }}%;" aria-valuenow="{{ report_card.days_present }}" aria-valuemin="0" aria-valuemax="{{ total_days }}">

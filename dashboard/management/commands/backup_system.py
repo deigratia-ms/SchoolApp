@@ -91,13 +91,18 @@ class Command(BaseCommand):
 
         # Full database dump with UTF-8 encoding
         full_dump_path = os.path.join(db_backup_path, 'full_database.json')
-        with open(full_dump_path, 'w', encoding='utf-8') as f:
-            call_command('dumpdata',
-                        '--natural-foreign',
-                        '--natural-primary',
-                        '--indent', '2',
-                        stdout=f)
-        
+        try:
+            with open(full_dump_path, 'w', encoding='utf-8') as f:
+                call_command('dumpdata',
+                            '--natural-foreign',
+                            '--natural-primary',
+                            '--indent', '2',
+                            stdout=f)
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Full database dump failed: {e}')
+            )
+
         # Individual app dumps for easier restoration
         for app_config in apps.get_app_configs():
             if not app_config.name.startswith('django.'):
@@ -114,7 +119,7 @@ class Command(BaseCommand):
                     self.stdout.write(
                         self.style.WARNING(f'Could not backup app {app_config.name}: {e}')
                     )
-        
+
         self.stdout.write(self.style.SUCCESS('Database backup completed'))
 
     def backup_media_files(self, backup_path):

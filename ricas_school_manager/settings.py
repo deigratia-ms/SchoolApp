@@ -213,6 +213,47 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='skillnetservices@gmail.com'
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='skillnetservices@gmail.com')
 
+# --- PERFORMANCE & CONCURRENCY OPTIMIZATIONS ---
+
+# Use database-backed cache for low RAM, or file-based if disk is available
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache_table',
+        'TIMEOUT': 300,  # 5 minutes
+    }
+}
+# To create cache table: python manage.py createcachetable
+
+# Use cached sessions for less DB load
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+# Template caching (for production)
+TEMPLATES[0]['OPTIONS']['loaders'] = [
+    ('django.template.loaders.cached.Loader', [
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    ]),
+]
+
+# Use WhiteNoise for static file serving (already in requirements)
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Gunicorn settings (for deployment):
+# Use --workers=2 --threads=2 for low RAM, scale up as needed
+
+# Database connection pooling (if using Postgres)
+# Use pgbouncer or set CONN_MAX_AGE for persistent connections
+DATABASES['default']['CONN_MAX_AGE'] = 60
+
+# Pagination defaults (limit per page to reduce memory usage)
+PAGINATION_PER_PAGE = 20
+
+# Disable debug toolbar and other dev-only middleware in production
+
+# --- END PERFORMANCE ---
+
 # Try to import local settings if they exist
 try:
     from .local_settings import *
