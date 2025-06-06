@@ -169,3 +169,7 @@ school_backup_*/
 *.tmp
 *.temp
 *deploy_django_flyio_windows_UPDATED.md
+
+# Deployment guides with secrets
+pythonanywhere_guide.md
+DEPLOYMENT_SUMMARY.md
