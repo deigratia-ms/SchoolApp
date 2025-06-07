@@ -74,7 +74,7 @@ TEMPLATES = [
         'DIRS': [
             BASE_DIR / 'templates',
         ],
-        'APP_DIRS': False,
+        'APP_DIRS': True,  # Enable app directories for Django admin templates
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
