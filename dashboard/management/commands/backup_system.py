@@ -424,28 +424,53 @@ if __name__ == '__main__':
         self.stdout.write(self.style.SUCCESS('Restore script created'))
 
     def compress_backup(self, backup_dir, backup_name, backup_path):
-        """Compress backup into zip file"""
+        """Compress backup into zip file with cross-device compatibility"""
         self.stdout.write('Compressing backup...')
 
-        # Create zip file directly in the final location to avoid cross-device issues
+        # Create zip file in same directory as backup_path first (avoid cross-device)
+        temp_zip_path = os.path.join(os.path.dirname(backup_path), f'{backup_name}.zip')
         final_zip_path = os.path.join(backup_dir, f'{backup_name}.zip')
 
         try:
-            with zipfile.ZipFile(final_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Create ZIP file in same filesystem as backup_path
+            with zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for root, dirs, files in os.walk(backup_path):
                     for file in files:
                         file_path = os.path.join(root, file)
                         arcname = os.path.relpath(file_path, backup_path)
                         zipf.write(file_path, arcname)
 
+            # Move to final location using shutil.copy() for cross-device compatibility
+            if temp_zip_path != final_zip_path:
+                try:
+                    # Try move first (faster if same device)
+                    shutil.move(temp_zip_path, final_zip_path)
+                except OSError as e:
+                    if "Invalid cross-device link" in str(e):
+                        # Use copy + remove for cross-device compatibility
+                        self.stdout.write('Using cross-device copy method...')
+                        shutil.copy2(temp_zip_path, final_zip_path)
+                        os.remove(temp_zip_path)
+                    else:
+                        raise
+                zip_path = final_zip_path
+            else:
+                zip_path = temp_zip_path
+
             # Remove uncompressed backup directory
             shutil.rmtree(backup_path)
 
             self.stdout.write(self.style.SUCCESS('Backup compressed successfully'))
-            return final_zip_path
+            return zip_path
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Compression failed: {e}'))
+            # Clean up temp zip if it exists
+            if os.path.exists(temp_zip_path):
+                try:
+                    os.remove(temp_zip_path)
+                except:
+                    pass
             # If compression fails, return the uncompressed directory
             self.stdout.write(self.style.WARNING('Backup saved as uncompressed directory'))
             return backup_path

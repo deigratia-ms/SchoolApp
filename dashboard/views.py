@@ -4991,22 +4991,15 @@ def create_default_widgets(user):
 # Backup and Restore Views
 @user_passes_test(is_admin)
 def backup_system(request):
-    """Create a comprehensive system backup"""
+    """Create a comprehensive system backup - Direct download (no server storage)"""
     if request.method == 'POST':
         try:
-            # Create backup directory
-            backup_dir = os.path.join(settings.BASE_DIR, 'backups')
-            os.makedirs(backup_dir, exist_ok=True)
-
             # Generate timestamp
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-            # Create backup using management command
+            # Create backup using management command in temporary directory
             with tempfile.TemporaryDirectory() as temp_dir:
-                backup_name = f'school_backup_{timestamp}'
-                backup_path = os.path.join(temp_dir, backup_name)
-
-                # Run backup command
+                # Run backup command directly in temp directory
                 call_command('backup_system',
                            output_dir=temp_dir,
                            compress=True)
@@ -5019,18 +5012,19 @@ def backup_system(request):
                         break
 
                 if backup_file and os.path.exists(backup_file):
-                    # Move backup to permanent location
-                    final_backup_path = os.path.join(backup_dir, os.path.basename(backup_file))
-                    os.rename(backup_file, final_backup_path)
+                    # Read the file content for direct download
+                    with open(backup_file, 'rb') as f:
+                        backup_content = f.read()
 
-                    # Return file for download
-                    response = FileResponse(
-                        open(final_backup_path, 'rb'),
-                        as_attachment=True,
-                        filename=os.path.basename(final_backup_path)
+                    # Create response for direct download
+                    response = HttpResponse(
+                        backup_content,
+                        content_type='application/zip'
                     )
+                    response['Content-Disposition'] = f'attachment; filename="{os.path.basename(backup_file)}"'
+                    response['Content-Length'] = len(backup_content)
 
-                    messages.success(request, 'System backup created successfully!')
+                    messages.success(request, 'System backup created and downloaded successfully!')
                     return response
                 else:
                     messages.error(request, 'Failed to create backup file.')
