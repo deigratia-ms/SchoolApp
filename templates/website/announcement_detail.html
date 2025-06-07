@@ -5,7 +5,7 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero-banner" style="background-image: url('{% if announcement.image %}{{ announcement.image.url }}{% else %}{% static "website/images/news-hero.jpg" %}{% endif %}');">
+<section class="hero-banner" style="background-image: url('{% if announcement.image %}{{ announcement.image.url }}{% else %}https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80{% endif %}');">
     <div class="hero-content">
         <nav aria-label="breadcrumb" class="mb-2">
             <ol class="breadcrumb">
