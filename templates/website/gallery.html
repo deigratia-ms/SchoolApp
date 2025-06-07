@@ -91,7 +91,11 @@
             <div class="gallery-item-wrapper" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:50 }}">
                 <div class="gallery-card">
                     <div class="gallery-image-container">
+                        {% if image.image %}
                         <img src="{{ image.image.url }}" alt="{{ image.title }}">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" alt="{{ image.title }}">
+                        {% endif %}
                     </div>
                     <div class="gallery-content">
                         <h5>{{ image.title }}</h5>

@@ -78,7 +78,7 @@
 </section>
 {% elif contact_hero and contact_hero.image %}
 <!-- Use contact hero image as fallback -->
-<section class="hero-banner" style="background-image: url('{{ contact_hero.image.url }}'); height: 350px;">
+<section class="hero-banner" style="background-image: url('{% if contact_hero.image %}{{ contact_hero.image.url }}{% else %}https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80{% endif %}'); height: 350px;">
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ terms_hero.title|default:"Terms of Service" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">

@@ -19,7 +19,7 @@
     <div class="carousel-inner">
         {% for slide in hero_slides %}
         <div class="carousel-item {% if forloop.first %}active{% endif %}" data-bs-interval="5000">
-            <div class="hero-slide" style="background-image: url('{{ slide.image.url }}');">
+            <div class="hero-slide" style="background-image: url('{% if slide.image %}{{ slide.image.url }}{% else %}https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80{% endif %}');">
                 <div class="hero-content">
                     <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ slide.title }}</h1>
                     {% if slide.subtitle %}
@@ -241,7 +241,11 @@
                 {% for image in featured_gallery %}
                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
                     <a href="{% url 'website:gallery-detail' image.pk %}" class="text-decoration-none">
+                        {% if image.image %}
                         <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}" style="height: 500px; object-fit: cover;">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="d-block w-100" alt="{{ image.title }}" style="height: 500px; object-fit: cover;">
+                        {% endif %}
                         <div class="carousel-caption d-none d-md-block">
                             <h5>{{ image.title }}</h5>
                             <p>{{ image.description|striptags|truncatewords:20 }}</p>
@@ -265,7 +269,11 @@
             <div class="col-12 col-sm-6 col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
                 <a href="{% url 'website:gallery-detail' image.pk %}" class="text-decoration-none">
                     <div class="card h-100">
+                        {% if image.image %}
                         <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}" style="height: 250px; object-fit: cover;">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="{{ image.title }}" style="height: 250px; object-fit: cover;">
+                        {% endif %}
                         <div class="card-img-overlay d-flex align-items-end" style="background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);">
                             <h5 class="card-title text-white mb-0">{{ image.title }}</h5>
                         </div>
