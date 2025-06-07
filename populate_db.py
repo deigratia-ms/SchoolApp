@@ -340,6 +340,12 @@ def populate_database():
             {'first_name': 'Kwabena', 'last_name': 'Takyi', 'classroom': 'JHS 2'},
             {'first_name': 'Adwoa', 'last_name': 'Darko', 'classroom': 'JHS 2'},
             {'first_name': 'Yaw', 'last_name': 'Agyapong', 'classroom': 'JHS 2'},
+            # Primary 3 students
+            {'first_name': 'Desmond', 'last_name': 'Oduro', 'classroom': 'Primary 1'},
+            {'first_name': 'Elizabeth', 'last_name': 'Mensah', 'classroom': 'Primary 1'},
+            {'first_name': 'Asamoah', 'last_name': 'Gyan', 'classroom': 'Primary 1'},
+            {'first_name': 'Marry', 'last_name': 'Oppong', 'classroom': 'Primary 1'},
+            {'first_name': 'Evans', 'last_name': 'Ntim', 'classroom': 'Primary 1'},
         ]
 
         students = []
