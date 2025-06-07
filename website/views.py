@@ -32,6 +32,17 @@ from .models import (
 from .forms import ContactForm, AdmissionsInquiryForm
 
 def home(request):
+    from django.core.cache import cache
+
+    # Try to get cached home page data
+    cache_key = 'home_page_data'
+    cached_data = cache.get(cache_key)
+
+    if cached_data is not None:
+        # Add user-specific data that can't be cached
+        cached_data['user'] = request.user
+        return render(request, 'website/home.html', cached_data)
+
     try:
         site_settings = SiteSettings.objects.first()
     except SiteSettings.DoesNotExist:
@@ -48,6 +59,10 @@ def home(request):
         'featured_gallery': featured_gallery,
         'show_gallery_carousel': featured_gallery.count() > 3
     }
+
+    # Cache for 2 minutes (home page content changes occasionally)
+    cache.set(cache_key, context, 120)
+
     return render(request, 'website/home.html', context)
 
 def about(request):

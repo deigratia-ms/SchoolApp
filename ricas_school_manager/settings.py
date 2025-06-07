@@ -17,7 +17,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-integration-key-repla
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 # Parse ALLOWED_HOSTS from comma-separated string
-allowed_hosts_str = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,*')
+allowed_hosts_str = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,*')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',')]
 
 
@@ -221,20 +221,42 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'django_cache_table',
         'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,  # Limit cache size
+        }
     }
 }
 # To create cache table: python manage.py createcachetable
 
+# Additional performance settings for development
+if DEBUG:
+    # Reduce database connection timeout in development
+    DATABASES['default']['CONN_MAX_AGE'] = 30
+
+    # Disable some middleware in development for speed
+    # Keep essential middleware only
+    MIDDLEWARE = [
+        'django.middleware.security.SecurityMiddleware',
+        'whitenoise.middleware.WhiteNoiseMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.middleware.common.CommonMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    ]
+
 # Use cached sessions for less DB load
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-# Template caching (for production)
-TEMPLATES[0]['OPTIONS']['loaders'] = [
-    ('django.template.loaders.cached.Loader', [
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader',
-    ]),
-]
+# Template caching (only for production)
+if not DEBUG:
+    TEMPLATES[0]['OPTIONS']['loaders'] = [
+        ('django.template.loaders.cached.Loader', [
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader',
+        ]),
+    ]
 
 # Use WhiteNoise for static file serving (already in requirements)
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')

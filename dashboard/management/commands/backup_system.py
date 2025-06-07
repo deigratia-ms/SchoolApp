@@ -91,36 +91,149 @@ class Command(BaseCommand):
 
         # Full database dump with UTF-8 encoding
         full_dump_path = os.path.join(db_backup_path, 'full_database.json')
-        try:
-            with open(full_dump_path, 'w', encoding='utf-8') as f:
-                call_command('dumpdata',
-                            '--natural-foreign',
-                            '--natural-primary',
-                            '--indent', '2',
-                            stdout=f)
-        except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f'Full database dump failed: {e}')
-            )
 
-        # Individual app dumps for easier restoration
-        for app_config in apps.get_app_configs():
-            if not app_config.name.startswith('django.'):
-                app_dump_path = os.path.join(db_backup_path, f'{app_config.name}.json')
-                try:
-                    with open(app_dump_path, 'w', encoding='utf-8') as f:
-                        call_command('dumpdata',
-                                    app_config.name,
-                                    '--natural-foreign',
-                                    '--natural-primary',
-                                    '--indent', '2',
-                                    stdout=f)
-                except Exception as e:
-                    self.stdout.write(
-                        self.style.WARNING(f'Could not backup app {app_config.name}: {e}')
-                    )
+        # Always use the robust alternative method first
+        self.stdout.write('Using robust backup method...')
+        success = self.backup_database_alternative(db_backup_path)
+
+        if not success:
+            # Fallback to traditional dumpdata if alternative fails
+            try:
+                self.stdout.write('Trying traditional dumpdata method...')
+                # Close any existing database connections to avoid cursor issues
+                from django.db import connections
+                for conn in connections.all():
+                    conn.close()
+
+                with open(full_dump_path, 'w', encoding='utf-8') as f:
+                    call_command('dumpdata',
+                                '--natural-foreign',
+                                '--natural-primary',
+                                '--indent', '2',
+                                stdout=f)
+                self.stdout.write(self.style.SUCCESS('Traditional database backup completed'))
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(f'Both backup methods failed: {e}')
+                )
+
+        # Individual app dumps for easier restoration (only if full backup succeeded)
+        if os.path.exists(full_dump_path) and os.path.getsize(full_dump_path) > 0:
+            for app_config in apps.get_app_configs():
+                if not app_config.name.startswith('django.'):
+                    app_dump_path = os.path.join(db_backup_path, f'{app_config.name}.json')
+                    try:
+                        # Close connections before each app backup
+                        from django.db import connections
+                        for conn in connections.all():
+                            conn.close()
+
+                        with open(app_dump_path, 'w', encoding='utf-8') as f:
+                            call_command('dumpdata',
+                                        app_config.name,
+                                        '--natural-foreign',
+                                        '--natural-primary',
+                                        '--indent', '2',
+                                        stdout=f)
+                    except Exception as e:
+                        self.stdout.write(
+                            self.style.WARNING(f'Could not backup app {app_config.name}: {e}')
+                        )
 
         self.stdout.write(self.style.SUCCESS('Database backup completed'))
+
+    def backup_database_alternative(self, db_backup_path):
+        """Alternative backup method for problematic databases"""
+        self.stdout.write('Using robust backup method...')
+
+        try:
+            # Use a more robust approach - backup by model instead of app
+            from django.apps import apps
+            import json
+
+            all_data = []
+
+            for app_config in apps.get_app_configs():
+                if not app_config.name.startswith('django.'):
+                    self.stdout.write(f'Processing app: {app_config.name}')
+
+                    for model in app_config.get_models():
+                        try:
+                            # Close all connections before each model
+                            from django.db import connections
+                            for conn in connections.all():
+                                conn.close()
+
+                            # Get model data using serializers (more reliable than dumpdata)
+                            from django.core import serializers
+
+                            # Get all objects for this model
+                            objects = model.objects.all()
+                            if objects.exists():
+                                # Serialize objects
+                                serialized_data = serializers.serialize(
+                                    'json',
+                                    objects,
+                                    use_natural_foreign_keys=True,
+                                    use_natural_primary_keys=True,
+                                    indent=2
+                                )
+
+                                # Parse and add to all_data
+                                model_data = json.loads(serialized_data)
+                                all_data.extend(model_data)
+
+                                self.stdout.write(f'  ✅ {model._meta.label}: {len(model_data)} records')
+                            else:
+                                self.stdout.write(f'  ⚪ {model._meta.label}: 0 records')
+
+                        except Exception as e:
+                            self.stdout.write(f'  ❌ {model._meta.label}: {e}')
+                            continue
+
+            # Write combined data to full_database.json
+            if all_data:
+                full_dump_path = os.path.join(db_backup_path, 'full_database.json')
+                with open(full_dump_path, 'w', encoding='utf-8') as f:
+                    json.dump(all_data, f, indent=2, ensure_ascii=False)
+                self.stdout.write(self.style.SUCCESS(f'Robust backup created with {len(all_data)} records'))
+                return True
+            else:
+                self.stdout.write(self.style.WARNING('No data found to backup'))
+                return False
+
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Robust backup method failed: {e}')
+            )
+            return False
+
+    def combine_app_backups(self, db_backup_path):
+        """Combine individual app backup files into a single file"""
+        try:
+            import json
+            combined_data = []
+
+            for filename in os.listdir(db_backup_path):
+                if filename.endswith('.json') and filename != 'full_database.json':
+                    file_path = os.path.join(db_backup_path, filename)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            app_data = json.load(f)
+                            if isinstance(app_data, list):
+                                combined_data.extend(app_data)
+                    except Exception as e:
+                        self.stdout.write(f'Could not read {filename}: {e}')
+
+            # Write combined data to full_database.json
+            if combined_data:
+                full_dump_path = os.path.join(db_backup_path, 'full_database.json')
+                with open(full_dump_path, 'w', encoding='utf-8') as f:
+                    json.dump(combined_data, f, indent=2, ensure_ascii=False)
+                self.stdout.write(self.style.SUCCESS('Combined backup created successfully'))
+
+        except Exception as e:
+            self.stdout.write(f'Could not combine app backups: {e}')
 
     def backup_media_files(self, backup_path):
         """Backup media files"""

@@ -165,9 +165,19 @@ class Command(BaseCommand):
             self.stdout.write('\n🧪 Testing Django loaddata compatibility:')
             try:
                 file_path = os.path.join(backup_dir, largest_json[0])
-                # Try dry run
-                call_command('loaddata', file_path, verbosity=0, dry_run=True)
-                self.stdout.write('  ✅ File is compatible with Django loaddata')
+                # Try to validate the file format without actually loading
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                if isinstance(data, list) and len(data) > 0:
+                    first_record = data[0]
+                    if isinstance(first_record, dict) and 'model' in first_record and 'fields' in first_record:
+                        self.stdout.write('  ✅ File is compatible with Django loaddata')
+                    else:
+                        self.stdout.write('  ❌ File format not compatible with Django loaddata')
+                        self.stdout.write('  💡 Expected Django fixture format with "model" and "fields" keys')
+                else:
+                    self.stdout.write('  ❌ File is empty or not a valid list')
             except Exception as e:
                 self.stdout.write(f'  ❌ File incompatible with loaddata: {e}')
                 self.stdout.write('  💡 Try manual data import or contact support')

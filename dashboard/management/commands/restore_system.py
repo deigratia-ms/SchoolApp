@@ -334,11 +334,34 @@ class Command(BaseCommand):
                     self.stdout.write(f'Encoding error: {ue}')
                     continue
 
-                # Try to load the data
-                call_command('loaddata', db_file, verbosity=2)
-                self.stdout.write(self.style.SUCCESS(f'Database restored successfully from {os.path.basename(db_file)}'))
-                restored = True
-                break
+                # Try to load the data with different methods
+                try:
+                    # Method 1: Standard loaddata
+                    call_command('loaddata', db_file, verbosity=2)
+                    self.stdout.write(self.style.SUCCESS(f'Database restored successfully from {os.path.basename(db_file)}'))
+                    restored = True
+                    break
+                except Exception as load_error:
+                    self.stdout.write(f'Standard loaddata failed: {load_error}')
+
+                    # Method 2: Try with ignore conflicts
+                    try:
+                        call_command('loaddata', db_file, ignore_conflicts=True, verbosity=2)
+                        self.stdout.write(self.style.SUCCESS(f'Database restored with conflicts ignored from {os.path.basename(db_file)}'))
+                        restored = True
+                        break
+                    except Exception as ignore_error:
+                        self.stdout.write(f'Ignore conflicts failed: {ignore_error}')
+
+                        # Method 3: Try with natural foreign keys
+                        try:
+                            call_command('loaddata', db_file, use_natural_foreign_keys=True, verbosity=2)
+                            self.stdout.write(self.style.SUCCESS(f'Database restored with natural keys from {os.path.basename(db_file)}'))
+                            restored = True
+                            break
+                        except Exception as natural_error:
+                            self.stdout.write(f'Natural foreign keys failed: {natural_error}')
+                            continue
 
             except Exception as e:
                 self.stdout.write(

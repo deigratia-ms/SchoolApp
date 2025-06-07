@@ -1,0 +1,117 @@
+[
+{
+  "model": "users.customuser",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$870000$Ve6GdRupMg1NfKRz2D659x$HcR3yseZyAtLajDY5IxVLfjxHQk/fcXMa/u72A6yVzY=",
+    "last_login": null,
+    "is_superuser": false,
+    "first_name": "Admin",
+    "last_name": "User",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T00:15:08.320Z",
+    "email": "admin@deigratia.edu.gh",
+    "role": "ADMIN",
+    "is_verified": true,
+    "phone_number": null,
+    "profile_picture": "",
+    "created_at": "2025-06-06T00:15:08.320Z",
+    "updated_at": "2025-06-06T00:15:08.320Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.customuser",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$870000$mQW73XWL1Rryf430w49U2F$G8Bfwx9dxaZkGAmpAs3R33/SwS1vq/RQ4DqtyyTO6eU=",
+    "last_login": null,
+    "is_superuser": false,
+    "first_name": "John",
+    "last_name": "Smith",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T00:15:27.471Z",
+    "email": "john.smith@deigratia.edu.gh",
+    "role": "TEACHER",
+    "is_verified": true,
+    "phone_number": null,
+    "profile_picture": "",
+    "created_at": "2025-06-06T00:15:27.471Z",
+    "updated_at": "2025-06-06T00:15:27.471Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.customuser",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$870000$bAz6iUAe8fBa0mWAe97kpR$BZZHlg+PhsiyaMB/OmM1w6xaoqD/Q2fCOPGxibcC8Lc=",
+    "last_login": null,
+    "is_superuser": false,
+    "first_name": "Mary",
+    "last_name": "Johnson",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T00:15:29.575Z",
+    "email": "mary.johnson@deigratia.edu.gh",
+    "role": "TEACHER",
+    "is_verified": true,
+    "phone_number": null,
+    "profile_picture": "",
+    "created_at": "2025-06-06T00:15:29.575Z",
+    "updated_at": "2025-06-06T00:15:29.575Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.customuser",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$870000$TuLgNitcUCcYLK0mZbOogK$kFo4dD7T9J5j0XeQr2fcEaoYAVUK3koG1lhwQqLd4EA=",
+    "last_login": null,
+    "is_superuser": false,
+    "first_name": "David",
+    "last_name": "Brown",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T00:15:31.882Z",
+    "email": "david.brown@deigratia.edu.gh",
+    "role": "TEACHER",
+    "is_verified": true,
+    "phone_number": null,
+    "profile_picture": "",
+    "created_at": "2025-06-06T00:15:31.882Z",
+    "updated_at": "2025-06-06T00:15:31.882Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.customuser",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$870000$0ZHqqAI0qBnSB2boOjML10$mo1GueWceTA2aIVhPthbv3qxuVmpgdg+JMYc5d+tP5s=",
+    "last_login": null,
+    "is_superuser": false,
+    "first_name": "Sarah",
+    "last_name": "Wilson",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T00:15:34.049Z",
+    "email": "sarah.wilson@deigratia.edu.gh",
+    "role": "TEACHER",
+    "is_verified": true,
+    "phone_number": null,
+    "profile_picture": "",
+    "created_at": "2025-06-06T00:15:34.049Z",
+    "updated_at": "2025-06-06T00:15:34.049Z",
+    "groups": [],
+    "user_permissions": []
+  }
+}
+]
