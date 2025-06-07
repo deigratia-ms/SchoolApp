@@ -1,0 +1,46 @@
+# Environment Configuration Template
+# Copy this file to .env and fill in your actual values
+# NEVER commit the actual .env file to version control
+
+# Django Settings
+SECRET_KEY=your-secret-key-here-generate-a-new-one
+DEBUG=False
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+
+# Database Configuration
+# For SQLite (development)
+DATABASE_URL=sqlite:///db.sqlite3
+
+# For MySQL (production)
+# DATABASE_URL=mysql://username:password@host:port/database_name
+
+# For PostgreSQL (production)
+# DATABASE_URL=postgres://username:password@host:port/database_name
+
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password-here
+EMAIL_USE_TLS=True
+
+# Security Settings (for production)
+SECURE_SSL_REDIRECT=True
+SECURE_HSTS_SECONDS=31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+SECURE_HSTS_PRELOAD=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+
+# Static Files (for production)
+STATIC_URL=/static/
+STATIC_ROOT=staticfiles
+
+# Media Files
+MEDIA_URL=/media/
+MEDIA_ROOT=media
+
+# Additional Security (optional)
+# SECURE_CONTENT_TYPE_NOSNIFF=True
+# SECURE_BROWSER_XSS_FILTER=True
+# X_FRAME_OPTIONS=DENY

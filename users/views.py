@@ -18,6 +18,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.template.loader import render_to_string
 from django.views.generic.edit import FormView
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
+from decouple import config
 
 from .utils import send_school_email
 from .models import (
@@ -408,12 +409,12 @@ def school_settings(request):
         # Create new settings with defaults
         settings = SchoolSettings.objects.create(
             school_name="Deigratia Montessori School",  # Default name
-            # Include default SMTP settings
-            smtp_host='smtp.gmail.com',
-            smtp_port=587,
-            smtp_username='skillnetservices@gmail.com',
-            smtp_password='bvcj inbr xxix sqif',
-            smtp_use_tls=True,
+            # Include default SMTP settings from environment
+            smtp_host=config('EMAIL_HOST', default='smtp.gmail.com'),
+            smtp_port=config('EMAIL_PORT', default=587, cast=int),
+            smtp_username=config('EMAIL_HOST_USER', default='skillnetservices@gmail.com'),
+            smtp_password=config('EMAIL_HOST_PASSWORD', default=''),
+            smtp_use_tls=config('EMAIL_USE_TLS', default=True, cast=bool),
             # Enable messaging by default
             enable_messaging=True,
             enable_student_to_student_chat=True
@@ -432,7 +433,7 @@ def school_settings(request):
             settings.smtp_username = 'skillnetservices@gmail.com'
             smtp_updated = True
         if not settings.smtp_password:
-            settings.smtp_password = 'bvcj inbr xxix sqif'
+            settings.smtp_password = config('EMAIL_HOST_PASSWORD', default='')
             smtp_updated = True
         if not settings.smtp_use_tls:
             settings.smtp_use_tls = True
