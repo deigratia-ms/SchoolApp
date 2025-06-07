@@ -138,11 +138,14 @@ class Command(BaseCommand):
             
             # Restore database
             self.restore_database(backup_dir)
-            
+
+            # Verify restoration worked
+            self.verify_restoration()
+
             # Restore media files
             if options['restore_media']:
                 self.restore_media_files(backup_dir)
-            
+
             self.stdout.write(
                 self.style.SUCCESS('System restore completed successfully!')
             )
@@ -388,11 +391,20 @@ class Command(BaseCommand):
                     self.stdout.write(f'Encoding error: {ue}')
                     continue
 
-                # Try to load the data
-                call_command('loaddata', db_file, verbosity=2)
-                self.stdout.write(self.style.SUCCESS(f'Database restored successfully from {os.path.basename(db_file)}'))
-                restored = True
-                break
+                # Try to load the data with detailed output
+                self.stdout.write(f'Attempting to load data from: {db_file}')
+                try:
+                    call_command('loaddata', db_file, verbosity=2)
+                    self.stdout.write(self.style.SUCCESS(f'Database restored successfully from {os.path.basename(db_file)}'))
+                    restored = True
+                    break
+                except Exception as load_error:
+                    self.stdout.write(self.style.ERROR(f'Failed to load {os.path.basename(db_file)}: {load_error}'))
+                    # Try alternative methods immediately
+                    if self.try_single_file_alternatives(db_file):
+                        restored = True
+                        break
+                    continue
 
             except Exception as e:
                 self.stdout.write(
@@ -473,22 +485,25 @@ class Command(BaseCommand):
 
         for db_file in db_files:
             try:
-                # Method 1: Try with natural foreign keys
-                self.stdout.write(f'Trying natural foreign keys for: {os.path.basename(db_file)}')
-                call_command('loaddata', db_file, use_natural_foreign_keys=True, verbosity=2)
-                self.stdout.write(self.style.SUCCESS('Restored using natural foreign keys'))
+                # Method 1: Try with ignorenonexistent
+                self.stdout.write(f'Trying ignorenonexistent for: {os.path.basename(db_file)}')
+                call_command('loaddata', db_file, ignorenonexistent=True, verbosity=2)
+                self.stdout.write(self.style.SUCCESS('Restored using ignorenonexistent'))
                 return True
             except Exception as e:
-                self.stdout.write(f'Natural foreign keys failed: {e}')
+                self.stdout.write(f'Ignorenonexistent failed: {e}')
 
             try:
-                # Method 2: Try ignoring conflicts
-                self.stdout.write(f'Trying to ignore conflicts for: {os.path.basename(db_file)}')
-                call_command('loaddata', db_file, ignore_conflicts=True, verbosity=2)
-                self.stdout.write(self.style.SUCCESS('Restored ignoring conflicts'))
-                return True
+                # Method 2: Try to clean the data
+                self.stdout.write(f'Trying to clean data for: {os.path.basename(db_file)}')
+                cleaned_file = self.clean_backup_data(db_file)
+                if cleaned_file:
+                    call_command('loaddata', cleaned_file, verbosity=2)
+                    self.stdout.write(self.style.SUCCESS('Restored using cleaned data'))
+                    os.remove(cleaned_file)
+                    return True
             except Exception as e:
-                self.stdout.write(f'Ignore conflicts failed: {e}')
+                self.stdout.write(f'Cleaned data restore failed: {e}')
 
             try:
                 # Method 3: Try loading specific models
@@ -521,3 +536,102 @@ class Command(BaseCommand):
                     os.remove(temp_file)
 
         return False
+
+    def try_single_file_alternatives(self, db_file):
+        """Try alternative methods for a single file"""
+        self.stdout.write(f'Trying alternative methods for: {os.path.basename(db_file)}')
+
+        # Method 1: Try with ignorenonexistent (available in this Django version)
+        try:
+            self.stdout.write('Trying with ignorenonexistent...')
+            call_command('loaddata', db_file, ignorenonexistent=True, verbosity=2)
+            self.stdout.write(self.style.SUCCESS('Restored with ignorenonexistent'))
+            return True
+        except Exception as e:
+            self.stdout.write(f'Ignorenonexistent failed: {e}')
+
+        # Method 2: Try to clean the data and reload
+        try:
+            self.stdout.write('Trying to clean problematic data...')
+            cleaned_file = self.clean_backup_data(db_file)
+            if cleaned_file:
+                call_command('loaddata', cleaned_file, verbosity=2)
+                self.stdout.write(self.style.SUCCESS('Restored with cleaned data'))
+                os.remove(cleaned_file)  # Clean up
+                return True
+        except Exception as e:
+            self.stdout.write(f'Cleaned data restore failed: {e}')
+
+        return False
+
+    def verify_restoration(self):
+        """Verify that data was actually restored"""
+        self.stdout.write('Verifying restoration...')
+
+        try:
+            from django.apps import apps
+            total_objects = 0
+
+            for app_config in apps.get_app_configs():
+                if not app_config.name.startswith('django.'):
+                    for model in app_config.get_models():
+                        try:
+                            count = model.objects.count()
+                            if count > 0:
+                                self.stdout.write(f'  ✅ {model._meta.label}: {count} objects')
+                                total_objects += count
+                            else:
+                                self.stdout.write(f'  ⚪ {model._meta.label}: 0 objects')
+                        except Exception as e:
+                            self.stdout.write(f'  ❌ {model._meta.label}: Error counting - {e}')
+
+            if total_objects > 0:
+                self.stdout.write(self.style.SUCCESS(f'Verification passed: {total_objects} total objects restored'))
+            else:
+                self.stdout.write(self.style.WARNING('Warning: No objects found in database after restore'))
+
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Verification failed: {e}'))
+
+    def clean_backup_data(self, db_file):
+        """Clean problematic data from backup file"""
+        try:
+            import json
+            import tempfile
+
+            with open(db_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            if not isinstance(data, list):
+                return None
+
+            cleaned_data = []
+            for record in data:
+                if isinstance(record, dict) and 'model' in record and 'fields' in record:
+                    # Skip problematic DashboardPreference records with null user_id
+                    if (record['model'] == 'dashboard.dashboardpreference' and
+                        record['fields'].get('user') is None):
+                        self.stdout.write(f'Skipping problematic DashboardPreference record: {record.get("pk")}')
+                        continue
+
+                    # Add other data cleaning rules here as needed
+                    cleaned_data.append(record)
+
+            if cleaned_data:
+                # Create temporary cleaned file
+                temp_fd, temp_path = tempfile.mkstemp(suffix='.json')
+                try:
+                    with os.fdopen(temp_fd, 'w', encoding='utf-8') as temp_file:
+                        json.dump(cleaned_data, temp_file, indent=2, ensure_ascii=False)
+                    return temp_path
+                except:
+                    os.close(temp_fd)
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+                    return None
+
+            return None
+
+        except Exception as e:
+            self.stdout.write(f'Data cleaning failed: {e}')
+            return None
