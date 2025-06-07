@@ -173,3 +173,4 @@ school_backup_*/
 # Deployment guides with secrets
 pythonanywhere_guide.md
 DEPLOYMENT_SUMMARY.md
+PERFORMANCE_OPTIMIZATION_SUMMARY.md
