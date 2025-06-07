@@ -409,15 +409,15 @@
         {% else %}
         <!-- Mobile: 2 images per row -->
         <div class="d-block d-md-none">
-            <div class="row g-3">
+            <div class="row g-2">
                 {% for image in featured_gallery %}
                 <div class="col-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
                     <a href="{% url 'website:gallery-detail' image.pk %}" class="text-decoration-none">
                         <div class="card mobile-gallery-card">
                             {% if image.image %}
-                            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}" style="height: 180px; object-fit: cover;">
+                            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}" style="height: 120px; object-fit: cover;">
                             {% else %}
-                            <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="{{ image.title }}" style="height: 180px; object-fit: cover;">
+                            <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="{{ image.title }}" style="height: 120px; object-fit: cover;">
                             {% endif %}
                             <div class="card-img-overlay d-flex align-items-end" style="background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);">
                                 <h6 class="card-title text-white mb-0 small">{{ image.title }}</h6>
@@ -803,9 +803,10 @@
 }
 
 .mobile-gallery-card {
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.5rem;
 }
 
 /* Event Date Styling */
@@ -891,11 +892,16 @@
     }
 
     .mobile-gallery-card img {
-        height: 140px !important;
+        height: 100px !important;
     }
 
     .mobile-gallery-card h6 {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .mobile-gallery-card {
+        margin-bottom: 0.25rem;
     }
 }
 
