@@ -426,18 +426,35 @@ if __name__ == '__main__':
     def compress_backup(self, backup_dir, backup_name, backup_path):
         """Compress backup into zip file"""
         self.stdout.write('Compressing backup...')
-        
-        zip_path = os.path.join(backup_dir, f'{backup_name}.zip')
-        
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+
+        # Create zip file in the same directory as backup_path to avoid cross-device issues
+        temp_zip_path = os.path.join(os.path.dirname(backup_path), f'{backup_name}.zip')
+        final_zip_path = os.path.join(backup_dir, f'{backup_name}.zip')
+
+        with zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(backup_path):
                 for file in files:
                     file_path = os.path.join(root, file)
                     arcname = os.path.relpath(file_path, backup_path)
                     zipf.write(file_path, arcname)
-        
+
+        # Move to final location (handle cross-device link error)
+        try:
+            if temp_zip_path != final_zip_path:
+                shutil.move(temp_zip_path, final_zip_path)
+            zip_path = final_zip_path
+        except OSError as e:
+            if "Invalid cross-device link" in str(e):
+                # Copy and remove for cross-device compatibility (PythonAnywhere)
+                shutil.copy2(temp_zip_path, final_zip_path)
+                os.remove(temp_zip_path)
+                zip_path = final_zip_path
+            else:
+                # If move failed but not cross-device, use temp location
+                zip_path = temp_zip_path
+
         # Remove uncompressed backup directory
         shutil.rmtree(backup_path)
-        
+
         self.stdout.write(self.style.SUCCESS('Backup compressed successfully'))
         return zip_path

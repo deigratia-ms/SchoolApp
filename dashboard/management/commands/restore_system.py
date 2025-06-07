@@ -67,21 +67,52 @@ class Command(BaseCommand):
     def restore_from_zip(self, zip_path, options):
         """Restore from compressed backup"""
         self.stdout.write('Extracting backup archive...')
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             with zipfile.ZipFile(zip_path, 'r') as zipf:
                 zipf.extractall(temp_dir)
-            
-            # Find the backup directory in temp
-            backup_dirs = [d for d in os.listdir(temp_dir) 
-                          if os.path.isdir(os.path.join(temp_dir, d))]
-            
-            if not backup_dirs:
+
+            # Find the backup directory in temp - improved logic for various structures
+            backup_dir = None
+
+            # Check if temp_dir itself contains backup files
+            if self.has_backup_files(temp_dir):
                 backup_dir = temp_dir
             else:
-                backup_dir = os.path.join(temp_dir, backup_dirs[0])
-            
+                # Look for subdirectories that contain backup files
+                for item in os.listdir(temp_dir):
+                    item_path = os.path.join(temp_dir, item)
+                    if os.path.isdir(item_path) and self.has_backup_files(item_path):
+                        backup_dir = item_path
+                        break
+
+                # If still not found, use the first directory or temp_dir
+                if not backup_dir:
+                    backup_dirs = [d for d in os.listdir(temp_dir)
+                                  if os.path.isdir(os.path.join(temp_dir, d))]
+                    if backup_dirs:
+                        backup_dir = os.path.join(temp_dir, backup_dirs[0])
+                    else:
+                        backup_dir = temp_dir
+
+            self.stdout.write(f'Using backup directory: {os.path.basename(backup_dir)}')
             self.restore_from_directory(backup_dir, options)
+
+    def has_backup_files(self, directory):
+        """Check if directory contains backup files"""
+        # Check for JSON files in root
+        for file in os.listdir(directory):
+            if file.endswith('.json'):
+                return True
+
+        # Check for database subdirectory with JSON files
+        db_dir = os.path.join(directory, 'database')
+        if os.path.exists(db_dir):
+            for file in os.listdir(db_dir):
+                if file.endswith('.json'):
+                    return True
+
+        return False
 
     def restore_from_directory(self, backup_dir, options):
         """Restore from backup directory"""
@@ -158,7 +189,10 @@ class Command(BaseCommand):
             for root, dirs, files in os.walk(backup_dir):
                 for file in files:
                     if file.endswith('.json'):
-                        json_files.append(os.path.join(root, file))
+                        file_path = os.path.join(root, file)
+                        # Only consider files larger than 10 bytes (not empty)
+                        if os.path.getsize(file_path) > 10:
+                            json_files.append(file_path)
 
             if json_files:
                 # Use the largest JSON file as it's likely the database backup
@@ -166,7 +200,27 @@ class Command(BaseCommand):
                 db_backup_found = True
                 self.stdout.write(f'Using largest JSON file as database backup: {os.path.relpath(largest_json, backup_dir)}')
 
+                # Validate the JSON file
+                try:
+                    with open(largest_json, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    if isinstance(data, list):
+                        self.stdout.write(f'Validated JSON file with {len(data)} records')
+                    else:
+                        self.stdout.write('Warning: JSON file is not a list format')
+                except Exception as e:
+                    self.stdout.write(f'Warning: Could not validate JSON file: {e}')
+
         if not db_backup_found:
+            # List all files for debugging
+            self.stdout.write('Available files in backup:')
+            for root, dirs, files in os.walk(backup_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(file_path, backup_dir)
+                    file_size = os.path.getsize(file_path)
+                    self.stdout.write(f'  - {rel_path} ({file_size} bytes)')
+
             raise Exception('No database backup file found. Expected JSON file with database data.')
 
         self.stdout.write(self.style.SUCCESS('Backup verification passed'))
