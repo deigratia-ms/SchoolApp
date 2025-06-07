@@ -258,9 +258,7 @@ if not DEBUG:
         ]),
     ]
 
-# Use WhiteNoise for static file serving (already in requirements)
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise is already included in MIDDLEWARE above
 
 # Gunicorn settings (for deployment):
 # Use --workers=2 --threads=2 for low RAM, scale up as needed
@@ -298,18 +296,15 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     X_FRAME_OPTIONS = 'DENY'
 
-    # Allowed hosts for production
-    ALLOWED_HOSTS = [
-        'school-management-system.fly.dev',
-        '.fly.dev',
-        'localhost',
-        '127.0.0.1',
-    ]
+    # Allowed hosts for production - use environment variable
+    env_allowed_hosts = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
+    ALLOWED_HOSTS = [host.strip() for host in env_allowed_hosts.split(',')]
 
-    # Additional allowed hosts from environment
-    additional_hosts = config('ALLOWED_HOSTS', default='')
-    if additional_hosts:
-        ALLOWED_HOSTS.extend(additional_hosts.split(','))
+    # Add default production hosts if not already included
+    default_hosts = ['school-management-system.fly.dev', '.fly.dev']
+    for host in default_hosts:
+        if host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(host)
 
 # Health check endpoint
 HEALTH_CHECK_URL = '/health/'
