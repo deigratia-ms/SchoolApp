@@ -3,138 +3,6 @@
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/login.css" %}">
 {{ form.media }}
-<style>
-    /* Custom admin login styles */
-    .login {
-        background: linear-gradient(135deg, #008080 0%, #20b2aa 100%);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .login #container {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        padding: 3rem;
-        max-width: 400px;
-        width: 100%;
-        margin: 2rem;
-    }
-    
-    .login #header {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .login #header h1 {
-        color: #008080;
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-    
-    .login #header h1 a {
-        color: #008080;
-        text-decoration: none;
-    }
-    
-    .login .subtitle {
-        color: #6c757d;
-        font-size: 1rem;
-        margin-bottom: 2rem;
-    }
-    
-    .login .form-row {
-        margin-bottom: 1.5rem;
-    }
-    
-    .login .form-row label {
-        display: block;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-    }
-    
-    .login .form-row input[type="text"],
-    .login .form-row input[type="password"] {
-        width: 100%;
-        padding: 0.75rem 1rem;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        box-sizing: border-box;
-    }
-    
-    .login .form-row input[type="text"]:focus,
-    .login .form-row input[type="password"]:focus {
-        outline: none;
-        border-color: #008080;
-        box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
-    }
-    
-    .login .submit-row {
-        text-align: center;
-        margin-top: 2rem;
-    }
-    
-    .login .submit-row input[type="submit"] {
-        background: linear-gradient(45deg, #008080, #20b2aa);
-        border: none;
-        color: white;
-        padding: 0.75rem 2rem;
-        font-size: 1rem;
-        font-weight: 600;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    
-    .login .submit-row input[type="submit"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 128, 128, 0.3);
-    }
-    
-    .login .errornote {
-        background: #ff6b6b;
-        color: white;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-        text-align: center;
-    }
-    
-    .login .help {
-        color: #6c757d;
-        font-size: 0.9rem;
-        text-align: center;
-        margin-top: 1rem;
-    }
-    
-    .login .help a {
-        color: #008080;
-        text-decoration: none;
-    }
-    
-    .login .help a:hover {
-        text-decoration: underline;
-    }
-    
-    /* Mobile responsive */
-    @media (max-width: 768px) {
-        .login #container {
-            padding: 2rem;
-            margin: 1rem;
-        }
-        
-        .login #header h1 {
-            font-size: 1.5rem;
-        }
-    }
-</style>
 {% endblock %}
 
 {% block bodyclass %}{{ block.super }} login{% endblock %}
@@ -150,53 +18,49 @@
 {% block breadcrumbs %}{% endblock %}
 
 {% block content %}
-<div id="header">
-    <h1><a href="{% url 'admin:index' %}">{% trans 'Deigratia School Admin' %}</a></h1>
-    <div class="subtitle">{% trans 'Administration Portal' %}</div>
-</div>
-
 {% if form.errors and not form.non_field_errors %}
-    <p class="errornote">
-    {% if form.errors.items|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
-    </p>
+<p class="errornote">
+{% if form.errors.items|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
+</p>
 {% endif %}
 
 {% if form.non_field_errors %}
-    {% for error in form.non_field_errors %}
-        <p class="errornote">{{ error }}</p>
-    {% endfor %}
+{% for error in form.non_field_errors %}
+<p class="errornote">
+    {{ error }}
+</p>
+{% endfor %}
 {% endif %}
 
 <div id="content-main">
-    {% if user.is_authenticated %}
-        <p class="errornote">
-        {% blocktrans trimmed %}
-            You are authenticated as {{ username }}, but are not authorized to
-            access this page. Would you like to login to a different account?
-        {% endblocktrans %}
-        </p>
-    {% endif %}
 
-    <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
-        <div class="form-row">
-            {{ form.username.label_tag }} {{ form.username }}
-        </div>
-        <div class="form-row">
-            {{ form.password.label_tag }} {{ form.password }}
-            <input type="hidden" name="next" value="{{ next }}">
-        </div>
-        {% url 'admin_password_reset' as password_reset_url %}
-        {% if password_reset_url %}
-        <div class="help"><a href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a></div>
-        {% endif %}
-        <div class="submit-row">
-            <input type="submit" value="{% trans 'Log in' %}">
-        </div>
-    </form>
+{% if user.is_authenticated %}
+<p class="errornote">
+{% blocktrans trimmed %}
+    You are authenticated as {{ username }}, but are not authorized to
+    access this page. Would you like to login to a different account?
+{% endblocktrans %}
+</p>
+{% endif %}
 
-    <div class="help">
-        <p>{% trans 'Welcome to Deigratia Montessori School Administration Portal' %}</p>
-        <p>{% trans 'Please enter your credentials to access the admin panel.' %}</p>
-    </div>
+<form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+  <div class="form-row">
+    {{ form.username.label_tag }} {{ form.username }}
+  </div>
+  <div class="form-row">
+    {{ form.password.label_tag }} {{ form.password }}
+    <input type="hidden" name="next" value="{{ next }}">
+  </div>
+  {% url 'admin_password_reset' as password_reset_url %}
+  {% if password_reset_url %}
+  <div class="password-reset-link">
+    <a href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
+  </div>
+  {% endif %}
+  <div class="submit-row">
+    <label>&nbsp;</label><input type="submit" value="{% trans 'Log in' %}">
+  </div>
+</form>
+
 </div>
 {% endblock %}
