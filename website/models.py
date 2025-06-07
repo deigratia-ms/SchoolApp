@@ -14,6 +14,7 @@ class SiteSettings(models.Model):
     # Basic Information
     school_logo = models.ImageField(upload_to='site/', help_text="Main school logo displayed in the header")
     footer_logo = models.ImageField(upload_to='site/', null=True, blank=True, help_text="Optional different logo for footer")
+    favicon = models.ImageField(upload_to='site/favicon/', null=True, blank=True, help_text="Website icon (favicon) displayed in browser tabs. Recommended size: 32x32 or 16x16 pixels. If not provided, the school logo will be used.")
 
     # Contact Information
     contact_email = models.EmailField(help_text="Main contact email address")
@@ -48,6 +49,11 @@ class SiteSettings(models.Model):
     def save(self, *args, **kwargs):
         if SiteSettings.objects.exists() and not self.pk:
             raise ValidationError('There can only be one SiteSettings instance')
+
+        # Clear cache when settings are updated
+        from django.core.cache import cache
+        cache.delete('unified_site_settings')
+
         return super(SiteSettings, self).save(*args, **kwargs)
 
 class FAQ(models.Model):

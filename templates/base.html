@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Deigratia Montessori School{% endblock %}</title>
 
+    <!-- Favicon -->
+    {% load static %}
+    {% if site_settings.favicon %}
+        <link rel="icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
+        <link rel="shortcut icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
+        <link rel="apple-touch-icon" href="{{ site_settings.favicon.url }}">
+    {% elif site_settings.school_logo %}
+        <link rel="icon" type="image/x-icon" href="{{ site_settings.school_logo.url }}">
+        <link rel="shortcut icon" type="image/x-icon" href="{{ site_settings.school_logo.url }}">
+        <link rel="apple-touch-icon" href="{{ site_settings.school_logo.url }}">
+    {% else %}
+        <link rel="icon" type="image/svg+xml" href="{% static 'website/images/favicon.svg' %}">
+        <link rel="shortcut icon" type="image/svg+xml" href="{% static 'website/images/favicon.svg' %}">
+        <link rel="apple-touch-icon" href="{% static 'website/images/favicon.svg' %}">
+    {% endif %}
+
      <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 

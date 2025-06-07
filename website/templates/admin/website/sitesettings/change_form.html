@@ -1,0 +1,88 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+(function($) {
+    $(document).ready(function() {
+        // Add favicon upload guidance
+        var faviconField = $('#id_favicon');
+        if (faviconField.length) {
+            var helpText = $('<div class="help" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #007cba; font-size: 13px;">' +
+                '<strong>Favicon Tips:</strong><br>' +
+                '• Best formats: .ico, .png, .svg<br>' +
+                '• Recommended sizes: 16x16, 32x32, or 48x48 pixels<br>' +
+                '• Keep it simple - complex designs don\'t work well at small sizes<br>' +
+                '• Test your favicon at different sizes before uploading<br>' +
+                '• <a href="https://favicon.io/" target="_blank">favicon.io</a> is a great tool for creating favicons' +
+                '</div>');
+            faviconField.closest('.form-row').append(helpText);
+        }
+
+        // Add logo upload guidance
+        var logoField = $('#id_school_logo');
+        if (logoField.length) {
+            var logoHelpText = $('<div class="help" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #28a745; font-size: 13px;">' +
+                '<strong>Logo Tips:</strong><br>' +
+                '• Recommended size: 200x60 pixels (or similar aspect ratio)<br>' +
+                '• Use PNG or SVG for best quality<br>' +
+                '• Ensure good contrast for readability<br>' +
+                '• Logo will be used as favicon if no specific favicon is uploaded' +
+                '</div>');
+            logoField.closest('.form-row').append(logoHelpText);
+        }
+
+        // Preview functionality for favicon
+        function previewFavicon(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var preview = $('<img>').attr({
+                        'src': e.target.result,
+                        'style': 'max-width: 32px; max-height: 32px; border: 1px solid #ddd; padding: 2px; margin-left: 10px;',
+                        'title': 'Favicon Preview'
+                    });
+                    
+                    // Remove existing preview
+                    input.parentNode.querySelector('.favicon-preview')?.remove();
+                    
+                    // Add new preview
+                    var previewContainer = $('<span class="favicon-preview"></span>').append(preview);
+                    $(input).after(previewContainer);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Attach preview to favicon field
+        faviconField.on('change', function() {
+            previewFavicon(this);
+        });
+    });
+})(django.jQuery);
+</script>
+
+<style>
+.favicon-preview img {
+    transition: transform 0.2s ease;
+}
+
+.favicon-preview img:hover {
+    transform: scale(2);
+    z-index: 1000;
+    position: relative;
+}
+
+.field-preview_favicon img {
+    cursor: pointer;
+}
+
+.field-preview_favicon img:hover {
+    transform: scale(3);
+    z-index: 1000;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+</style>
+{% endblock %}

@@ -350,10 +350,22 @@ class FAQAdmin(admin.ModelAdmin):
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'contact_email', 'contact_phone', 'preview_logo')
+    list_display = ('__str__', 'contact_email', 'contact_phone', 'preview_logo', 'preview_favicon')
+    readonly_fields = ('preview_logo', 'preview_favicon')
     fieldsets = (
         ('Basic Information', {
-            'fields': ('school_logo', 'footer_logo')
+            'fields': (
+                ('school_logo', 'preview_logo'),
+                ('footer_logo',),
+                ('favicon', 'preview_favicon')
+            ),
+            'description': '''
+                <strong>Logo & Favicon Guidelines:</strong><br>
+                • <strong>School Logo:</strong> Main logo displayed in the header (recommended: 200x60 pixels)<br>
+                • <strong>Footer Logo:</strong> Optional different logo for footer<br>
+                • <strong>Favicon:</strong> Small icon in browser tabs (recommended: 32x32 or 16x16 pixels, .ico or .png format)<br>
+                • If no favicon is uploaded, the school logo will be used automatically
+            '''
         }),
         ('Contact Information', {
             'fields': (
@@ -382,6 +394,20 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="max-height: 50px;" />', obj.school_logo.url)
         return "No Logo"
     preview_logo.short_description = 'Logo Preview'
+
+    def preview_favicon(self, obj):
+        if obj.favicon:
+            return format_html(
+                '<img src="{}" style="max-height: 32px; max-width: 32px; border: 1px solid #ddd; padding: 2px;" title="Favicon Preview" />',
+                obj.favicon.url
+            )
+        elif obj.school_logo:
+            return format_html(
+                '<img src="{}" style="max-height: 32px; max-width: 32px; border: 1px solid #ddd; padding: 2px;" title="Using School Logo as Favicon" />',
+                obj.school_logo.url
+            )
+        return format_html('<span style="color: #999; font-style: italic;">Default Favicon</span>')
+    preview_favicon.short_description = 'Favicon Preview'
 
 @admin.register(HeroSlide)
 class HeroSlideAdmin(admin.ModelAdmin):

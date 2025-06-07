@@ -68,6 +68,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ricas_school_manager.urls'
 
+# URL configuration
+APPEND_SLASH = True  # Django default, but explicit for clarity
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -285,18 +288,23 @@ except ImportError:
 # Scheduler settings
 RUN_SCHEDULER_IN_DEBUG = config('RUN_SCHEDULER_IN_DEBUG', default=True, cast=bool)
 
-# Production security settings
+# Security settings - only enforce HTTPS in production environments
+# This ensures development works with HTTP while production is secure
 if not DEBUG:
-    # Security settings for production
+    # Only apply security settings in production
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
     X_FRAME_OPTIONS = 'DENY'
+
+    # HTTPS enforcement - only if explicitly enabled via environment
+    FORCE_HTTPS = config('FORCE_HTTPS', default=False, cast=bool)
+    if FORCE_HTTPS:
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+        SECURE_HSTS_PRELOAD = True
+        SECURE_HSTS_SECONDS = 31536000  # 1 year
+        SECURE_SSL_REDIRECT = True
+        SESSION_COOKIE_SECURE = True
+        CSRF_COOKIE_SECURE = True
 
     # Allowed hosts for production - use environment variable
     env_allowed_hosts = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
