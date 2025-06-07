@@ -112,16 +112,28 @@ def populate_database():
         school_name="Deigratia Montessori School",
         defaults={
             'address': '123 Education Street, Accra, Ghana',
-            'contact_phone': '+233 20 123 4567',
-            'contact_email': 'info@deigratia.edu.gh',
-            'website': 'www.deigratia.edu.gh',
-            'school_motto': 'Nurturing Excellence Through Montessori Education',
+            'phone': '+233 20 123 4567',  # Fixed: contact_phone -> phone
+            'email': 'info@deigratia.edu.gh',  # Fixed: contact_email -> email
+            'website': 'https://www.deigratia.edu.gh',  # Fixed: added https://
+            'principal_name': 'Dr. Grace Mensah',  # Added: principal_name field
             'academic_year': '2023-2024',
-            'current_term': 'First Term',
+            # Removed: current_term (not in model)
+            # Removed: school_motto (not in model)
             'enable_messaging': True,
             'enable_student_to_student_chat': True,
             'primary_color': '#004d4d',
-            'dark_mode': False
+            'dark_mode': False,
+            # Added: notification settings
+            'notify_assignments': True,
+            'notify_grades': True,
+            'notify_attendance': True,
+            'notify_events': True,
+            # Added: SMTP settings (optional)
+            'smtp_host': '',
+            'smtp_port': 587,
+            'smtp_username': '',
+            'smtp_password': '',
+            'smtp_use_tls': True
         }
     )
 
