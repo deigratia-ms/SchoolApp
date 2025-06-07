@@ -10,7 +10,7 @@
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ sections.hero.title|default:"Join Our Community" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-            {{ sections.hero.content|default:"Begin your child's journey towards excellence in education" }}
+            {{ sections.hero.content|safe|default:"Begin your child's journey towards excellence in education" }}
         </p>
     </div>
 </section>

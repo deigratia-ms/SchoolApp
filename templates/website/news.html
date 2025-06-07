@@ -6,7 +6,7 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="news-hero" style="background-image: url('{% if news_hero and news_hero.image %}{{ news_hero.image.url }}{% elif first_announcement_image %}{{ first_announcement_image.url }}{% else %}{% static "img/news-hero.jpg" %}{% endif %}');">
+<section class="news-hero" style="background-image: url('{% if news_hero and news_hero.image %}{{ news_hero.image.url }}{% elif first_announcement_image %}{{ first_announcement_image.url }}{% else %}https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80{% endif %}');">
     <div class="news-hero-content">
         <h1 class="news-hero-title" data-aos="fade-up">{% if news_hero and news_hero.title %}{{ news_hero.title }}{% else %}News & Announcements{% endif %}</h1>
         <p class="news-hero-subtitle" data-aos="fade-up" data-aos-delay="100">

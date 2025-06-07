@@ -544,7 +544,7 @@
     <div class="container">
         <div class="events-hero__content">
             <h1 class="events-hero__title">{% if sections.events_hero %}{{ sections.events_hero.title }}{% else %}School Events Calendar{% endif %}</h1>
-            <p class="events-hero__subtitle">{% if sections.events_hero %}{{ sections.events_hero.content }}{% else %}Join us for exciting educational and community events throughout the year{% endif %}</p>
+            <p class="events-hero__subtitle">{% if sections.events_hero %}{{ sections.events_hero.content|safe }}{% else %}Join us for exciting educational and community events throughout the year{% endif %}</p>
             <div class="events-hero__buttons">
                 <a href="#upcoming-events" class="btn btn-light">View Events</a>
                 <a href="{% url 'website:contact' %}" class="btn btn-outline-light">Contact Us</a>
@@ -591,7 +591,7 @@
                             <span class="event-card__date"><i class="far fa-calendar-alt"></i>{{ event.date|date:"M d, Y" }}</span>
                             <h3 class="event-card__title">{{ event.title }}</h3>
                             <p class="event-card__location"><i class="fas fa-map-marker-alt"></i>{{ event.location }}</p>
-                            <p class="event-card__description">{{ event.description|truncatewords:20 }}</p>
+                            <p class="event-card__description">{{ event.description|striptags|truncatewords:20 }}</p>
                             <a href="{% url 'website:event-detail' event.id %}" class="btn btn-outline-primary event-card__button">Learn More</a>
                         </div>
                     </div>

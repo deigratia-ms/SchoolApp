@@ -471,7 +471,7 @@ def populate_testimonials():
         {
             'name': 'Mrs. Grace Osei',
             'role': 'Parent of Kwame (Primary 3)',
-            'content': '<p>Deigratia Montessori School has been a blessing to our family. My son Kwame has grown tremendously in confidence and independence.</p><p>The teachers are caring and professional, and the Montessori approach has helped him develop a genuine love for learning. I highly recommend this school to any parent looking for quality education.</p>',
+            'content': 'Deigratia Montessori School has been a blessing to our family. My son Kwame has grown tremendously in confidence and independence. The teachers are caring and professional, and the Montessori approach has helped him develop a genuine love for learning. I highly recommend this school to any parent looking for quality education.',
             'is_featured': True
         },
         {
@@ -741,19 +741,19 @@ def populate_hero_slides():
     hero_slides_data = [
         {
             'title': 'Welcome to Deigratia Montessori School',
-            'subtitle': '<p>Nurturing independent, confident, and capable children through authentic Montessori education in the heart of Accra.</p>',
+            'subtitle': 'Nurturing independent, confident, and capable children through authentic Montessori education in the heart of Accra.',
             'order': 1,
             'is_active': True
         },
         {
             'title': 'Authentic Montessori Education',
-            'subtitle': '<p>Our AMI-certified teachers provide genuine Montessori experiences that foster natural learning and development.</p>',
+            'subtitle': 'Our AMI-certified teachers provide genuine Montessori experiences that foster natural learning and development.',
             'order': 2,
             'is_active': True
         },
         {
             'title': 'Beautiful Learning Environment',
-            'subtitle': '<p>Carefully prepared environments with natural materials that inspire curiosity and support independent learning.</p>',
+            'subtitle': 'Carefully prepared environments with natural materials that inspire curiosity and support independent learning.',
             'order': 3,
             'is_active': True
         }
