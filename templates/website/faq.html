@@ -10,7 +10,7 @@
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ faq_hero.title|default:"Frequently Asked Questions" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-            {{ faq_hero.content|default:"Find answers to common questions about our school, programs, and policies." }}
+            {{ faq_hero.content|safe|default:"Find answers to common questions about our school, programs, and policies." }}
         </p>
     </div>
 </section>

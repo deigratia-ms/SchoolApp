@@ -72,7 +72,7 @@
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ terms_hero.title|default:"Terms of Service" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-            {{ terms_hero.content|default:"Please read these terms carefully before using our website and services." }}
+            {{ terms_hero.content|safe|default:"Please read these terms carefully before using our website and services." }}
         </p>
     </div>
 </section>
@@ -82,7 +82,7 @@
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ terms_hero.title|default:"Terms of Service" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-            {{ terms_hero.content|default:"Please read these terms carefully before using our website and services." }}
+            {{ terms_hero.content|safe|default:"Please read these terms carefully before using our website and services." }}
         </p>
     </div>
 </section>

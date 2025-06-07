@@ -10,7 +10,7 @@
     <div class="news-hero-content">
         <h1 class="news-hero-title" data-aos="fade-up">{% if news_hero and news_hero.title %}{{ news_hero.title }}{% else %}News & Announcements{% endif %}</h1>
         <p class="news-hero-subtitle" data-aos="fade-up" data-aos-delay="100">
-            {% if news_hero and news_hero.content %}{{ news_hero.content }}{% else %}Stay informed about the latest updates and achievements at Deigratia Montessori{% endif %}
+            {% if news_hero and news_hero.content %}{{ news_hero.content|safe }}{% else %}Stay informed about the latest updates and achievements at Deigratia Montessori{% endif %}
         </p>
         <div class="filter-badges">
             {% if search_query %}
@@ -55,7 +55,7 @@
                                     </div>
                                     {% endif %}
                                 </div>
-                                <p class="news-card-description">{{ announcement.content|truncatewords:30 }}</p>
+                                <p class="news-card-description">{{ announcement.content|striptags|truncatewords:30 }}</p>
                                 <a href="{% url 'website:announcement-detail' announcement.slug %}" class="btn btn-primary news-card-button">Read More</a>
                             </div>
                         </article>

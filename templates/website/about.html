@@ -10,7 +10,7 @@
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ sections.about_hero.title|default:"About Our School" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-            {{ sections.about_hero.content|default:"Discover the Deigratia Montessori difference and our commitment to excellence in education" }}
+            {{ sections.about_hero.content|safe|default:"Discover the Deigratia Montessori difference and our commitment to excellence in education" }}
         </p>
     </div>
 </section>
@@ -26,7 +26,7 @@
                             <i class="fas fa-bullseye fa-2x text-primary me-3"></i>
                             <h2 class="mb-0">{{ sections.mission.title|default:"Our Mission" }}</h2>
                         </div>
-                        <p class="card-text">{{ sections.mission.content|default:"To provide an enriching Montessori education that nurtures each child's unique potential, fostering independence, creativity, and a lifelong love for learning while maintaining the highest standards of academic excellence." }}</p>
+                        <p class="card-text">{{ sections.mission.content|safe|default:"To provide an enriching Montessori education that nurtures each child's unique potential, fostering independence, creativity, and a lifelong love for learning while maintaining the highest standards of academic excellence." }}</p>
                     </div>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                             <i class="fas fa-eye fa-2x text-primary me-3"></i>
                             <h2 class="mb-0">{{ sections.vision.title|default:"Our Vision" }}</h2>
                         </div>
-                        <p class="card-text">{{ sections.vision.content|default:"To be a leading Montessori institution that empowers children to become confident, responsible, and globally conscious individuals who contribute positively to society through their unique gifts and talents." }}</p>
+                        <p class="card-text">{{ sections.vision.content|safe|default:"To be a leading Montessori institution that empowers children to become confident, responsible, and globally conscious individuals who contribute positively to society through their unique gifts and talents." }}</p>
                     </div>
                 </div>
             </div>
@@ -58,7 +58,7 @@
             </div>
             <div class="col-lg-6" data-aos="fade-left">
                 <h2 class="section-title text-start">{{ sections.story.title|default:"Our Story" }}</h2>
-                <p class="lead mb-4">{{ sections.story.subtitle|default:"Founded with a vision to provide exceptional Montessori education" }}</p>
+                <p class="lead mb-4">{{ sections.story.subtitle|safe|default:"Founded with a vision to provide exceptional Montessori education" }}</p>
                 <div class="story-content">
                     {{ sections.story.content|default:"<p>Deigratia Montessori School was established with a clear vision: to create an educational environment where children can thrive and develop their full potential. Our journey began with a deep commitment to the Montessori method and its proven approach to child development.</p><p>Today, we continue to build upon this foundation, combining traditional Montessori principles with innovative educational practices to prepare our students for success in the modern world.</p>"|safe }}
                 </div>
@@ -86,7 +86,7 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ member.name }}</h5>
                         <p class="card-subtitle mb-2 text-primary">{{ member.position }}</p>
-                        <p class="card-text">{{ member.bio|truncatewords:30 }}</p>
+                        <p class="card-text">{{ member.bio|striptags|truncatewords:30 }}</p>
                         <button class="btn btn-primary view-staff-details" data-staff-id="{{ member.id }}">
                             View Profile
                         </button>
@@ -160,7 +160,7 @@
                                 <i class="fas fa-{{ item.icon }} fa-3x"></i>
                             </div>
                             <h5 class="card-title">{{ item.title }}</h5>
-                            <p class="card-text">{{ item.description }}</p>
+                            <p class="card-text">{{ item.description|safe }}</p>
                         </div>
                     </div>
                 </div>
@@ -222,7 +222,7 @@
             {% for testimonial in testimonials %}
             <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
                 <div class="testimonial-card">
-                    <p class="mb-4">{{ testimonial.content }}</p>
+                    <p class="mb-4">{{ testimonial.content|safe }}</p>
                     <div class="d-flex align-items-center">
                         {% if testimonial.image %}
                         <img src="{{ testimonial.image.url }}" class="rounded-circle me-3" width="50" height="50" alt="{{ testimonial.name }}">

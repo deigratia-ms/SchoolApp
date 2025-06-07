@@ -24,7 +24,7 @@
                     <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ slide.title }}</h1>
                     {% if slide.subtitle %}
                     <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                        {{ slide.subtitle }}
+                        {{ slide.subtitle|safe }}
                     </p>
                     {% endif %}
                     <div class="hero-buttons d-flex flex-column flex-md-row justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
@@ -88,7 +88,7 @@
                     <div class="card-body">
                         <div class="announcement-badge mb-2">Featured</div>
                         <h5 class="card-title">{{ announcement.title }}</h5>
-                        <p class="card-text">{{ announcement.content|truncatewords:30 }}</p>
+                        <p class="card-text">{{ announcement.content|striptags|truncatewords:30 }}</p>
                         <a href="{% url 'website:announcement-detail' announcement.slug %}" class="btn btn-outline-primary">Read More</a>
                     </div>
                 </div>
@@ -108,7 +108,7 @@
         <div class="row align-items-center">
             <div class="col-lg-6 order-2 order-lg-1 mt-4 mt-lg-0" data-aos="fade-right">
                 <h2 class="section-title text-center text-lg-start">{{ settings.about_section_title|default:"Why Choose Us?" }}</h2>
-                <p>{{ settings.about_section_content|default:"At Deigratia Montessori School, we believe in nurturing each child's unique potential through the time-tested Montessori method. Our approach combines traditional values with modern educational techniques to create an environment where children can thrive." }}</p>
+                <p>{{ settings.about_section_content|safe|default:"At Deigratia Montessori School, we believe in nurturing each child's unique potential through the time-tested Montessori method. Our approach combines traditional values with modern educational techniques to create an environment where children can thrive." }}</p>
                 <div class="row mt-4 gy-3">
                     <div class="col-12 col-sm-6">
                         <div class="d-flex align-items-start">
@@ -180,7 +180,7 @@
                             <div class="month">{{ event.date|date:"M" }}</div>
                         </div>
                         <h5 class="card-title">{{ event.title }}</h5>
-                        <p class="card-text">{{ event.description|truncatewords:20 }}</p>
+                        <p class="card-text">{{ event.description|striptags|truncatewords:20 }}</p>
                         <p class="text-muted">
                             <i class="fas fa-map-marker-alt me-2"></i>{{ event.location }}
                         </p>
@@ -208,7 +208,7 @@
             {% for testimonial in testimonials %}
             <div class="col-12 col-sm-6 col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
                 <div class="testimonial-card">
-                    <p class="mb-4">{{ testimonial.content }}</p>
+                    <p class="mb-4">{{ testimonial.content|safe }}</p>
                     <div class="d-flex align-items-center">
                         {% if testimonial.image %}
                         <img src="{{ testimonial.image.url }}" class="rounded-circle me-3" width="50" height="50" alt="{{ testimonial.name }}">
@@ -244,7 +244,7 @@
                         <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.title }}" style="height: 500px; object-fit: cover;">
                         <div class="carousel-caption d-none d-md-block">
                             <h5>{{ image.title }}</h5>
-                            <p>{{ image.description|truncatewords:20 }}</p>
+                            <p>{{ image.description|striptags|truncatewords:20 }}</p>
                         </div>
                     </a>
                 </div>

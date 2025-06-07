@@ -72,7 +72,7 @@
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ privacy_hero.title|default:"Privacy Policy" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-            {{ privacy_hero.content|default:"Our commitment to protecting your privacy and personal information." }}
+            {{ privacy_hero.content|safe|default:"Our commitment to protecting your privacy and personal information." }}
         </p>
     </div>
 </section>
@@ -82,7 +82,7 @@
     <div class="hero-content">
         <h1 class="mb-4" data-aos="fade-up" style="color: white !important; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">{{ privacy_hero.title|default:"Privacy Policy" }}</h1>
         <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-            {{ privacy_hero.content|default:"Our commitment to protecting your privacy and personal information." }}
+            {{ privacy_hero.content|safe|default:"Our commitment to protecting your privacy and personal information." }}
         </p>
     </div>
 </section>

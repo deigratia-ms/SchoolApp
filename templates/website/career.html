@@ -122,7 +122,7 @@
         <div class="text-center text-white">
             <h1 class="mb-4" data-aos="fade-up">{{ career_hero.title|default:"Career Opportunities" }}</h1>
             <p class="lead mb-4" data-aos="fade-up" data-aos-delay="100">
-                {{ career_hero.content|default:"Join our team of dedicated professionals and make a difference in the lives of our students." }}
+                {{ career_hero.content|safe|default:"Join our team of dedicated professionals and make a difference in the lives of our students." }}
             </p>
         </div>
     </div>
