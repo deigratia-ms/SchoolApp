@@ -25,8 +25,19 @@ def is_parent(user):
 def check_system_active(view_func):
     """Decorator to check if the appointment system is active"""
     def _wrapped_view(request, *args, **kwargs):
-        settings = AppointmentSettings.objects.first()
-        if not settings or not settings.system_active:
+        from django.core.cache import cache
+
+        # Try to get from cache first
+        cache_key = 'appointment_system_active'
+        system_active = cache.get(cache_key)
+
+        if system_active is None:
+            settings = AppointmentSettings.objects.first()
+            system_active = settings and settings.system_active
+            # Cache for 5 minutes
+            cache.set(cache_key, system_active, 300)
+
+        if not system_active:
             return redirect('appointments:system_inactive')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
