@@ -415,12 +415,12 @@
                     <a href="{% url 'website:gallery-detail' image.pk %}" class="text-decoration-none">
                         <div class="card mobile-gallery-card">
                             {% if image.image %}
-                            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}" style="height: 48px; object-fit: cover;">
+                            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}" style="height: 32px; object-fit: cover;">
                             {% else %}
-                            <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="{{ image.title }}" style="height: 48px; object-fit: cover;">
+                            <img src="https://images.unsplash.com/photo-1503676260728-1c00da09c228?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60" class="card-img-top" alt="{{ image.title }}" style="height: 32px; object-fit: cover;">
                             {% endif %}
-                            <div class="card-img-overlay d-flex align-items-end p-1" style="background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);">
-                                <h6 class="card-title text-white mb-0 small">{{ image.title }}</h6>
+                            <div class="card-img-overlay d-flex align-items-end p-0" style="background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);">
+                                <h6 class="card-title text-white mb-0" style="font-size: 0.5rem; padding: 0.05rem 0.1rem;">{{ image.title }}</h6>
                             </div>
                         </div>
                     </a>
@@ -892,21 +892,21 @@
     }
 
     .mobile-gallery-card img {
-        height: 42px !important;
+        height: 28px !important;
     }
 
     .mobile-gallery-card h6 {
-        font-size: 0.6rem;
-        padding: 0.1rem 0.2rem;
-        line-height: 1.1;
+        font-size: 0.5rem;
+        padding: 0.05rem 0.1rem;
+        line-height: 1;
     }
 
     .mobile-gallery-card {
-        margin-bottom: 0.1rem;
+        margin-bottom: 0.05rem;
     }
 
     .mobile-gallery-card .card-img-overlay {
-        padding: 0.15rem !important;
+        padding: 0.1rem !important;
     }
 }
 
