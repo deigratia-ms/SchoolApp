@@ -296,15 +296,16 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
 
-    # HTTPS enforcement - only if explicitly enabled via environment
-    FORCE_HTTPS = config('FORCE_HTTPS', default=False, cast=bool)
-    if FORCE_HTTPS:
+    # HTTPS/SSL security settings from environment variables
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+    SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+    CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+
+    # Additional HSTS settings if HSTS is enabled
+    if SECURE_HSTS_SECONDS > 0:
         SECURE_HSTS_INCLUDE_SUBDOMAINS = True
         SECURE_HSTS_PRELOAD = True
-        SECURE_HSTS_SECONDS = 31536000  # 1 year
-        SECURE_SSL_REDIRECT = True
-        SESSION_COOKIE_SECURE = True
-        CSRF_COOKIE_SECURE = True
 
     # Allowed hosts for production - use environment variable
     env_allowed_hosts = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
