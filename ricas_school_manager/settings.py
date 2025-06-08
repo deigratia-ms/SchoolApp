@@ -288,6 +288,12 @@ except ImportError:
 # Scheduler settings
 RUN_SCHEDULER_IN_DEBUG = config('RUN_SCHEDULER_IN_DEBUG', default=True, cast=bool)
 
+# Production Environment Detection
+IS_PRODUCTION = not DEBUG and (
+    'fly.dev' in config('ALLOWED_HOSTS', default='') or
+    config('ENVIRONMENT', default='development').lower() == 'production'
+)
+
 # Security settings - only enforce HTTPS in production environments
 # This ensures development works with HTTP while production is secure
 if not DEBUG:
@@ -319,3 +325,100 @@ if not DEBUG:
 
 # Health check endpoint
 HEALTH_CHECK_URL = '/health/'
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'dashboard': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Create logs directory if it doesn't exist
+import os
+logs_dir = BASE_DIR / 'logs'
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
+
+# Production-specific optimizations
+if IS_PRODUCTION:
+    # Enhanced security settings for production
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    # Additional security headers
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+    # Optimize database connections for production (optional)
+    # Only apply if not already set
+    if DATABASES['default'].get('CONN_MAX_AGE', 0) < 300:
+        DATABASES['default']['CONN_MAX_AGE'] = 300  # 5 minutes
+
+    # Optional: Advanced connection pooling (uncomment if needed)
+    # DATABASES['default']['OPTIONS'] = {
+    #     'MAX_CONNS': 20,
+    #     'MIN_CONNS': 5,
+    # }
+
+    # Production logging - log to stdout for fly.io
+    LOGGING['handlers']['console']['level'] = 'WARNING'
+    LOGGING['handlers']['file']['level'] = 'ERROR'
+
+    # Disable debug toolbar and other dev tools
+    INSTALLED_APPS = [app for app in INSTALLED_APPS if 'debug_toolbar' not in app]
+
+    # Cache optimization for production
+    CACHES['default']['TIMEOUT'] = 600  # 10 minutes
+    CACHES['default']['OPTIONS']['MAX_ENTRIES'] = 5000

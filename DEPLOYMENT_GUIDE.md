@@ -64,6 +64,11 @@ flyctl postgres attach school-db
 # Connect to your app and run migrations
 flyctl ssh console
 python manage.py migrate
+
+# Optional: Run production setup (recommended)
+python manage.py setup_production
+
+# Create superuser
 python manage.py createsuperuser
 exit
 ```
@@ -205,6 +210,7 @@ SECRET_KEY=your-super-secret-django-key
 DEBUG=False
 DATABASE_URL=postgresql://user:password@host:port/database
 ALLOWED_HOSTS=yourdomain.com,.yourdomain.com
+ENVIRONMENT=production
 
 # Optional
 DEFAULT_FROM_EMAIL=noreply@yourdomain.com
@@ -213,7 +219,74 @@ EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-app-password
+DEFAULT_SCHOOL_NAME=Your School Name
+TIME_ZONE=Africa/Accra
 ```
+
+## 🚀 New Production Features
+
+### Automated Production Setup
+A new management command `setup_production` is available to automate production setup:
+
+```bash
+# Run complete production setup
+python manage.py setup_production
+
+# Skip specific steps if needed
+python manage.py setup_production --skip-cache --skip-static --skip-migrations
+```
+
+#### What `setup_production` Does:
+
+**Step 1/6: Database Migrations**
+- Runs `python manage.py migrate`
+- Creates all necessary database tables
+- Safe to run multiple times
+
+**Step 2/6: Cache Table Creation**
+- Creates `django_cache_table` for database caching
+- Improves application performance
+- Handles existing table gracefully
+
+**Step 3/6: Static Files Collection**
+- Runs `python manage.py collectstatic --noinput`
+- Gathers all static files for production serving
+- Required for proper CSS/JS loading
+
+**Step 4/6: Logging Directory Setup**
+- Creates `/logs` directory for application logs
+- Ensures proper permissions
+- Required for production logging
+
+**Step 5/6: Database Connection Verification**
+- Tests database connectivity
+- Ensures application can communicate with database
+- Helps identify connection issues early
+
+**Step 6/6: Production Settings Check**
+- Validates critical security settings
+- Checks for common production issues
+- Provides warnings and recommendations
+
+#### Command Options:
+- `--skip-migrations`: Skip database migrations
+- `--skip-cache`: Skip cache table creation
+- `--skip-static`: Skip static files collection
+
+#### Error Handling:
+The command is designed to be safe and robust:
+- ✅ **Safe to run multiple times**
+- ✅ **Handles existing resources gracefully**
+- ✅ **Provides detailed progress feedback**
+- ✅ **Continues on non-critical errors**
+- ✅ **Gives clear success/failure summary**
+
+### Enhanced Logging
+Production logging is now configured to:
+- Log to both files and console
+- Create logs directory automatically
+- Separate error and info logs
+- Include request tracking
 
 ## 📁 Backup Contents
 
