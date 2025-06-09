@@ -223,6 +223,8 @@ DEFAULT_SCHOOL_NAME=Your School Name
 TIME_ZONE=Africa/Accra
 ```
 
+
+
 ## 🚀 New Production Features
 
 ### Automated Production Setup
