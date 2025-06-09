@@ -30,6 +30,9 @@ RUN mkdir -p media logs
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
+# Create cache table (ignore if exists)
+RUN python manage.py createcachetable || true
+
 # Create a non-root user
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
 USER appuser
@@ -37,5 +40,5 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "ricas_school_manager.wsgi:application"]
+# Run the application with optimized settings
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--timeout", "120", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "ricas_school_manager.wsgi:application"]

@@ -7,14 +7,18 @@
 
     <!-- Favicon -->
     {% load static %}
-    {% if site_settings.favicon %}
+    {% if site_settings and site_settings.favicon %}
         <link rel="icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
         <link rel="shortcut icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
         <link rel="apple-touch-icon" href="{{ site_settings.favicon.url }}">
-    {% elif site_settings.school_logo %}
-        <link rel="icon" type="image/x-icon" href="{{ site_settings.school_logo.url }}">
-        <link rel="shortcut icon" type="image/x-icon" href="{{ site_settings.school_logo.url }}">
+    {% elif site_settings and site_settings.school_logo %}
+        <link rel="icon" type="image/png" href="{{ site_settings.school_logo.url }}">
+        <link rel="shortcut icon" type="image/png" href="{{ site_settings.school_logo.url }}">
         <link rel="apple-touch-icon" href="{{ site_settings.school_logo.url }}">
+    {% elif school_settings and school_settings.logo %}
+        <link rel="icon" type="image/png" href="{{ school_settings.logo.url }}">
+        <link rel="shortcut icon" type="image/png" href="{{ school_settings.logo.url }}">
+        <link rel="apple-touch-icon" href="{{ school_settings.logo.url }}">
     {% else %}
         <link rel="icon" type="image/svg+xml" href="{% static 'website/images/favicon.svg' %}">
         <link rel="shortcut icon" type="image/svg+xml" href="{% static 'website/images/favicon.svg' %}">

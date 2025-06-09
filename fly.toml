@@ -1,52 +1,42 @@
-# fly.toml app configuration file generated for school-management-system
+# fly.toml app configuration file generated for deigratia-school on 2025-06-09T19:37:55Z
+#
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "school-management-system"
-primary_region = "iad"
+app = 'deigratia-school'
+primary_region = 'iad'
+console_command = '/code/manage.py shell'
 
 [build]
 
+[deploy]
+  release_command = 'python manage.py migrate --noinput'
+
 [env]
-  PORT = "8000"
-  DJANGO_SETTINGS_MODULE = "ricas_school_manager.settings"
-  ENVIRONMENT = "production"
+  PORT = '8000'
 
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
-
-[[http_service.checks]]
-  interval = "10s"
-  grace_period = "5s"
-  method = "GET"
-  path = "/health/"
-  protocol = "http"
-  timeout = "2s"
-  tls_skip_verify = false
-
-[http_service.concurrency]
-  type = "connections"
-  hard_limit = 25
-  soft_limit = 20
+  processes = ['app']
 
 [[vm]]
-  memory = "1gb"
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
 
 [[statics]]
-  guest_path = "/app/staticfiles"
-  url_prefix = "/static/"
+  guest_path = '/app/staticfiles'
+  url_prefix = '/static/'
 
-# Optional: Uncomment to use persistent storage for media files
-# [mounts]
-#   source = "school_data"
-#   destination = "/app/media"
+[[statics]]
+  guest_path = '/app/media'
+  url_prefix = '/media/'
+  fallback_file = ''
 
-# Optional: Uncomment to run setup_production automatically on deploy
-# [deploy]
-#   release_command = "python manage.py setup_production"
+[mounts]
+  source = 'deigratia_media'
+  destination = '/app/media'

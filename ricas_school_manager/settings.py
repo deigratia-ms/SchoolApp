@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.gzip.GZipMiddleware',  # Compress responses
 ]
 
 ROOT_URLCONF = 'ricas_school_manager.urls'
@@ -138,8 +139,13 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# WhiteNoise configuration for static files
+# WhiteNoise configuration for static files with optimization
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# WhiteNoise optimization settings
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_MAX_AGE = 31536000  # 1 year cache for static files
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
