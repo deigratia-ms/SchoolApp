@@ -8,26 +8,64 @@
     .parent-card {
         transition: all 0.3s ease;
         cursor: pointer;
+        border: 2px solid #dee2e6;
     }
     .parent-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: #0a2351;
     }
     .parent-card.selected {
-        border-color: #0a2351;
-        background-color: #f0f7ff;
+        border: 3px solid #0a2351 !important;
+        background-color: #e8f4fd !important;
+        box-shadow: 0 8px 25px rgba(10, 35, 81, 0.15) !important;
+        transform: translateY(-3px) !important;
     }
+    .parent-card.selected .card-title {
+        color: #0a2351;
+        font-weight: 600;
+    }
+
     .time-slot-card {
         transition: all 0.3s ease;
         cursor: pointer;
+        border: 2px solid #dee2e6;
+        position: relative;
     }
     .time-slot-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: #28a745;
     }
     .time-slot-card.selected {
-        border-color: #28a745;
-        background-color: #f0fff4;
+        border: 3px solid #28a745 !important;
+        background-color: #e8f5e8 !important;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2) !important;
+        transform: translateY(-3px) !important;
+    }
+    .time-slot-card.selected::before {
+        content: '✓';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 10;
+    }
+    .time-slot-card.selected .card-title {
+        color: #155724;
+        font-weight: 600;
+    }
+    .time-slot-card.selected .card-text {
+        color: #155724;
     }
 </style>
 {% endblock %}
