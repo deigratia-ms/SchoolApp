@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'tinymce',
     'django_apscheduler',
+    'cloudinary_storage',
+    'cloudinary',
 
     # Website (DGMS) app
     'website',
@@ -147,8 +149,31 @@ WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_MAX_AGE = 31536000  # 1 year cache for static files
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Cloudinary Configuration for Image Optimization
+try:
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
+    CLOUDINARY_AVAILABLE = True
+except ImportError:
+    CLOUDINARY_AVAILABLE = False
+
+# Cloudinary settings - Free tier provides 25GB storage + 25GB bandwidth
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
+
+# Use Cloudinary for media files in production, local storage in development
+if not DEBUG and CLOUDINARY_AVAILABLE and CLOUDINARY_STORAGE['CLOUD_NAME']:
+    # Production: Use Cloudinary for optimized image delivery
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    MEDIA_URL = f"https://res.cloudinary.com/{CLOUDINARY_STORAGE['CLOUD_NAME']}/"
+else:
+    # Development or fallback: Use local storage
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
