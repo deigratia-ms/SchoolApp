@@ -56,6 +56,15 @@ Write-Host "🏗️  Creating optimized app..." -ForegroundColor Yellow
 Write-Host "🌍 Using London region (closest to Ghana for 90% of users)" -ForegroundColor Blue
 fly launch --name deigratia-school --region lhr --no-deploy
 
+# Create Managed Postgres database
+Write-Host "🗄️  Creating Managed Postgres database..." -ForegroundColor Yellow
+Write-Host "📊 Using modern Managed Postgres (not deprecated Legacy)" -ForegroundColor Blue
+fly mpg create --name deigratia-school-db --region lhr --plan basic
+
+# Attach database to app
+Write-Host "🔗 Connecting database to app..." -ForegroundColor Yellow
+fly mpg attach deigratia-school-db --app deigratia-school
+
 # Import environment variables
 Write-Host "🔧 Importing environment variables..." -ForegroundColor Yellow
 Get-Content .env | fly secrets import

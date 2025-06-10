@@ -57,12 +57,31 @@ fly launch --name deigratia-school --region lhr --no-deploy
 - ❓ "Overwrite Dockerfile?" → Type: **No**
 - ❓ "Set secrets on deigratia-school?" → Type: **No**
 
+### **Create Managed Postgres Database (London Region)**
+```powershell
+# Create modern Managed Postgres database (NOT legacy)
+fly mpg create --name deigratia-school-db --region lhr --plan basic
+```
+
+**When prompted:**
+- ❓ "Select Organization" → Choose: **Deigratia Montessori School (personal)**
+- ❓ "Cluster name" → Use: **deigratia-school-db**
+- ❓ "Region" → Choose: **lhr (London)** - closest to Ghana
+- ❓ "Plan" → Choose: **Basic** (2 shared vCPUs, 1GB RAM) - cost-effective
+
+### **Attach Database to App**
+```powershell
+# Connect the database to your app
+fly mpg attach deigratia-school-db --app deigratia-school
+```
+
 **✅ This will create:**
 - App name: `deigratia-school`
-- Database: `deigratia-school-db` (PostgreSQL, auto-created)
+- Database: `deigratia-school-db` (**Managed Postgres** - modern, not deprecated)
 - URL: `https://deigratia-school.fly.dev`
 - **Region**: London (lhr) - closest to Ghana for 90% of users
-- **Optimized**: 256MB RAM, auto-suspend, cost-efficient
+- **Database Type**: **Managed Postgres** (future-proof, fully supported)
+- **Optimized**: 256MB RAM app + 1GB RAM database, auto-suspend, cost-efficient
 
 ---
 
