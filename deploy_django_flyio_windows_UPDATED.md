@@ -47,8 +47,8 @@ fly auth login
 **Copy and paste this EXACT command:**
 
 ```powershell
-# Create app with optimized configuration
-fly launch --name deigratia-school --region iad --no-deploy
+# Create app with optimized configuration (London region for Ghana users)
+fly launch --name deigratia-school --region lhr --no-deploy
 ```
 
 **When prompted:**
@@ -59,8 +59,9 @@ fly launch --name deigratia-school --region iad --no-deploy
 
 **✅ This will create:**
 - App name: `deigratia-school`
-- Database: `deigratia-school-db`
+- Database: `deigratia-school-db` (PostgreSQL, auto-created)
 - URL: `https://deigratia-school.fly.dev`
+- **Region**: London (lhr) - closest to Ghana for 90% of users
 - **Optimized**: 256MB RAM, auto-suspend, cost-efficient
 
 ---
@@ -113,18 +114,21 @@ fly ssh console
 **Inside the remote shell, copy and paste:**
 
 ```bash
-# Run optimized production setup
-python manage.py setup_production
-
-# Run performance optimization
-python optimize_performance.py
-
-# Create admin user
+# Create admin user (production setup runs automatically during deployment)
 python manage.py createsuperuser
+
+# Optional: Run performance optimization check
+python optimize_performance.py
 
 # Exit remote shell
 exit
 ```
+
+**📝 Note:** The `setup_production` command runs automatically during deployment via the `release_command` in fly.toml. This ensures:
+- Database migrations are applied
+- Cache tables are created
+- Production settings are verified
+- All setup steps complete before the app starts
 
 ---
 

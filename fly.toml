@@ -4,13 +4,13 @@
 #
 
 app = 'deigratia-school'
-primary_region = 'iad'
+primary_region = 'lhr'
 console_command = '/code/manage.py shell'
 
 [build]
 
 [deploy]
-  release_command = 'python manage.py migrate --noinput'
+  release_command = 'python manage.py migrate --noinput && python manage.py setup_production --skip-static'
 
 [env]
   PORT = '8000'
@@ -32,11 +32,5 @@ console_command = '/code/manage.py shell'
   guest_path = '/app/staticfiles'
   url_prefix = '/static/'
 
-[[statics]]
-  guest_path = '/app/media'
-  url_prefix = '/media/'
-  fallback_file = ''
-
-[mounts]
-  source = 'deigratia_media'
-  destination = '/app/media'
+# Media files handled by Cloudinary CDN (no local storage needed)
+# This reduces costs and improves performance

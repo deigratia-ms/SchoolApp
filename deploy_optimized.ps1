@@ -53,7 +53,8 @@ if ($cleanup -eq "y" -or $cleanup -eq "Y") {
 
 # Create optimized app
 Write-Host "🏗️  Creating optimized app..." -ForegroundColor Yellow
-fly launch --name deigratia-school --region iad --no-deploy
+Write-Host "🌍 Using London region (closest to Ghana for 90% of users)" -ForegroundColor Blue
+fly launch --name deigratia-school --region lhr --no-deploy
 
 # Import environment variables
 Write-Host "🔧 Importing environment variables..." -ForegroundColor Yellow
