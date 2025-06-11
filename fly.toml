@@ -5,12 +5,11 @@
 
 app = 'deigratia-school'
 primary_region = 'lhr'
-console_command = '/code/manage.py shell'
+console_command = '/app/manage.py shell'
 
 [build]
 
 [deploy]
-  release_command = 'python manage.py migrate --noinput && python manage.py setup_production --skip-static'
 
 [env]
   PORT = '8000'
@@ -24,7 +23,7 @@ console_command = '/code/manage.py shell'
   processes = ['app']
 
 [[vm]]
-  memory = '256mb'
+  memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
 
@@ -33,4 +32,5 @@ console_command = '/code/manage.py shell'
   url_prefix = '/static/'
 
 # Media files handled by Cloudinary CDN (no local storage needed)
-# This reduces costs and improves performance
+# Database: Neon PostgreSQL (FREE tier)
+# Cost-optimized single machine deployment
