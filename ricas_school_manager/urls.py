@@ -42,11 +42,7 @@ urlpatterns = [
     path('tinymce/', include('tinymce.urls')),
 ]
 
-# Serve media files in both development and production
-# In production, you might want to use a proper web server (nginx/apache) or CDN
-# But for PythonAnywhere and similar platforms, this works fine
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# Serve static files only in development (WhiteNoise handles production static files)
+# Serve media files only in development (Cloudinary handles production media files)
 if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

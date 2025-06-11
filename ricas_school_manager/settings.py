@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',  # Must be before django.contrib.staticfiles
     'django.contrib.staticfiles',
     'django.contrib.humanize',
 
@@ -39,7 +40,6 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'tinymce',
     'django_apscheduler',
-    'cloudinary_storage',
     'cloudinary',
 
     # Website (DGMS) app
@@ -100,14 +100,32 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ricas_school_manager.wsgi.application'
 
 
-# Database - SINGLE DATABASE FOR BOTH SYSTEMS
-# Use PostgreSQL for both local development and production
-DATABASE_URL = config('DATABASE_URL', default='postgresql://neondb_owner:npg_UgOjXAbZ49Gn@ep-little-recipe-a23uiq8a-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require')
-
-# Always use PostgreSQL (both local and production)
-DATABASES = {
-    'default': dj_database_url.parse(DATABASE_URL)
-}
+# Database Configuration
+# Use SQLite for local development, PostgreSQL for production
+if DEBUG:
+    # Local development - use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    # Production - use PostgreSQL from environment variable
+    DATABASE_URL = config('DATABASE_URL', default='')
+    if DATABASE_URL:
+        DATABASES = {
+            'default': dj_database_url.parse(DATABASE_URL)
+        }
+    else:
+        # Fallback to SQLite if no DATABASE_URL is provided
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+        print("Warning: No DATABASE_URL found, using SQLite as fallback")
 
 
 # Password validation
@@ -165,15 +183,28 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
 
+# Configure Cloudinary
+if CLOUDINARY_AVAILABLE and CLOUDINARY_STORAGE['CLOUD_NAME']:
+    import cloudinary
+    cloudinary.config(
+        cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+        api_key=CLOUDINARY_STORAGE['API_KEY'],
+        api_secret=CLOUDINARY_STORAGE['API_SECRET'],
+        secure=True
+    )
+
 # Use Cloudinary for media files in production, local storage in development
 if not DEBUG and CLOUDINARY_AVAILABLE and CLOUDINARY_STORAGE['CLOUD_NAME']:
     # Production: Use Cloudinary for optimized image delivery
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = f"https://res.cloudinary.com/{CLOUDINARY_STORAGE['CLOUD_NAME']}/"
+    # Log Cloudinary configuration (will be logged later after logging is configured)
+    CLOUDINARY_CONFIGURED = True
 else:
     # Development or fallback: Use local storage
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    CLOUDINARY_CONFIGURED = False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -265,7 +296,8 @@ CACHES = {
 # Additional performance settings for development
 if DEBUG:
     # Reduce database connection timeout in development
-    DATABASES['default']['CONN_MAX_AGE'] = 30
+    if 'CONN_MAX_AGE' not in DATABASES['default']:
+        DATABASES['default']['CONN_MAX_AGE'] = 30
 
     # Disable some middleware in development for speed
     # Keep essential middleware only
@@ -301,7 +333,7 @@ if not DEBUG:
 
 # Database connection pooling (if using Postgres)
 # Use pgbouncer or set CONN_MAX_AGE for persistent connections
-DATABASES['default']['CONN_MAX_AGE'] = 60
+# Note: CONN_MAX_AGE is set conditionally above for development
 
 # Pagination defaults (limit per page to reduce memory usage)
 PAGINATION_PER_PAGE = 20
@@ -417,6 +449,15 @@ import os
 logs_dir = BASE_DIR / 'logs'
 if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
+
+# Log Cloudinary configuration after logging is set up
+import logging
+logger = logging.getLogger('django')
+if 'CLOUDINARY_CONFIGURED' in locals():
+    if CLOUDINARY_CONFIGURED:
+        logger.info(f"Using Cloudinary for media files: {CLOUDINARY_STORAGE['CLOUD_NAME']}")
+    elif not DEBUG:
+        logger.warning("Using local storage in production. Cloudinary not configured properly.")
 
 # Production-specific optimizations
 if IS_PRODUCTION:
