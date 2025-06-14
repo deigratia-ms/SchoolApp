@@ -30,6 +30,9 @@ from courses.models import ClassRoom
 import random
 import string
 import secrets
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
 
 # Helper functions for role-based access
 def is_admin(user):
@@ -813,6 +816,22 @@ def user_management(request):
     })
 
 @user_passes_test(is_admin)
+def teacher_documents(request, user_id):
+    """View teacher documents"""
+    try:
+        user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.Role.TEACHER)
+        teacher = get_object_or_404(Teacher, user=user)
+
+        context = {
+            'teacher': teacher,
+        }
+
+        return render(request, 'users/teacher_documents.html', context)
+    except (CustomUser.DoesNotExist, Teacher.DoesNotExist):
+        messages.error(request, 'Teacher not found.')
+        return redirect('users:teacher_management')
+
+@user_passes_test(is_admin)
 def teacher_management(request):
     """View and manage teachers"""
     search_query = request.GET.get('search', None)
@@ -1080,6 +1099,10 @@ def create_user(request):
                 is_verified=True
             )
 
+            # Store initial password for welcome email
+            user.initial_password = password
+            user.save()
+
             # Handle Teacher role
             if role == CustomUser.Role.TEACHER:
                 employee_id = request.POST.get('employee_id')
@@ -1285,6 +1308,24 @@ def edit_user(request, user_id):
                 teacher.employee_id = request.POST.get('employee_id')
                 teacher.department = request.POST.get('department')
                 teacher.qualification = request.POST.get('qualification')
+
+                # Handle document uploads
+                if 'resume_cv' in request.FILES:
+                    teacher.resume_cv = request.FILES['resume_cv']
+                if 'teaching_certificate' in request.FILES:
+                    teacher.teaching_certificate = request.FILES['teaching_certificate']
+                if 'degree_certificates' in request.FILES:
+                    teacher.degree_certificates = request.FILES['degree_certificates']
+                if 'professional_development' in request.FILES:
+                    teacher.professional_development = request.FILES['professional_development']
+                if 'background_check' in request.FILES:
+                    teacher.background_check = request.FILES['background_check']
+                if 'references' in request.FILES:
+                    teacher.references = request.FILES['references']
+                if 'other_documents' in request.FILES:
+                    teacher.other_documents = request.FILES['other_documents']
+
+                teacher.documents_notes = request.POST.get('documents_notes', '')
                 teacher.save()
             except Teacher.DoesNotExist:
                 pass
@@ -1294,6 +1335,22 @@ def edit_user(request, user_id):
                 student = Student.objects.get(user=user)
                 student.student_id = request.POST.get('student_id')
                 student.pin = request.POST.get('pin')
+
+                # Handle document uploads
+                if 'birth_certificate' in request.FILES:
+                    student.birth_certificate = request.FILES['birth_certificate']
+                if 'medical_records' in request.FILES:
+                    student.medical_records = request.FILES['medical_records']
+                if 'previous_school_records' in request.FILES:
+                    student.previous_school_records = request.FILES['previous_school_records']
+                if 'immunization_records' in request.FILES:
+                    student.immunization_records = request.FILES['immunization_records']
+                if 'emergency_contact_form' in request.FILES:
+                    student.emergency_contact_form = request.FILES['emergency_contact_form']
+                if 'other_student_documents' in request.FILES:
+                    student.other_documents = request.FILES['other_student_documents']
+
+                student.documents_notes = request.POST.get('student_documents_notes', '')
                 student.save()
 
                 # Handle classroom assignment - a student can only belong to one class
@@ -1517,13 +1574,36 @@ def register_teacher(request):
             is_verified=True
         )
 
+        # Store initial password for welcome email
+        user.initial_password = password
+        user.save()
+
         # Create teacher profile
-        Teacher.objects.create(
+        teacher = Teacher.objects.create(
             user=user,
             employee_id=employee_id,
             department=department,
             qualification=qualification
         )
+
+        # Handle document uploads
+        if 'resume_cv' in request.FILES:
+            teacher.resume_cv = request.FILES['resume_cv']
+        if 'teaching_certificate' in request.FILES:
+            teacher.teaching_certificate = request.FILES['teaching_certificate']
+        if 'degree_certificates' in request.FILES:
+            teacher.degree_certificates = request.FILES['degree_certificates']
+        if 'professional_development' in request.FILES:
+            teacher.professional_development = request.FILES['professional_development']
+        if 'background_check' in request.FILES:
+            teacher.background_check = request.FILES['background_check']
+        if 'references' in request.FILES:
+            teacher.references = request.FILES['references']
+        if 'other_documents' in request.FILES:
+            teacher.other_documents = request.FILES['other_documents']
+
+        teacher.documents_notes = request.POST.get('documents_notes', '')
+        teacher.save()
 
         # Handle welcome email unless skip checkbox is checked
         if not skip_welcome_email:
@@ -1585,7 +1665,7 @@ def register_teacher(request):
                         <p><strong>Email:</strong> {email}</p>
                         <p><strong>Password:</strong> {password}</p>
                         <p><strong>Employee ID:</strong> {employee_id}</p>
-                        <p><strong>Login URL:</strong> <a href="{request.build_absolute_uri('/users/teacher-login/')}">{request.build_absolute_uri('/users/teacher-login/')}</a></p>
+                        <p><strong>Login URL:</strong> <a href="{base_url}/users/teacher-login/">{base_url}/users/teacher-login/</a></p>
                     </div>
 
                     <p>For security reasons, please change your password after your first login.</p>
@@ -1802,7 +1882,7 @@ def register_parent(request):
                         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #1cc88a;">
                             <h3 style="margin-top: 0; color: #1cc88a;">Your Linked Children and Their Login Credentials</h3>
                             <div style="margin-bottom: 15px;">
-                                <p>Your children can log in at: <a href="{request.build_absolute_uri('/users/student-login/')}" style="color: #4e73df;">{request.build_absolute_uri('/users/student-login/')}</a></p>
+                                <p>Your children can log in at: <a href="{base_url}/users/student-login/" style="color: #4e73df;">{base_url}/users/student-login/</a></p>
                             </div>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr style="background-color: #eef2ff; text-align: left;">
@@ -1854,7 +1934,7 @@ You have been registered as a Parent/Guardian in our school management system.
 YOUR PARENT ACCOUNT LOGIN CREDENTIALS:
 Email: {email}
 Password: {password}
-Login URL: {request.build_absolute_uri('/users/parent-login/')}
+Login URL: {base_url}/users/parent-login/
 
 Please change your password after your first login for security reasons.
 {children_info}
@@ -3684,4 +3764,165 @@ def test_email(request):
             })
 
     return redirect('users:school_settings')
+
+
+@user_passes_test(is_admin)
+def staff_management(request):
+    """View and manage all staff users (non-teaching staff)"""
+    role_filter = request.GET.get('role', None)
+    search_query = request.GET.get('search', None)
+
+    # Get all non-teaching staff roles
+    staff_roles = [
+        CustomUser.Role.ACCOUNTANT,
+        CustomUser.Role.SECRETARY,
+        CustomUser.Role.RECEPTIONIST,
+        CustomUser.Role.SECURITY,
+        CustomUser.Role.JANITOR,
+        CustomUser.Role.COOK,
+        CustomUser.Role.CLEANER,
+        CustomUser.Role.STAFF
+    ]
+
+    # Filter users by staff roles
+    users = CustomUser.objects.filter(role__in=staff_roles).select_related('staff_profile')
+
+    if role_filter and role_filter in [role.value for role in staff_roles]:
+        users = users.filter(role=role_filter)
+
+    if search_query:
+        users = users.filter(
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(phone_number__icontains=search_query)
+        )
+
+    # Get role choices for the filter dropdown
+    role_choices = [(role.value, role.label) for role in CustomUser.Role if role in staff_roles]
+
+    # Statistics
+    stats = {
+        'total_staff': users.count(),
+        'by_role': {}
+    }
+
+    for role in staff_roles:
+        count = CustomUser.objects.filter(role=role).count()
+        stats['by_role'][role.label] = count
+
+    return render(request, 'users/staff_management.html', {
+        'users': users,
+        'role_filter': role_filter,
+        'search_query': search_query,
+        'role_choices': role_choices,
+        'stats': stats,
+    })
+
+
+@user_passes_test(is_admin)
+def export_staff_excel(request):
+    """Export staff data to Excel file"""
+    role_filter = request.GET.get('role', None)
+    search_query = request.GET.get('search', None)
+
+    # Get all non-teaching staff roles
+    staff_roles = [
+        CustomUser.Role.ACCOUNTANT,
+        CustomUser.Role.SECRETARY,
+        CustomUser.Role.RECEPTIONIST,
+        CustomUser.Role.SECURITY,
+        CustomUser.Role.JANITOR,
+        CustomUser.Role.COOK,
+        CustomUser.Role.CLEANER,
+        CustomUser.Role.STAFF
+    ]
+
+    # Filter users by staff roles
+    users = CustomUser.objects.filter(role__in=staff_roles).select_related('staff_profile')
+
+    if role_filter and role_filter in [role.value for role in staff_roles]:
+        users = users.filter(role=role_filter)
+
+    if search_query:
+        users = users.filter(
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(phone_number__icontains=search_query)
+        )
+
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Staff Data"
+
+    # Define headers
+    headers = [
+        'Full Name', 'Email', 'Phone Number', 'Role', 'Employee ID',
+        'Department', 'Date Joined', 'Is Active', 'Is Verified'
+    ]
+
+    # Style for headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+
+    # Write headers
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+
+    # Write data
+    for row_num, user in enumerate(users, 2):
+        # Get staff profile data
+        staff_profile = getattr(user, 'staff_profile', None)
+        employee_id = staff_profile.employee_id if staff_profile else 'N/A'
+        department = staff_profile.department if staff_profile else 'N/A'
+
+        data = [
+            user.get_full_name() or f"{user.first_name} {user.last_name}",
+            user.email,
+            user.phone_number or 'N/A',
+            user.get_role_display(),
+            employee_id,
+            department,
+            user.date_joined.strftime('%Y-%m-%d') if user.date_joined else 'N/A',
+            'Yes' if user.is_active else 'No',
+            'Yes' if user.is_verified else 'No'
+        ]
+
+        for col_num, value in enumerate(data, 1):
+            ws.cell(row=row_num, column=col_num, value=value)
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = get_column_letter(column[0].column)
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Create response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+    # Generate filename with timestamp
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'staff_data_{timestamp}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # Save workbook to response
+    wb.save(response)
+    return response
 

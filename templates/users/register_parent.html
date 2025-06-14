@@ -214,9 +214,7 @@
                           >
                             {{ student.user.get_full_name }}
                             <small class="text-muted d-block">
-                              ID: {{ student.student_id }} | Grade: {{
-                              student.grade }}{% if student.section %}-{{
-                              student.section }}{% endif %}
+                              ID: {{ student.student_id }} | Grade: {% if student.grade %}{{ student.grade.name }}{% else %}Not Assigned{% endif %}{% if student.section %}-{{ student.section }}{% endif %}
                             </small>
                           </label>
                         </div>

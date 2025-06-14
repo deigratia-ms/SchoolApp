@@ -150,76 +150,123 @@
         <input type="hidden" name="slot_ids" id="selectedSlotIds" value="">
 
         {% if time_slots %}
-            {% regroup time_slots by date as date_list %}
-
-            {% for date_group in date_list %}
-                <div class="date-header">
-                    <i class="fas fa-calendar-day me-2"></i> {{ date_group.grouper|date:"l, F d, Y" }}
-                </div>
-
-                <div class="row mb-4">
-                    {% for slot in date_group.list %}
-                        <div class="col-md-3 mb-3">
-                            <div class="card time-slot-card {% if not slot.is_active %}inactive{% elif slot.is_available %}available{% else %}unavailable{% endif %}" data-slot-id="{{ slot.id }}">
-                                <div class="checkbox-container">
-                                    <input type="checkbox" class="form-check-input slot-checkbox" data-slot-id="{{ slot.id }}" {% if not slot.is_available %}disabled{% endif %}>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="card-title mb-0">
-                                            {{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}
-                                        </h6>
-                                        <span class="badge {% if not slot.is_active %}bg-secondary{% elif slot.is_available %}bg-success{% else %}bg-danger{% endif %}">
-                                            {% if not slot.is_active %}Inactive{% elif slot.is_available %}Available{% else %}Booked{% endif %}
-                                        </span>
-                                    </div>
-
+            <!-- Time Slots Table -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">
+                                <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                            </th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Appointment</th>
+                            <th width="120">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in time_slots %}
+                        <tr class="{% if not slot.is_active %}table-secondary{% elif slot.is_available %}table-success{% else %}table-danger{% endif %}">
+                            <td>
+                                <input type="checkbox" class="form-check-input slot-checkbox" data-slot-id="{{ slot.id }}" {% if not slot.is_available %}disabled{% endif %}>
+                            </td>
+                            <td>
+                                <strong>{{ slot.date|date:"l, M d, Y" }}</strong>
+                            </td>
+                            <td>
+                                {{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}
+                            </td>
+                            <td>
+                                <span class="badge {% if not slot.is_active %}bg-secondary{% elif slot.is_available %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if not slot.is_active %}Inactive{% elif slot.is_available %}Available{% else %}Booked{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if not slot.is_available %}
+                                    {% for appointment in slot.appointment_set.all %}
+                                        <div class="small">
+                                            <strong>{{ appointment.parent.user.get_full_name }}</strong><br>
+                                            <span class="text-{% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'pending' %}warning{% elif appointment.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                                {{ appointment.get_status_display }}
+                                            </span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
                                     {% if slot.is_available and slot.is_active %}
-                                        <div class="d-flex justify-content-end mt-3">
-                                            <div class="btn-group">
-                                                <button type="button" class="btn btn-sm btn-outline-danger delete-slot" data-slot-id="{{ slot.id }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-warning deactivate-slot" data-slot-id="{{ slot.id }}">
-                                                    <i class="fas fa-power-off"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                                        <button type="button" class="btn btn-outline-danger delete-slot" data-slot-id="{{ slot.id }}" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning deactivate-slot" data-slot-id="{{ slot.id }}" title="Deactivate">
+                                            <i class="fas fa-power-off"></i>
+                                        </button>
                                     {% elif not slot.is_active %}
-                                        <div class="d-flex justify-content-end mt-3">
-                                            <div class="btn-group">
-                                                <button type="button" class="btn btn-sm btn-outline-danger delete-slot" data-slot-id="{{ slot.id }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-success activate-slot" data-slot-id="{{ slot.id }}">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                                        <button type="button" class="btn btn-outline-danger delete-slot" data-slot-id="{{ slot.id }}" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success activate-slot" data-slot-id="{{ slot.id }}" title="Activate">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
                                     {% else %}
                                         {% for appointment in slot.appointment_set.all %}
-                                            <p class="small mb-1">
-                                                <strong>Parent:</strong> {{ appointment.parent.user.get_full_name }}
-                                            </p>
-                                            <p class="small mb-0">
-                                                <strong>Status:</strong>
-                                                <span class="text-{% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'pending' %}warning{% elif appointment.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
-                                                    {{ appointment.get_status_display }}
-                                                </span>
-                                            </p>
-                                            <div class="d-flex justify-content-end mt-2">
-                                                <a href="{% url 'appointments:appointment_detail' appointment.id %}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                            </div>
+                                            <a href="{% url 'appointments:appointment_detail' appointment.id %}" class="btn btn-outline-primary" title="View Appointment">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
                                         {% endfor %}
                                     {% endif %}
                                 </div>
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if time_slots.has_other_pages %}
+            <nav aria-label="Time slots pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if time_slots.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.time %}time={{ request.GET.time }}&{% endif %}page={{ time_slots.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in time_slots.paginator.page_range %}
+                        {% if time_slots.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > time_slots.number|add:'-3' and num < time_slots.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.time %}time={{ request.GET.time }}&{% endif %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
                     {% endfor %}
-                </div>
-            {% endfor %}
+
+                    {% if time_slots.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.date_from %}date_from={{ request.GET.date_from }}&{% endif %}{% if request.GET.date_to %}date_to={{ request.GET.date_to }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.time %}time={{ request.GET.time }}&{% endif %}page={{ time_slots.next_page_number }}">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            <!-- Pagination Info -->
+            <div class="text-center text-muted mt-3">
+                Showing {{ time_slots.start_index }} to {{ time_slots.end_index }} of {{ time_slots.paginator.count }} time slots
+            </div>
+            {% endif %}
+
         {% else %}
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i> No time slots found. Use the "Generate Slots" button to create new time slots.
@@ -286,35 +333,31 @@
             });
         });
 
-        // Card click to toggle checkbox
-        timeSlotCards.forEach(card => {
-            card.addEventListener('click', function(e) {
-                // Don't toggle if clicking on a button or link
-                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' ||
-                    e.target.closest('button') || e.target.closest('a') ||
-                    e.target.tagName === 'INPUT') {
-                    return;
-                }
-
-                const slotId = this.dataset.slotId;
-                const checkbox = document.querySelector(`.slot-checkbox[data-slot-id="${slotId}"]`);
-
-                if (checkbox && !checkbox.disabled) {
-                    checkbox.checked = !checkbox.checked;
-                    this.classList.toggle('selected', checkbox.checked);
-                    updateBulkActionButtons();
-                }
-            });
-        });
-
-        // Checkbox click
-        slotCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function(e) {
-                e.stopPropagation();
-                const slotId = this.dataset.slotId;
-                const card = document.querySelector(`.time-slot-card[data-slot-id="${slotId}"]`);
-                card.classList.toggle('selected', this.checked);
+        // Select all checkbox functionality
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                slotCheckboxes.forEach(checkbox => {
+                    if (!checkbox.disabled) {
+                        checkbox.checked = this.checked;
+                    }
+                });
                 updateBulkActionButtons();
+            });
+        }
+
+        // Individual checkbox click
+        slotCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateBulkActionButtons();
+
+                // Update select all checkbox state
+                if (selectAllCheckbox) {
+                    const enabledCheckboxes = Array.from(slotCheckboxes).filter(cb => !cb.disabled);
+                    const checkedEnabledCheckboxes = enabledCheckboxes.filter(cb => cb.checked);
+                    selectAllCheckbox.checked = enabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length === enabledCheckboxes.length;
+                    selectAllCheckbox.indeterminate = checkedEnabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length < enabledCheckboxes.length;
+                }
             });
         });
 
@@ -323,11 +366,12 @@
             slotCheckboxes.forEach(checkbox => {
                 if (!checkbox.disabled) {
                     checkbox.checked = true;
-                    const slotId = checkbox.dataset.slotId;
-                    const card = document.querySelector(`.time-slot-card[data-slot-id="${slotId}"]`);
-                    card.classList.add('selected');
                 }
             });
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            }
             updateBulkActionButtons();
         });
 
@@ -335,10 +379,11 @@
         deselectAllBtn.addEventListener('click', function() {
             slotCheckboxes.forEach(checkbox => {
                 checkbox.checked = false;
-                const slotId = checkbox.dataset.slotId;
-                const card = document.querySelector(`.time-slot-card[data-slot-id="${slotId}"]`);
-                card.classList.remove('selected');
             });
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            }
             updateBulkActionButtons();
         });
 
