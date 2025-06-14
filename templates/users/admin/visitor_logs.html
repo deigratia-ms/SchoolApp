@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Visitor Logs - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .visitor-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .visitor-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-checked-in { border-left-color: #28a745; }
+    .status-checked-out { border-left-color: #6c757d; }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-id-badge me-2 text-info"></i>Visitor Logs Management
+            </h2>
+            <p class="text-muted mb-0">Monitor and manage all visitor activity</p>
+        </div>
+        <div>
+            <span class="badge bg-info me-2">{{ visitors.paginator.count }} Total</span>
+            <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-outline-primary">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3 class="mb-1">{{ visitors|length }}</h3>
+                <p class="mb-0 opacity-75">Today's Visitors</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <h3 class="mb-1">
+                    {% for visitor in visitors %}{% if not visitor.check_out_time %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h3>
+                <p class="mb-0 opacity-75">Currently In Building</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #6c757d, #495057);">
+                <h3 class="mb-1">
+                    {% for visitor in visitors %}{% if visitor.check_out_time %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h3>
+                <p class="mb-0 opacity-75">Checked Out</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+                <h3 class="mb-1">{{ visitors.paginator.count }}</h3>
+                <p class="mb-0 opacity-75">All Time Total</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" value="{{ date_filter }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="visitor_type" class="form-label">Visitor Type</label>
+                    <select class="form-select" id="visitor_type" name="visitor_type">
+                        <option value="">All Types</option>
+                        <option value="parent" {% if visitor_type_filter == 'parent' %}selected{% endif %}>Parent</option>
+                        <option value="prospective_parent" {% if visitor_type_filter == 'prospective_parent' %}selected{% endif %}>Prospective Parent</option>
+                        <option value="vendor" {% if visitor_type_filter == 'vendor' %}selected{% endif %}>Vendor</option>
+                        <option value="official" {% if visitor_type_filter == 'official' %}selected{% endif %}>Official</option>
+                        <option value="other" {% if visitor_type_filter == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="purpose" class="form-label">Purpose</label>
+                    <select class="form-select" id="purpose" name="purpose">
+                        <option value="">All Purposes</option>
+                        <option value="meeting" {% if purpose_filter == 'meeting' %}selected{% endif %}>Meeting</option>
+                        <option value="inquiry" {% if purpose_filter == 'inquiry' %}selected{% endif %}>Inquiry</option>
+                        <option value="delivery" {% if purpose_filter == 'delivery' %}selected{% endif %}>Delivery</option>
+                        <option value="maintenance" {% if purpose_filter == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                        <option value="other" {% if purpose_filter == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Search by name, company...">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'users:manage_visitor_logs' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Visitors List -->
+    <div class="row">
+        {% for visitor in visitors %}
+        <div class="col-lg-6 mb-4">
+            <div class="card visitor-card {% if visitor.check_out_time %}status-checked-out{% else %}status-checked-in{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">
+                            <i class="fas fa-user me-2"></i>{{ visitor.visitor_name }}
+                        </h6>
+                        {% if visitor.company_organization %}
+                        <small class="text-muted">{{ visitor.company_organization }}</small>
+                        {% endif %}
+                    </div>
+                    <span class="badge bg-{% if visitor.check_out_time %}secondary{% else %}success{% endif %}">
+                        {% if visitor.check_out_time %}Checked Out{% else %}In Building{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Check-in:</strong><br>
+                            <span class="text-muted">{{ visitor.check_in_time|date:"M d, Y g:i A" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>{% if visitor.check_out_time %}Check-out:{% else %}Duration:{% endif %}</strong><br>
+                            <span class="text-muted">
+                                {% if visitor.check_out_time %}
+                                    {{ visitor.check_out_time|date:"g:i A" }}
+                                {% else %}
+                                    {{ visitor.check_in_time|timesince }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Type:</strong><br>
+                            <span class="text-muted">{{ visitor.get_visitor_type_display }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Purpose:</strong><br>
+                            <span class="text-muted">{{ visitor.get_purpose_display }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if visitor.person_to_meet %}
+                    <div class="mb-2">
+                        <strong>Meeting:</strong>
+                        <span class="text-muted">{{ visitor.person_to_meet }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if visitor.purpose_description %}
+                    <div class="mb-2">
+                        <strong>Description:</strong>
+                        <p class="text-muted small mb-0">{{ visitor.purpose_description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-2">
+                        <strong>Contact:</strong>
+                        {% if visitor.visitor_phone %}
+                            <span class="text-muted">{{ visitor.visitor_phone }}</span>
+                        {% endif %}
+                        {% if visitor.visitor_email %}
+                            <small class="text-muted d-block">{{ visitor.visitor_email }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong>Received by:</strong>
+                        <span class="text-muted">{{ visitor.received_by.get_full_name }}</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Security:</strong>
+                        {% if visitor.id_verified %}
+                            <span class="badge bg-success me-1">ID Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning me-1">ID Not Verified</span>
+                        {% endif %}
+                        {% if visitor.visitor_badge_issued %}
+                            <span class="badge bg-info">Badge Issued</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if visitor.expected_duration %}
+                    <div class="mb-2">
+                        <strong>Expected Duration:</strong>
+                        <span class="text-muted">{{ visitor.expected_duration }} minutes</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if visitor.notes %}
+                    <div class="mb-3">
+                        <strong>Notes:</strong>
+                        <p class="text-muted small mb-0">{{ visitor.notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Admin Actions -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if not visitor.check_out_time %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Still in building
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Visit completed
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-info btn-sm" onclick="viewVisitorDetails({{ visitor.id }})">
+                                <i class="fas fa-info-circle me-1"></i>Details
+                            </button>
+                            {% if not visitor.check_out_time %}
+                                <button class="btn btn-outline-warning btn-sm" onclick="adminCheckOut({{ visitor.id }})">
+                                    <i class="fas fa-sign-out-alt me-1"></i>Check Out
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No visitors found</h5>
+                    <p class="text-muted mb-4">
+                        {% if date_filter or visitor_type_filter or purpose_filter or search_query %}
+                            No visitors match your current filters.
+                        {% else %}
+                            No visitors have been logged yet.
+                        {% endif %}
+                    </p>
+                    {% if date_filter or visitor_type_filter or purpose_filter or search_query %}
+                    <a href="{% url 'users:manage_visitor_logs' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-times me-2"></i>Clear Filters
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if visitors.has_other_pages %}
+    <nav aria-label="Visitors pagination">
+        <ul class="pagination justify-content-center">
+            {% if visitors.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visitor_type_filter %}&visitor_type={{ visitor_type_filter }}{% endif %}{% if purpose_filter %}&purpose={{ purpose_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ visitors.previous_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visitor_type_filter %}&visitor_type={{ visitor_type_filter }}{% endif %}{% if purpose_filter %}&purpose={{ purpose_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ visitors.number }} of {{ visitors.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if visitors.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ visitors.next_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visitor_type_filter %}&visitor_type={{ visitor_type_filter }}{% endif %}{% if purpose_filter %}&purpose={{ purpose_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ visitors.paginator.num_pages }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visitor_type_filter %}&visitor_type={{ visitor_type_filter }}{% endif %}{% if purpose_filter %}&purpose={{ purpose_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewVisitorDetails(visitorId) {
+    // This would typically show a modal with full visitor details
+    alert('Visitor details functionality will be implemented. Visitor ID: ' + visitorId);
+}
+
+function adminCheckOut(visitorId) {
+    if (confirm('Check out this visitor?')) {
+        // This would typically make an AJAX call to check out the visitor
+        alert('Admin check-out functionality will be implemented. Visitor ID: ' + visitorId);
+    }
+}
+
+// Set today's date as default if no date filter is set
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('date');
+    if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

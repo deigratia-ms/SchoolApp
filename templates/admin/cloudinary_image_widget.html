@@ -1,0 +1,130 @@
+{% load i18n static %}
+<div class="cloudinary-upload-widget">
+    <style>
+        .cloudinary-status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .cloudinary-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .cloudinary-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .cloudinary-error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .cloudinary-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .cloudinary-info h4 {
+            margin: 0 0 5px 0;
+            color: #1976d2;
+        }
+        .upload-progress {
+            display: none;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+    
+    <div class="cloudinary-info">
+        <h4>📁 Cloudinary Image Upload</h4>
+        <p>
+            <strong>✅ Automatic Upload:</strong> Your images are automatically uploaded to Cloudinary for fast, optimized delivery.<br>
+            <strong>📏 Recommended Sizes:</strong> Hero images: 1920x600px, Regular images: 800x600px<br>
+            <strong>📁 Supported Formats:</strong> JPG, PNG, WebP, GIF (Max: 10MB)
+        </p>
+    </div>
+    
+    {% if widget.value %}
+        <div class="current-image">
+            {{ widget.format_value }}
+        </div>
+    {% endif %}
+    
+    <div class="file-input-wrapper">
+        <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %} id="id_{{ widget.name }}">
+        {% if widget.is_required %}
+            <input type="hidden" name="{{ widget.name }}" value="{{ widget.value|default:'' }}">
+        {% endif %}
+    </div>
+    
+    <div class="upload-progress" id="progress-{{ widget.name }}">
+        <p>Uploading to Cloudinary...</p>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+    </div>
+    
+    {% if widget.value and widget.is_initial %}
+        <div class="checkbox-row">
+            <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.is_required %} disabled{% endif %}>
+            <label for="{{ widget.checkbox_id }}">{% trans "Clear" %}</label>
+        </div>
+    {% endif %}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('id_{{ widget.name }}');
+            const progressDiv = document.getElementById('progress-{{ widget.name }}');
+            
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    if (e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        
+                        // Show upload progress
+                        progressDiv.style.display = 'block';
+                        
+                        // Simulate progress (since we can't track actual Cloudinary upload progress in admin)
+                        let progress = 0;
+                        const progressBar = progressDiv.querySelector('.progress-fill');
+                        
+                        const interval = setInterval(() => {
+                            progress += Math.random() * 20;
+                            if (progress >= 90) {
+                                progress = 90;
+                                clearInterval(interval);
+                            }
+                            progressBar.style.width = progress + '%';
+                        }, 200);
+                        
+                        // Hide progress after form submission
+                        const form = fileInput.closest('form');
+                        if (form) {
+                            form.addEventListener('submit', function() {
+                                progressBar.style.width = '100%';
+                                setTimeout(() => {
+                                    progressDiv.style.display = 'none';
+                                }, 1000);
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</div>

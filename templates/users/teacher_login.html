@@ -63,14 +63,16 @@
                 <!-- Role Selection Buttons -->
                 <div class="text-center mb-3">
                     <p class="text-muted mb-2">I am a:</p>
-                    <div class="d-flex justify-content-center gap-2">
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
                         <a href="{% url 'users:student_login' %}" class="btn btn-outline-primary">
                             <i class="fas fa-user-graduate mb-1"></i><br>Student
                         </a>
                         <a href="{% url 'users:parent_login' %}" class="btn btn-outline-info">
                             <i class="fas fa-user-friends mb-1"></i><br>Parent
                         </a>
-
+                        <a href="{% url 'users:login' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-user-cog mb-1"></i><br>Other
+                        </a>
                     </div>
                 </div>
 

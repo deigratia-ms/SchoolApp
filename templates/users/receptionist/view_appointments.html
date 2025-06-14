@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}View Appointments - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .appointment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .search-card {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+    }
+    
+    .status-pending {
+        border-left-color: #ffc107;
+    }
+    
+    .status-confirmed {
+        border-left-color: #28a745;
+    }
+    
+    .status-cancelled {
+        border-left-color: #dc3545;
+    }
+    
+    .status-completed {
+        border-left-color: #6c757d;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:receptionist_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">View Appointments</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-calendar-alt me-2 text-danger"></i>All Appointments
+            </h2>
+            <p class="text-muted mb-0">View and manage all scheduled appointments</p>
+        </div>
+        <a href="{% url 'users:new_appointment' %}" class="btn btn-danger">
+            <i class="fas fa-plus me-2"></i>New Appointment
+        </a>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ appointments.paginator.count|default:0 }}</h3>
+                        <p class="mb-0 opacity-75">Total Appointments</p>
+                    </div>
+                    <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">0</h3>
+                        <p class="mb-0 opacity-75">Confirmed</p>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">0</h3>
+                        <p class="mb-0 opacity-75">Pending</p>
+                    </div>
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #6c757d, #5a6268);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">0</h3>
+                        <p class="mb-0 opacity-75">Completed</p>
+                    </div>
+                    <i class="fas fa-check-double fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card search-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Parent name or purpose">
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" value="{{ date_filter }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Appointments List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Appointments
+                {% if appointments %}
+                    <span class="badge bg-danger ms-2">{{ appointments.paginator.count }} total</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Parent</th>
+                                <th>Purpose</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in appointments %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ appointment.time_slot.date|date:"l, F d, Y" }}</div>
+                                    <small class="text-muted">{{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="parent-initials me-2" style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #dc3545, #c82333); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">
+                                            {{ appointment.parent.user.first_name|slice:":1" }}{{ appointment.parent.user.last_name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ appointment.parent.user.get_full_name }}</div>
+                                            <small class="text-muted">
+                                                {% if appointment.parent.children.exists %}
+                                                    Parent of: {% for child in appointment.parent.children.all %}{{ child.user.get_full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="purpose-text">{{ appointment.purpose|truncatewords:10 }}</div>
+                                    {% if appointment.purpose|length > 50 %}
+                                        <small class="text-muted">...</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if appointment.status == 'confirmed' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Confirmed
+                                        </span>
+                                    {% elif appointment.status == 'pending' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>Pending
+                                        </span>
+                                    {% elif appointment.status == 'cancelled' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Cancelled
+                                        </span>
+                                    {% elif appointment.status == 'completed' %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-check-double me-1"></i>Completed
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ appointment.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ appointment.created_at|date:"M d, Y" }}</div>
+                                    <small class="text-muted">{{ appointment.created_at|time:"g:i A" }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if appointments.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if appointments.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ appointments.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in appointments.paginator.page_range %}
+                            {% if appointments.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > appointments.number|add:'-3' and num < appointments.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if appointments.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ appointments.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No appointments found</h5>
+                    {% if search_query or status_filter or date_filter %}
+                        <p class="text-muted">Try adjusting your search criteria</p>
+                        <a href="{% url 'users:view_appointments' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    {% else %}
+                        <p class="text-muted">No appointments have been scheduled yet</p>
+                        <a href="{% url 'users:new_appointment' %}" class="btn btn-danger">
+                            <i class="fas fa-plus me-2"></i>Schedule First Appointment
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

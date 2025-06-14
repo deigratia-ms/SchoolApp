@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}New Appointment - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .appointment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .search-card {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+    }
+    
+    .time-slot-card {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .time-slot-card:hover {
+        border-color: #dc3545;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .time-slot-card.selected {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:receptionist_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">New Appointment</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-calendar-plus me-2 text-danger"></i>Schedule New Appointment
+            </h2>
+            <p class="text-muted mb-0">Help parents schedule appointments with school staff</p>
+        </div>
+        <a href="{% url 'users:view_appointments' %}" class="btn btn-outline-danger">
+            <i class="fas fa-list me-2"></i>View All Appointments
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Appointment Form -->
+        <div class="col-lg-8">
+            <div class="card appointment-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>Appointment Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="parent_id" class="form-label">Select Parent *</label>
+                                <select class="form-select" id="parent_id" name="parent_id" required>
+                                    <option value="">Choose a parent...</option>
+                                    {% for parent in parents %}
+                                    <option value="{{ parent.id }}">
+                                        {{ parent.user.get_full_name }} 
+                                        {% if parent.children.exists %}
+                                            (Parent of: {% for child in parent.children.all %}{{ child.user.get_full_name }}{% if not forloop.last %}, {% endif %}{% endfor %})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="slot_id" class="form-label">Select Time Slot *</label>
+                                <select class="form-select" id="slot_id" name="slot_id" required>
+                                    <option value="">Choose a time slot...</option>
+                                    {% for slot in available_slots %}
+                                    <option value="{{ slot.id }}">
+                                        {{ slot.date|date:"l, F d, Y" }} - {{ slot.start_time|time:"g:i A" }} to {{ slot.end_time|time:"g:i A" }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="purpose" class="form-label">Purpose of Visit *</label>
+                                <textarea class="form-control" id="purpose" name="purpose" rows="3" required 
+                                          placeholder="Please describe the purpose of the appointment..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'dashboard:receptionist_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-calendar-check me-2"></i>Schedule Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Time Slots Preview -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Available Time Slots
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if available_slots %}
+                        <div class="row g-2">
+                            {% for slot in available_slots|slice:":6" %}
+                            <div class="col-12">
+                                <div class="time-slot-card p-3" onclick="selectTimeSlot('{{ slot.id }}', '{{ slot.date|date:"l, F d, Y" }}', '{{ slot.start_time|time:"g:i A" }}', '{{ slot.end_time|time:"g:i A" }}')">
+                                    <div class="fw-bold text-danger">{{ slot.date|date:"M d" }}</div>
+                                    <div class="small text-muted">{{ slot.date|date:"l" }}</div>
+                                    <div class="small">{{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if available_slots|length > 6 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">And {{ available_slots|length|add:"-6" }} more slots available</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No available time slots</p>
+                            <small class="text-muted">Please contact admin to create time slots</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Info -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Quick Info
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Appointments are confirmed immediately
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-bell text-warning me-2"></i>
+                            Parents will be notified via email
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-calendar text-info me-2"></i>
+                            Appointments can be rescheduled if needed
+                        </div>
+                        <div>
+                            <i class="fas fa-phone text-primary me-2"></i>
+                            Contact admin for urgent appointments
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function selectTimeSlot(slotId, date, startTime, endTime) {
+        // Update the select dropdown
+        const slotSelect = document.getElementById('slot_id');
+        slotSelect.value = slotId;
+        
+        // Remove previous selection styling
+        document.querySelectorAll('.time-slot-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Add selection styling to clicked card
+        event.currentTarget.classList.add('selected');
+        
+        // Show feedback
+        const feedback = document.createElement('div');
+        feedback.className = 'alert alert-success alert-dismissible fade show mt-3';
+        feedback.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            Selected: ${date} from ${startTime} to ${endTime}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Remove any existing feedback
+        const existingFeedback = document.querySelector('.alert-success');
+        if (existingFeedback) {
+            existingFeedback.remove();
+        }
+        
+        // Add new feedback
+        document.querySelector('.card-body form').prepend(feedback);
+    }
+
+    // Auto-dismiss success messages after 3 seconds
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert-success');
+        alerts.forEach(alert => {
+            if (alert.querySelector('.btn-close')) {
+                alert.querySelector('.btn-close').click();
+            }
+        });
+    }, 3000);
+</script>
+{% endblock %}

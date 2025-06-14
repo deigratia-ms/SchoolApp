@@ -30,6 +30,16 @@ class TeacherAdmin(admin.ModelAdmin):
     list_display = ('user', 'employee_id', 'department', 'qualification')
     search_fields = ('user__email', 'user__first_name', 'user__last_name', 'employee_id', 'department')
     list_filter = ('department',)
+    fieldsets = (
+        ('Teacher Information', {
+            'fields': ('user', 'employee_id', 'department', 'qualification')
+        }),
+        ('Documents (Optional)', {
+            'fields': ('resume_cv', 'teaching_certificate', 'degree_certificates', 'professional_development', 'background_check', 'references', 'other_documents', 'documents_notes'),
+            'classes': ('collapse',),
+            'description': 'Upload teacher documents for record keeping. All fields are optional.'
+        }),
+    )
 
 
 @admin.register(Student)
@@ -48,7 +58,12 @@ class StudentAdmin(admin.ModelAdmin):
             'fields': ('status', 'is_repeating', 'years_in_current_grade', 'last_promoted_date')
         }),
         ('Additional Information', {
-            'fields': ('additional_info',)
+            'fields': ('additional_info', 'chat_enabled')
+        }),
+        ('Documents (Optional)', {
+            'fields': ('birth_certificate', 'medical_records', 'previous_school_records', 'immunization_records', 'emergency_contact_form', 'other_documents', 'documents_notes'),
+            'classes': ('collapse',),
+            'description': 'Upload student documents for record keeping. All fields are optional.'
         }),
     )
 
@@ -75,6 +90,11 @@ class StaffMemberAdmin(admin.ModelAdmin):
         }),
         ('Additional Information', {
             'fields': ('responsibilities',)
+        }),
+        ('Documents (Optional)', {
+            'fields': ('resume_cv', 'job_application', 'certificates', 'training_records', 'background_check', 'references', 'contract_documents', 'other_documents', 'documents_notes'),
+            'classes': ('collapse',),
+            'description': 'Upload staff documents for record keeping. All fields are optional.'
         }),
     )
 

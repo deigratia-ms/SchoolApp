@@ -84,6 +84,8 @@ def index(request):
         return redirect('dashboard:student_dashboard')
     elif is_parent(user):
         return redirect('dashboard:parent_dashboard')
+    elif is_receptionist(user):
+        return redirect('dashboard:receptionist_dashboard')
     elif is_non_teaching_staff(user):
         return redirect('dashboard:staff_dashboard')
     else:
@@ -1171,6 +1173,41 @@ def parent_dashboard(request):
         ]
     } if len(children) > 1 else None
 
+    # Get appointment and document data for the new features
+    recent_appointments = []
+    pending_requests = []
+    children_documents = []
+    parent_documents = []
+
+    try:
+        from appointments.models import Appointment, AppointmentRequest
+        from documents.models import DocumentUpload
+
+        if parent:
+            # Get recent appointments
+            recent_appointments = Appointment.objects.filter(
+                parent=parent
+            ).select_related('time_slot').order_by('-created_at')[:5]
+
+            # Get pending appointment requests
+            pending_requests = AppointmentRequest.objects.filter(
+                parent=parent,
+                status='pending'
+            ).order_by('-created_at')[:3]
+
+            # Get children's documents
+            children_documents = DocumentUpload.objects.filter(
+                student__in=parent.children.all()
+            ).select_related('category', 'student').order_by('-created_at')[:5]
+
+            # Get parent's documents
+            parent_documents = DocumentUpload.objects.filter(
+                parent=parent
+            ).select_related('category').order_by('-created_at')[:5]
+    except ImportError:
+        # Models don't exist yet, skip for now
+        pass
+
     return render(request, 'dashboard/parent_dashboard.html', {
         'user': user,
         'parent': parent,
@@ -1184,6 +1221,11 @@ def parent_dashboard(request):
         'comparative_data': comparative_data,
         'total_fees': total_fees,
         'child_data_dict': child_data_dict,
+        # New features
+        'recent_appointments': recent_appointments,
+        'pending_requests': pending_requests,
+        'children_documents': children_documents,
+        'parent_documents': parent_documents,
     })
 
 
@@ -5192,3 +5234,325 @@ def backup_progress(request):
         'status': 'completed',
         'message': 'Backup completed successfully'
     })
+
+
+@user_passes_test(is_receptionist)
+def receptionist_dashboard(request):
+    """
+    Receptionist dashboard with specific features for front desk operations
+    """
+    user = request.user
+
+    # Get staff profile
+    try:
+        staff_member = StaffMember.objects.get(user=user)
+    except StaffMember.DoesNotExist:
+        staff_member = None
+
+    # Today's statistics
+    today = timezone.now().date()
+
+    # Get today's visitor count (we'll need to create a visitor model)
+    # For now, we'll use placeholder data
+    today_visitors = 0
+
+    # Get pending admission inquiries
+    from website.models import AdmissionsInquiry
+    pending_inquiries = AdmissionsInquiry.objects.filter(status='new').count()
+
+    # Get recent announcements
+    recent_announcements = Announcement.objects.filter(
+        Q(target_type='ALL') | Q(target_type='STAFF')
+    ).order_by('-created_at')[:5]
+
+    # Get upcoming events
+    upcoming_events = Event.objects.filter(
+        end_date__gte=timezone.now()
+    ).order_by('start_date')[:5]
+
+    # Get recent messages/communications
+    recent_messages = Message.objects.filter(
+        Q(sender=user) | Q(recipient=user)
+    ).order_by('-created_at')[:5]
+
+    # Get today's appointments (we'll need to create this)
+    today_appointments = 0
+
+    # Quick stats for dashboard cards
+    stats = {
+        'today_visitors': today_visitors,
+        'pending_inquiries': pending_inquiries,
+        'today_appointments': today_appointments,
+        'total_students': Student.objects.count(),
+        'total_staff': CustomUser.objects.filter(
+            role__in=[
+                CustomUser.Role.TEACHER,
+                CustomUser.Role.ACCOUNTANT,
+                CustomUser.Role.SECRETARY,
+                CustomUser.Role.RECEPTIONIST,
+                CustomUser.Role.SECURITY,
+                CustomUser.Role.JANITOR,
+                CustomUser.Role.COOK,
+                CustomUser.Role.CLEANER,
+                CustomUser.Role.STAFF
+            ]
+        ).count(),
+    }
+
+    context = {
+        'user': user,
+        'staff_member': staff_member,
+        'stats': stats,
+        'recent_announcements': recent_announcements,
+        'upcoming_events': upcoming_events,
+        'recent_messages': recent_messages,
+        'pending_inquiries': pending_inquiries,
+    }
+
+    return render(request, 'dashboard/receptionist_dashboard.html', context)
+
+
+# Parent appointment and document management views
+@user_passes_test(is_parent)
+def parent_request_appointment(request):
+    """Request custom appointment date/time"""
+    from appointments.models import AppointmentRequest, TimeSlot
+    from users.models import Parent
+    from django.contrib import messages
+    from datetime import datetime
+
+    parent = get_object_or_404(Parent, user=request.user)
+
+    if request.method == 'POST':
+        # Handle appointment request creation
+        requested_date = request.POST.get('requested_date')
+        requested_start_time = request.POST.get('requested_start_time')
+        requested_end_time = request.POST.get('requested_end_time')
+        purpose = request.POST.get('purpose')
+        reason_for_custom_time = request.POST.get('reason_for_custom_time')
+
+        try:
+            # Create appointment request
+            appointment_request = AppointmentRequest.objects.create(
+                parent=parent,
+                requested_date=datetime.strptime(requested_date, '%Y-%m-%d').date(),
+                requested_start_time=datetime.strptime(requested_start_time, '%H:%M').time(),
+                requested_end_time=datetime.strptime(requested_end_time, '%H:%M').time(),
+                purpose=purpose,
+                reason_for_custom_time=reason_for_custom_time,
+                status='pending'
+            )
+
+            messages.success(request, "Your appointment request has been submitted and is pending approval.")
+            return redirect('dashboard:parent_appointment_requests')
+
+        except Exception as e:
+            messages.error(request, f"Error submitting appointment request: {str(e)}")
+
+    # Get available time slots for reference
+    available_slots = TimeSlot.objects.filter(
+        date__gte=timezone.now().date(),
+        is_available=True,
+        is_active=True
+    ).order_by('date', 'start_time')[:10]
+
+    context = {
+        'parent': parent,
+        'available_slots': available_slots,
+    }
+
+    return render(request, 'dashboard/parent/request_appointment.html', context)
+
+
+@user_passes_test(is_parent)
+def parent_appointment_requests(request):
+    """View all appointment requests"""
+    from appointments.models import AppointmentRequest
+    from users.models import Parent
+    from django.core.paginator import Paginator
+
+    parent = get_object_or_404(Parent, user=request.user)
+
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+
+    # Base query
+    requests = AppointmentRequest.objects.filter(parent=parent)
+
+    # Apply status filter
+    if status_filter:
+        requests = requests.filter(status=status_filter)
+
+    # Order by most recent first
+    requests = requests.order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(requests, 10)
+    page = request.GET.get('page')
+    requests = paginator.get_page(page)
+
+    context = {
+        'parent': parent,
+        'requests': requests,
+        'status_filter': status_filter,
+    }
+
+    return render(request, 'dashboard/parent/appointment_requests.html', context)
+
+
+@user_passes_test(is_parent)
+def parent_appointments(request):
+    """View all confirmed appointments"""
+    from appointments.models import Appointment
+    from users.models import Parent
+    from django.core.paginator import Paginator
+
+    parent = get_object_or_404(Parent, user=request.user)
+
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+
+    # Base query
+    appointments = Appointment.objects.filter(parent=parent).select_related('time_slot')
+
+    # Apply status filter
+    if status_filter:
+        appointments = appointments.filter(status=status_filter)
+
+    # Order by appointment date
+    appointments = appointments.order_by('-time_slot__date', '-time_slot__start_time')
+
+    # Pagination
+    paginator = Paginator(appointments, 10)
+    page = request.GET.get('page')
+    appointments = paginator.get_page(page)
+
+    context = {
+        'parent': parent,
+        'appointments': appointments,
+        'status_filter': status_filter,
+    }
+
+    return render(request, 'dashboard/parent/appointments.html', context)
+
+
+@user_passes_test(is_parent)
+def parent_upload_document(request):
+    """Upload documents for parent or children"""
+    from documents.models import DocumentUpload, DocumentCategory
+    from users.models import Parent
+    from django.contrib import messages
+
+    parent = get_object_or_404(Parent, user=request.user)
+
+    if request.method == 'POST':
+        # Handle document upload
+        title = request.POST.get('title')
+        category_id = request.POST.get('category')
+        description = request.POST.get('description', '')
+        student_id = request.POST.get('student_id')  # Optional - for child documents
+        file = request.FILES.get('file')
+
+        try:
+            category = DocumentCategory.objects.get(id=category_id)
+
+            # Determine if this is for a student or parent
+            student = None
+            if student_id:
+                student = parent.children.get(id=student_id)
+                uploaded_by_type = 'parent'  # Parent uploading for child
+            else:
+                uploaded_by_type = 'parent'  # Parent uploading for themselves
+
+            # Create document upload
+            document = DocumentUpload.objects.create(
+                title=title,
+                category=category,
+                file=file,
+                description=description,
+                student=student,
+                parent=parent if not student else None,
+                uploaded_by_type=uploaded_by_type,
+                uploaded_by=request.user,
+                status='pending'
+            )
+
+            messages.success(request, "Document uploaded successfully and is pending review.")
+            return redirect('dashboard:parent_documents')
+
+        except Exception as e:
+            messages.error(request, f"Error uploading document: {str(e)}")
+
+    # Get document categories
+    categories = DocumentCategory.objects.filter(is_active=True).order_by('order', 'name')
+
+    # Get parent's children
+    children = parent.children.all()
+
+    context = {
+        'parent': parent,
+        'categories': categories,
+        'children': children,
+    }
+
+    return render(request, 'dashboard/parent/upload_document.html', context)
+
+
+@user_passes_test(is_parent)
+def parent_documents(request):
+    """View all uploaded documents"""
+    from documents.models import DocumentUpload, DocumentCategory
+    from users.models import Parent
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+
+    parent = get_object_or_404(Parent, user=request.user)
+
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+    category_filter = request.GET.get('category', '')
+    document_type = request.GET.get('type', 'all')  # all, parent, children
+
+    # Base queries
+    parent_documents = DocumentUpload.objects.filter(parent=parent)
+    children_documents = DocumentUpload.objects.filter(student__in=parent.children.all())
+
+    # Combine or filter based on type
+    if document_type == 'parent':
+        documents = parent_documents
+    elif document_type == 'children':
+        documents = children_documents
+    else:
+        # Combine both querysets
+        documents = DocumentUpload.objects.filter(
+            Q(parent=parent) | Q(student__in=parent.children.all())
+        )
+
+    # Apply filters
+    if status_filter:
+        documents = documents.filter(status=status_filter)
+
+    if category_filter:
+        documents = documents.filter(category_id=category_filter)
+
+    # Order by most recent first
+    documents = documents.select_related('category', 'student', 'reviewed_by').order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(documents, 15)
+    page = request.GET.get('page')
+    documents = paginator.get_page(page)
+
+    # Get categories for filter
+    categories = DocumentCategory.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'parent': parent,
+        'documents': documents,
+        'categories': categories,
+        'status_filter': status_filter,
+        'category_filter': category_filter,
+        'document_type': document_type,
+    }
+
+    return render(request, 'dashboard/parent/documents.html', context)

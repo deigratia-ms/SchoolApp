@@ -88,7 +88,7 @@ Management System{% endblock %} {% block auth_content %}
         <!-- Role Selection Buttons -->
         <div class="text-center mb-3">
           <p class="text-muted mb-2">I am a:</p>
-          <div class="d-flex justify-content-center gap-2">
+          <div class="d-flex justify-content-center gap-2 flex-wrap">
             <a
               href="{% url 'users:student_login' %}"
               class="btn btn-outline-primary"
@@ -100,6 +100,12 @@ Management System{% endblock %} {% block auth_content %}
               class="btn btn-outline-success"
             >
               <i class="fas fa-chalkboard-teacher mb-1"></i><br />Teacher
+            </a>
+            <a
+              href="{% url 'users:login' %}"
+              class="btn btn-outline-secondary"
+            >
+              <i class="fas fa-user-cog mb-1"></i><br />Other
             </a>
           </div>
         </div>

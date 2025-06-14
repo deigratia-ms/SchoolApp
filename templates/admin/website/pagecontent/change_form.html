@@ -1,0 +1,151 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script type="text/javascript">
+(function($) {
+    'use strict';
+    
+    console.log('Inline PageContent admin script loaded!');
+    
+    // Define page-to-sections mapping
+    const PAGE_SECTIONS = {
+        'home': ['hero', 'about_preview', 'featured_programs', 'why_choose_us'],
+        'about': ['about_hero', 'mission', 'vision', 'story', 'montessori_method', 'values'],
+        'academics': ['academics_hero', 'curriculum_approach', 'assessment_intro', 'cta_section'],
+        'admissions': ['hero', 'admission_process', 'requirements', 'fees', 'scholarships'],
+        'events': ['events_hero', 'events_newsletter', 'events_cta', 'events_calendar'],
+        'news': ['news_hero'],
+        'contact': ['contact_hero'],
+        'staff': ['staff_hero'],
+        'career': ['career_hero', 'career_intro'],
+        'calendar': ['calendar_hero', 'calendar_content'],
+        'privacy': ['privacy_hero', 'privacy_content'],
+        'terms': ['terms_hero', 'terms_content'],
+        'faq': ['faq_hero']
+    };
+    
+    console.log('Page sections mapping:', PAGE_SECTIONS);
+    
+    function filterSections() {
+        const pageSelect = $('#id_page');
+        const sectionSelect = $('#id_section');
+        
+        if (!pageSelect.length || !sectionSelect.length) {
+            console.log('Elements not found - page:', pageSelect.length, 'section:', sectionSelect.length);
+            return;
+        }
+
+        const selectedPage = pageSelect.val();
+        console.log('Filtering sections for page:', selectedPage);
+        
+        // Store all original options if not already stored
+        if (!sectionSelect.data('original-options')) {
+            const originalOptions = sectionSelect.find('option').clone();
+            sectionSelect.data('original-options', originalOptions);
+            console.log('Stored original options:', originalOptions.length);
+        }
+        
+        // Clear ALL options first
+        sectionSelect.empty();
+        
+        if (!selectedPage) {
+            // No page selected - disable dropdown and show helpful message
+            sectionSelect.prop('disabled', true);
+            sectionSelect.append('<option value="">Please select a page first</option>');
+            console.log('No page selected - disabled section dropdown');
+        } else {
+            // Page selected - enable dropdown and filter sections
+            sectionSelect.prop('disabled', false);
+            
+            // Add empty option first
+            sectionSelect.append('<option value="">---------</option>');
+            
+            if (PAGE_SECTIONS[selectedPage]) {
+                const validSections = PAGE_SECTIONS[selectedPage];
+                console.log('Valid sections for', selectedPage, ':', validSections);
+                
+                // Get original options to find the correct display names
+                const originalOptions = sectionSelect.data('original-options');
+                
+                // Add only the valid sections for this page
+                validSections.forEach(function(sectionValue) {
+                    // Find the original option to get the correct display text
+                    let displayName = sectionValue;
+                    originalOptions.each(function() {
+                        if ($(this).val() === sectionValue) {
+                            displayName = $(this).text();
+                            return false; // break the loop
+                        }
+                    });
+                    
+                    const option = $('<option></option>')
+                        .attr('value', sectionValue)
+                        .text(displayName);
+                    sectionSelect.append(option);
+                });
+                
+                console.log('Added', validSections.length, 'sections to dropdown');
+            } else {
+                console.log('Page not in mapping, showing all sections');
+                // Fallback: if page not in our mapping, show all sections
+                const originalOptions = sectionSelect.data('original-options');
+                originalOptions.each(function() {
+                    const option = $(this);
+                    if (option.val()) {
+                        sectionSelect.append(option.clone());
+                    }
+                });
+            }
+        }
+    }
+    
+    // Initialize when DOM is ready
+    $(document).ready(function() {
+        console.log('DOM ready - setting up page content filtering');
+        
+        // Check if the required elements exist
+        const pageSelect = $('#id_page');
+        const sectionSelect = $('#id_section');
+        
+        if (!pageSelect.length) {
+            console.log('Page select element not found!');
+            return;
+        }
+        
+        if (!sectionSelect.length) {
+            console.log('Section select element not found!');
+            return;
+        }
+        
+        console.log('Found page and section elements, setting up filtering...');
+        
+        // Add some helpful styling
+        $('<style>')
+            .prop('type', 'text/css')
+            .html(`
+                .disabled-until-page-selected {
+                    background-color: #f5f5f5 !important;
+                    color: #999 !important;
+                    cursor: not-allowed !important;
+                }
+                #id_section:disabled {
+                    opacity: 0.6;
+                }
+            `)
+            .appendTo('head');
+        
+        // Bind the change event
+        pageSelect.on('change', function() {
+            console.log('Page changed to:', $(this).val());
+            filterSections();
+        });
+        
+        // Run initial filter
+        filterSections();
+    });
+    
+})(django.jQuery);
+</script>
+{% endblock %}

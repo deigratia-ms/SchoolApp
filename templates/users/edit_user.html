@@ -159,8 +159,91 @@
                                 
                                 <div class="col-12">
                                     <label for="qualification" class="form-label">Qualification</label>
-                                    <input type="text" class="form-control" id="qualification" name="qualification" 
+                                    <input type="text" class="form-control" id="qualification" name="qualification"
                                            value="{{ teacher.qualification|default:'' }}">
+                                </div>
+                            </div>
+
+                            <!-- Teacher Documents Section -->
+                            <div class="mt-4">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-file-upload me-2"></i>Documents (Optional)
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="resume_cv" class="form-label">Resume/CV</label>
+                                        <input type="file" class="form-control" id="resume_cv" name="resume_cv" accept=".pdf,.doc,.docx">
+                                        {% if teacher.resume_cv %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ teacher.resume_cv.url }}" target="_blank">{{ teacher.resume_cv.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="teaching_certificate" class="form-label">Teaching Certificate</label>
+                                        <input type="file" class="form-control" id="teaching_certificate" name="teaching_certificate" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if teacher.teaching_certificate %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ teacher.teaching_certificate.url }}" target="_blank">{{ teacher.teaching_certificate.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="degree_certificates" class="form-label">Degree Certificates</label>
+                                        <input type="file" class="form-control" id="degree_certificates" name="degree_certificates" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if teacher.degree_certificates %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ teacher.degree_certificates.url }}" target="_blank">{{ teacher.degree_certificates.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="professional_development" class="form-label">Professional Development</label>
+                                        <input type="file" class="form-control" id="professional_development" name="professional_development" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if teacher.professional_development %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ teacher.professional_development.url }}" target="_blank">{{ teacher.professional_development.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="background_check" class="form-label">Background Check</label>
+                                        <input type="file" class="form-control" id="background_check" name="background_check" accept=".pdf">
+                                        {% if teacher.background_check %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ teacher.background_check.url }}" target="_blank">{{ teacher.background_check.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="references" class="form-label">References</label>
+                                        <input type="file" class="form-control" id="references" name="references" accept=".pdf,.doc,.docx">
+                                        {% if teacher.references %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ teacher.references.url }}" target="_blank">{{ teacher.references.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="other_documents" class="form-label">Other Documents</label>
+                                        <input type="file" class="form-control" id="other_documents" name="other_documents" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if teacher.other_documents %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ teacher.other_documents.url }}" target="_blank">{{ teacher.other_documents.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label for="documents_notes" class="form-label">Document Notes</label>
+                                        <textarea class="form-control" id="documents_notes" name="documents_notes" rows="3" placeholder="Additional notes about uploaded documents">{{ teacher.documents_notes|default:'' }}</textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -212,6 +295,79 @@
                                             </option>
                                         {% endfor %}
                                     </select>
+                                </div>
+                            </div>
+
+                            <!-- Student Documents Section -->
+                            <div class="mt-4">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-file-upload me-2"></i>Documents (Optional)
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="birth_certificate" class="form-label">Birth Certificate</label>
+                                        <input type="file" class="form-control" id="birth_certificate" name="birth_certificate" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if student.birth_certificate %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ student.birth_certificate.url }}" target="_blank">{{ student.birth_certificate.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="medical_records" class="form-label">Medical Records</label>
+                                        <input type="file" class="form-control" id="medical_records" name="medical_records" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if student.medical_records %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ student.medical_records.url }}" target="_blank">{{ student.medical_records.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="previous_school_records" class="form-label">Previous School Records</label>
+                                        <input type="file" class="form-control" id="previous_school_records" name="previous_school_records" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if student.previous_school_records %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ student.previous_school_records.url }}" target="_blank">{{ student.previous_school_records.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="immunization_records" class="form-label">Immunization Records</label>
+                                        <input type="file" class="form-control" id="immunization_records" name="immunization_records" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if student.immunization_records %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ student.immunization_records.url }}" target="_blank">{{ student.immunization_records.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="emergency_contact_form" class="form-label">Emergency Contact Form</label>
+                                        <input type="file" class="form-control" id="emergency_contact_form" name="emergency_contact_form" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if student.emergency_contact_form %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ student.emergency_contact_form.url }}" target="_blank">{{ student.emergency_contact_form.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="other_documents" class="form-label">Other Documents</label>
+                                        <input type="file" class="form-control" id="other_student_documents" name="other_student_documents" accept=".pdf,.jpg,.jpeg,.png">
+                                        {% if student.other_documents %}
+                                            <div class="form-text">
+                                                Current: <a href="{{ student.other_documents.url }}" target="_blank">{{ student.other_documents.name|slice:"20:" }}</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label for="student_documents_notes" class="form-label">Document Notes</label>
+                                        <textarea class="form-control" id="student_documents_notes" name="student_documents_notes" rows="3" placeholder="Additional notes about uploaded documents">{{ student.documents_notes|default:'' }}</textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>

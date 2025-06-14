@@ -15,7 +15,6 @@ from .models import (
     Testimonial,
     Staff,
     Gallery,
-    SiteSettings,
     TourLocation,
     TourImage,
     FAQ,
@@ -27,8 +26,10 @@ from .models import (
     AssessmentMethod,
     EventCategory,
     PastEventHighlight,
-    EventPageContent
+    EventPageContent,
+    SiteSettings
 )
+from users.models import SchoolSettings
 from .forms import ContactForm, AdmissionsInquiryForm
 
 def home(request):
@@ -44,8 +45,8 @@ def home(request):
         return render(request, 'website/home.html', cached_data)
 
     try:
-        site_settings = SiteSettings.objects.first()
-    except SiteSettings.DoesNotExist:
+        site_settings = SchoolSettings.objects.first()
+    except SchoolSettings.DoesNotExist:
         site_settings = None
 
     featured_gallery = Gallery.objects.filter(is_featured=True)
@@ -391,9 +392,9 @@ class EventDetailView(DetailView):
         context['related_events'] = related_events
 
         # Add site settings
-        from website.models import SiteSettings
+        from users.models import SchoolSettings
         try:
-            context['site_settings'] = SiteSettings.objects.first()
+            context['site_settings'] = SchoolSettings.objects.first()
         except:
             # If no site settings exist, provide defaults
             from types import SimpleNamespace
@@ -593,7 +594,7 @@ def academics(request):
             section=section,
             is_active=True
         ).first()
-        for section in ['academics_hero', 'curriculum_image', 'assessment_intro', 'cta_section']
+        for section in ['academics_hero', 'curriculum_approach', 'assessment_intro', 'cta_section']
     }
 
     # Get academic programs
@@ -667,7 +668,7 @@ def contact(request):
     else:
         form = ContactForm()
 
-    # Get site settings
+    # Get site settings (use SiteSettings for Google Maps data)
     try:
         site_settings = SiteSettings.objects.first()
     except SiteSettings.DoesNotExist:

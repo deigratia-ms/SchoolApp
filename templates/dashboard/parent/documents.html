@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Documents - Parent{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    
+    .document-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-pending { border-left-color: #6c757d; }
+    .status-approved { border-left-color: #28a745; }
+    .status-rejected { border-left-color: #dc3545; }
+    .status-needs_revision { border-left-color: #ffc107; }
+    
+    .file-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .file-pdf { color: #dc3545; }
+    .file-doc { color: #007bff; }
+    .file-image { color: #28a745; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:parent_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">My Documents</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-folder-open me-2 text-primary"></i>My Documents
+            </h2>
+            <p class="text-muted mb-0">Manage documents for you and your children</p>
+        </div>
+        <a href="{% url 'dashboard:parent_upload_document' %}" class="btn btn-primary">
+            <i class="fas fa-upload me-2"></i>Upload Document
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="needs_revision" {% if status_filter == 'needs_revision' %}selected{% endif %}>Needs Revision</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if category_filter == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Document Type</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="all" {% if document_type == 'all' %}selected{% endif %}>All Documents</option>
+                        <option value="parent" {% if document_type == 'parent' %}selected{% endif %}>My Documents</option>
+                        <option value="children" {% if document_type == 'children' %}selected{% endif %}>Children's Documents</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'dashboard:parent_documents' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Documents Grid -->
+    <div class="row">
+        {% for document in documents %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card document-card status-{{ document.status }}">
+                <div class="card-body text-center">
+                    <!-- File Icon -->
+                    <div class="file-icon">
+                        {% if document.file.name|slice:"-4:" == ".pdf" %}
+                            <i class="fas fa-file-pdf file-pdf"></i>
+                        {% elif document.file.name|slice:"-4:" in ".doc,.docx" %}
+                            <i class="fas fa-file-word file-doc"></i>
+                        {% elif document.file.name|slice:"-4:" in ".jpg,.jpeg,.png" %}
+                            <i class="fas fa-file-image file-image"></i>
+                        {% else %}
+                            <i class="fas fa-file text-muted"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Document Info -->
+                    <h6 class="card-title">{{ document.title|truncatewords:4 }}</h6>
+                    <p class="text-muted small mb-2">{{ document.category.name }}</p>
+                    
+                    {% if document.student %}
+                        <p class="text-info small mb-2">
+                            <i class="fas fa-user-graduate me-1"></i>{{ document.student.user.get_full_name }}
+                        </p>
+                    {% else %}
+                        <p class="text-primary small mb-2">
+                            <i class="fas fa-user me-1"></i>Personal Document
+                        </p>
+                    {% endif %}
+                    
+                    <!-- Status Badge -->
+                    <span class="badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %} mb-3">
+                        {{ document.get_status_display }}
+                    </span>
+                    
+                    <!-- Upload Info -->
+                    <div class="small text-muted mb-3">
+                        <div>Uploaded: {{ document.created_at|date:"M d, Y" }}</div>
+                        {% if document.reviewed_at %}
+                        <div>Reviewed: {{ document.reviewed_at|date:"M d, Y" }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Description -->
+                    {% if document.description %}
+                    <p class="small text-muted mb-3">{{ document.description|truncatewords:10 }}</p>
+                    {% endif %}
+                    
+                    <!-- Admin Notes -->
+                    {% if document.admin_notes %}
+                    <div class="alert alert-info small mb-3">
+                        <strong>Admin Notes:</strong><br>
+                        {{ document.admin_notes|truncatewords:15 }}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        {% if document.status == 'approved' %}
+                            <a href="{{ document.file.url }}" target="_blank" class="btn btn-success btn-sm">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                        {% else %}
+                            <a href="{{ document.file.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>View
+                            </a>
+                        {% endif %}
+                        
+                        {% if document.status == 'needs_revision' %}
+                            <button class="btn btn-warning btn-sm" onclick="reuploadDocument({{ document.id }})">
+                                <i class="fas fa-upload me-1"></i>Re-upload
+                            </button>
+                        {% endif %}
+                        
+                        {% if document.status == 'pending' %}
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteDocument({{ document.id }})">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No documents found</h5>
+                    <p class="text-muted mb-4">
+                        {% if status_filter or category_filter or document_type != 'all' %}
+                            No documents match your current filters.
+                        {% else %}
+                            You haven't uploaded any documents yet.
+                        {% endif %}
+                    </p>
+                    <div>
+                        <a href="{% url 'dashboard:parent_upload_document' %}" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload Your First Document
+                        </a>
+                        {% if status_filter or category_filter or document_type != 'all' %}
+                        <a href="{% url 'dashboard:parent_documents' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if documents.has_other_pages %}
+    <nav aria-label="Documents pagination">
+        <ul class="pagination justify-content-center">
+            {% if documents.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if document_type %}&type={{ document_type }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if document_type %}&type={{ document_type }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ documents.number }} of {{ documents.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if documents.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if document_type %}&type={{ document_type }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if document_type %}&type={{ document_type }}{% endif %}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function reuploadDocument(documentId) {
+    if (confirm('This will allow you to upload a new version of this document. Continue?')) {
+        // Redirect to upload page with document ID for replacement
+        window.location.href = "{% url 'dashboard:parent_upload_document' %}?replace=" + documentId;
+    }
+}
+
+function deleteDocument(documentId) {
+    if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+        // This would typically make an AJAX call to delete the document
+        alert('Delete functionality will be implemented. For now, please contact the school to remove documents.');
+    }
+}
+</script>
+{% endblock %}

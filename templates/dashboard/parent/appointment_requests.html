@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Appointment Requests - Parent{% endblock %}
+
+{% block extra_css %}
+<style>
+    .request-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .request-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-pending { border-left-color: #ffc107; }
+    .status-approved { border-left-color: #28a745; }
+    .status-rejected { border-left-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:parent_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Appointment Requests</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-clock me-2 text-warning"></i>My Appointment Requests
+            </h2>
+            <p class="text-muted mb-0">Track your custom appointment requests</p>
+        </div>
+        <a href="{% url 'dashboard:parent_request_appointment' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>New Request
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'dashboard:parent_appointment_requests' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Requests List -->
+    <div class="row">
+        {% for request in requests %}
+        <div class="col-lg-6 mb-4">
+            <div class="card request-card status-{{ request.status }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-calendar me-2"></i>{{ request.requested_date|date:"M d, Y" }}
+                    </h6>
+                    <span class="badge bg-{% if request.status == 'approved' %}success{% elif request.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                        {{ request.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Time:</strong><br>
+                            <span class="text-muted">{{ request.requested_start_time|time:"g:i A" }} - {{ request.requested_end_time|time:"g:i A" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Requested:</strong><br>
+                            <span class="text-muted">{{ request.created_at|date:"M d, Y g:i A" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Purpose:</strong>
+                        <p class="text-muted mb-0">{{ request.purpose|truncatewords:20 }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Reason for Custom Time:</strong>
+                        <p class="text-muted mb-0">{{ request.reason_for_custom_time|truncatewords:15 }}</p>
+                    </div>
+                    
+                    {% if request.reviewed_by %}
+                    <div class="mb-3">
+                        <strong>Reviewed by:</strong>
+                        <span class="text-muted">{{ request.reviewed_by.get_full_name }}</span>
+                        <small class="text-muted d-block">{{ request.reviewed_at|date:"M d, Y g:i A" }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if request.admin_notes %}
+                    <div class="mb-3">
+                        <strong>Admin Notes:</strong>
+                        <p class="text-muted mb-0">{{ request.admin_notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if request.created_appointment %}
+                    <div class="alert alert-success mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Appointment Created!</strong> 
+                        <a href="{% url 'dashboard:parent_appointments' %}" class="alert-link">View your appointments</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No appointment requests found</h5>
+                    <p class="text-muted mb-4">You haven't submitted any custom appointment requests yet.</p>
+                    <a href="{% url 'dashboard:parent_request_appointment' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Submit Your First Request
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if requests.has_other_pages %}
+    <nav aria-label="Appointment requests pagination">
+        <ul class="pagination justify-content-center">
+            {% if requests.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ requests.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ requests.number }} of {{ requests.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if requests.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ requests.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ requests.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

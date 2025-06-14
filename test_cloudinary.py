@@ -5,13 +5,24 @@ Run this to check if Cloudinary is properly set up
 """
 
 import os
-import django
+import sys
 from pathlib import Path
 
 # Setup Django
 BASE_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(BASE_DIR))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ricas_school_manager.settings')
-django.setup()
+
+# Set production-like environment for testing
+os.environ['DEBUG'] = 'False'
+os.environ['ENVIRONMENT'] = 'production'
+
+try:
+    import django
+    django.setup()
+except Exception as e:
+    print(f"Django setup failed: {e}")
+    print("Trying to continue with basic checks...")
 
 def test_cloudinary_config():
     """Test Cloudinary configuration"""

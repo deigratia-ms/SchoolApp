@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Admission Enquiries - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .enquiry-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+    
+    .enquiry-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-new { border-left-color: #007bff; }
+    .status-contacted { border-left-color: #ffc107; }
+    .status-visited { border-left-color: #17a2b8; }
+    .status-applied { border-left-color: #28a745; }
+    .status-admitted { border-left-color: #6f42c1; }
+    .status-declined { border-left-color: #dc3545; }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .priority-high { border-top: 3px solid #dc3545; }
+    .priority-medium { border-top: 3px solid #ffc107; }
+    .priority-low { border-top: 3px solid #28a745; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-user-graduate me-2 text-success"></i>Admission Enquiries
+            </h2>
+            <p class="text-muted mb-0">Manage prospective parent enquiries and applications</p>
+        </div>
+        <div>
+            <span class="badge bg-success me-2">{{ enquiries.paginator.count }} Total</span>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEnquiryModal">
+                <i class="fas fa-plus me-2"></i>Add Enquiry
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="stats-card">
+                <h4 class="mb-1">
+                    {% for enquiry in enquiries %}{% if enquiry.status == 'new' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h4>
+                <p class="mb-0 opacity-75">New</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+                <h4 class="mb-1">
+                    {% for enquiry in enquiries %}{% if enquiry.status == 'contacted' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h4>
+                <p class="mb-0 opacity-75">Contacted</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                <h4 class="mb-1">
+                    {% for enquiry in enquiries %}{% if enquiry.status == 'visited' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h4>
+                <p class="mb-0 opacity-75">Visited</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <h4 class="mb-1">
+                    {% for enquiry in enquiries %}{% if enquiry.status == 'applied' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h4>
+                <p class="mb-0 opacity-75">Applied</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card" style="background: linear-gradient(135deg, #6f42c1, #6610f2);">
+                <h4 class="mb-1">
+                    {% for enquiry in enquiries %}{% if enquiry.status == 'admitted' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h4>
+                <p class="mb-0 opacity-75">Admitted</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                <h4 class="mb-1">
+                    {% for enquiry in enquiries %}{% if enquiry.status == 'declined' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </h4>
+                <p class="mb-0 opacity-75">Declined</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="new" {% if status_filter == 'new' %}selected{% endif %}>New</option>
+                        <option value="contacted" {% if status_filter == 'contacted' %}selected{% endif %}>Contacted</option>
+                        <option value="visited" {% if status_filter == 'visited' %}selected{% endif %}>Visited</option>
+                        <option value="applied" {% if status_filter == 'applied' %}selected{% endif %}>Applied</option>
+                        <option value="admitted" {% if status_filter == 'admitted' %}selected{% endif %}>Admitted</option>
+                        <option value="declined" {% if status_filter == 'declined' %}selected{% endif %}>Declined</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="program" class="form-label">Program</label>
+                    <select class="form-select" id="program" name="program">
+                        <option value="">All Programs</option>
+                        <option value="nursery" {% if program_filter == 'nursery' %}selected{% endif %}>Nursery</option>
+                        <option value="primary" {% if program_filter == 'primary' %}selected{% endif %}>Primary</option>
+                        <option value="jhs" {% if program_filter == 'jhs' %}selected{% endif %}>Junior High School</option>
+                        <option value="shs" {% if program_filter == 'shs' %}selected{% endif %}>Senior High School</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Search by parent or child name, email, phone...">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'users:manage_admission_enquiries' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Enquiries List -->
+    <div class="row">
+        {% for enquiry in enquiries %}
+        <div class="col-lg-6 mb-4">
+            <div class="card enquiry-card status-{{ enquiry.status }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">
+                            <i class="fas fa-user me-2"></i>{{ enquiry.parent_name }}
+                        </h6>
+                        <small class="text-muted">For: {{ enquiry.child_name }}</small>
+                    </div>
+                    <span class="badge bg-{% if enquiry.status == 'new' %}primary{% elif enquiry.status == 'contacted' %}warning{% elif enquiry.status == 'visited' %}info{% elif enquiry.status == 'applied' %}success{% elif enquiry.status == 'admitted' %}purple{% else %}danger{% endif %}">
+                        {{ enquiry.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Child Age:</strong><br>
+                            <span class="text-muted">{{ enquiry.child_age }} years</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Program:</strong><br>
+                            <span class="text-muted">{{ enquiry.get_program_of_interest_display }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Phone:</strong><br>
+                            <span class="text-muted">{{ enquiry.parent_phone }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Email:</strong><br>
+                            <span class="text-muted">{{ enquiry.parent_email }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if enquiry.preferred_start_date %}
+                    <div class="mb-2">
+                        <strong>Preferred Start:</strong>
+                        <span class="text-muted">{{ enquiry.preferred_start_date|date:"M Y" }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if enquiry.how_did_you_hear %}
+                    <div class="mb-2">
+                        <strong>How they heard about us:</strong>
+                        <span class="text-muted">{{ enquiry.get_how_did_you_hear_display }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if enquiry.message %}
+                    <div class="mb-3">
+                        <strong>Message:</strong>
+                        <p class="text-muted small mb-0">{{ enquiry.message|truncatewords:20 }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-2">
+                        <strong>Enquiry Date:</strong>
+                        <span class="text-muted">{{ enquiry.created_at|date:"M d, Y g:i A" }}</span>
+                        <small class="text-muted">({{ enquiry.created_at|timesince }} ago)</small>
+                    </div>
+                    
+                    {% if enquiry.assigned_to %}
+                    <div class="mb-2">
+                        <strong>Assigned to:</strong>
+                        <span class="text-muted">{{ enquiry.assigned_to.get_full_name }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if enquiry.follow_up_date %}
+                    <div class="mb-2">
+                        <strong>Follow-up Date:</strong>
+                        <span class="text-muted">{{ enquiry.follow_up_date|date:"M d, Y" }}</span>
+                        {% if enquiry.follow_up_date < today %}
+                            <span class="badge bg-danger ms-1">Overdue</span>
+                        {% elif enquiry.follow_up_date == today %}
+                            <span class="badge bg-warning ms-1">Today</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if enquiry.notes %}
+                    <div class="mb-3">
+                        <strong>Notes:</strong>
+                        <p class="text-muted small mb-0">{{ enquiry.notes|truncatewords:15 }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group">
+                            {% if enquiry.status == 'new' %}
+                                <button class="btn btn-warning btn-sm" onclick="updateStatus({{ enquiry.id }}, 'contacted')">
+                                    <i class="fas fa-phone me-1"></i>Mark Contacted
+                                </button>
+                            {% elif enquiry.status == 'contacted' %}
+                                <button class="btn btn-info btn-sm" onclick="updateStatus({{ enquiry.id }}, 'visited')">
+                                    <i class="fas fa-eye me-1"></i>Mark Visited
+                                </button>
+                            {% elif enquiry.status == 'visited' %}
+                                <button class="btn btn-success btn-sm" onclick="updateStatus({{ enquiry.id }}, 'applied')">
+                                    <i class="fas fa-file-alt me-1"></i>Mark Applied
+                                </button>
+                            {% elif enquiry.status == 'applied' %}
+                                <button class="btn btn-purple btn-sm" onclick="updateStatus({{ enquiry.id }}, 'admitted')">
+                                    <i class="fas fa-graduation-cap me-1"></i>Admit
+                                </button>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary btn-sm" onclick="editEnquiry({{ enquiry.id }})">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="viewEnquiry({{ enquiry.id }})">
+                                <i class="fas fa-eye me-1"></i>View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-user-graduate fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No admission enquiries found</h5>
+                    <p class="text-muted mb-4">
+                        {% if status_filter or program_filter or search_query %}
+                            No enquiries match your current filters.
+                        {% else %}
+                            No admission enquiries have been received yet.
+                        {% endif %}
+                    </p>
+                    <div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEnquiryModal">
+                            <i class="fas fa-plus me-2"></i>Add First Enquiry
+                        </button>
+                        {% if status_filter or program_filter or search_query %}
+                        <a href="{% url 'users:manage_admission_enquiries' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if enquiries.has_other_pages %}
+    <nav aria-label="Enquiries pagination">
+        <ul class="pagination justify-content-center">
+            {% if enquiries.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if program_filter %}&program={{ program_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ enquiries.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if program_filter %}&program={{ program_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ enquiries.number }} of {{ enquiries.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if enquiries.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ enquiries.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if program_filter %}&program={{ program_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ enquiries.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if program_filter %}&program={{ program_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Add Enquiry Modal -->
+<div class="modal fade" id="addEnquiryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Admission Enquiry
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-center text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Add enquiry functionality will be implemented here.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateStatus(enquiryId, newStatus) {
+    if (confirm('Update enquiry status to ' + newStatus + '?')) {
+        // This would typically make an AJAX call to update the status
+        alert('Status update functionality will be implemented. Enquiry ID: ' + enquiryId + ', New Status: ' + newStatus);
+    }
+}
+
+function editEnquiry(enquiryId) {
+    // This would typically open an edit modal or redirect to edit page
+    alert('Edit enquiry functionality will be implemented. Enquiry ID: ' + enquiryId);
+}
+
+function viewEnquiry(enquiryId) {
+    // This would typically show a detailed view modal
+    alert('View enquiry details functionality will be implemented. Enquiry ID: ' + enquiryId);
+}
+</script>
+{% endblock %}

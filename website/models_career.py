@@ -87,10 +87,10 @@ class JobApplication(models.Model):
 
     def send_confirmation_email(self):
         """Send confirmation email to applicant"""
-        from website.models import SiteSettings
+        from users.models import SchoolSettings
 
         # Get site settings for the email template
-        site_settings = SiteSettings.objects.first()
+        site_settings = SchoolSettings.objects.first()
 
         subject = f"Application Received - {self.position.title}"
         html_message = render_to_string('website/emails/application_confirmation.html', {
@@ -109,10 +109,10 @@ class JobApplication(models.Model):
 
     def send_status_update_email(self):
         """Send status update email to applicant"""
-        from website.models import SiteSettings
+        from users.models import SchoolSettings
 
         # Get site settings for the email template
-        site_settings = SiteSettings.objects.first()
+        site_settings = SchoolSettings.objects.first()
 
         status_display = dict(self.STATUS_CHOICES)[self.status]
 

@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}View Documents - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    
+    .document-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-pending { border-left-color: #6c757d; }
+    .status-approved { border-left-color: #28a745; }
+    .status-rejected { border-left-color: #dc3545; }
+    .status-needs_revision { border-left-color: #ffc107; }
+    
+    .file-icon {
+        font-size: 1.5rem;
+        margin-right: 0.5rem;
+    }
+    
+    .file-pdf { color: #dc3545; }
+    .file-doc { color: #007bff; }
+    .file-image { color: #28a745; }
+    
+    .read-only-badge {
+        background: linear-gradient(135deg, #6c757d, #495057);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-folder-open me-2 text-primary"></i>Document Viewer
+            </h2>
+            <p class="text-muted mb-0">View uploaded documents (Read-only access)</p>
+        </div>
+        <div>
+            <span class="read-only-badge">
+                <i class="fas fa-eye me-1"></i>Read-Only Access
+            </span>
+            <span class="badge bg-primary ms-2">{{ documents.paginator.count }} Total</span>
+        </div>
+    </div>
+
+    <!-- Info Alert -->
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Note:</strong> You have read-only access to view documents. For document approval or management, please contact an administrator.
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="needs_revision" {% if status_filter == 'needs_revision' %}selected{% endif %}>Needs Revision</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if category_filter == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Search by title, student, or parent name...">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'users:view_documents' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Documents List -->
+    <div class="row">
+        {% for document in documents %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card document-card status-{{ document.status }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <!-- File Icon -->
+                        {% if document.file.name|slice:"-4:" == ".pdf" %}
+                            <i class="fas fa-file-pdf file-icon file-pdf"></i>
+                        {% elif document.file.name|slice:"-4:" in ".doc,.docx" %}
+                            <i class="fas fa-file-word file-icon file-doc"></i>
+                        {% elif document.file.name|slice:"-4:" in ".jpg,.jpeg,.png" %}
+                            <i class="fas fa-file-image file-icon file-image"></i>
+                        {% else %}
+                            <i class="fas fa-file file-icon text-muted"></i>
+                        {% endif %}
+                        <h6 class="mb-0">{{ document.title|truncatewords:3 }}</h6>
+                    </div>
+                    <span class="badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %}">
+                        {{ document.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Category:</strong>
+                        <span class="text-muted">{{ document.category.name }}</span>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong>Uploaded by:</strong>
+                        <span class="text-muted">{{ document.uploaded_by.get_full_name }}</span>
+                    </div>
+                    
+                    {% if document.student %}
+                    <div class="mb-2">
+                        <strong>For Student:</strong>
+                        <span class="text-info">{{ document.student.user.get_full_name }}</span>
+                        <small class="text-muted d-block">{{ document.student.student_id }}</small>
+                    </div>
+                    {% elif document.parent %}
+                    <div class="mb-2">
+                        <strong>Parent Document:</strong>
+                        <span class="text-primary">{{ document.parent.user.get_full_name }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-2">
+                        <strong>Uploaded:</strong>
+                        <span class="text-muted">{{ document.created_at|date:"M d, Y g:i A" }}</span>
+                        <small class="text-muted d-block">({{ document.created_at|timesince }} ago)</small>
+                    </div>
+                    
+                    {% if document.reviewed_by %}
+                    <div class="mb-2">
+                        <strong>Reviewed by:</strong>
+                        <span class="text-muted">{{ document.reviewed_by.get_full_name }}</span>
+                        <small class="text-muted d-block">{{ document.reviewed_at|date:"M d, Y g:i A" }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if document.description %}
+                    <div class="mb-2">
+                        <strong>Description:</strong>
+                        <p class="text-muted small mb-0">{{ document.description|truncatewords:15 }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if document.admin_notes %}
+                    <div class="mb-3">
+                        <strong>Admin Notes:</strong>
+                        <div class="alert alert-info small mb-0">
+                            {{ document.admin_notes|truncatewords:15 }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- File Info -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-file me-1"></i>
+                            {{ document.file.name|slice:"10:" }}
+                            {% if document.file.size %}
+                                ({{ document.file.size|filesizeformat }})
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="{{ document.file.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Document
+                        </a>
+                        
+                        {% if document.status == 'approved' %}
+                        <a href="{{ document.file.url }}" download class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                        {% endif %}
+                        
+                        <button class="btn btn-outline-info btn-sm" onclick="showDocumentDetails({{ document.id }})">
+                            <i class="fas fa-info-circle me-1"></i>Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No documents found</h5>
+                    <p class="text-muted mb-4">
+                        {% if status_filter or category_filter or search_query %}
+                            No documents match your current filters.
+                        {% else %}
+                            No documents have been uploaded yet.
+                        {% endif %}
+                    </p>
+                    {% if status_filter or category_filter or search_query %}
+                    <a href="{% url 'users:view_documents' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-times me-2"></i>Clear Filters
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if documents.has_other_pages %}
+    <nav aria-label="Documents pagination">
+        <ul class="pagination justify-content-center">
+            {% if documents.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ documents.number }} of {{ documents.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if documents.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Document Details Modal -->
+<div class="modal fade" id="documentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file me-2"></i>Document Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="documentDetailsContent">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showDocumentDetails(documentId) {
+    // This would typically make an AJAX call to get document details
+    // For now, show a placeholder
+    const content = `
+        <div class="text-center py-4">
+            <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+            <h5>Document Details</h5>
+            <p class="text-muted">Detailed document information would be displayed here.</p>
+            <p class="small text-muted">This feature will be implemented to show full document metadata, history, and related information.</p>
+        </div>
+    `;
+    
+    document.getElementById('documentDetailsContent').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('documentDetailsModal')).show();
+}
+
+// Auto-refresh page every 5 minutes to show latest documents
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        location.reload();
+    }
+}, 300000); // 5 minutes
+</script>
+{% endblock %}

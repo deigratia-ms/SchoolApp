@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Student Directory - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-card {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+    }
+
+    .stats-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+
+    .student-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .student-initials {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .status-active {
+        color: #28a745;
+    }
+
+    .status-inactive {
+        color: #dc3545;
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:receptionist_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Student Directory</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-user-graduate me-2 text-primary"></i>Student Directory
+                    </h2>
+                    <p class="text-muted mb-0">View student information and contact details</p>
+                </div>
+                <div class="badge bg-primary fs-6">
+                    {{ total_students }} Student{{ total_students|pluralize }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card search-card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Search Students</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="search" name="search"
+                                       value="{{ search_query }}" placeholder="Name, ID, or email...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="grade" class="form-label">Grade/Class</label>
+                            <select class="form-select" id="grade" name="grade">
+                                <option value="">All Grades</option>
+                                {% for grade in grades %}
+                                <option value="{{ grade.id }}" {% if grade_filter == grade.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ grade.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i>Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Students
+                {% if students %}
+                    <span class="badge bg-primary ms-2">{{ students.paginator.count }} total</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if students %}
+                <!-- Pagination Info -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="pagination-info">
+                        Showing {{ students.start_index }} to {{ students.end_index }} of {{ students.paginator.count }} students
+                    </div>
+                    <div class="pagination-info">
+                        Page {{ students.number }} of {{ students.paginator.num_pages }}
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Student ID</th>
+                                <th>Grade/Class</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if student.user.profile_picture %}
+                                            <img src="{{ student.user.profile_picture.url }}" alt="{{ student.user.get_full_name }}" class="student-avatar me-2">
+                                        {% else %}
+                                            <div class="student-initials me-2">
+                                                {{ student.user.first_name.0 }}{{ student.user.last_name.0 }}
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold">{{ student.user.get_full_name }}</div>
+                                            {% if student.user.email and '@school.internal' not in student.user.email %}
+                                                <small class="text-muted">{{ student.user.email }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ student.student_id }}</span>
+                                </td>
+                                <td>
+                                    {% if student.grade %}
+                                        <span class="badge bg-primary">{{ student.grade.name }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Not Assigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if student.user.phone_number %}
+                                        <div class="small">
+                                            <i class="fas fa-phone me-1 text-success"></i>{{ student.user.phone_number }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">No phone</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if student.user.is_active %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="small">{{ student.user.date_joined|date:"M d, Y" }}</div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                            onclick="viewStudentDetails('{{ student.id }}', '{{ student.user.get_full_name }}', '{{ student.student_id }}', '{{ student.grade.name|default:"Not Assigned" }}', '{{ student.user.phone_number|default:"" }}', '{{ student.user.email|default:"" }}', '{{ student.user.is_active|yesno:"Active,Inactive" }}', '{{ student.user.date_joined|date:"F d, Y" }}')"
+                                            title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if students.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if students.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if grade_filter %}&grade={{ grade_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in students.paginator.page_range %}
+                            {% if students.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if grade_filter %}&grade={{ grade_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if students.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if grade_filter %}&grade={{ grade_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-user-graduate fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No students found</h5>
+                    {% if search_query or grade_filter or status_filter %}
+                        <p class="text-muted">Try adjusting your search criteria</p>
+                        <a href="{% url 'users:student_directory_receptionist' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    {% else %}
+                        <p class="text-muted">No students have been registered yet</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Student Details Modal -->
+<div class="modal fade" id="studentDetailsModal" tabindex="-1" aria-labelledby="studentDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentDetailsModalLabel">
+                    <i class="fas fa-user-graduate me-2"></i>Student Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="studentDetailsContent">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function viewStudentDetails(id, name, studentId, grade, phone, email, status, joinDate) {
+        const content = `
+            <div class="row g-3">
+                <div class="col-12">
+                    <h6 class="text-primary">${name}</h6>
+                    <hr>
+                </div>
+                <div class="col-6">
+                    <strong>Student ID:</strong><br>
+                    <span class="text-muted">${studentId}</span>
+                </div>
+                <div class="col-6">
+                    <strong>Grade/Class:</strong><br>
+                    <span class="badge bg-primary">${grade}</span>
+                </div>
+                <div class="col-6">
+                    <strong>Status:</strong><br>
+                    <span class="badge ${status === 'Active' ? 'bg-success' : 'bg-danger'}">${status}</span>
+                </div>
+                <div class="col-6">
+                    <strong>Joined:</strong><br>
+                    <span class="text-muted">${joinDate}</span>
+                </div>
+                ${phone ? `
+                <div class="col-12">
+                    <strong>Phone:</strong><br>
+                    <span class="text-muted"><i class="fas fa-phone me-1"></i>${phone}</span>
+                </div>
+                ` : ''}
+                ${email && !email.includes('@school.internal') ? `
+                <div class="col-12">
+                    <strong>Email:</strong><br>
+                    <span class="text-muted"><i class="fas fa-envelope me-1"></i>${email}</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+
+        document.getElementById('studentDetailsContent').innerHTML = content;
+        new bootstrap.Modal(document.getElementById('studentDetailsModal')).show();
+    }
+
+    // Auto-submit form on filter changes
+    document.getElementById('grade').addEventListener('change', function() {
+        this.form.submit();
+    });
+
+    document.getElementById('status').addEventListener('change', function() {
+        this.form.submit();
+    });
+</script>
+{% endblock %}

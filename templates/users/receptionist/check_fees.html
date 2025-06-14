@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Check Student Fees - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fee-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    
+    .fee-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .search-card {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+    }
+    
+    .status-paid {
+        border-left-color: #28a745;
+    }
+    
+    .status-pending {
+        border-left-color: #ffc107;
+    }
+    
+    .status-overdue {
+        border-left-color: #dc3545;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:receptionist_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Check Student Fees</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-search-dollar me-2 text-primary"></i>Check Student Fees
+            </h2>
+            <p class="text-muted mb-0">View student fee status and payment information</p>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">₵{{ total_amount|floatformat:2|intcomma }}</h3>
+                        <p class="mb-0 opacity-75">Total Expected</p>
+                    </div>
+                    <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">₵{{ total_paid|floatformat:2|intcomma }}</h3>
+                        <p class="mb-0 opacity-75">Total Collected</p>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">₵{{ total_balance|floatformat:2|intcomma }}</h3>
+                        <p class="mb-0 opacity-75">Outstanding</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #6f42c1, #5a32a3);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ collection_rate|floatformat:1 }}%</h3>
+                        <p class="mb-0 opacity-75">Collection Rate</p>
+                    </div>
+                    <i class="fas fa-chart-pie fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card search-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search Student</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Name or Student ID">
+                </div>
+                <div class="col-md-2">
+                    <label for="term" class="form-label">Term</label>
+                    <select class="form-select" id="term" name="term">
+                        <option value="">All Terms</option>
+                        {% for term in terms %}
+                        <option value="{{ term.id }}" {% if term.id|stringformat:"s" == selected_term %}selected{% endif %}>
+                            {{ term.name }} ({{ term.academic_year }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="classroom" class="form-label">Class</label>
+                    <select class="form-select" id="classroom" name="classroom">
+                        <option value="">All Classes</option>
+                        {% for classroom in classrooms %}
+                        <option value="{{ classroom.id }}" {% if classroom.id|stringformat:"s" == selected_classroom %}selected{% endif %}>
+                            {{ classroom.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="fee_category" class="form-label">Fee Type</label>
+                    <select class="form-select" id="fee_category" name="fee_category">
+                        <option value="">All Types</option>
+                        {% for category in fee_categories %}
+                        <option value="{{ category.id }}" {% if category.id|stringformat:"s" == selected_category %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="partial" {% if selected_status == 'partial' %}selected{% endif %}>Partial</option>
+                        <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Paid</option>
+                        <option value="overdue" {% if selected_status == 'overdue' %}selected{% endif %}>Overdue</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Student Fees List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Student Fees
+                {% if student_fees %}
+                    <span class="badge bg-primary ms-2">{{ student_fees.paginator.count }} total</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if student_fees %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Class</th>
+                                <th>Fee Type</th>
+                                <th>Amount</th>
+                                <th>Paid</th>
+                                <th>Balance</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fee in student_fees %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="student-initials me-2" style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #007bff, #0056b3); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">
+                                            {{ fee.student.user.first_name|slice:":1" }}{{ fee.student.user.last_name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ fee.student.user.get_full_name }}</div>
+                                            <small class="text-muted">{{ fee.student.student_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ fee.class_fee.classroom.name }}</td>
+                                <td>{{ fee.class_fee.fee_category.name }}</td>
+                                <td>₵{{ fee.amount|floatformat:2|intcomma }}</td>
+                                <td>₵{{ fee.amount_paid|floatformat:2|intcomma }}</td>
+                                <td>₵{{ fee.balance|floatformat:2|intcomma }}</td>
+                                <td>
+                                    {% if fee.due_date %}
+                                        {{ fee.due_date|date:"M d, Y" }}
+                                        {% if fee.due_date < today and fee.balance > 0 %}
+                                            <small class="text-danger">(Overdue)</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if fee.status == 'paid' %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% elif fee.status == 'partial' %}
+                                        <span class="badge bg-warning">Partial</span>
+                                    {% elif fee.status == 'overdue' %}
+                                        <span class="badge bg-danger">Overdue</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if student_fees.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if student_fees.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ student_fees.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in student_fees.paginator.page_range %}
+                            {% if student_fees.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > student_fees.number|add:'-3' and num < student_fees.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if student_fees.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ student_fees.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_classroom %}&classroom={{ selected_classroom }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search-dollar fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No student fees found</h5>
+                    {% if search_query or selected_term or selected_classroom or selected_category or selected_status %}
+                        <p class="text-muted">Try adjusting your search criteria</p>
+                        <a href="{% url 'users:check_student_fees' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    {% else %}
+                        <p class="text-muted">No student fees have been created yet</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

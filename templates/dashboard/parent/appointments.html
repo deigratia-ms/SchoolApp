@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Appointments - Parent{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+    
+    .appointment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-confirmed { border-left-color: #28a745; }
+    .status-completed { border-left-color: #6c757d; }
+    .status-cancelled { border-left-color: #dc3545; }
+    .status-rescheduled { border-left-color: #ffc107; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:parent_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">My Appointments</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-calendar-check me-2 text-success"></i>My Appointments
+            </h2>
+            <p class="text-muted mb-0">View all your confirmed appointments</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:parent_request_appointment' %}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-2"></i>Request Custom
+            </a>
+            <a href="{% url 'appointments:parent_dashboard' %}" class="btn btn-outline-success">
+                <i class="fas fa-calendar me-2"></i>Book Available
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        <option value="rescheduled" {% if status_filter == 'rescheduled' %}selected{% endif %}>Rescheduled</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'dashboard:parent_appointments' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Appointments List -->
+    <div class="row">
+        {% for appointment in appointments %}
+        <div class="col-lg-6 mb-4">
+            <div class="card appointment-card status-{{ appointment.status }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-calendar me-2"></i>{{ appointment.time_slot.date|date:"l, M d, Y" }}
+                    </h6>
+                    <span class="badge bg-{% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'completed' %}secondary{% elif appointment.status == 'cancelled' %}danger{% else %}warning{% endif %}">
+                        {{ appointment.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Time:</strong><br>
+                            <span class="text-muted">{{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Duration:</strong><br>
+                            <span class="text-muted">
+                                {% with duration=appointment.time_slot.end_time|timeuntil:appointment.time_slot.start_time %}
+                                    {{ duration|default:"1 hour" }}
+                                {% endwith %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Purpose:</strong>
+                        <p class="text-muted mb-0">{{ appointment.purpose }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Booked:</strong>
+                        <span class="text-muted">{{ appointment.created_at|date:"M d, Y g:i A" }}</span>
+                    </div>
+                    
+                    {% if appointment.notes %}
+                    <div class="mb-3">
+                        <strong>Notes:</strong>
+                        <p class="text-muted mb-0">{{ appointment.notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action buttons based on status and date -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        {% if appointment.status == 'confirmed' %}
+                            {% if appointment.time_slot.date >= today %}
+                                <div>
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-clock me-1"></i>Upcoming
+                                    </span>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="requestReschedule({{ appointment.id }})">
+                                        <i class="fas fa-calendar-alt me-1"></i>Reschedule
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment({{ appointment.id }})">
+                                        <i class="fas fa-times me-1"></i>Cancel
+                                    </button>
+                                </div>
+                            {% else %}
+                                <div>
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-history me-1"></i>Past
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% elif appointment.status == 'completed' %}
+                            <div>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Completed
+                                </span>
+                            </div>
+                        {% elif appointment.status == 'cancelled' %}
+                            <div>
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-ban me-1"></i>Cancelled
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No appointments found</h5>
+                    <p class="text-muted mb-4">You don't have any appointments scheduled yet.</p>
+                    <div>
+                        <a href="{% url 'appointments:parent_dashboard' %}" class="btn btn-success me-2">
+                            <i class="fas fa-calendar-check me-2"></i>Book Available Slot
+                        </a>
+                        <a href="{% url 'dashboard:parent_request_appointment' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>Request Custom Time
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if appointments.has_other_pages %}
+    <nav aria-label="Appointments pagination">
+        <ul class="pagination justify-content-center">
+            {% if appointments.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ appointments.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ appointments.number }} of {{ appointments.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if appointments.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ appointments.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ appointments.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function requestReschedule(appointmentId) {
+    if (confirm('Are you sure you want to request a reschedule for this appointment?')) {
+        // This would typically make an AJAX call to request reschedule
+        alert('Reschedule request functionality will be implemented. For now, please contact the school directly.');
+    }
+}
+
+function cancelAppointment(appointmentId) {
+    if (confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) {
+        // This would typically make an AJAX call to cancel the appointment
+        alert('Cancellation functionality will be implemented. For now, please contact the school directly.');
+    }
+}
+</script>
+{% endblock %}

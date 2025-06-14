@@ -2,7 +2,31 @@
 {% load static %}
 {% load math_filters %}
 
-{% block title %}About Us | Deigratia Montessori School{% endblock %}
+{% block title %}About Us | Deigratia Montessori School - Our Story & Mission{% endblock %}
+
+{% block meta_description %}Learn about Deigratia Montessori School's mission, vision, and commitment to authentic Montessori education in Ghana. Discover our story, values, and dedication to nurturing young minds.{% endblock %}
+
+{% block meta_keywords %}About Deigratia Montessori, school mission, Montessori philosophy, educational values, school history Ghana, Montessori principles, child development, authentic Montessori education{% endblock %}
+
+{% block og_title %}About Deigratia Montessori School - Our Story & Mission{% endblock %}
+{% block og_description %}Discover the story behind Deigratia Montessori School. Learn about our mission to provide authentic Montessori education and our commitment to nurturing independent, creative learners in Ghana.{% endblock %}
+
+{% block additional_structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "name": "About Deigratia Montessori School",
+  "description": "Learn about our mission, vision, and commitment to authentic Montessori education in Ghana.",
+  "url": "https://deigratiams.edu.gh/about/",
+  "mainEntity": {
+    "@type": "EducationalOrganization",
+    "name": "Deigratia Montessori School",
+    "mission": "To nurture and develop each child's potential through innovative Montessori education"
+  }
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->

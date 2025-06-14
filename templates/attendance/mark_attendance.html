@@ -180,7 +180,7 @@
                                             </div>
 	                                        </td>
 	                                        <td>
-		                                            <input type="text" class="form-control" name="remarks_{{ student.id }}" value="{% if student_statuses|get_item:student.id %}{{ student_statuses|get_item:student.id|get_attribute:'remarks'|default:'' }}{% endif %}" placeholder="Optional remarks">
+		                                            <input type="text" class="form-control" name="remarks_{{ student.id }}" value="{% if student_statuses|get_item:student.id %}{{ student_statuses|get_item:student.id|getattr:'remarks'|default:'' }}{% endif %}" placeholder="Optional remarks">
 		                                        </td>
 		                                    </tr>
 		                                    {% empty %}
@@ -216,7 +216,7 @@
                                 </div>
 
                                 <div>
-                                    <input type="text" class="form-control form-control-sm" name="remarks_{{ student.id }}" value="{% if student_statuses|get_item:student.id %}{{ student_statuses|get_item:student.id|get_attribute:'remarks'|default:'' }}{% endif %}" placeholder="Optional remarks">
+                                    <input type="text" class="form-control form-control-sm" name="remarks_{{ student.id }}" value="{% if student_statuses|get_item:student.id %}{{ student_statuses|get_item:student.id|getattr:'remarks'|default:'' }}{% endif %}" placeholder="Optional remarks">
                                 </div>
                             </div>
                             {% empty %}

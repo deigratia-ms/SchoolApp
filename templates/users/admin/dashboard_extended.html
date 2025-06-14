@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Extended Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stats-card.warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+    
+    .stats-card.success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .stats-card.info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+    
+    .stats-card.danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    
+    .activity-card {
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    
+    .activity-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .activity-item {
+        border-bottom: 1px solid #e9ecef;
+        padding: 0.75rem 0;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .quick-action-btn {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-tachometer-alt me-2 text-primary"></i>Extended Admin Dashboard
+            </h2>
+            <p class="text-muted mb-0">Manage appointments, documents, visitors, and enquiries</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-outline-primary">
+                <i class="fas fa-home me-2"></i>Main Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ pending_appointment_requests }}</h3>
+                        <p class="mb-0 opacity-75">Pending Appointment Requests</p>
+                    </div>
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ pending_documents }}</h3>
+                        <p class="mb-0 opacity-75">Pending Documents</p>
+                    </div>
+                    <i class="fas fa-file-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ new_enquiries }}</h3>
+                        <p class="mb-0 opacity-75">New Admission Enquiries</p>
+                    </div>
+                    <i class="fas fa-user-graduate fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card danger">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ active_visitors }}</h3>
+                        <p class="mb-0 opacity-75">Active Visitors</p>
+                    </div>
+                    <i class="fas fa-id-badge fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">
+                <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+            </h4>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'users:manage_appointment_requests' %}" class="btn btn-outline-warning quick-action-btn w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <span>Review Requests</span>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'users:manage_documents' %}" class="btn btn-outline-info quick-action-btn w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
+                <i class="fas fa-file-alt fa-2x mb-2"></i>
+                <span>Review Documents</span>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'users:manage_admission_enquiries' %}" class="btn btn-outline-success quick-action-btn w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
+                <i class="fas fa-user-graduate fa-2x mb-2"></i>
+                <span>Manage Enquiries</span>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'users:manage_visitor_logs' %}" class="btn btn-outline-danger quick-action-btn w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
+                <i class="fas fa-id-badge fa-2x mb-2"></i>
+                <span>Visitor Logs</span>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'appointments:admin_dashboard' %}" class="btn btn-outline-primary quick-action-btn w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
+                <i class="fas fa-calendar fa-2x mb-2"></i>
+                <span>Appointments</span>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'dashboard:admin_dashboard' %}" class="btn btn-outline-secondary quick-action-btn w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
+                <i class="fas fa-home fa-2x mb-2"></i>
+                <span>Main Dashboard</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Appointment Requests -->
+        <div class="col-lg-6 mb-4">
+            <div class="card activity-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Recent Appointment Requests
+                    </h5>
+                    <a href="{% url 'users:manage_appointment_requests' %}" class="btn btn-sm btn-outline-warning">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_appointment_requests %}
+                        {% for request in recent_appointment_requests %}
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold">{{ request.parent.user.get_full_name }}</div>
+                                    <div class="small text-muted">{{ request.requested_date|date:"M d, Y" }} at {{ request.requested_start_time|time:"g:i A" }}</div>
+                                    <div class="small text-muted">{{ request.purpose|truncatewords:8 }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-{% if request.status == 'approved' %}success{% elif request.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                        {{ request.get_status_display }}
+                                    </span>
+                                    <div class="small text-muted">{{ request.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No recent appointment requests</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Documents -->
+        <div class="col-lg-6 mb-4">
+            <div class="card activity-card" style="border-left-color: #17a2b8;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Recent Documents
+                    </h5>
+                    <a href="{% url 'users:manage_documents' %}" class="btn btn-sm btn-outline-info">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_documents %}
+                        {% for document in recent_documents %}
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold">{{ document.title|truncatewords:4 }}</div>
+                                    <div class="small text-muted">
+                                        {% if document.student %}
+                                            For: {{ document.student.user.get_full_name }}
+                                        {% elif document.parent %}
+                                            Parent: {{ document.parent.user.get_full_name }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="small text-muted">{{ document.category.name }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %}">
+                                        {{ document.get_status_display }}
+                                    </span>
+                                    <div class="small text-muted">{{ document.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-file-upload fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No recent documents</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Admission Enquiries -->
+        <div class="col-lg-12 mb-4">
+            <div class="card activity-card" style="border-left-color: #28a745;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-graduate me-2"></i>Recent Admission Enquiries
+                    </h5>
+                    <a href="{% url 'users:manage_admission_enquiries' %}" class="btn btn-sm btn-outline-success">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_enquiries %}
+                        <div class="row">
+                            {% for enquiry in recent_enquiries %}
+                            <div class="col-md-6 mb-3">
+                                <div class="activity-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="fw-bold">{{ enquiry.parent_name }}</div>
+                                            <div class="small text-muted">Child: {{ enquiry.child_name }} ({{ enquiry.child_age }} years)</div>
+                                            <div class="small text-muted">Program: {{ enquiry.get_program_of_interest_display }}</div>
+                                            <div class="small text-muted">{{ enquiry.parent_phone }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{% if enquiry.status == 'new' %}primary{% elif enquiry.status == 'contacted' %}warning{% elif enquiry.status == 'visited' %}info{% elif enquiry.status == 'applied' %}success{% elif enquiry.status == 'admitted' %}purple{% else %}danger{% endif %}">
+                                                {{ enquiry.get_status_display }}
+                                            </span>
+                                            <div class="small text-muted">{{ enquiry.created_at|timesince }} ago</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-user-plus fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No recent admission enquiries</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh dashboard every 5 minutes
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        location.reload();
+    }
+}, 300000); // 5 minutes
+
+// Add click tracking for quick actions
+document.querySelectorAll('.quick-action-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        // Could track analytics here
+        console.log('Quick action clicked:', this.href);
+    });
+});
+</script>
+{% endblock %}

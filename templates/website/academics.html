@@ -53,33 +53,45 @@
         <h2 class="section-title" data-aos="fade-up">Our Curriculum Approach</h2>
         <div class="row align-items-center gy-4">
             <div class="col-lg-6" data-aos="fade-right">
-                {% if sections.curriculum_image and sections.curriculum_image.image %}
-                    <img src="{{ sections.curriculum_image.image.url }}" class="img-fluid rounded-3 shadow" alt="Montessori Materials">
+                {% if sections.curriculum_approach and sections.curriculum_approach.image %}
+                    <img src="{{ sections.curriculum_approach.image.url }}" class="img-fluid rounded-3 shadow" alt="Montessori Materials">
                 {% else %}
                     <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="img-fluid rounded-3 shadow" alt="Montessori Materials">
                 {% endif %}
             </div>
             <div class="col-lg-6" data-aos="fade-left">
-                <div class="accordion" id="curriculumAccordion">
-                    {% for item in curriculum_items %}
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading{{ forloop.counter }}">
-                            <button class="accordion-button{% if not forloop.first %} collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
-                                {{ item.title }}
-                            </button>
-                        </h2>
-                        <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" data-bs-parent="#curriculumAccordion">
-                            <div class="accordion-body">
-                                {{ item.content }}
-                            </div>
+                {% if sections.curriculum_approach %}
+                    <div class="curriculum-content">
+                        {% if sections.curriculum_approach.title %}
+                            <h3 class="mb-4">{{ sections.curriculum_approach.title }}</h3>
+                        {% endif %}
+                        <div class="content-text">
+                            {{ sections.curriculum_approach.content|safe|default:"Our comprehensive curriculum approach details will be available soon." }}
                         </div>
                     </div>
-                    {% empty %}
-                    <div class="alert alert-info">
-                        Curriculum approach details coming soon...
+                {% else %}
+                    <!-- Fallback to accordion if curriculum_items exist -->
+                    <div class="accordion" id="curriculumAccordion">
+                        {% for item in curriculum_items %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                <button class="accordion-button{% if not forloop.first %} collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
+                                    {{ item.title }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" data-bs-parent="#curriculumAccordion">
+                                <div class="accordion-body">
+                                    {{ item.content }}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="alert alert-info">
+                            Curriculum approach details coming soon...
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -1,0 +1,428 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Review Document - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-card {
+        border-radius: 15px;
+        border-left: 4px solid #007bff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .uploader-info-card {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+    
+    .action-card {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+    
+    .file-preview {
+        border: 2px dashed #e9ecef;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8f9fa;
+    }
+    
+    .file-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .file-pdf { color: #dc3545; }
+    .file-doc { color: #007bff; }
+    .file-image { color: #28a745; }
+    
+    .timeline-item {
+        border-left: 3px solid #e9ecef;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'users:manage_documents' %}">Documents</a></li>
+            <li class="breadcrumb-item active">Review Document</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-file-alt me-2 text-primary"></i>Review Document
+            </h2>
+            <p class="text-muted mb-0">Review and approve/reject uploaded document</p>
+        </div>
+        <a href="{% url 'users:manage_documents' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Documents
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Document Details -->
+        <div class="col-lg-8">
+            <div class="card document-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file me-2"></i>Document Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h6 class="text-primary">Document Title</h6>
+                            <div class="p-3 bg-light rounded">
+                                <div class="fw-bold fs-5">{{ document.title }}</div>
+                                <div class="text-muted">Category: {{ document.category.name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-primary">Status</h6>
+                            <div class="p-3 bg-light rounded">
+                                <span class="badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %} fs-6">
+                                    {{ document.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">For</h6>
+                            <div class="p-3 bg-light rounded">
+                                {% if document.student %}
+                                    <div class="fw-bold">{{ document.student.user.get_full_name }}</div>
+                                    <div class="text-muted">Student ID: {{ document.student.student_id }}</div>
+                                    <div class="text-muted">Class: {{ document.student.current_class }}</div>
+                                {% elif document.parent %}
+                                    <div class="fw-bold">{{ document.parent.user.get_full_name }}</div>
+                                    <div class="text-muted">Parent Document</div>
+                                {% else %}
+                                    <div class="text-muted">General Document</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Upload Information</h6>
+                            <div class="p-3 bg-light rounded">
+                                <div class="small">
+                                    <strong>Uploaded:</strong> {{ document.created_at|date:"M d, Y g:i A" }}<br>
+                                    <strong>By:</strong> {{ document.uploaded_by.get_full_name }}<br>
+                                    <strong>Type:</strong> {{ document.get_uploaded_by_type_display }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if document.description %}
+                    <div class="mb-4">
+                        <h6 class="text-primary">Description</h6>
+                        <div class="p-3 bg-light rounded">
+                            <p class="mb-0">{{ document.description }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- File Preview -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">File Preview</h6>
+                        <div class="file-preview">
+                            {% if document.file.name|slice:"-4:" == ".pdf" %}
+                                <i class="fas fa-file-pdf file-icon file-pdf"></i>
+                                <h5>PDF Document</h5>
+                            {% elif document.file.name|slice:"-4:" in ".doc,.docx" %}
+                                <i class="fas fa-file-word file-icon file-doc"></i>
+                                <h5>Word Document</h5>
+                            {% elif document.file.name|slice:"-4:" in ".jpg,.jpeg,.png" %}
+                                <i class="fas fa-file-image file-icon file-image"></i>
+                                <h5>Image File</h5>
+                            {% else %}
+                                <i class="fas fa-file file-icon text-muted"></i>
+                                <h5>Document File</h5>
+                            {% endif %}
+                            
+                            <p class="text-muted mb-3">{{ document.file.name|slice:"10:" }}</p>
+                            {% if document.file.size %}
+                                <p class="small text-muted mb-3">Size: {{ document.file.size|filesizeformat }}</p>
+                            {% endif %}
+                            
+                            <div class="d-grid gap-2 d-md-block">
+                                <a href="{{ document.file.url }}" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-eye me-1"></i>View Document
+                                </a>
+                                <a href="{{ document.file.url }}" download class="btn btn-outline-primary">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if document.reviewed_by %}
+                    <div class="mb-4">
+                        <h6 class="text-primary">Review Information</h6>
+                        <div class="p-3 bg-light rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Reviewed by:</strong><br>
+                                    <span class="text-muted">{{ document.reviewed_by.get_full_name }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Review Date:</strong><br>
+                                    <span class="text-muted">{{ document.reviewed_at|date:"M d, Y g:i A" }}</span>
+                                </div>
+                            </div>
+                            {% if document.admin_notes %}
+                            <div class="mt-3">
+                                <strong>Admin Notes:</strong>
+                                <p class="text-muted mb-0 mt-1">{{ document.admin_notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Form -->
+            {% if document.status == 'pending' or document.status == 'needs_revision' %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-gavel me-2"></i>Review Decision
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Decision *</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="action" id="approved" value="approved" required>
+                                        <label class="form-check-label text-success" for="approved">
+                                            <i class="fas fa-check me-1"></i>Approve
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="action" id="needs_revision" value="needs_revision" required>
+                                        <label class="form-check-label text-warning" for="needs_revision">
+                                            <i class="fas fa-edit me-1"></i>Needs Revision
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="action" id="rejected" value="rejected" required>
+                                        <label class="form-check-label text-danger" for="rejected">
+                                            <i class="fas fa-times me-1"></i>Reject
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="admin_notes" class="form-label">Admin Notes</label>
+                            <textarea class="form-control" id="admin_notes" name="admin_notes" rows="4" 
+                                      placeholder="Add notes about your decision..."></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Notes are required for rejection or revision requests. For approvals, notes are optional.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'users:manage_documents' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Submit Decision
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Uploader Information -->
+        <div class="col-lg-4">
+            <div class="uploader-info-card mb-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-user me-2"></i>Uploader Information
+                </h6>
+                <div class="mb-2">
+                    <strong>Name:</strong><br>
+                    <span class="opacity-75">{{ document.uploaded_by.get_full_name }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Email:</strong><br>
+                    <span class="opacity-75">{{ document.uploaded_by.email }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Role:</strong><br>
+                    <span class="opacity-75">{{ document.uploaded_by.get_role_display }}</span>
+                </div>
+                
+                {% if document.student and document.student.parent %}
+                <hr class="my-3 opacity-50">
+                <div class="mb-2">
+                    <strong>Parent:</strong><br>
+                    <span class="opacity-75">{{ document.student.parent.user.get_full_name }}</span>
+                </div>
+                {% endif %}
+                
+                <hr class="my-3 opacity-50">
+                
+                <div class="small">
+                    <div class="mb-2">
+                        <i class="fas fa-calendar me-2"></i>
+                        Member since: {{ document.uploaded_by.date_joined|date:"M Y" }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-clock me-2"></i>
+                        Last login: {{ document.uploaded_by.last_login|date:"M d, Y" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            {% if document.status == 'pending' %}
+            <div class="action-card">
+                <h6 class="mb-3">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success btn-sm" onclick="quickApprove()">
+                        <i class="fas fa-check me-1"></i>Quick Approve
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="quickRevision()">
+                        <i class="fas fa-edit me-1"></i>Request Revision
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="quickReject()">
+                        <i class="fas fa-times me-1"></i>Quick Reject
+                    </button>
+                </div>
+                
+                <hr class="my-3 opacity-50">
+                
+                <div class="small">
+                    <div class="mb-2">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Quick actions will use default notes
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-edit me-2"></i>
+                        Use the form for custom notes
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Timeline -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Document Timeline
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-item">
+                        <strong>Document Uploaded</strong>
+                        <div class="small text-muted">{{ document.created_at|date:"M d, Y g:i A" }}</div>
+                        <div class="small text-muted">by {{ document.uploaded_by.get_full_name }}</div>
+                    </div>
+                    
+                    {% if document.reviewed_at %}
+                    <div class="timeline-item">
+                        <strong>Document Reviewed</strong>
+                        <div class="small text-muted">{{ document.reviewed_at|date:"M d, Y g:i A" }}</div>
+                        <div class="small text-muted">by {{ document.reviewed_by.get_full_name }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function quickApprove() {
+    if (confirm('Approve this document with default notes?')) {
+        document.getElementById('approved').checked = true;
+        document.getElementById('admin_notes').value = 'Document approved - meets requirements.';
+        document.querySelector('form').submit();
+    }
+}
+
+function quickRevision() {
+    const reason = prompt('Enter revision requirements:');
+    if (reason && reason.trim() !== '') {
+        document.getElementById('needs_revision').checked = true;
+        document.getElementById('admin_notes').value = reason;
+        document.querySelector('form').submit();
+    } else if (reason !== null) {
+        alert('Please provide revision requirements.');
+    }
+}
+
+function quickReject() {
+    const reason = prompt('Enter reason for rejection:');
+    if (reason && reason.trim() !== '') {
+        document.getElementById('rejected').checked = true;
+        document.getElementById('admin_notes').value = reason;
+        document.querySelector('form').submit();
+    } else if (reason !== null) {
+        alert('Please provide a reason for rejection.');
+    }
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const action = document.querySelector('input[name="action"]:checked');
+    const notes = document.getElementById('admin_notes').value.trim();
+    
+    if (!action) {
+        e.preventDefault();
+        alert('Please select an action.');
+        return;
+    }
+    
+    if ((action.value === 'rejected' || action.value === 'needs_revision') && notes === '') {
+        e.preventDefault();
+        alert('Admin notes are required for rejection or revision requests.');
+        document.getElementById('admin_notes').focus();
+        return;
+    }
+});
+</script>
+{% endblock %}

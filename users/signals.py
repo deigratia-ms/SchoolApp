@@ -54,6 +54,7 @@ def send_welcome_email(sender, instance, created, **kwargs):
             # Create role-specific content
             role_specific_content = ""
             login_url = ""
+            credentials_html = ""
 
             if instance.is_admin:
                 # Admin-specific content - admins use email to login
@@ -147,6 +148,9 @@ def send_welcome_email(sender, instance, created, **kwargs):
                 login_url = f"{base_url}/users/login/"
 
                 # Get staff profile info if it exists
+                # Get the password from the instance's initial_password attribute if it exists
+                password_display = getattr(instance, 'initial_password', 'Use the password you received during registration')
+
                 try:
                     staff = StaffMember.objects.get(user=instance)
                     credentials_html = f"""
@@ -155,26 +159,76 @@ def send_welcome_email(sender, instance, created, **kwargs):
                         <ul style="padding-left: 20px;">
                             <li><strong>Staff ID:</strong> {staff.employee_id}</li>
                             <li><strong>Email:</strong> {instance.email}</li>
+                            <li><strong>Password:</strong> {password_display}</li>
                             <li><strong>Login URL:</strong> <a href="{login_url}">{login_url}</a></li>
                         </ul>
-                        <p style="margin-bottom: 0;">Please login with the password you were provided during account creation.</p>
+                        <p style="margin-bottom: 0; color: #d35400;"><strong>Security Note:</strong> Please change your password after your first login.</p>
                     </div>
                     """
 
                     department_info = f"<p>You have been assigned to the <strong>{staff.department}</strong> department.</p>" if staff.department else ""
                     position_info = f"<p>Your position is <strong>{staff.position}</strong>.</p>" if staff.position else ""
 
+                    # Add role-specific features information
+                    role_features = ""
+                    if instance.role == 'RECEPTIONIST':
+                        role_features = """
+                        <p>As a receptionist, you can:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>View student and staff directories</li>
+                            <li>Send messages and announcements</li>
+                            <li>Manage appointments and visitor logs</li>
+                            <li>Handle admission inquiries</li>
+                            <li>Check student fee status</li>
+                            <li>Process document requests</li>
+                        </ul>
+                        """
+                    elif instance.role == 'ACCOUNTANT':
+                        role_features = """
+                        <p>As an accountant, you can:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Manage payroll and staff salaries</li>
+                            <li>Handle student fees and payments</li>
+                            <li>Generate financial reports</li>
+                            <li>Process payment records</li>
+                        </ul>
+                        """
+                    elif instance.role == 'SECRETARY':
+                        role_features = """
+                        <p>As a secretary, you can:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Access student and staff directories</li>
+                            <li>Create announcements and events</li>
+                            <li>Manage administrative tasks</li>
+                            <li>Handle communications</li>
+                        </ul>
+                        """
+
                     role_specific_content = f"""
                     <p>You have been registered as a <strong>{instance.get_role_display()}</strong> in the {school_name} management system.</p>
                     {department_info}
                     {position_info}
-                    <p>You can access your dashboard, view your schedule, and use the system features relevant to your role.</p>
+                    {role_features}
                     {credentials_html}
                     """
                 except StaffMember.DoesNotExist:
+                    # Even without StaffMember profile, provide login credentials
+                    credentials_html = f"""
+                    <div style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+                        <h3 style="margin-top: 0; color: #333;">Your Login Credentials</h3>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Email:</strong> {instance.email}</li>
+                            <li><strong>Password:</strong> {password_display}</li>
+                            <li><strong>Login URL:</strong> <a href="{login_url}">{login_url}</a></li>
+                        </ul>
+                        <p style="margin-bottom: 0; color: #d35400;"><strong>Security Note:</strong> Please change your password after your first login.</p>
+                    </div>
+                    """
+
                     role_specific_content = f"""
                     <p>You have been registered as a <strong>{instance.get_role_display()}</strong> in the {school_name} management system.</p>
-                    <p>Your profile setup is incomplete. Please contact the system administrator for your complete login credentials.</p>
+                    <p>Your staff profile will be completed by the system administrator. You can start using the system with the credentials below.</p>
+                    {credentials_html}
                     """
 
             elif instance.is_parent:
@@ -300,11 +354,12 @@ def send_welcome_email(sender, instance, created, **kwargs):
                 login_id_text = f"Email: {instance.email}"
             elif instance.is_non_teaching_staff:
                 # For non-teaching staff (accountant, security, etc.)
+                password_display = getattr(instance, 'initial_password', 'Use the password you received during registration')
                 try:
                     staff = StaffMember.objects.get(user=instance)
-                    login_id_text = f"Staff ID: {staff.employee_id}\nEmail: {instance.email}"
+                    login_id_text = f"Staff ID: {staff.employee_id}\nEmail: {instance.email}\nPassword: {password_display}"
                 except StaffMember.DoesNotExist:
-                    login_id_text = f"Email: {instance.email}"
+                    login_id_text = f"Email: {instance.email}\nPassword: {password_display}"
             else:
                 login_id_text = ""
 

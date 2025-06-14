@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Staff Directory - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+    
+    .staff-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .search-card {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+    }
+    
+    .staff-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .staff-initials {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .role-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:receptionist_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Staff Directory</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-user-tie me-2 text-success"></i>Staff Directory
+                    </h2>
+                    <p class="text-muted mb-0">View staff information and contact details</p>
+                </div>
+                <div class="badge bg-success fs-6">
+                    {{ total_staff }} Staff Member{{ total_staff|pluralize }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card search-card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="search" class="form-label">Search Staff</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="search" name="search" 
+                                       value="{{ search_query }}" placeholder="Search by name or email...">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="role" class="form-label">Filter by Role</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="">All Roles</option>
+                                {% for role_value, role_label in roles %}
+                                <option value="{{ role_value }}" {% if role_filter == role_value %}selected{% endif %}>
+                                    {{ role_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-filter me-2"></i>Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff List -->
+    <div class="row">
+        {% if staff %}
+            {% for staff_member in staff %}
+            <div class="col-lg-6 col-xl-4 mb-3">
+                <div class="card staff-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if staff_member.profile_picture %}
+                                <img src="{{ staff_member.profile_picture.url }}" alt="{{ staff_member.get_full_name }}" class="staff-avatar me-3">
+                            {% else %}
+                                <div class="staff-initials me-3">
+                                    {{ staff_member.first_name.0 }}{{ staff_member.last_name.0 }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ staff_member.get_full_name }}</h6>
+                                <span class="badge role-badge {% if staff_member.role == 'ADMIN' %}bg-danger{% elif staff_member.role == 'TEACHER' %}bg-primary{% elif staff_member.role == 'SECRETARY' %}bg-info{% elif staff_member.role == 'ACCOUNTANT' %}bg-warning text-dark{% elif staff_member.role == 'RECEPTIONIST' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ staff_member.get_role_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Email</small>
+                            <span class="small">
+                                <i class="fas fa-envelope me-1"></i>{{ staff_member.email }}
+                            </span>
+                        </div>
+                        
+                        {% if staff_member.phone_number %}
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Phone</small>
+                            <span class="small">
+                                <i class="fas fa-phone me-1"></i>{{ staff_member.phone_number }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>Joined {{ staff_member.date_joined|date:"M Y" }}
+                            </small>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-success btn-sm" 
+                                        onclick="viewStaffDetails('{{ staff_member.id }}', '{{ staff_member.get_full_name }}', '{{ staff_member.get_role_display }}', '{{ staff_member.email }}', '{{ staff_member.phone_number|default:"" }}', '{{ staff_member.date_joined|date:"F d, Y" }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% if staff_member.email %}
+                                <a href="mailto:{{ staff_member.email }}" class="btn btn-outline-primary btn-sm" title="Send Email">
+                                    <i class="fas fa-envelope"></i>
+                                </a>
+                                {% endif %}
+                                {% if staff_member.phone_number %}
+                                <a href="tel:{{ staff_member.phone_number }}" class="btn btn-outline-info btn-sm" title="Call">
+                                    <i class="fas fa-phone"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-user-tie fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No staff members found</h5>
+                    {% if search_query or role_filter %}
+                        <p class="text-muted">Try adjusting your search criteria</p>
+                        <a href="{% url 'users:staff_directory_receptionist' %}" class="btn btn-outline-success">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    {% else %}
+                        <p class="text-muted">No staff members have been registered yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Staff Details Modal -->
+<div class="modal fade" id="staffDetailsModal" tabindex="-1" aria-labelledby="staffDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staffDetailsModalLabel">
+                    <i class="fas fa-user-tie me-2"></i>Staff Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="staffDetailsContent">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function viewStaffDetails(id, name, role, email, phone, joinDate) {
+        const content = `
+            <div class="row g-3">
+                <div class="col-12">
+                    <h6 class="text-success">${name}</h6>
+                    <hr>
+                </div>
+                <div class="col-12">
+                    <strong>Role:</strong><br>
+                    <span class="badge bg-success">${role}</span>
+                </div>
+                <div class="col-12">
+                    <strong>Email:</strong><br>
+                    <span class="text-muted">
+                        <i class="fas fa-envelope me-1"></i>
+                        <a href="mailto:${email}">${email}</a>
+                    </span>
+                </div>
+                ${phone ? `
+                <div class="col-12">
+                    <strong>Phone:</strong><br>
+                    <span class="text-muted">
+                        <i class="fas fa-phone me-1"></i>
+                        <a href="tel:${phone}">${phone}</a>
+                    </span>
+                </div>
+                ` : ''}
+                <div class="col-12">
+                    <strong>Join Date:</strong><br>
+                    <span class="text-muted"><i class="fas fa-calendar me-1"></i>${joinDate}</span>
+                </div>
+                <div class="col-12">
+                    <strong>Status:</strong><br>
+                    <span class="badge bg-success">Active</span>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('staffDetailsContent').innerHTML = content;
+        new bootstrap.Modal(document.getElementById('staffDetailsModal')).show();
+    }
+    
+    // Auto-submit form on role change
+    document.getElementById('role').addEventListener('change', function() {
+        this.form.submit();
+    });
+</script>
+{% endblock %}

@@ -34,7 +34,7 @@ def warm_cache():
     # This can be called during deployment or maintenance
     from .models import SiteSettings
     from users.models import SchoolSettings
-    
+
     # Pre-load settings
     site_settings = SiteSettings.objects.first()
     school_settings = SchoolSettings.objects.first()

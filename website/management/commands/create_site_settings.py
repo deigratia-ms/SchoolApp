@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
 from website.models import SiteSettings
-from users.models import SchoolSettings
+from users.models import SiteSettings
 import os
 
 
@@ -9,12 +9,12 @@ class Command(BaseCommand):
     help = 'Create default site settings with school logo'
 
     def handle(self, *args, **options):
-        # Get or create SchoolSettings (use first if multiple exist)
-        school_settings = SchoolSettings.objects.first()
+        # Get or create SiteSettings (use first if multiple exist)
+        school_settings = SiteSettings.objects.first()
         created = False
 
         if not school_settings:
-            school_settings = SchoolSettings.objects.create(
+            school_settings = SiteSettings.objects.create(
                 school_name='Deigratia Montessori School',
                 address='Accra, Ghana',
                 phone='+233 123 456 789',
@@ -30,11 +30,11 @@ class Command(BaseCommand):
         
         if created:
             self.stdout.write(
-                self.style.SUCCESS('Created SchoolSettings')
+                self.style.SUCCESS('Created SiteSettings')
             )
         else:
             self.stdout.write(
-                self.style.SUCCESS('SchoolSettings already exists')
+                self.style.SUCCESS('SiteSettings already exists')
             )
         
         # Get or create SiteSettings (use first if multiple exist)
@@ -69,24 +69,24 @@ class Command(BaseCommand):
                 self.style.SUCCESS('Created SiteSettings')
             )
 
-            # Set school logo from SchoolSettings if available
-            if school_settings.logo:
-                site_settings.school_logo = school_settings.logo
+            # Set school logo from SiteSettings if available
+            if school_settings.school_logo:
+                site_settings.school_logo = school_settings.school_logo
                 site_settings.save()
                 self.stdout.write(
-                    self.style.SUCCESS('Set school logo in SiteSettings from SchoolSettings')
+                    self.style.SUCCESS('Set school logo in SiteSettings from SiteSettings')
                 )
         else:
             self.stdout.write(
                 self.style.SUCCESS('SiteSettings already exists')
             )
 
-            # Update school logo if SchoolSettings has one but SiteSettings doesn't
-            if school_settings.logo and not site_settings.school_logo:
-                site_settings.school_logo = school_settings.logo
+            # Update school logo if SiteSettings has one but SiteSettings doesn't
+            if school_settings.school_logo and not site_settings.school_logo:
+                site_settings.school_logo = school_settings.school_logo
                 site_settings.save()
                 self.stdout.write(
-                    self.style.SUCCESS('Updated school logo in SiteSettings from SchoolSettings')
+                    self.style.SUCCESS('Updated school logo in SiteSettings from SiteSettings')
                 )
         
         # Clear cache to ensure new settings are loaded

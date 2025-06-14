@@ -8,6 +8,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Set school name to Deigratia Montessory School
+        from users.models import SchoolSettings
+
         school_settings = SchoolSettings.objects.first()
         if school_settings:
             if school_settings.school_name != "Deigratia Montessory School":

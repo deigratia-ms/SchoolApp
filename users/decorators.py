@@ -387,3 +387,60 @@ def can_view_child_data(view_func):
             return redirect('dashboard:dashboard')
     
     return wrapper
+
+
+# Function-based decorators for use with user_passes_test
+def is_admin(user):
+    """
+    Function to check if user is an admin.
+    For use with @user_passes_test(is_admin)
+    """
+    return user.is_authenticated and user.role == 'ADMIN'
+
+
+def is_teacher(user):
+    """
+    Function to check if user is a teacher.
+    For use with @user_passes_test(is_teacher)
+    """
+    return user.is_authenticated and user.role == 'TEACHER'
+
+
+def is_student(user):
+    """
+    Function to check if user is a student.
+    For use with @user_passes_test(is_student)
+    """
+    return user.is_authenticated and user.role == 'STUDENT'
+
+
+def is_parent(user):
+    """
+    Function to check if user is a parent.
+    For use with @user_passes_test(is_parent)
+    """
+    return user.is_authenticated and user.role == 'PARENT'
+
+
+def is_receptionist(user):
+    """
+    Function to check if user is a receptionist.
+    For use with @user_passes_test(is_receptionist)
+    """
+    return user.is_authenticated and user.role == 'RECEPTIONIST'
+
+
+def is_admin_or_teacher(user):
+    """
+    Function to check if user is an admin or teacher.
+    For use with @user_passes_test(is_admin_or_teacher)
+    """
+    return user.is_authenticated and user.role in ['ADMIN', 'TEACHER']
+
+
+def is_admin_or_accountant(user):
+    """
+    Function to check if user is an admin or accountant.
+    For use with @user_passes_test(is_admin_or_accountant)
+    """
+    return user.is_authenticated and user.role in ['ADMIN', 'ACCOUNTANT']

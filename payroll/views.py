@@ -1190,9 +1190,9 @@ def bulk_generate_payslips(request, payrolls):
             # School logo and header
             if school_settings:
                 # Add school logo if available
-                if school_settings.logo and hasattr(school_settings.logo, 'url'):
+                if school_settings.school_logo and hasattr(school_settings.school_logo, 'url'):
                     try:
-                        logo_path = school_settings.logo.path
+                        logo_path = school_settings.school_logo.path
                         img = Image(logo_path, width=2*inch, height=1*inch)
                         img.hAlign = 'CENTER'
                         elements.append(img)
@@ -1206,8 +1206,8 @@ def bulk_generate_payslips(request, payrolls):
                     elements.append(Paragraph(f'<b>{school_settings.school_name}</b>', styles['Center']))
                     if school_settings.address:
                         elements.append(Paragraph(school_settings.address, styles['Center']))
-                    if school_settings.phone or school_settings.email:
-                        elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
+                    if school_settings.contact_phone or school_settings.contact_email:
+                        elements.append(Paragraph(f'Tel: {school_settings.contact_phone} | Email: {school_settings.contact_email}', styles['Center']))
             else:
                 elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 
@@ -1530,9 +1530,9 @@ def generate_payslip(request, payroll_id):
             # School logo and header
             if school_settings:
                 # Add school logo if available
-                if school_settings.logo and hasattr(school_settings.logo, 'url'):
+                if school_settings.school_logo and hasattr(school_settings.school_logo, 'url'):
                     try:
-                        logo_path = school_settings.logo.path
+                        logo_path = school_settings.school_logo.path
                         img = Image(logo_path, width=2*inch, height=1*inch)
                         img.hAlign = 'CENTER'
                         elements.append(img)
@@ -1546,8 +1546,8 @@ def generate_payslip(request, payroll_id):
                     elements.append(Paragraph(f'<b>{school_settings.school_name}</b>', styles['Center']))
                     if school_settings.address:
                         elements.append(Paragraph(school_settings.address, styles['Center']))
-                    if school_settings.phone or school_settings.email:
-                        elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
+                    if school_settings.contact_phone or school_settings.contact_email:
+                        elements.append(Paragraph(f'Tel: {school_settings.contact_phone} | Email: {school_settings.contact_email}', styles['Center']))
             else:
                 elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 
@@ -1750,9 +1750,9 @@ def download_payslip(request, payslip_id):
             # School logo and header
             if school_settings:
                 # Add school logo if available
-                if school_settings.logo and hasattr(school_settings.logo, 'url'):
+                if school_settings.school_logo and hasattr(school_settings.school_logo, 'url'):
                     try:
-                        logo_path = school_settings.logo.path
+                        logo_path = school_settings.school_logo.path
                         img = Image(logo_path, width=2*inch, height=1*inch)
                         img.hAlign = 'CENTER'
                         elements.append(img)
@@ -1766,8 +1766,8 @@ def download_payslip(request, payslip_id):
                     elements.append(Paragraph(f'<b>{school_settings.school_name}</b>', styles['Center']))
                     if school_settings.address:
                         elements.append(Paragraph(school_settings.address, styles['Center']))
-                    if school_settings.phone or school_settings.email:
-                        elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
+                    if school_settings.contact_phone or school_settings.contact_email:
+                        elements.append(Paragraph(f'Tel: {school_settings.contact_phone} | Email: {school_settings.contact_email}', styles['Center']))
             else:
                 elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 
@@ -1949,9 +1949,9 @@ def email_payslip(request, payslip_id):
             # School logo and header
             if school_settings:
                 # Add school logo if available
-                if school_settings.logo and hasattr(school_settings.logo, 'url'):
+                if school_settings.school_logo and hasattr(school_settings.school_logo, 'url'):
                     try:
-                        logo_path = school_settings.logo.path
+                        logo_path = school_settings.school_logo.path
                         img = Image(logo_path, width=2*inch, height=1*inch)
                         img.hAlign = 'CENTER'
                         elements.append(img)
@@ -1965,8 +1965,8 @@ def email_payslip(request, payslip_id):
                     elements.append(Paragraph(f'<b>{school_settings.school_name}</b>', styles['Center']))
                     if school_settings.address:
                         elements.append(Paragraph(school_settings.address, styles['Center']))
-                    if school_settings.phone or school_settings.email:
-                        elements.append(Paragraph(f'Tel: {school_settings.phone} | Email: {school_settings.email}', styles['Center']))
+                    if school_settings.contact_phone or school_settings.contact_email:
+                        elements.append(Paragraph(f'Tel: {school_settings.contact_phone} | Email: {school_settings.contact_email}', styles['Center']))
             else:
                 elements.append(Paragraph('<b>Deigratia Montessori School</b>', styles['Center']))
 

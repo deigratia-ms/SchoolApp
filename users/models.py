@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from website.storage import get_cloudinary_storage
 
 class CustomUserManager(BaseUserManager):
     """
@@ -68,7 +69,7 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=15, choices=Role.choices, default=Role.STUDENT)
     is_verified = models.BooleanField(default=True)  # All users are verified by default
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', storage=get_cloudinary_storage, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -175,6 +176,16 @@ class Teacher(models.Model):
     department = models.CharField(max_length=100, blank=True, null=True)
     qualification = models.CharField(max_length=255, blank=True, null=True)
 
+    # Document upload fields (optional)
+    resume_cv = models.FileField(upload_to='teacher_documents/resumes/', blank=True, null=True, help_text="Upload resume/CV (PDF, DOC, DOCX)")
+    teaching_certificate = models.FileField(upload_to='teacher_documents/certificates/', blank=True, null=True, help_text="Upload teaching certificate (PDF, JPG, PNG)")
+    degree_certificates = models.FileField(upload_to='teacher_documents/degrees/', blank=True, null=True, help_text="Upload degree certificates (PDF, JPG, PNG)")
+    professional_development = models.FileField(upload_to='teacher_documents/professional_dev/', blank=True, null=True, help_text="Upload professional development certificates (PDF, JPG, PNG)")
+    background_check = models.FileField(upload_to='teacher_documents/background_checks/', blank=True, null=True, help_text="Upload background check documents (PDF)")
+    references = models.FileField(upload_to='teacher_documents/references/', blank=True, null=True, help_text="Upload reference letters (PDF, DOC, DOCX)")
+    other_documents = models.FileField(upload_to='teacher_documents/other/', blank=True, null=True, help_text="Upload other relevant documents (PDF, JPG, PNG)")
+    documents_notes = models.TextField(blank=True, null=True, help_text="Additional notes about uploaded documents")
+
     def __str__(self):
         return f"Teacher: {self.user.get_full_name() or self.user.email}"
 
@@ -202,6 +213,15 @@ class Student(models.Model):
     section = models.CharField(max_length=10, null=True, blank=True)
     additional_info = models.JSONField(blank=True, null=True)  # For storing address and other extra info
     chat_enabled = models.BooleanField(default=True, help_text="If disabled, student cannot send or receive messages (parental control)")
+
+    # Document upload fields (optional)
+    birth_certificate = models.FileField(upload_to='student_documents/birth_certificates/', blank=True, null=True, help_text="Upload birth certificate (PDF, JPG, PNG)")
+    medical_records = models.FileField(upload_to='student_documents/medical_records/', blank=True, null=True, help_text="Upload medical records (PDF, JPG, PNG)")
+    previous_school_records = models.FileField(upload_to='student_documents/school_records/', blank=True, null=True, help_text="Upload previous school records (PDF, JPG, PNG)")
+    immunization_records = models.FileField(upload_to='student_documents/immunization/', blank=True, null=True, help_text="Upload immunization records (PDF, JPG, PNG)")
+    emergency_contact_form = models.FileField(upload_to='student_documents/emergency_contacts/', blank=True, null=True, help_text="Upload emergency contact form (PDF, JPG, PNG)")
+    other_documents = models.FileField(upload_to='student_documents/other/', blank=True, null=True, help_text="Upload other relevant documents (PDF, JPG, PNG)")
+    documents_notes = models.TextField(blank=True, null=True, help_text="Additional notes about uploaded documents")
 
     # Fields for managing promotion, repetition, and completion
     status = models.CharField(
@@ -297,6 +317,17 @@ class StaffMember(models.Model):
     supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
     responsibilities = models.TextField(blank=True, null=True)
 
+    # Document upload fields (optional)
+    resume_cv = models.FileField(upload_to='staff_documents/resumes/', blank=True, null=True, help_text="Upload resume/CV (PDF, DOC, DOCX)")
+    job_application = models.FileField(upload_to='staff_documents/applications/', blank=True, null=True, help_text="Upload job application (PDF, DOC, DOCX)")
+    certificates = models.FileField(upload_to='staff_documents/certificates/', blank=True, null=True, help_text="Upload relevant certificates (PDF, JPG, PNG)")
+    training_records = models.FileField(upload_to='staff_documents/training/', blank=True, null=True, help_text="Upload training records (PDF, JPG, PNG)")
+    background_check = models.FileField(upload_to='staff_documents/background_checks/', blank=True, null=True, help_text="Upload background check documents (PDF)")
+    references = models.FileField(upload_to='staff_documents/references/', blank=True, null=True, help_text="Upload reference letters (PDF, DOC, DOCX)")
+    contract_documents = models.FileField(upload_to='staff_documents/contracts/', blank=True, null=True, help_text="Upload contract documents (PDF)")
+    other_documents = models.FileField(upload_to='staff_documents/other/', blank=True, null=True, help_text="Upload other relevant documents (PDF, JPG, PNG)")
+    documents_notes = models.TextField(blank=True, null=True, help_text="Additional notes about uploaded documents")
+
     def __str__(self):
         return f"{self.user.get_role_display()}: {self.user.get_full_name() or self.user.email}"
 
@@ -315,7 +346,7 @@ class SchoolSettings(models.Model):
     Model to store school-wide settings like name, logo, etc.
     """
     school_name = models.CharField(max_length=255, default='Deigratia Montessori School')
-    logo = models.ImageField(upload_to='school_logo/', blank=True, null=True)
+    logo = models.ImageField(upload_to='school_logo/', storage=get_cloudinary_storage, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
@@ -364,7 +395,7 @@ class IDCardTemplate(models.Model):
 
     name = models.CharField(max_length=100)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-    background_image = models.ImageField(upload_to='id_card_templates/', blank=True, null=True)
+    background_image = models.ImageField(upload_to='id_card_templates/', storage=get_cloudinary_storage, blank=True, null=True)
     header_text = models.CharField(max_length=255, default="School ID Card")
     card_width = models.PositiveIntegerField(default=1013)  # Width in pixels (CR80 landscape)
     card_height = models.PositiveIntegerField(default=638)  # Height in pixels (CR80 landscape)
@@ -416,7 +447,7 @@ class AdmissionLetterTemplate(models.Model):
     header_text = models.CharField(max_length=255, default="Admission Letter")
     body_template = models.TextField(help_text="Use placeholders like {student_name}, {grade}, etc.")
     footer_text = models.TextField(blank=True, null=True)
-    signature_image = models.ImageField(upload_to='signatures/', blank=True, null=True)
+    signature_image = models.ImageField(upload_to='signatures/', storage=get_cloudinary_storage, blank=True, null=True)
     signatory_name = models.CharField(max_length=100, blank=True, null=True)
     signatory_position = models.CharField(max_length=100, blank=True, null=True)
     is_active = models.BooleanField(default=True)

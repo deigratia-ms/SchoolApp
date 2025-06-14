@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
-from website.models import SiteSettings
 from users.models import SchoolSettings
+from users.models import
 
 
 class Command(BaseCommand):
@@ -9,13 +9,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("=== SITE SETTINGS CHECK ===")
         
-        # Check SiteSettings
-        site_settings = SiteSettings.objects.first()
+        # Check SchoolSettings
+        site_settings = SchoolSettings.objects.first()
         if site_settings:
-            self.stdout.write(self.style.SUCCESS("✅ SiteSettings found"))
-            if site_settings.school_logo:
-                self.stdout.write(f"   School Logo: {site_settings.school_logo.url}")
-                self.stdout.write(f"   Logo Path: {site_settings.school_logo.path}")
+            self.stdout.write(self.style.SUCCESS("✅ SchoolSettings found"))
+            if site_settings.logo:
+                self.stdout.write(f"   School Logo: {site_settings.logo.url}")
+                self.stdout.write(f"   Logo Path: {site_settings.logo.path}")
             else:
                 self.stdout.write(self.style.WARNING("   ⚠️  No school logo uploaded"))
                 
@@ -24,9 +24,11 @@ class Command(BaseCommand):
             else:
                 self.stdout.write("   No favicon uploaded")
         else:
-            self.stdout.write(self.style.ERROR("❌ No SiteSettings found"))
+            self.stdout.write(self.style.ERROR("❌ No SchoolSettings found"))
             
         # Check SchoolSettings
+        from users.models import SchoolSettings
+
         school_settings = SchoolSettings.objects.first()
         if school_settings:
             self.stdout.write(self.style.SUCCESS("✅ SchoolSettings found"))
@@ -53,8 +55,8 @@ class Command(BaseCommand):
             
         self.stdout.write("\n=== RECOMMENDATIONS ===")
         if not site_settings:
-            self.stdout.write("1. Create SiteSettings in Django Admin")
-        if not (site_settings and site_settings.school_logo) and not (school_settings and school_settings.logo):
+            self.stdout.write("1. Create SchoolSettings in Django Admin")
+        if not (site_settings and site_settings.logo) and not (school_settings and school_settings.logo):
             self.stdout.write("2. Upload a school logo")
         if not hero_slides.exists():
             self.stdout.write("3. Create hero slides for the homepage")

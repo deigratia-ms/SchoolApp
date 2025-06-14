@@ -372,7 +372,19 @@ def manage_settings(request):
     """
     # Get or create settings
     settings, created = AppointmentSettings.objects.get_or_create(
-        defaults={'school_name': 'School Appointment System'}
+        defaults={
+            'school_name': 'Deigratia Montessori School',
+            'excluded_days': [5, 6],  # Saturday and Sunday
+            'appointment_duration': 30,
+            'day_start_time': '09:00',
+            'day_end_time': '15:00',
+            'excluded_hours': [],
+            'days_to_generate': 14,
+            'auto_confirm_appointments': False,
+            'default_appointment_purpose': 'Termly One-on-One Appointment',
+            'reminder_days': 1,
+            'system_active': True,
+        }
     )
 
     # Create form

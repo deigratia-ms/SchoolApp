@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import F
 from django.core.management import call_command
 
-from users.models import Student, SchoolSettings
+from users.models import Student
 from courses.models import ClassRoom, ClassSubject
 from assignments.models import ReportCard
 

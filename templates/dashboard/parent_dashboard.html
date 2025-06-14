@@ -589,6 +589,116 @@ Management System{% endblock %} {% block content %}
   </div>
   {% endif %}
 
+  <!-- Appointment and Document Management -->
+  <div class="row mb-4">
+    <!-- Recent Appointments -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-calendar-check me-2"></i>Recent Appointments
+          </h5>
+          <a href="{% url 'dashboard:parent_appointments' %}" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+          {% if recent_appointments %}
+            {% for appointment in recent_appointments %}
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+              <div>
+                <div class="fw-bold">{{ appointment.time_slot.date|date:"M d, Y" }}</div>
+                <small class="text-muted">{{ appointment.time_slot.start_time|time:"g:i A" }} - {{ appointment.time_slot.end_time|time:"g:i A" }}</small>
+                <div class="small text-muted mt-1">{{ appointment.purpose|truncatewords:8 }}</div>
+              </div>
+              <span class="badge bg-success">{{ appointment.get_status_display }}</span>
+            </div>
+            {% endfor %}
+            <div class="text-center">
+              <a href="{% url 'dashboard:parent_request_appointment' %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Request New
+              </a>
+            </div>
+          {% else %}
+            <div class="text-center py-3">
+              <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+              <p class="text-muted mb-2">No recent appointments</p>
+              <a href="{% url 'dashboard:parent_request_appointment' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Request Appointment
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending Requests & Documents -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-clock me-2"></i>Pending Requests & Documents
+          </h5>
+          <a href="{% url 'dashboard:parent_appointment_requests' %}" class="btn btn-sm btn-warning">View All</a>
+        </div>
+        <div class="card-body">
+          {% if pending_requests %}
+            <h6 class="text-warning mb-2">Appointment Requests</h6>
+            {% for request in pending_requests %}
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+              <div>
+                <div class="fw-bold">{{ request.requested_date|date:"M d, Y" }}</div>
+                <small class="text-muted">{{ request.requested_start_time|time:"g:i A" }} - {{ request.requested_end_time|time:"g:i A" }}</small>
+              </div>
+              <span class="badge bg-warning">{{ request.get_status_display }}</span>
+            </div>
+            {% endfor %}
+          {% endif %}
+
+          {% if children_documents or parent_documents %}
+            <h6 class="text-info mb-2 mt-3">Recent Documents</h6>
+            {% for document in children_documents|slice:":3" %}
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+              <div>
+                <div class="fw-bold">{{ document.title|truncatewords:4 }}</div>
+                <small class="text-muted">For: {{ document.student.user.get_full_name }}</small>
+              </div>
+              <span class="badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %}">
+                {{ document.get_status_display }}
+              </span>
+            </div>
+            {% endfor %}
+            {% for document in parent_documents|slice:":2" %}
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+              <div>
+                <div class="fw-bold">{{ document.title|truncatewords:4 }}</div>
+                <small class="text-muted">Personal Document</small>
+              </div>
+              <span class="badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %}">
+                {{ document.get_status_display }}
+              </span>
+            </div>
+            {% endfor %}
+            <div class="text-center mt-2">
+              <a href="{% url 'dashboard:parent_documents' %}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-eye me-1"></i>View All
+              </a>
+              <a href="{% url 'dashboard:parent_upload_document' %}" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-upload me-1"></i>Upload
+              </a>
+            </div>
+          {% else %}
+            <div class="text-center py-3">
+              <i class="fas fa-file-upload fa-2x text-muted mb-2"></i>
+              <p class="text-muted mb-2">No documents uploaded yet</p>
+              <a href="{% url 'dashboard:parent_upload_document' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-upload me-1"></i>Upload Document
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Recent Announcements and Events -->
   <div class="row">
     <div class="col-md-6 mb-4">

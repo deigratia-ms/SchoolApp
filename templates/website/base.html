@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <meta name="description" content="Deigratia Montessori School - Nurturing Excellence Through Montessori Education">
+    {% include 'website/seo_meta.html' %}
     <title>{% block title %}Deigratia Montessori School{% endblock %}</title>
 
     <!-- Favicon -->
@@ -478,6 +476,9 @@
                                 <li><a class="dropdown-item" href="{% url 'users:teacher_login' %}" target="_blank">
                                     <i class="fas fa-chalkboard-teacher me-2"></i>Teacher
                                 </a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:login' %}" target="_blank">
+                                    <i class="fas fa-user-cog me-2"></i>Other
+                                </a></li>
                             </ul>
                         </div>
                     {% endif %}
@@ -616,6 +617,9 @@
                                     </a></li>
                                     <li><a class="dropdown-item" href="{% url 'users:teacher_login' %}" target="_blank">
                                         <i class="fas fa-chalkboard-teacher me-2"></i>Teacher
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'users:login' %}" target="_blank">
+                                        <i class="fas fa-user-cog me-2"></i>Other
                                     </a></li>
                                 </ul>
                             </div>

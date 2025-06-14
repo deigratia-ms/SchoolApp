@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Payment History - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+    
+    .payment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .search-card {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+    
+    .payment-method-cash {
+        background-color: #28a745;
+    }
+    
+    .payment-method-bank {
+        background-color: #007bff;
+    }
+    
+    .payment-method-mobile {
+        background-color: #6f42c1;
+    }
+    
+    .payment-method-cheque {
+        background-color: #fd7e14;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:receptionist_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Payment History</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-receipt me-2 text-success"></i>Payment History
+            </h2>
+            <p class="text-muted mb-0">View all student fee payments and receipts</p>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">₵{{ total_amount|floatformat:2|intcomma }}</h3>
+                        <p class="mb-0 opacity-75">Total Payments</p>
+                    </div>
+                    <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #007bff, #0056b3);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ payments.paginator.count|default:0 }}</h3>
+                        <p class="mb-0 opacity-75">Total Transactions</p>
+                    </div>
+                    <i class="fas fa-receipt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #6f42c1, #5a32a3);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ payments.paginator.count|default:0 }}</h3>
+                        <p class="mb-0 opacity-75">Receipts Issued</p>
+                    </div>
+                    <i class="fas fa-file-invoice fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card search-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Student name or receipt number">
+                </div>
+                <div class="col-md-2">
+                    <label for="term" class="form-label">Term</label>
+                    <select class="form-select" id="term" name="term">
+                        <option value="">All Terms</option>
+                        {% for term in terms %}
+                        <option value="{{ term.id }}" {% if term.id|stringformat:"s" == selected_term %}selected{% endif %}>
+                            {{ term.name }} ({{ term.academic_year }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="fee_category" class="form-label">Fee Type</label>
+                    <select class="form-select" id="fee_category" name="fee_category">
+                        <option value="">All Types</option>
+                        {% for category in fee_categories %}
+                        <option value="{{ category.id }}" {% if category.id|stringformat:"s" == selected_category %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="payment_method" class="form-label">Payment Method</label>
+                    <select class="form-select" id="payment_method" name="payment_method">
+                        <option value="">All Methods</option>
+                        <option value="cash" {% if selected_payment_method == 'cash' %}selected{% endif %}>Cash</option>
+                        <option value="bank_transfer" {% if selected_payment_method == 'bank_transfer' %}selected{% endif %}>Bank Transfer</option>
+                        <option value="mobile_money" {% if selected_payment_method == 'mobile_money' %}selected{% endif %}>Mobile Money</option>
+                        <option value="cheque" {% if selected_payment_method == 'cheque' %}selected{% endif %}>Cheque</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label">Date Range</label>
+                    <select class="form-select" id="date_range" name="date_range">
+                        <option value="">All Time</option>
+                        <option value="today" {% if selected_date_range == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week" {% if selected_date_range == 'week' %}selected{% endif %}>This Week</option>
+                        <option value="month" {% if selected_date_range == 'month' %}selected{% endif %}>This Month</option>
+                        <option value="custom" {% if selected_date_range == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Custom Date Range -->
+            {% if selected_date_range == 'custom' %}
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payment History List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Payment History
+                {% if payments %}
+                    <span class="badge bg-success ms-2">{{ payments.paginator.count }} total</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if payments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Student</th>
+                                <th>Fee Type</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Receipt</th>
+                                <th>Received By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ payment.created_at|date:"M d, Y" }}</div>
+                                    <small class="text-muted">{{ payment.created_at|time:"g:i A" }}</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="student-initials me-2" style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #28a745, #1e7e34); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">
+                                            {{ payment.student_fee.student.user.first_name|slice:":1" }}{{ payment.student_fee.student.user.last_name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ payment.student_fee.student.user.get_full_name }}</div>
+                                            <small class="text-muted">{{ payment.student_fee.student.student_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ payment.student_fee.class_fee.fee_category.name }}</td>
+                                <td>
+                                    <span class="fw-bold text-success">₵{{ payment.amount|floatformat:2|intcomma }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge payment-method-{{ payment.payment_method }}">
+                                        {% if payment.payment_method == 'cash' %}
+                                            <i class="fas fa-money-bill-wave me-1"></i>Cash
+                                        {% elif payment.payment_method == 'bank_transfer' %}
+                                            <i class="fas fa-university me-1"></i>Bank Transfer
+                                        {% elif payment.payment_method == 'mobile_money' %}
+                                            <i class="fas fa-mobile-alt me-1"></i>Mobile Money
+                                        {% elif payment.payment_method == 'cheque' %}
+                                            <i class="fas fa-money-check me-1"></i>Cheque
+                                        {% else %}
+                                            {{ payment.get_payment_method_display }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if payment.receipt %}
+                                        <div class="fw-bold">{{ payment.receipt.receipt_number }}</div>
+                                        <small class="text-muted">{{ payment.receipt.created_at|date:"M d, Y" }}</small>
+                                    {% else %}
+                                        <span class="text-muted">No receipt</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.received_by %}
+                                        <div class="fw-bold">{{ payment.received_by.get_full_name }}</div>
+                                        <small class="text-muted">{{ payment.received_by.get_role_display }}</small>
+                                    {% else %}
+                                        <span class="text-muted">System</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if payments.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if payments.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ payments.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_payment_method %}&payment_method={{ selected_payment_method }}{% endif %}{% if selected_date_range %}&date_range={{ selected_date_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in payments.paginator.page_range %}
+                            {% if payments.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > payments.number|add:'-3' and num < payments.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_payment_method %}&payment_method={{ selected_payment_method }}{% endif %}{% if selected_date_range %}&date_range={{ selected_date_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if payments.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ payments.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_term %}&term={{ selected_term }}{% endif %}{% if selected_category %}&fee_category={{ selected_category }}{% endif %}{% if selected_payment_method %}&payment_method={{ selected_payment_method }}{% endif %}{% if selected_date_range %}&date_range={{ selected_date_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No payments found</h5>
+                    {% if search_query or selected_term or selected_category or selected_payment_method or selected_date_range %}
+                        <p class="text-muted">Try adjusting your search criteria</p>
+                        <a href="{% url 'users:payment_history' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    {% else %}
+                        <p class="text-muted">No payments have been recorded yet</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Show/hide custom date range fields
+    document.getElementById('date_range').addEventListener('change', function() {
+        const customFields = document.querySelector('.row.mt-3');
+        if (this.value === 'custom') {
+            if (!customFields) {
+                // Create custom date fields if they don't exist
+                const form = this.closest('form');
+                const newRow = document.createElement('div');
+                newRow.className = 'row mt-3';
+                newRow.innerHTML = `
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date">
+                    </div>
+                `;
+                form.appendChild(newRow);
+            }
+        }
+    });
+</script>
+{% endblock %}

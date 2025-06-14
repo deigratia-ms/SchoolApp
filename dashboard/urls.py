@@ -13,7 +13,15 @@ urlpatterns = [
     path('student/', views.student_dashboard, name='student_dashboard'),
     path('parent/', views.parent_dashboard, name='parent_dashboard'),
     path('parent/child/<int:child_id>/', views.parent_child_detail, name='parent_child_detail'),
+
+    # Parent appointment and document management
+    path('parent/request-appointment/', views.parent_request_appointment, name='parent_request_appointment'),
+    path('parent/appointment-requests/', views.parent_appointment_requests, name='parent_appointment_requests'),
+    path('parent/appointments/', views.parent_appointments, name='parent_appointments'),
+    path('parent/upload-document/', views.parent_upload_document, name='parent_upload_document'),
+    path('parent/documents/', views.parent_documents, name='parent_documents'),
     path('staff/', views.staff_dashboard, name='staff_dashboard'),
+    path('receptionist/', views.receptionist_dashboard, name='receptionist_dashboard'),
 
     # Dashboard widgets
     path('widgets/', views.manage_widgets, name='manage_widgets'),

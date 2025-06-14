@@ -5,11 +5,23 @@ This file integrates settings from both the DGMS website and School Management S
 
 import os
 from pathlib import Path
-from decouple import config
+from decouple import config, Config, RepositoryEnv
 import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Check for local development environment file first
 BASE_DIR = Path(__file__).resolve().parent.parent
+local_env_file = BASE_DIR / '.env.local'
+
+if local_env_file.exists():
+    # Use local development settings
+    config = Config(RepositoryEnv(str(local_env_file)))
+    print("🔧 Using local development environment (.env.local)")
+else:
+    # Use production settings from .env
+    config = config
+    print("🚀 Using production environment (.env)")
+
+# BASE_DIR is already defined above
 
 
 # Quick-start development settings - unsuitable for production
@@ -55,6 +67,7 @@ INSTALLED_APPS = [
     'fees',
     'payroll',
     'appointments',  # Appointment booking system
+    'documents',  # Document management system
 ]
 
 MIDDLEWARE = [
@@ -101,31 +114,23 @@ WSGI_APPLICATION = 'ricas_school_manager.wsgi.application'
 
 
 # Database Configuration
-# Use SQLite for local development, PostgreSQL for production
-if DEBUG:
-    # Local development - use SQLite
+# Use PostgreSQL from environment variable if available, otherwise SQLite
+DATABASE_URL = config('DATABASE_URL', default='')
+if DATABASE_URL:
+    # Use PostgreSQL (production or local development with .env.local)
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
+    }
+    print(f"🗄️ Using PostgreSQL database")
+else:
+    # Fallback to SQLite for local development without DATABASE_URL
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-else:
-    # Production - use PostgreSQL from environment variable
-    DATABASE_URL = config('DATABASE_URL', default='')
-    if DATABASE_URL:
-        DATABASES = {
-            'default': dj_database_url.parse(DATABASE_URL)
-        }
-    else:
-        # Fallback to SQLite if no DATABASE_URL is provided
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
-        print("Warning: No DATABASE_URL found, using SQLite as fallback")
+    print("🗄️ Using SQLite database (local development)")
 
 
 # Password validation
@@ -172,19 +177,28 @@ try:
     import cloudinary
     import cloudinary.uploader
     import cloudinary.api
+    import cloudinary_storage
     CLOUDINARY_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Cloudinary import error: {e}")
     CLOUDINARY_AVAILABLE = False
 
 # Cloudinary settings - Free tier provides 25GB storage + 25GB bandwidth
+# Set individual variables first (required by cloudinary_storage)
+CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
+CLOUDINARY_API_KEY = config('CLOUDINARY_API_KEY', default='')
+CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET', default='')
+
+# This is the format that cloudinary_storage expects
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
-    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
-    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+    'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+    'API_KEY': CLOUDINARY_API_KEY,
+    'API_SECRET': CLOUDINARY_API_SECRET,
 }
 
-# Configure Cloudinary
+# Configure Cloudinary and Storage
 if CLOUDINARY_AVAILABLE and CLOUDINARY_STORAGE['CLOUD_NAME']:
+    # Configure Cloudinary first
     import cloudinary
     cloudinary.config(
         cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
@@ -193,18 +207,30 @@ if CLOUDINARY_AVAILABLE and CLOUDINARY_STORAGE['CLOUD_NAME']:
         secure=True
     )
 
-# Use Cloudinary for media files in production, local storage in development
-if not DEBUG and CLOUDINARY_AVAILABLE and CLOUDINARY_STORAGE['CLOUD_NAME']:
-    # Production: Use Cloudinary for optimized image delivery
+    # Set storage backend (don't import the class here to avoid initialization issues)
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = f"https://res.cloudinary.com/{CLOUDINARY_STORAGE['CLOUD_NAME']}/"
-    # Log Cloudinary configuration (will be logged later after logging is configured)
+    # Don't set MEDIA_URL when using cloudinary_storage - it handles URLs internally
     CLOUDINARY_CONFIGURED = True
+
+    print(f"✅ Cloudinary storage configured: {CLOUDINARY_STORAGE['CLOUD_NAME']}")
+
+    # Force Django to reload default_storage with our configuration
+    try:
+        from django.core.files import storage
+        # Clear the cached default storage
+        if hasattr(storage, '_default_storage'):
+            delattr(storage, '_default_storage')
+        # Force reload
+        storage.default_storage = storage.DefaultStorage()
+        print(f"✅ Default storage reloaded")
+    except Exception as e:
+        print(f"⚠️ Could not reload default storage: {e}")
 else:
     # Development or fallback: Use local storage
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
     CLOUDINARY_CONFIGURED = False
+    print("Using local storage (Cloudinary not available or not configured)")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

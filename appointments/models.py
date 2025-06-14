@@ -55,8 +55,8 @@ class AppointmentSettings(models.Model):
                 if not isinstance(hour, dict) or 'start' not in hour or 'end' not in hour:
                     raise ValidationError('Each excluded hour must have start and end times')
 
-        # Validate excluded days format
-        if self.excluded_days:
+        # Validate excluded days format (only if excluded_days is not None/empty)
+        if self.excluded_days is not None and self.excluded_days != []:
             if not isinstance(self.excluded_days, list):
                 raise ValidationError('Excluded days must be a list')
             for day in self.excluded_days:
@@ -64,9 +64,10 @@ class AppointmentSettings(models.Model):
                     raise ValidationError('Excluded days must be integers from 0 to 6')
 
     def save(self, *args, **kwargs):
-        self.full_clean()
-        if not self.excluded_days:  # Set default excluded days if none are set
+        # Set default excluded days if none are set (before validation)
+        if not self.excluded_days:
             self.excluded_days = [5, 6]  # Saturday and Sunday
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -179,3 +180,53 @@ class Appointment(models.Model):
                 self.time_slot.is_available = False
                 self.time_slot.save()
             super().save(*args, **kwargs)
+
+
+class AppointmentRequest(models.Model):
+    """
+    Model for parents to request custom appointment dates/times that need approval
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('scheduled', 'Scheduled'),
+    ]
+
+    parent = models.ForeignKey('users.Parent', on_delete=models.CASCADE, related_name='appointment_requests')
+    requested_date = models.DateField()
+    requested_start_time = models.TimeField()
+    requested_end_time = models.TimeField()
+    purpose = models.TextField()
+    reason_for_custom_time = models.TextField(help_text="Why do you need a custom appointment time?")
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_notes = models.TextField(blank=True, null=True, help_text="Admin notes for approval/rejection")
+    reviewed_by = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_appointment_requests')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    # If approved, this links to the created appointment
+    created_appointment = models.OneToOneField('Appointment', on_delete=models.SET_NULL, null=True, blank=True, related_name='from_request')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Appointment Request"
+        verbose_name_plural = "Appointment Requests"
+
+    def __str__(self):
+        return f"{self.parent} - {self.requested_date} {self.requested_start_time} ({self.status})"
+
+    def clean(self):
+        if self.requested_start_time >= self.requested_end_time:
+            raise ValidationError('End time must be after start time')
+
+        # Check if requested date is in the past
+        if self.requested_date < timezone.now().date():
+            raise ValidationError('Cannot request appointments for past dates')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Document Requests - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .request-card {
+        border-left: 4px solid #ffc107;
+        transition: all 0.3s ease;
+    }
+    
+    .request-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        border: none;
+        color: #212529;
+    }
+    
+    .urgency-badge {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    .urgency-high {
+        background-color: #dc3545;
+    }
+    
+    .urgency-normal {
+        background-color: #28a745;
+    }
+    
+    .urgency-low {
+        background-color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-file-alt me-2 text-warning"></i>Document Requests
+                    </h2>
+                    <p class="text-muted mb-0">Process document requests and track status</p>
+                </div>
+                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#newRequestModal">
+                    <i class="fas fa-plus me-2"></i>New Request
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ recent_requests.count }}</h4>
+                            <p class="mb-0">Total Requests</p>
+                        </div>
+                        <i class="fas fa-file-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ document_types|length }}</h4>
+                            <p class="mb-0">Document Types</p>
+                        </div>
+                        <i class="fas fa-certificate fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Requests -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Recent Document Requests
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_requests %}
+                        <div class="row">
+                            {% for request in recent_requests %}
+                            <div class="col-lg-6 mb-3">
+                                <div class="card request-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ request.subject }}</h6>
+                                        <p class="card-text small text-muted">{{ request.content|truncatewords:20 }}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>{{ request.created_at|timesince }} ago
+                                            </small>
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-plus fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No document requests yet</h5>
+                            <p class="text-muted">Start by processing your first document request</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Request Modal -->
+<div class="modal fade" id="newRequestModal" tabindex="-1" aria-labelledby="newRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newRequestModalLabel">
+                    <i class="fas fa-file-plus me-2"></i>New Document Request
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="student_name" class="form-label">Student Name *</label>
+                            <input type="text" class="form-control" id="student_name" name="student_name" required placeholder="Full name of the student">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="document_type" class="form-label">Document Type *</label>
+                            <select class="form-select" id="document_type" name="document_type" required>
+                                <option value="">Select Document Type</option>
+                                {% for doc_type in document_types %}
+                                <option value="{{ doc_type }}">{{ doc_type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="requester_name" class="form-label">Requester Name *</label>
+                            <input type="text" class="form-control" id="requester_name" name="requester_name" required placeholder="Person requesting the document">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="requester_phone" class="form-label">Requester Phone *</label>
+                            <input type="tel" class="form-control" id="requester_phone" name="requester_phone" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="urgency" class="form-label">Urgency Level</label>
+                            <select class="form-select" id="urgency" name="urgency">
+                                <option value="normal">Normal (3-5 days)</option>
+                                <option value="high">High (1-2 days)</option>
+                                <option value="low">Low (1 week)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="relationship" class="form-label">Relationship to Student</label>
+                            <select class="form-select" id="relationship" name="relationship">
+                                <option value="">Select Relationship</option>
+                                <option value="Parent">Parent</option>
+                                <option value="Guardian">Guardian</option>
+                                <option value="Student">Student (Self)</option>
+                                <option value="Sibling">Sibling</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="additional_notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="additional_notes" name="additional_notes" rows="3" placeholder="Any special instructions or requirements..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-2"></i>Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-focus on student name field when modal opens
+    document.getElementById('newRequestModal').addEventListener('shown.bs.modal', function () {
+        document.getElementById('student_name').focus();
+    });
+    
+    // Clear form when modal is hidden
+    document.getElementById('newRequestModal').addEventListener('hidden.bs.modal', function () {
+        this.querySelector('form').reset();
+    });
+    
+    // Handle custom document type
+    document.getElementById('document_type').addEventListener('change', function() {
+        if (this.value === 'Other') {
+            const customType = prompt('Please specify the document type:');
+            if (customType) {
+                const option = new Option(customType, customType, true, true);
+                this.appendChild(option);
+            }
+        }
+    });
+    
+    // Update urgency badge color based on selection
+    document.getElementById('urgency').addEventListener('change', function() {
+        const urgencyLevel = this.value;
+        const badge = document.querySelector('.urgency-badge');
+        if (badge) {
+            badge.className = `badge urgency-badge urgency-${urgencyLevel}`;
+        }
+    });
+</script>
+{% endblock %}
