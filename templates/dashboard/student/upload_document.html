@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Upload Document - Student{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-card {
+        border-radius: 15px;
+        border-left: 4px solid #007bff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .file-drop-zone {
+        border: 2px dashed #007bff;
+        border-radius: 10px;
+        padding: 3rem 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .file-drop-zone:hover {
+        border-color: #0056b3;
+        background: #e3f2fd;
+    }
+    
+    .file-drop-zone.dragover {
+        border-color: #28a745;
+        background: #d4edda;
+    }
+    
+    .category-card {
+        border: 2px solid transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .category-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .category-card.selected {
+        border-color: #007bff;
+        background: #e3f2fd;
+    }
+    
+    .category-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:student_documents' %}">My Documents</a></li>
+            <li class="breadcrumb-item active">Upload Document</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-upload me-2 text-primary"></i>Upload Document
+            </h2>
+            <p class="text-muted mb-0">Upload your documents for review and approval</p>
+        </div>
+        <a href="{% url 'dashboard:student_documents' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Documents
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Upload Form -->
+        <div class="col-lg-8">
+            <div class="card upload-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-upload me-2"></i>Document Upload Form
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        
+                        <!-- Document Category Selection -->
+                        <div class="mb-4">
+                            <label class="form-label">Document Category *</label>
+                            <div class="row g-3">
+                                {% for category in categories %}
+                                <div class="col-md-4">
+                                    <div class="category-card p-3 text-center" onclick="selectCategory('{{ category.id }}', '{{ category.name }}')">
+                                        <input type="radio" name="category" value="{{ category.id }}" class="d-none" required>
+                                        <i class="fas fa-{% if 'Academic' in category.name %}graduation-cap{% elif 'Medical' in category.name %}heartbeat{% elif 'Identity' in category.name %}id-card{% elif 'Financial' in category.name %}money-bill{% else %}file-alt{% endif %} category-icon text-primary"></i>
+                                        <h6 class="mb-1">{{ category.name }}</h6>
+                                        <p class="small text-muted mb-0">{{ category.description|default:"Upload documents for this category" }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Document Details -->
+                        <div class="row mb-4">
+                            <div class="col-12 mb-3">
+                                <label for="title" class="form-label">Document Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       placeholder="Enter a descriptive title for your document" required>
+                                <div class="form-text">Example: "Birth Certificate", "Medical Report", "Previous School Certificate"</div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Description (Optional)</label>
+                                <textarea class="form-control" id="description" name="description" rows="3" 
+                                          placeholder="Add any additional notes about this document..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- File Drop Zone -->
+                        <div class="file-drop-zone mb-4" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5>Drag & Drop File Here</h5>
+                            <p class="text-muted mb-0">or click to browse files</p>
+                            <input type="file" id="fileInput" name="file" class="d-none" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                        </div>
+                        
+                        <!-- File Requirements -->
+                        <div class="alert alert-info mb-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle me-2"></i>File Requirements
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Supported formats: PDF, DOC, DOCX, JPG, PNG</li>
+                                <li>Maximum file size: 10MB</li>
+                                <li>Ensure documents are clear and readable</li>
+                                <li>Personal information should be visible</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'dashboard:student_documents' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-upload me-2"></i>Upload Document
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Guidelines -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Upload Guidelines
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-primary">Document Categories</h6>
+                        <ul class="small">
+                            <li><strong>Academic:</strong> Certificates, transcripts, report cards</li>
+                            <li><strong>Medical:</strong> Health records, vaccination certificates</li>
+                            <li><strong>Identity:</strong> Birth certificate, passport, ID cards</li>
+                            <li><strong>Financial:</strong> Fee receipts, scholarship documents</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">Review Process</h6>
+                        <div class="small">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-secondary me-2">1</span>
+                                <span>Document uploaded</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning me-2">2</span>
+                                <span>Under review by admin</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2">3</span>
+                                <span>Approved and processed</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning small">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Only upload documents that belong to you. Uploading false or fraudulent documents may result in disciplinary action.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Uploads -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Uploads
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_documents %}
+                        {% for document in recent_documents %}
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-file-alt text-muted me-3"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">{{ document.title|truncatechars:25 }}</div>
+                                <div class="text-muted small">{{ document.created_at|timesince }} ago</div>
+                            </div>
+                            <span class="badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %}">
+                                {{ document.get_status_display }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted small mb-0">No recent uploads</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Category selection
+function selectCategory(categoryId, categoryName) {
+    // Remove previous selections
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Select current category
+    event.currentTarget.classList.add('selected');
+    event.currentTarget.querySelector('input[type="radio"]').checked = true;
+    
+    // Update title placeholder
+    const titleInput = document.getElementById('title');
+    titleInput.placeholder = `Enter title for ${categoryName} document`;
+}
+
+// File drop zone functionality
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        updateDropZoneText(files[0].name);
+    }
+});
+
+fileInput.addEventListener('change', function() {
+    if (this.files.length > 0) {
+        updateDropZoneText(this.files[0].name);
+    }
+});
+
+function updateDropZoneText(fileName) {
+    dropZone.innerHTML = `
+        <i class="fas fa-file fa-3x text-success mb-3"></i>
+        <h5>File Selected</h5>
+        <p class="text-muted mb-0">${fileName}</p>
+    `;
+}
+
+// Form validation
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const category = document.querySelector('input[name="category"]:checked');
+    const title = document.getElementById('title').value.trim();
+    const file = document.getElementById('fileInput').files[0];
+    
+    if (!category) {
+        e.preventDefault();
+        alert('Please select a document category.');
+        return;
+    }
+    
+    if (!title) {
+        e.preventDefault();
+        alert('Please enter a document title.');
+        return;
+    }
+    
+    if (!file) {
+        e.preventDefault();
+        alert('Please select a file to upload.');
+        return;
+    }
+    
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+        e.preventDefault();
+        alert('File size must be less than 10MB.');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

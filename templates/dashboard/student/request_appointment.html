@@ -1,0 +1,473 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Request Appointment - Student{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-card {
+        border-radius: 15px;
+        border-left: 4px solid #007bff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .appointment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .time-slot-card {
+        border: 2px solid transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+    
+    .time-slot-card:hover {
+        border-color: #007bff;
+        background: #e3f2fd;
+        transform: translateY(-2px);
+    }
+    
+    .time-slot-card.selected {
+        border-color: #007bff;
+        background: #e3f2fd;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.2);
+    }
+    
+    .purpose-card {
+        border: 2px solid transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .purpose-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+    }
+    
+    .purpose-card.selected {
+        border-color: #007bff;
+        background: #e3f2fd;
+    }
+    
+    .purpose-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    
+    .step {
+        display: flex;
+        align-items: center;
+        margin: 0 1rem;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 0.5rem;
+    }
+    
+    .step.active .step-number {
+        background: #007bff;
+        color: white;
+    }
+    
+    .step.completed .step-number {
+        background: #28a745;
+        color: white;
+    }
+    
+    .step-line {
+        width: 50px;
+        height: 2px;
+        background: #e9ecef;
+        margin: 0 1rem;
+    }
+    
+    .step-line.completed {
+        background: #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:student_appointments' %}">My Appointments</a></li>
+            <li class="breadcrumb-item active">Request Appointment</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-calendar-plus me-2 text-primary"></i>Request Appointment
+            </h2>
+            <p class="text-muted mb-0">Schedule a meeting with school administration or counselors</p>
+        </div>
+        <a href="{% url 'dashboard:student_appointments' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Appointments
+        </a>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+        <div class="step active" id="step1">
+            <div class="step-number">1</div>
+            <span>Purpose</span>
+        </div>
+        <div class="step-line" id="line1"></div>
+        <div class="step" id="step2">
+            <div class="step-number">2</div>
+            <span>Date & Time</span>
+        </div>
+        <div class="step-line" id="line2"></div>
+        <div class="step" id="step3">
+            <div class="step-number">3</div>
+            <span>Details</span>
+        </div>
+        <div class="step-line" id="line3"></div>
+        <div class="step" id="step4">
+            <div class="step-number">4</div>
+            <span>Review</span>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card appointment-card">
+                <div class="card-body">
+                    <form method="post" id="appointmentForm">
+                        {% csrf_token %}
+                        
+                        <!-- Step 1: Purpose Selection -->
+                        <div class="step-content" id="step1Content">
+                            <h5 class="mb-4">What is the purpose of your appointment?</h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="purpose-card" onclick="selectPurpose('academic', 'Academic Support')">
+                                        <input type="radio" name="purpose" value="academic" class="d-none" required>
+                                        <i class="fas fa-graduation-cap purpose-icon text-primary"></i>
+                                        <h6>Academic Support</h6>
+                                        <p class="small text-muted mb-0">Discuss grades, assignments, or academic concerns</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="purpose-card" onclick="selectPurpose('counseling', 'Counseling')">
+                                        <input type="radio" name="purpose" value="counseling" class="d-none" required>
+                                        <i class="fas fa-heart purpose-icon text-success"></i>
+                                        <h6>Counseling</h6>
+                                        <p class="small text-muted mb-0">Personal guidance and emotional support</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="purpose-card" onclick="selectPurpose('disciplinary', 'Disciplinary Matter')">
+                                        <input type="radio" name="purpose" value="disciplinary" class="d-none" required>
+                                        <i class="fas fa-exclamation-triangle purpose-icon text-warning"></i>
+                                        <h6>Disciplinary Matter</h6>
+                                        <p class="small text-muted mb-0">Discuss behavioral concerns or incidents</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="purpose-card" onclick="selectPurpose('career', 'Career Guidance')">
+                                        <input type="radio" name="purpose" value="career" class="d-none" required>
+                                        <i class="fas fa-briefcase purpose-icon text-info"></i>
+                                        <h6>Career Guidance</h6>
+                                        <p class="small text-muted mb-0">Future planning and career advice</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="purpose-card" onclick="selectPurpose('health', 'Health Concern')">
+                                        <input type="radio" name="purpose" value="health" class="d-none" required>
+                                        <i class="fas fa-heartbeat purpose-icon text-danger"></i>
+                                        <h6>Health Concern</h6>
+                                        <p class="small text-muted mb-0">Medical or health-related issues</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="purpose-card" onclick="selectPurpose('other', 'Other')">
+                                        <input type="radio" name="purpose" value="other" class="d-none" required>
+                                        <i class="fas fa-question-circle purpose-icon text-secondary"></i>
+                                        <h6>Other</h6>
+                                        <p class="small text-muted mb-0">Any other matter you'd like to discuss</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Date & Time Selection -->
+                        <div class="step-content d-none" id="step2Content">
+                            <h5 class="mb-4">When would you like to meet?</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label for="preferred_date" class="form-label">Preferred Date</label>
+                                    <input type="date" class="form-control" id="preferred_date" name="preferred_date" 
+                                           min="{{ today|date:'Y-m-d' }}" required>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label for="preferred_time" class="form-label">Preferred Time</label>
+                                    <select class="form-select" id="preferred_time" name="preferred_time" required>
+                                        <option value="">Select a time</option>
+                                        <option value="08:00">8:00 AM</option>
+                                        <option value="09:00">9:00 AM</option>
+                                        <option value="10:00">10:00 AM</option>
+                                        <option value="11:00">11:00 AM</option>
+                                        <option value="12:00">12:00 PM</option>
+                                        <option value="13:00">1:00 PM</option>
+                                        <option value="14:00">2:00 PM</option>
+                                        <option value="15:00">3:00 PM</option>
+                                        <option value="16:00">4:00 PM</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Note:</strong> This is a request for your preferred time. The actual appointment time will be confirmed by the administration based on availability.
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Details -->
+                        <div class="step-content d-none" id="step3Content">
+                            <h5 class="mb-4">Provide additional details</h5>
+                            <div class="mb-4">
+                                <label for="description" class="form-label">Description *</label>
+                                <textarea class="form-control" id="description" name="description" rows="4" 
+                                          placeholder="Please provide details about what you'd like to discuss..." required></textarea>
+                                <div class="form-text">Be specific about your concerns or questions to help us prepare for the meeting.</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="urgency" class="form-label">Urgency Level</label>
+                                <select class="form-select" id="urgency" name="urgency">
+                                    <option value="low">Low - Can wait a few days</option>
+                                    <option value="medium" selected>Medium - Within this week</option>
+                                    <option value="high">High - As soon as possible</option>
+                                    <option value="urgent">Urgent - Today if possible</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="parent_notification" name="parent_notification" checked>
+                                <label class="form-check-label" for="parent_notification">
+                                    Notify my parents/guardians about this appointment request
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Review -->
+                        <div class="step-content d-none" id="step4Content">
+                            <h5 class="mb-4">Review your appointment request</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Purpose:</strong> <span id="reviewPurpose">-</span></p>
+                                            <p><strong>Preferred Date:</strong> <span id="reviewDate">-</span></p>
+                                            <p><strong>Preferred Time:</strong> <span id="reviewTime">-</span></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Urgency:</strong> <span id="reviewUrgency">-</span></p>
+                                            <p><strong>Parent Notification:</strong> <span id="reviewParentNotification">-</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <p><strong>Description:</strong></p>
+                                        <p class="text-muted" id="reviewDescription">-</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning mt-4">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Important:</strong> This is a request and not a confirmed appointment. You will receive a notification once your request is reviewed and approved.
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">
+                                <i class="fas fa-arrow-left me-2"></i>Previous
+                            </button>
+                            <div></div>
+                            <button type="button" class="btn btn-primary" id="nextBtn" onclick="changeStep(1)">
+                                Next <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                            <button type="submit" class="btn btn-success d-none" id="submitBtn">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+const totalSteps = 4;
+
+function selectPurpose(value, label) {
+    // Remove previous selections
+    document.querySelectorAll('.purpose-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Select current purpose
+    event.currentTarget.classList.add('selected');
+    event.currentTarget.querySelector('input[type="radio"]').checked = true;
+    
+    // Enable next button
+    document.getElementById('nextBtn').disabled = false;
+}
+
+function changeStep(direction) {
+    const newStep = currentStep + direction;
+    
+    if (newStep < 1 || newStep > totalSteps) return;
+    
+    // Validate current step before proceeding
+    if (direction > 0 && !validateStep(currentStep)) return;
+    
+    // Hide current step
+    document.getElementById(`step${currentStep}Content`).classList.add('d-none');
+    
+    // Update step indicators
+    updateStepIndicators(currentStep, newStep);
+    
+    // Show new step
+    currentStep = newStep;
+    document.getElementById(`step${currentStep}Content`).classList.remove('d-none');
+    
+    // Update buttons
+    updateButtons();
+    
+    // Update review if on step 4
+    if (currentStep === 4) {
+        updateReview();
+    }
+}
+
+function validateStep(step) {
+    switch(step) {
+        case 1:
+            const purpose = document.querySelector('input[name="purpose"]:checked');
+            if (!purpose) {
+                alert('Please select a purpose for your appointment.');
+                return false;
+            }
+            break;
+        case 2:
+            const date = document.getElementById('preferred_date').value;
+            const time = document.getElementById('preferred_time').value;
+            if (!date || !time) {
+                alert('Please select both a preferred date and time.');
+                return false;
+            }
+            break;
+        case 3:
+            const description = document.getElementById('description').value.trim();
+            if (!description) {
+                alert('Please provide a description for your appointment.');
+                return false;
+            }
+            break;
+    }
+    return true;
+}
+
+function updateStepIndicators(oldStep, newStep) {
+    // Mark previous steps as completed
+    for (let i = 1; i < newStep; i++) {
+        document.getElementById(`step${i}`).classList.add('completed');
+        document.getElementById(`step${i}`).classList.remove('active');
+        if (i < newStep - 1) {
+            document.getElementById(`line${i}`).classList.add('completed');
+        }
+    }
+    
+    // Mark current step as active
+    document.getElementById(`step${newStep}`).classList.add('active');
+    document.getElementById(`step${newStep}`).classList.remove('completed');
+    
+    // Remove active from future steps
+    for (let i = newStep + 1; i <= totalSteps; i++) {
+        document.getElementById(`step${i}`).classList.remove('active', 'completed');
+    }
+}
+
+function updateButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
+    
+    if (currentStep === totalSteps) {
+        nextBtn.classList.add('d-none');
+        submitBtn.classList.remove('d-none');
+    } else {
+        nextBtn.classList.remove('d-none');
+        submitBtn.classList.add('d-none');
+    }
+}
+
+function updateReview() {
+    const purpose = document.querySelector('input[name="purpose"]:checked');
+    const date = document.getElementById('preferred_date').value;
+    const time = document.getElementById('preferred_time').value;
+    const description = document.getElementById('description').value;
+    const urgency = document.getElementById('urgency').value;
+    const parentNotification = document.getElementById('parent_notification').checked;
+    
+    document.getElementById('reviewPurpose').textContent = purpose ? purpose.nextElementSibling.textContent : '-';
+    document.getElementById('reviewDate').textContent = date ? new Date(date).toLocaleDateString() : '-';
+    document.getElementById('reviewTime').textContent = time ? document.querySelector(`option[value="${time}"]`).textContent : '-';
+    document.getElementById('reviewDescription').textContent = description || '-';
+    document.getElementById('reviewUrgency').textContent = urgency ? document.querySelector(`option[value="${urgency}"]`).textContent : '-';
+    document.getElementById('reviewParentNotification').textContent = parentNotification ? 'Yes' : 'No';
+}
+
+// Form submission
+document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+    if (!validateStep(currentStep)) {
+        e.preventDefault();
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+    submitBtn.disabled = true;
+});
+
+// Set minimum date to today
+document.getElementById('preferred_date').min = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

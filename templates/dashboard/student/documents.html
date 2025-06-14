@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Documents - Student{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-card {
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .document-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+    }
+    
+    .file-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .file-pdf { color: #dc3545; }
+    .file-doc { color: #007bff; }
+    .file-image { color: #28a745; }
+    
+    .upload-prompt {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+    
+    .filter-card {
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">My Documents</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-folder-open me-2 text-primary"></i>My Documents
+            </h2>
+            <p class="text-muted mb-0">Manage and track your uploaded documents</p>
+        </div>
+        <a href="{% url 'dashboard:student_upload_document' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Upload Document
+        </a>
+    </div>
+
+    <!-- Stats and Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ total_documents }}</h3>
+                        <p class="mb-0 opacity-75">Total Documents</p>
+                    </div>
+                    <i class="fas fa-file-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-warning mb-0">{{ pending_documents }}</h3>
+                    <p class="text-muted mb-0">Pending Review</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-success mb-0">{{ approved_documents }}</h3>
+                    <p class="text-muted mb-0">Approved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="text-danger mb-0">{{ rejected_documents }}</h3>
+                    <p class="text-muted mb-0">Need Attention</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card filter-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="needs_revision" {% if request.GET.status == 'needs_revision' %}selected{% endif %}>Needs Revision</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Search by title..." value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fas fa-search me-1"></i>Filter
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Documents Grid -->
+    {% if documents %}
+        <div class="row">
+            {% for document in documents %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card document-card h-100">
+                    <div class="card-body">
+                        <!-- File Icon -->
+                        <div class="text-center mb-3">
+                            {% if document.file.name|slice:"-4:" == ".pdf" %}
+                                <i class="fas fa-file-pdf file-icon file-pdf"></i>
+                            {% elif document.file.name|slice:"-4:" in ".doc,.docx" %}
+                                <i class="fas fa-file-word file-icon file-doc"></i>
+                            {% elif document.file.name|slice:"-4:" in ".jpg,.jpeg,.png" %}
+                                <i class="fas fa-file-image file-icon file-image"></i>
+                            {% else %}
+                                <i class="fas fa-file file-icon text-muted"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Document Info -->
+                        <h6 class="card-title mb-2">{{ document.title }}</h6>
+                        <p class="text-muted small mb-2">{{ document.category.name }}</p>
+                        
+                        {% if document.description %}
+                        <p class="card-text small text-muted mb-3">{{ document.description|truncatechars:80 }}</p>
+                        {% endif %}
+                        
+                        <!-- Status Badge -->
+                        <div class="mb-3">
+                            <span class="badge status-badge bg-{% if document.status == 'approved' %}success{% elif document.status == 'rejected' %}danger{% elif document.status == 'needs_revision' %}warning{% else %}secondary{% endif %}">
+                                {{ document.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <!-- Upload Info -->
+                        <div class="small text-muted mb-3">
+                            <div><i class="fas fa-calendar me-1"></i>{{ document.created_at|date:"M d, Y" }}</div>
+                            {% if document.file.size %}
+                                <div><i class="fas fa-weight me-1"></i>{{ document.file.size|filesizeformat }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Admin Notes -->
+                        {% if document.admin_notes %}
+                        <div class="alert alert-info small mb-3">
+                            <strong>Admin Notes:</strong><br>
+                            {{ document.admin_notes|truncatechars:100 }}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Actions -->
+                        <div class="d-grid gap-2">
+                            <a href="{{ document.file.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>View Document
+                            </a>
+                            <a href="{{ document.file.url }}" download class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Footer with Review Info -->
+                    {% if document.reviewed_by %}
+                    <div class="card-footer bg-light small">
+                        <i class="fas fa-user-check me-1"></i>
+                        Reviewed by {{ document.reviewed_by.get_full_name }} on {{ document.reviewed_at|date:"M d, Y" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if documents.has_other_pages %}
+        <nav aria-label="Documents pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if documents.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ documents.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for num in documents.paginator.page_range %}
+                    {% if documents.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if documents.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ documents.next_page_number }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="upload-prompt">
+            <i class="fas fa-cloud-upload-alt fa-4x mb-3"></i>
+            <h3>No Documents Yet</h3>
+            <p class="mb-4">Start by uploading your first document. All your academic, medical, and personal documents can be stored here securely.</p>
+            <a href="{% url 'dashboard:student_upload_document' %}" class="btn btn-light btn-lg">
+                <i class="fas fa-plus me-2"></i>Upload Your First Document
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit form on filter change
+document.getElementById('category').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('status').addEventListener('change', function() {
+    this.form.submit();
+});
+
+// Clear filters
+function clearFilters() {
+    window.location.href = '{% url "dashboard:student_documents" %}';
+}
+
+// Add clear filters button if any filters are active
+{% if request.GET.category or request.GET.status or request.GET.search %}
+document.addEventListener('DOMContentLoaded', function() {
+    const filterCard = document.querySelector('.filter-card .card-body');
+    const clearBtn = document.createElement('div');
+    clearBtn.className = 'col-12 text-end mt-2';
+    clearBtn.innerHTML = '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearFilters()"><i class="fas fa-times me-1"></i>Clear Filters</button>';
+    filterCard.querySelector('.row').appendChild(clearBtn);
+});
+{% endif %}
+</script>
+{% endblock %}
