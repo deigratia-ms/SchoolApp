@@ -2,7 +2,30 @@
 {% load static %}
 {% load math_filters %}
 
-{% block title %}Home | Deigratia Montessori School{% endblock %}
+{% block title %}Deigratia Montessori School | Premier Montessori Education in Ghana{% endblock %}
+
+{% block meta_description %}Deigratia Montessori School offers premier Montessori education in Ghana. Our child-centered approach nurtures independence, creativity, and academic excellence for children aged 18 months to 12 years.{% endblock %}
+
+{% block meta_keywords %}Deigratia Montessori School, Montessori education Ghana, private school Accra, early childhood education, primary school Ghana, Montessori method, quality education Ghana, international school, toddler program, elementary education{% endblock %}
+
+{% block og_title %}Deigratia Montessori School | Premier Montessori Education in Ghana{% endblock %}
+{% block og_description %}Discover exceptional Montessori education at Deigratia Montessori School. We nurture young minds through child-centered learning, fostering independence, creativity, and academic achievement in Ghana.{% endblock %}
+
+{% block additional_structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Home - Deigratia Montessori School",
+  "description": "Premier Montessori education in Ghana. Nurturing excellence through child-centered learning.",
+  "url": "https://deigratiams.edu.gh/",
+  "mainEntity": {
+    "@type": "EducationalOrganization",
+    "name": "Deigratia Montessori School"
+  }
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -27,16 +50,26 @@
                         {{ slide.subtitle|safe }}
                     </p>
                     {% endif %}
+                    {% if slide.show_buttons %}
                     <div class="hero-buttons d-flex flex-column flex-md-row justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                        <a href="{% url 'website:admissions' %}" class="btn btn-hero-primary btn-lg">
-                            <i class="fas fa-user-plus me-2"></i>
-                            Apply Now
+                        {% if slide.primary_button_text and slide.primary_button_url %}
+                        <a href="{% if slide.primary_button_url|slice:':4' == 'http' %}{{ slide.primary_button_url }}{% else %}{{ slide.primary_button_url }}{% endif %}"
+                           class="btn btn-hero-{{ slide.primary_button_style|default:'primary' }} btn-lg"
+                           {% if slide.primary_button_url|slice:':4' == 'http' %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                            <i class="fas fa-arrow-right me-2"></i>
+                            {{ slide.primary_button_text }}
                         </a>
-                        <a href="{% url 'website:contact' %}" class="btn btn-hero-secondary btn-lg">
-                            <i class="fas fa-phone me-2"></i>
-                            Contact Us
+                        {% endif %}
+                        {% if slide.secondary_button_text and slide.secondary_button_url %}
+                        <a href="{% if slide.secondary_button_url|slice:':4' == 'http' %}{{ slide.secondary_button_url }}{% else %}{{ slide.secondary_button_url }}{% endif %}"
+                           class="btn btn-hero-{{ slide.secondary_button_style|default:'secondary' }} btn-lg"
+                           {% if slide.secondary_button_url|slice:':4' == 'http' %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                            <i class="fas fa-arrow-right me-2"></i>
+                            {{ slide.secondary_button_text }}
                         </a>
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -580,6 +613,146 @@
     text-decoration: none;
 }
 
+/* Additional hero button styles */
+.btn-hero-success {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    border: none;
+    color: white;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+}
+
+.btn-hero-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-hero-warning {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    border: none;
+    color: #212529;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+}
+
+.btn-hero-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+    color: #212529;
+    text-decoration: none;
+}
+
+.btn-hero-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    border: none;
+    color: white;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+}
+
+.btn-hero-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-hero-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    border: none;
+    color: white;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+}
+
+.btn-hero-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-hero-light {
+    background: #f8f9fa;
+    border: 2px solid #f8f9fa;
+    color: #212529;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(248, 249, 250, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+}
+
+.btn-hero-light:hover {
+    background: #e2e6ea;
+    border-color: #dae0e5;
+    transform: translateY(-2px);
+    color: #212529;
+    text-decoration: none;
+}
+
+.btn-hero-dark {
+    background: linear-gradient(135deg, #343a40, #23272b);
+    border: none;
+    color: white;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(52, 58, 64, 0.3);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+}
+
+.btn-hero-dark:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 58, 64, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
 /* Hero Banner for fallback */
 .hero-banner {
     height: 400px;
@@ -668,7 +841,13 @@
     }
 
     .btn-hero-primary,
-    .btn-hero-secondary {
+    .btn-hero-secondary,
+    .btn-hero-success,
+    .btn-hero-warning,
+    .btn-hero-danger,
+    .btn-hero-info,
+    .btn-hero-light,
+    .btn-hero-dark {
         width: 100%;
         max-width: 220px;
         margin: 0 auto 0.6rem auto;
@@ -709,7 +888,13 @@
     }
 
     .btn-hero-primary,
-    .btn-hero-secondary {
+    .btn-hero-secondary,
+    .btn-hero-success,
+    .btn-hero-warning,
+    .btn-hero-danger,
+    .btn-hero-info,
+    .btn-hero-light,
+    .btn-hero-dark {
         min-width: 160px;
         padding: 12px 20px;
         font-size: 0.95rem;
@@ -732,7 +917,13 @@
     }
 
     .btn-hero-primary,
-    .btn-hero-secondary {
+    .btn-hero-secondary,
+    .btn-hero-success,
+    .btn-hero-warning,
+    .btn-hero-danger,
+    .btn-hero-info,
+    .btn-hero-light,
+    .btn-hero-dark {
         padding: 15px 30px;
         min-width: 180px;
     }

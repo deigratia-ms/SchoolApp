@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django import forms
+from django.contrib import messages
+from django.core.files.storage import default_storage
 from tinymce.widgets import TinyMCE
 
 # Import career admin
@@ -15,14 +17,76 @@ from .models import (
     SpecialProgram, AssessmentMethod
 )
 
-# Create a custom form for PageContent with TinyMCE widget
+# Custom widget for image uploads with Cloudinary feedback
+class CloudinaryImageWidget(forms.ClearableFileInput):
+    def format_value(self, value):
+        if value:
+            # Check if it's a Cloudinary URL
+            if hasattr(value, 'url'):
+                url = value.url
+                if 'cloudinary.com' in url:
+                    return format_html(
+                        '<div style="margin: 10px 0; padding: 10px; background: #e8f5e8; border: 1px solid #4caf50; border-radius: 4px;">'
+                        '<span style="color: #2e7d32; font-weight: bold;">✅ Stored in Cloudinary</span><br>'
+                        '<img src="{}" style="max-width: 200px; max-height: 150px; margin: 5px 0;" />'
+                        '<br><small style="color: #666;">Fast CDN delivery enabled</small>'
+                        '</div>',
+                        url
+                    )
+                else:
+                    return format_html(
+                        '<div style="margin: 10px 0; padding: 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">'
+                        '<span style="color: #856404; font-weight: bold;">⚠️ Local storage (not Cloudinary)</span><br>'
+                        '<img src="{}" style="max-width: 200px; max-height: 150px; margin: 5px 0;" />'
+                        '</div>',
+                        url
+                    )
+        return super().format_value(value)
+
+# Create a custom form for PageContent with TinyMCE widget and Cloudinary feedback
 class PageContentAdminForm(forms.ModelForm):
     class Meta:
         model = PageContent
         fields = '__all__'
         widgets = {
             'content': TinyMCE(attrs={'cols': 80, 'rows': 30}),
+            'image': CloudinaryImageWidget(),
+            'calendar_placeholder_image': CloudinaryImageWidget(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Add helpful help text for page and section fields
+        self.fields['page'].help_text = (
+            "Select the page where this content will appear. "
+            "The section dropdown will automatically filter to show only relevant sections for the selected page."
+        )
+        self.fields['section'].help_text = (
+            "Choose the specific section within the page. "
+            "Sections are automatically filtered based on your page selection to prevent mistakes."
+        )
+
+        # Update title help text based on the instance
+        if self.instance and self.instance.pk:
+            self.fields['title'].help_text = self.instance.get_title_help_text()
+            self.fields['image'].help_text = self.instance.get_image_help_text()
+        else:
+            # For new instances, provide general help text
+            self.fields['title'].help_text = (
+                "Optional title for this section. Many sections have predefined titles in templates. "
+                "Leave blank unless you need a custom title or subtitle."
+            )
+            self.fields['image'].help_text = (
+                "Upload an image. It will be automatically stored in Cloudinary for fast loading. "
+                "Recommended formats: JPG, PNG, WebP. Max size: 10MB."
+            )
+
+        if 'calendar_placeholder_image' in self.fields:
+            self.fields['calendar_placeholder_image'].help_text = (
+                "Upload a placeholder image for the calendar widget. "
+                "It will be automatically stored in Cloudinary."
+            )
 
 @admin.register(PageContent)
 class PageContentAdmin(admin.ModelAdmin):
@@ -32,6 +96,47 @@ class PageContentAdmin(admin.ModelAdmin):
     search_fields = ('title', 'content')
     ordering = ('page', 'order')
     readonly_fields = ('image_preview_large', 'calendar_image_preview')
+
+    class Media:
+        js = ('admin/js/page_content_admin.js',)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['page_sections_mapping'] = {
+            'home': ['hero', 'about_preview', 'featured_programs', 'why_choose_us'],
+            'about': ['about_hero', 'mission', 'vision', 'story', 'montessori_method', 'values'],
+            'academics': ['academics_hero', 'curriculum_approach', 'assessment_intro', 'cta_section'],
+            'admissions': ['hero', 'admission_process', 'requirements', 'fees', 'scholarships'],
+            'events': ['events_hero', 'events_newsletter', 'events_cta', 'events_calendar'],
+            'news': ['news_hero'],
+            'contact': ['contact_hero'],
+            'staff': ['staff_hero'],
+            'career': ['career_hero', 'career_intro'],
+            'calendar': ['calendar_hero', 'calendar_content'],
+            'privacy': ['privacy_hero', 'privacy_content'],
+            'terms': ['terms_hero', 'terms_content'],
+            'faq': ['faq_hero']
+        }
+        return super().add_view(request, form_url, extra_context)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['page_sections_mapping'] = {
+            'home': ['hero', 'about_preview', 'featured_programs', 'why_choose_us'],
+            'about': ['about_hero', 'mission', 'vision', 'story', 'montessori_method', 'values'],
+            'academics': ['academics_hero', 'curriculum_approach', 'assessment_intro', 'cta_section'],
+            'admissions': ['hero', 'admission_process', 'requirements', 'fees', 'scholarships'],
+            'events': ['events_hero', 'events_newsletter', 'events_cta', 'events_calendar'],
+            'news': ['news_hero'],
+            'contact': ['contact_hero'],
+            'staff': ['staff_hero'],
+            'career': ['career_hero', 'career_intro'],
+            'calendar': ['calendar_hero', 'calendar_content'],
+            'privacy': ['privacy_hero', 'privacy_content'],
+            'terms': ['terms_hero', 'terms_content'],
+            'faq': ['faq_hero']
+        }
+        return super().change_view(request, object_id, form_url, extra_context)
 
     def get_section_display(self, obj):
         section_descriptions = {
@@ -51,7 +156,7 @@ class PageContentAdmin(admin.ModelAdmin):
 
             # Academics Page Sections
             'academics_hero': 'Academics Page - Hero Banner',
-            'curriculum_image': 'Academics Page - Curriculum Image',
+            'curriculum_approach': 'Academics Page - Curriculum Approach Section',
             'assessment_intro': 'Academics Page - Assessment Intro',
             'cta_section': 'Academics Page - Call to Action',
 
@@ -125,7 +230,7 @@ class PageContentAdmin(admin.ModelAdmin):
                         'classes': ('wide',)
                     }),
                 )
-            elif obj.section in ['curriculum_image', 'story']:
+            elif obj.section in ['curriculum_approach', 'story']:
                 return (
                     (None, {
                         'fields': ('page', 'section', 'title', 'is_active', 'order')
@@ -348,8 +453,34 @@ class FAQAdmin(admin.ModelAdmin):
         return page_descriptions.get(obj.page, obj.get_page_display())
     get_page_display.short_description = 'Page'
 
+# Custom form for SiteSettings with Cloudinary feedback
+class SiteSettingsAdminForm(forms.ModelForm):
+    class Meta:
+        model = SiteSettings
+        fields = '__all__'
+        widgets = {
+            'school_logo': CloudinaryImageWidget(),
+            'footer_logo': CloudinaryImageWidget(),
+            'favicon': CloudinaryImageWidget(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['school_logo'].help_text = (
+            "Main logo displayed in the header. Recommended size: 200x60 pixels. "
+            "Automatically uploaded to Cloudinary."
+        )
+        self.fields['footer_logo'].help_text = (
+            "Optional different logo for footer. Automatically uploaded to Cloudinary."
+        )
+        self.fields['favicon'].help_text = (
+            "Small icon in browser tabs. Recommended: 32x32 or 16x16 pixels. "
+            "If not provided, school logo will be used. Automatically uploaded to Cloudinary."
+        )
+
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
+    form = SiteSettingsAdminForm
     list_display = ('__str__', 'contact_email', 'contact_phone', 'preview_logo', 'preview_favicon')
     readonly_fields = ('preview_logo', 'preview_favicon')
     fieldsets = (
@@ -409,10 +540,107 @@ class SiteSettingsAdmin(admin.ModelAdmin):
         return format_html('<span style="color: #999; font-style: italic;">Default Favicon</span>')
     preview_favicon.short_description = 'Favicon Preview'
 
+# Custom form for HeroSlide with Cloudinary feedback
+class HeroSlideAdminForm(forms.ModelForm):
+    class Meta:
+        model = HeroSlide
+        fields = '__all__'
+        widgets = {
+            'image': CloudinaryImageWidget(),
+            'primary_button_url': forms.TextInput(attrs={
+                'placeholder': 'e.g., /admissions/ or https://example.com',
+                'class': 'vTextField'
+            }),
+            'secondary_button_url': forms.TextInput(attrs={
+                'placeholder': 'e.g., /contact/ or https://example.com',
+                'class': 'vTextField'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['image'].help_text = (
+            "Hero slide image. Recommended size: 1920x600 pixels for best quality. "
+            "Automatically uploaded to Cloudinary for fast loading."
+        )
+
+        # Enhanced help text for button fields
+        self.fields['primary_button_text'].help_text = (
+            "Default: 'Apply Now'. Common alternatives: 'Learn More', 'Get Started', 'Enroll Now', 'Discover More'"
+        )
+        self.fields['primary_button_url'].help_text = (
+            "Default: '/admissions/'. Other examples: '/about/', '/academics/', '/contact/', 'https://forms.example.com'"
+        )
+        self.fields['secondary_button_text'].help_text = (
+            "Default: 'Contact Us'. Common alternatives: 'Learn More', 'Call Now', 'Visit Us', 'Get Info'. Leave empty to hide this button."
+        )
+        self.fields['secondary_button_url'].help_text = (
+            "Default: '/contact/'. Other examples: '/about/', 'tel:+1234567890', 'mailto:info@school.com', '/virtual-tour/'"
+        )
+
+        # Set placeholders with default values
+        self.fields['primary_button_text'].widget.attrs.update({
+            'placeholder': 'Apply Now'
+        })
+        self.fields['primary_button_url'].widget.attrs.update({
+            'placeholder': '/admissions/'
+        })
+        self.fields['secondary_button_text'].widget.attrs.update({
+            'placeholder': 'Contact Us'
+        })
+        self.fields['secondary_button_url'].widget.attrs.update({
+            'placeholder': '/contact/'
+        })
+
 @admin.register(HeroSlide)
 class HeroSlideAdmin(admin.ModelAdmin):
-    list_display = ('title', 'preview_image', 'order', 'is_active')
+    form = HeroSlideAdminForm
+    list_display = ('title', 'preview_image', 'show_buttons', 'order', 'is_active')
     list_editable = ('order', 'is_active')
+    list_filter = ('show_buttons', 'is_active')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'subtitle', 'order', 'is_active')
+        }),
+        ('Image', {
+            'fields': ('image',),
+            'description': 'Upload the hero slide image. Recommended size: 1920x600 pixels.'
+        }),
+        ('Button Configuration', {
+            'fields': ('show_buttons',),
+            'description': (
+                'Check "Show buttons" to display action buttons on this slide. '
+                'When enabled, the primary button defaults to "Apply Now" → "/admissions/" '
+                'and the secondary button defaults to "Contact Us" → "/contact/". '
+                'You can customize or clear these as needed.'
+            )
+        }),
+        ('Primary Button', {
+            'fields': ('primary_button_text', 'primary_button_url', 'primary_button_style'),
+            'classes': ('collapse', 'button-config'),
+            'description': (
+                'Primary button configuration. Defaults: Text="Apply Now", URL="/admissions/", Style="Primary (Blue)". '
+                'Quick copy-paste options: '
+                'Text: "Learn More" | "Get Started" | "Enroll Now" | "Discover More" | '
+                'URL: "/about/" | "/academics/" | "/virtual-tour/" | "https://forms.example.com"'
+            )
+        }),
+        ('Secondary Button (Optional)', {
+            'fields': ('secondary_button_text', 'secondary_button_url', 'secondary_button_style'),
+            'classes': ('collapse', 'button-config'),
+            'description': (
+                'Secondary button configuration. Defaults: Text="Contact Us", URL="/contact/", Style="Secondary (Gray)". '
+                'Leave text empty to hide this button. '
+                'Quick copy-paste options: '
+                'Text: "Call Now" | "Visit Us" | "Get Info" | "Schedule Tour" | '
+                'URL: "tel:+233123456789" | "mailto:info@deigratiams.edu.gh" | "/calendar/" | "/staff/"'
+            )
+        }),
+    )
+
+    class Media:
+        js = ('admin/js/hero_slide_admin.js',)
 
     def preview_image(self, obj):
         if obj.image:

@@ -6,15 +6,16 @@ from django.utils.text import slugify
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+from .storage import get_cloudinary_storage
 
 # Import career models
 from .models_career import JobPosition, JobApplication
 
 class SiteSettings(models.Model):
     # Basic Information
-    school_logo = models.ImageField(upload_to='site/', help_text="Main school logo displayed in the header")
-    footer_logo = models.ImageField(upload_to='site/', null=True, blank=True, help_text="Optional different logo for footer")
-    favicon = models.ImageField(upload_to='site/favicon/', null=True, blank=True, help_text="Website icon (favicon) displayed in browser tabs. Recommended size: 32x32 or 16x16 pixels. If not provided, the school logo will be used.")
+    school_logo = models.ImageField(upload_to='site/', storage=get_cloudinary_storage, help_text="Main school logo displayed in the header")
+    footer_logo = models.ImageField(upload_to='site/', storage=get_cloudinary_storage, null=True, blank=True, help_text="Optional different logo for footer")
+    favicon = models.ImageField(upload_to='site/favicon/', storage=get_cloudinary_storage, null=True, blank=True, help_text="Website icon (favicon) displayed in browser tabs. Recommended size: 32x32 or 16x16 pixels. If not provided, the school logo will be used.")
 
     # Contact Information
     contact_email = models.EmailField(help_text="Main contact email address")
@@ -203,7 +204,7 @@ class PageContent(models.Model):
 
         # Academics Page Sections
         ('academics_hero', 'Academics Hero Section'),
-        ('curriculum_image', 'Curriculum Approach Image'),
+        ('curriculum_approach', 'Curriculum Approach Section'),
         ('assessment_intro', 'Assessment Introduction'),
         ('cta_section', 'Academics Call to Action'),
 
@@ -246,13 +247,13 @@ class PageContent(models.Model):
 
     page = models.CharField(max_length=20, choices=PAGE_CHOICES)
     section = models.CharField(max_length=50, choices=SECTION_CHOICES)
-    title = models.CharField(max_length=200, help_text="Title for this section")
+    title = models.CharField(max_length=200, blank=True, help_text="Optional title for this section. Many sections already have predefined titles in the template.")
     content = models.TextField(help_text="Main content text for this section", blank=True)
     def get_upload_path(instance, filename):
         """Determine the upload path based on the section type"""
         if instance.section in ['hero', 'about_hero', 'academics_hero', 'events_hero', 'news_hero', 'contact_hero', 'staff_hero', 'career_hero', 'calendar_hero', 'privacy_hero', 'terms_hero', 'faq_hero']:
             return f'hero_slides/{filename}'
-        elif instance.section == 'curriculum_image':
+        elif instance.section == 'curriculum_approach':
             return f'academics/curriculum/{filename}'
         elif instance.section == 'story':
             return f'about/story/{filename}'
@@ -260,12 +261,14 @@ class PageContent(models.Model):
 
     image = models.ImageField(
         upload_to=get_upload_path,
+        storage=get_cloudinary_storage,
         null=True,
         blank=True,
         help_text="Image for this section."
     )
     calendar_placeholder_image = models.ImageField(
         upload_to='page_content/',
+        storage=get_cloudinary_storage,
         null=True,
         blank=True,
         help_text="Placeholder image for the calendar widget"
@@ -280,6 +283,30 @@ class PageContent(models.Model):
         elif self.section in ['hero', 'about_hero', 'academics_hero', 'events_hero', 'news_hero', 'contact_hero', 'staff_hero', 'career_hero', 'calendar_hero', 'privacy_hero', 'terms_hero', 'faq_hero']:
             return "Banner/hero image displayed at the top of the page. Recommended size: 1920x600 pixels."
         return "Image for this section. Use high-quality images appropriate for their purpose."
+
+    def get_title_help_text(self):
+        """Get context-specific help text for the title field"""
+        # Sections that have hardcoded titles in templates
+        sections_with_predefined_titles = {
+            'curriculum_approach': 'This section already has "Our Curriculum Approach" as the main title. Leave blank to use the default, or add a custom subtitle.',
+            'assessment_intro': 'This section appears under "Assessment & Progress" heading. Leave blank or add a custom subtitle.',
+            'mission': 'This section already has "Our Mission" as the title. Leave blank to use the default.',
+            'vision': 'This section already has "Our Vision" as the title. Leave blank to use the default.',
+            'story': 'This section already has "Our Story" as the title. Leave blank to use the default.',
+            'montessori_method': 'This section already has "The Montessori Method" as the title. Leave blank to use the default.',
+            'values': 'This section already has "Our Values" as the title. Leave blank to use the default.',
+            'fees': 'This section already has "Programs & Tuition" as the title. Leave blank to use the default.',
+        }
+
+        # Hero sections typically need custom titles
+        hero_sections = ['hero', 'about_hero', 'academics_hero', 'events_hero', 'news_hero', 'contact_hero', 'staff_hero', 'career_hero', 'calendar_hero', 'privacy_hero', 'terms_hero', 'faq_hero']
+
+        if self.section in sections_with_predefined_titles:
+            return sections_with_predefined_titles[self.section]
+        elif self.section in hero_sections:
+            return "Title displayed prominently on the hero banner. This should be compelling and descriptive."
+        else:
+            return "Optional title for this section. Leave blank if the section doesn't need a custom title."
 
     def save(self, *args, **kwargs):
         # Only set default images for new objects (not when updating)
@@ -329,9 +356,72 @@ class PageContent(models.Model):
 class HeroSlide(models.Model):
     title = models.CharField(max_length=200)
     subtitle = models.TextField(blank=True)
-    image = models.ImageField(upload_to='hero_slides/')
+    image = models.ImageField(upload_to='hero_slides/', storage=get_cloudinary_storage)
     order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+
+    # Button configuration fields
+    show_buttons = models.BooleanField(default=False, help_text="Check to show buttons on this slide")
+
+    # Primary button
+    primary_button_text = models.CharField(
+        max_length=50,
+        blank=True,
+        default="Apply Now",
+        help_text="Text for the primary button (default: 'Apply Now')"
+    )
+    primary_button_url = models.CharField(
+        max_length=200,
+        blank=True,
+        default="/admissions/",
+        help_text="URL for the primary button (default: '/admissions/' - can be internal like '/admissions/' or external like 'https://example.com')"
+    )
+    primary_button_style = models.CharField(
+        max_length=20,
+        choices=[
+            ('primary', 'Primary (Blue)'),
+            ('secondary', 'Secondary (Gray)'),
+            ('success', 'Success (Green)'),
+            ('warning', 'Warning (Yellow)'),
+            ('danger', 'Danger (Red)'),
+            ('info', 'Info (Light Blue)'),
+            ('light', 'Light'),
+            ('dark', 'Dark'),
+        ],
+        default='primary',
+        blank=True,
+        help_text="Bootstrap button style"
+    )
+
+    # Secondary button
+    secondary_button_text = models.CharField(
+        max_length=50,
+        blank=True,
+        default="Contact Us",
+        help_text="Text for the secondary button (default: 'Contact Us', leave empty to hide)"
+    )
+    secondary_button_url = models.CharField(
+        max_length=200,
+        blank=True,
+        default="/contact/",
+        help_text="URL for the secondary button (default: '/contact/' - can be internal like '/contact/' or external like 'https://example.com')"
+    )
+    secondary_button_style = models.CharField(
+        max_length=20,
+        choices=[
+            ('primary', 'Primary (Blue)'),
+            ('secondary', 'Secondary (Gray)'),
+            ('success', 'Success (Green)'),
+            ('warning', 'Warning (Yellow)'),
+            ('danger', 'Danger (Red)'),
+            ('info', 'Info (Light Blue)'),
+            ('light', 'Light'),
+            ('dark', 'Dark'),
+        ],
+        default='secondary',
+        blank=True,
+        help_text="Bootstrap button style"
+    )
 
     class Meta:
         ordering = ['order']
@@ -376,7 +466,7 @@ class Announcement(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True, null=False, blank=False)  # Explicitly required
     content = models.TextField()
-    image = models.ImageField(upload_to='announcements/', null=True, blank=True)
+    image = models.ImageField(upload_to='announcements/', storage=get_cloudinary_storage, null=True, blank=True)
     date_posted = models.DateTimeField(default=timezone.now)
     is_featured = models.BooleanField(default=False)
     category = models.ForeignKey(AnnouncementCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='announcements')
