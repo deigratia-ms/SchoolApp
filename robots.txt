@@ -1,3 +1,41 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /users/
+Disallow: /courses/
+Disallow: /assignments/
+Disallow: /attendance/
+Disallow: /communications/
+Disallow: /fees/
+Disallow: /payroll/
+Disallow: /appointments/
+Disallow: /my-admin/
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Allow important pages
+Allow: /
+Allow: /about/
+Allow: /academics/
+Allow: /admissions/
+Allow: /contact/
+Allow: /events/
+Allow: /news/
+Allow: /gallery/
+Allow: /staff/
+Allow: /careers/
+Allow: /virtual-tour/
+Allow: /calendar/
+Allow: /privacy-policy/
+Allow: /terms-of-service/
+Allow: /faqs/
+
+# Sitemap location
 Sitemap: https://deigratiams.edu.gh/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1

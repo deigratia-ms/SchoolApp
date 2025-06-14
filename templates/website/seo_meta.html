@@ -1,0 +1,120 @@
+{% load static %}
+<!-- SEO Meta Tags for Deigratia Montessori School -->
+
+<!-- Basic Meta Tags -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+<meta name="description" content="{% block meta_description %}{{ page_description|default:'Deigratia Montessori School - Premier Montessori education in Ghana. Nurturing excellence through child-centered learning, fostering independence, creativity, and academic achievement.' }}{% endblock %}">
+<meta name="keywords" content="{% block meta_keywords %}Deigratia Montessori School, Montessori education Ghana, private school Accra, early childhood education, primary school Ghana, Montessori method, quality education Ghana, international school{% endblock %}">
+<meta name="author" content="Deigratia Montessori School">
+<meta name="robots" content="index, follow">
+<meta name="language" content="English">
+<meta name="revisit-after" content="7 days">
+
+<!-- Canonical URL -->
+<link rel="canonical" href="{% block canonical_url %}https://deigratiams.edu.gh{{ request.get_full_path }}{% endblock %}">
+
+<!-- Open Graph Meta Tags for Facebook -->
+<meta property="og:title" content="{% block og_title %}{{ page_title|default:'Deigratia Montessori School' }}{% endblock %}">
+<meta property="og:description" content="{% block og_description %}{{ page_description|default:'Premier Montessori education in Ghana. Nurturing excellence through child-centered learning, fostering independence, creativity, and academic achievement.' }}{% endblock %}">
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:url" content="{% block og_url %}https://deigratiams.edu.gh{{ request.get_full_path }}{% endblock %}">
+<meta property="og:site_name" content="Deigratia Montessori School">
+<meta property="og:image" content="{% block og_image %}{% if site_settings.school_logo %}{{ site_settings.school_logo.url }}{% else %}{% static 'website/images/og-image.jpg' %}{% endif %}{% endblock %}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{% block og_image_alt %}Deigratia Montessori School Logo{% endblock %}">
+<meta property="og:locale" content="en_US">
+
+<!-- Twitter Card Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{% block twitter_title %}{{ page_title|default:'Deigratia Montessori School' }}{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}{{ page_description|default:'Premier Montessori education in Ghana. Nurturing excellence through child-centered learning.' }}{% endblock %}">
+<meta name="twitter:image" content="{% block twitter_image %}{% if site_settings.school_logo %}{{ site_settings.school_logo.url }}{% else %}{% static 'website/images/twitter-card.jpg' %}{% endif %}{% endblock %}">
+<meta name="twitter:image:alt" content="{% block twitter_image_alt %}Deigratia Montessori School{% endblock %}">
+<meta name="twitter:site" content="@deigratiams">
+<meta name="twitter:creator" content="@deigratiams">
+
+<!-- Additional Meta Tags -->
+<meta name="theme-color" content="#007bff">
+<meta name="msapplication-TileColor" content="#007bff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Deigratia Montessori">
+
+<!-- Favicon and Icons -->
+<link rel="icon" type="image/x-icon" href="{% static 'website/images/favicon.ico' %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'website/images/favicon-32x32.png' %}">
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'website/images/favicon-16x16.png' %}">
+<link rel="apple-touch-icon" sizes="180x180" href="{% static 'website/images/apple-touch-icon.png' %}">
+<link rel="manifest" href="{% static 'website/manifest.json' %}">
+
+<!-- Structured Data (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  "name": "Deigratia Montessori School",
+  "alternateName": "Deigratia Montessori",
+  "url": "https://deigratiams.edu.gh",
+  "logo": "{% if site_settings.school_logo %}{{ site_settings.school_logo.url }}{% else %}{% static 'website/images/logo.png' %}{% endif %}",
+  "description": "Premier Montessori education in Ghana. Nurturing excellence through child-centered learning, fostering independence, creativity, and academic achievement.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ site_settings.address|default:'Accra, Ghana' }}",
+    "addressLocality": "Accra",
+    "addressCountry": "Ghana"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "{{ site_settings.contact_phone|default:'+233 123 456 789' }}",
+    "contactType": "customer service",
+    "email": "{{ site_settings.contact_email|default:'info@deigratiams.edu.gh' }}"
+  },
+  "sameAs": [
+    {% if site_settings.facebook_url %}"{{ site_settings.facebook_url }}"{% endif %}{% if site_settings.twitter_url %},
+    "{{ site_settings.twitter_url }}"{% endif %}{% if site_settings.instagram_url %},
+    "{{ site_settings.instagram_url }}"{% endif %}{% if site_settings.linkedin_url %},
+    "{{ site_settings.linkedin_url }}"{% endif %}{% if site_settings.youtube_url %},
+    "{{ site_settings.youtube_url }}"{% endif %}
+  ],
+  "foundingDate": "2020",
+  "educationalCredentialAwarded": "Primary Education Certificate",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Educational Programs",
+    "itemListElement": [
+      {
+        "@type": "Course",
+        "name": "Toddler Program",
+        "description": "Early childhood Montessori education for ages 18 months to 3 years"
+      },
+      {
+        "@type": "Course", 
+        "name": "Primary Program",
+        "description": "Montessori primary education for ages 3 to 6 years"
+      },
+      {
+        "@type": "Course",
+        "name": "Elementary Program", 
+        "description": "Montessori elementary education for ages 6 to 12 years"
+      }
+    ]
+  }
+}
+</script>
+
+{% block additional_structured_data %}{% endblock %}
+
+<!-- Preconnect to external domains for performance -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://res.cloudinary.com">
+
+<!-- DNS Prefetch for better performance -->
+<link rel="dns-prefetch" href="//fonts.googleapis.com">
+<link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="//res.cloudinary.com">
