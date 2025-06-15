@@ -1,0 +1,5 @@
+first_name,last_name,date_of_birth,grade,section,parent_email,parent_first_name,parent_last_name,parent_phone,parent_occupation,parent_relationship,student_id,pin,additional_info
+John,Doe,2015-05-15,Grade 1,A,jane.doe@example.com,Jane,Doe,+233123456789,Engineer,Mother,,,"Excellent student - IDs auto-generated"
+Mary,Smith,2014-08-20,Grade 2,B,robert.smith@example.com,Robert,Smith,+233987654321,Doctor,Father,,,"Very active - parent will be created automatically"
+David,Johnson,2016-03-10,Kindergarten,A,sarah.johnson@example.com,Sarah,Johnson,+233555666777,Teacher,Mother,,,"Loves reading - system handles everything"
+Alice,Brown,2015-12-01,Grade 1,B,jane.doe@example.com,Jane,Doe,+233123456789,Engineer,Mother,,,"Same parent as John - will link to existing parent"

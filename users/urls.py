@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import receptionist_views
 from . import admin_views
+from . import csv_import_views
 
 app_name = 'users'
 
@@ -37,7 +38,12 @@ urlpatterns = [
     path('reset-password/<int:user_id>/', views.reset_password, name='reset_password'),
     
     path('reset-password/<int:user_id>/', views.reset_password, name='reset_password'),
-    
+
+    # CSV Import URLs
+    path('csv/upload/', csv_import_views.csv_upload_page, name='csv_upload_page'),
+    path('csv/template/<str:user_type>/', csv_import_views.download_csv_template, name='download_csv_template'),
+    path('csv/upload/', csv_import_views.process_csv_upload, name='process_csv_upload'),
+
     # Password Reset - Using Django's built-in views with custom templates
     path('password-reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),
     path('password-reset/done/', views.CustomPasswordResetDoneView.as_view(), name='password_reset_done'),

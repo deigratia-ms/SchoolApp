@@ -1,0 +1,686 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Bulk User Import - CSV Upload{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-card {
+        border-radius: 15px;
+        border-left: 4px solid #007bff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .upload-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .file-drop-zone {
+        border: 2px dashed #007bff;
+        border-radius: 10px;
+        padding: 3rem 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .file-drop-zone:hover {
+        border-color: #0056b3;
+        background: #e3f2fd;
+    }
+    
+    .file-drop-zone.dragover {
+        border-color: #28a745;
+        background: #d4edda;
+    }
+    
+    .user-type-card {
+        border: 2px solid transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .user-type-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+    }
+    
+    .user-type-card.selected {
+        border-color: #007bff;
+        background: #e3f2fd;
+    }
+    
+    .user-type-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .progress-container {
+        display: none;
+        margin-top: 1rem;
+    }
+    
+    .results-container {
+        display: none;
+        margin-top: 2rem;
+    }
+    
+    .template-download {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    .template-download:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'users:user_management' %}">User Management</a></li>
+            <li class="breadcrumb-item active">Bulk Import</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-upload me-2 text-primary"></i>Bulk User Import
+            </h2>
+            <p class="text-muted mb-0">Import multiple users at once using CSV files</p>
+        </div>
+        <a href="{% url 'users:user_management' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to User Management
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Upload Form -->
+        <div class="col-lg-8">
+            <div class="card upload-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-csv me-2"></i>CSV Upload Form
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="csvUploadForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- User Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label">Select User Type *</label>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <div class="user-type-card" onclick="selectUserType('students')">
+                                        <input type="radio" name="user_type" value="students" class="d-none" required>
+                                        <i class="fas fa-graduation-cap user-type-icon text-primary"></i>
+                                        <h6 class="mb-1">Students</h6>
+                                        <p class="small text-muted mb-0">Import student records with parent linking</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="user-type-card" onclick="selectUserType('teachers')">
+                                        <input type="radio" name="user_type" value="teachers" class="d-none" required>
+                                        <i class="fas fa-chalkboard-teacher user-type-icon text-success"></i>
+                                        <h6 class="mb-1">Teachers</h6>
+                                        <p class="small text-muted mb-0">Import teaching staff with qualifications</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="user-type-card" onclick="selectUserType('parents')">
+                                        <input type="radio" name="user_type" value="parents" class="d-none" required>
+                                        <i class="fas fa-users user-type-icon text-info"></i>
+                                        <h6 class="mb-1">Parents</h6>
+                                        <p class="small text-muted mb-0">Import parent accounts with child linking</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="user-type-card" onclick="selectUserType('staff')">
+                                        <input type="radio" name="user_type" value="staff" class="d-none" required>
+                                        <i class="fas fa-user-tie user-type-icon text-warning"></i>
+                                        <h6 class="mb-1">Staff</h6>
+                                        <p class="small text-muted mb-0">Import administrative and support staff</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Template Download -->
+                        <div class="mb-4">
+                            <label class="form-label">Download Template</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <a href="#" id="templateDownload" class="template-download" style="display: none;">
+                                    <i class="fas fa-download me-2"></i>Download CSV Template
+                                </a>
+                                <small class="text-muted">Select a user type above to download the appropriate template</small>
+                            </div>
+                        </div>
+                        
+                        <!-- File Upload -->
+                        <div class="file-drop-zone mb-4" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5>Drag & Drop CSV File Here</h5>
+                            <p class="text-muted mb-0">or click to browse files</p>
+                            <input type="file" id="csvFile" name="csv_file" class="d-none" accept=".csv" required>
+                        </div>
+                        
+                        <!-- Email Options -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sendEmails" name="send_emails" checked>
+                                <label class="form-check-label" for="sendEmails">
+                                    <strong>Send welcome emails to created users</strong>
+                                </label>
+                                <div class="form-text">
+                                    Users will receive login credentials and welcome instructions via email
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo me-2"></i>Reset Form
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-upload me-2"></i>Upload & Process CSV
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span id="progressLabel">Processing CSV...</span>
+                            <span id="progressText">0%</span>
+                        </div>
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 0%" id="progressBar"></div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="small text-muted">Processed</div>
+                                <div class="fw-bold" id="processedCount">0</div>
+                            </div>
+                            <div class="col-3">
+                                <div class="small text-success">Success</div>
+                                <div class="fw-bold text-success" id="successCount">0</div>
+                            </div>
+                            <div class="col-3">
+                                <div class="small text-warning">Warnings</div>
+                                <div class="fw-bold text-warning" id="warningCount">0</div>
+                            </div>
+                            <div class="col-3">
+                                <div class="small text-danger">Errors</div>
+                                <div class="fw-bold text-danger" id="errorCount">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Results -->
+                    <div class="results-container" id="resultsContainer">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guidelines -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Import Guidelines
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-primary">📋 Simple CSV Requirements</h6>
+                        <ul class="small">
+                            <li><strong>Download the template</strong> - it has all the right columns</li>
+                            <li><strong>Fill in the data</strong> - only name and email are required</li>
+                            <li><strong>Leave fields empty</strong> - system auto-generates IDs and passwords</li>
+                            <li><strong>Don't worry about duplicates</strong> - system handles them gracefully</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">🎯 What Gets Auto-Generated</h6>
+                        <div class="small">
+                            <div class="mb-2">
+                                <strong>Students:</strong> Student ID (STU12345), PIN (5 digits), parent accounts if email provided
+                            </div>
+                            <div class="mb-2">
+                                <strong>Teachers:</strong> Employee ID (TCH12345), secure password, welcome email
+                            </div>
+                            <div class="mb-2">
+                                <strong>Parents:</strong> Secure password, automatic linking to children
+                            </div>
+                            <div class="mb-2">
+                                <strong>Staff:</strong> Employee ID (REC12345, ACC12345, etc.), secure password
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">🔗 Parent-Child Linking</h6>
+                        <div class="small">
+                            <p><strong>Automatic during student import:</strong></p>
+                            <ul>
+                                <li>Provide parent email in student row</li>
+                                <li>System finds existing parent or creates new one</li>
+                                <li>Student automatically linked to parent</li>
+                                <li>Both get welcome emails with login details</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">Email Notifications</h6>
+                        <div class="small">
+                            <p>When enabled, users receive:</p>
+                            <ul>
+                                <li>Welcome email with login credentials</li>
+                                <li>Login instructions and portal links</li>
+                                <li>School contact information</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Good News:</strong> Duplicate emails are handled gracefully - they become warnings, not errors!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Imports -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Import Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="mb-2">
+                            <strong>✅ Super Simple Process:</strong>
+                            <ul>
+                                <li><strong>Download template</strong> → Fill names & emails → Upload</li>
+                                <li><strong>System handles everything else</strong> (IDs, passwords, linking)</li>
+                                <li><strong>Errors don't stop import</strong> - only bad rows fail</li>
+                                <li><strong>Get detailed report</strong> of what happened</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-2">
+                            <strong>🎯 Pro Tips:</strong>
+                            <ul>
+                                <li><strong>Student IDs:</strong> Leave empty - system generates unique ones</li>
+                                <li><strong>Duplicate emails:</strong> System warns but continues processing</li>
+                                <li><strong>Parent linking:</strong> Just put parent email in student row</li>
+                                <li><strong>Dates:</strong> Use YYYY-MM-DD format (e.g., 2015-05-15)</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-success small mb-0">
+                            <strong>💡 Remember:</strong> You only need to provide names and emails. Everything else is optional and will be auto-generated if left empty!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedUserType = null;
+
+// User type selection
+function selectUserType(userType) {
+    // Remove previous selections
+    document.querySelectorAll('.user-type-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Select current type
+    event.currentTarget.classList.add('selected');
+    event.currentTarget.querySelector('input[type="radio"]').checked = true;
+    
+    selectedUserType = userType;
+    
+    // Update template download link
+    const templateDownload = document.getElementById('templateDownload');
+    templateDownload.href = `/users/csv/template/${userType}/`;
+    templateDownload.style.display = 'inline-flex';
+}
+
+// File drop zone functionality
+const dropZone = document.getElementById('dropZone');
+const csvFile = document.getElementById('csvFile');
+
+dropZone.addEventListener('click', () => csvFile.click());
+
+dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        csvFile.files = files;
+        updateDropZoneText(files[0].name);
+    }
+});
+
+csvFile.addEventListener('change', function() {
+    if (this.files.length > 0) {
+        updateDropZoneText(this.files[0].name);
+    }
+});
+
+function updateDropZoneText(fileName) {
+    dropZone.innerHTML = `
+        <i class="fas fa-file-csv fa-3x text-success mb-3"></i>
+        <h5>File Selected</h5>
+        <p class="text-muted mb-0">${fileName}</p>
+    `;
+}
+
+// Form submission with progress tracking
+document.getElementById('csvUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (!selectedUserType) {
+        alert('Please select a user type.');
+        return;
+    }
+
+    if (!csvFile.files.length) {
+        alert('Please select a CSV file.');
+        return;
+    }
+
+    // Show progress
+    document.querySelector('.progress-container').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+    // Reset progress indicators
+    updateProgress(0, 0, 0, 0, 0);
+
+    // Prepare form data
+    const formData = new FormData(this);
+
+    // Start progress simulation (since we can't track real-time progress easily)
+    let progressInterval = startProgressSimulation();
+
+    // Submit form
+    fetch('/users/csv/upload/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        clearInterval(progressInterval);
+
+        // Show final progress
+        if (data.total_rows) {
+            updateProgress(100, data.total_rows, data.success_count, data.warning_count || 0, data.error_count);
+        }
+
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-upload me-2"></i>Upload & Process CSV';
+
+        showResults(data);
+    })
+    .catch(error => {
+        clearInterval(progressInterval);
+        document.querySelector('.progress-container').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-upload me-2"></i>Upload & Process CSV';
+
+        alert('An error occurred: ' + error.message);
+    });
+});
+
+function startProgressSimulation() {
+    let progress = 0;
+    return setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90; // Don't go to 100% until we get real results
+
+        document.getElementById('progressBar').style.width = progress + '%';
+        document.getElementById('progressText').textContent = Math.round(progress) + '%';
+        document.getElementById('progressLabel').textContent = 'Processing CSV... Please wait';
+    }, 500);
+}
+
+function updateProgress(percentage, processed, success, warnings, errors) {
+    document.getElementById('progressBar').style.width = percentage + '%';
+    document.getElementById('progressText').textContent = percentage + '%';
+    document.getElementById('processedCount').textContent = processed;
+    document.getElementById('successCount').textContent = success;
+    document.getElementById('warningCount').textContent = warnings;
+    document.getElementById('errorCount').textContent = errors;
+
+    if (percentage === 100) {
+        document.getElementById('progressLabel').textContent = 'Processing Complete!';
+        document.getElementById('progressBar').classList.remove('progress-bar-animated');
+    }
+}
+
+function showResults(data) {
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Summary Card
+    let html = '<div class="row mb-4">';
+
+    // Main Summary
+    html += '<div class="col-md-8">';
+    html += '<div class="card border-primary">';
+    html += '<div class="card-header bg-primary text-white"><h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Import Summary</h6></div>';
+    html += '<div class="card-body">';
+    html += '<div class="row text-center">';
+    html += `<div class="col-3"><div class="h4 text-primary">${data.total_rows || 0}</div><div class="small text-muted">Total Rows</div></div>`;
+    html += `<div class="col-3"><div class="h4 text-success">${data.success_count}</div><div class="small text-muted">Created</div></div>`;
+    html += `<div class="col-3"><div class="h4 text-warning">${data.warning_count || 0}</div><div class="small text-muted">Warnings</div></div>`;
+    html += `<div class="col-3"><div class="h4 text-danger">${data.error_count}</div><div class="small text-muted">Errors</div></div>`;
+    html += '</div>';
+
+    if (data.summary) {
+        html += '<hr>';
+        html += `<div class="small text-muted">Success Rate: <strong class="text-success">${data.summary.success_rate}%</strong> | `;
+        html += `Error Rate: <strong class="text-danger">${data.summary.error_rate}%</strong> | `;
+        html += `Processing Time: <strong>${data.analytics?.processing_time || 0}s</strong></div>`;
+    }
+    html += '</div></div></div>';
+
+    // Analytics Card
+    if (data.analytics) {
+        html += '<div class="col-md-4">';
+        html += '<div class="card border-info">';
+        html += '<div class="card-header bg-info text-white"><h6 class="mb-0"><i class="fas fa-analytics me-2"></i>Analytics</h6></div>';
+        html += '<div class="card-body small">';
+        html += `<div class="d-flex justify-content-between"><span>Email Success:</span><span class="text-success">${data.analytics.email_success}</span></div>`;
+        html += `<div class="d-flex justify-content-between"><span>Email Failures:</span><span class="text-danger">${data.analytics.email_failures}</span></div>`;
+        html += `<div class="d-flex justify-content-between"><span>Duplicate Emails:</span><span class="text-warning">${data.analytics.duplicate_emails}</span></div>`;
+        html += `<div class="d-flex justify-content-between"><span>Validation Errors:</span><span class="text-danger">${data.analytics.validation_errors}</span></div>`;
+        html += '</div></div></div>';
+    }
+    html += '</div>';
+
+    // Created Users Table
+    if (data.created_users && data.created_users.length > 0) {
+        html += '<div class="card mt-3">';
+        html += '<div class="card-header bg-success text-white"><h6 class="mb-0"><i class="fas fa-users me-2"></i>Successfully Created Users</h6></div>';
+        html += '<div class="card-body"><div class="table-responsive"><table class="table table-sm table-hover">';
+        html += '<thead class="table-light"><tr><th>Name</th><th>Details</th><th>Status</th></tr></thead><tbody>';
+
+        data.created_users.forEach(user => {
+            html += `<tr><td><strong>${user.name}</strong></td><td>`;
+            if (user.student_id) html += `<span class="badge bg-primary me-1">ID: ${user.student_id}</span><span class="badge bg-secondary">PIN: ${user.pin}</span>`;
+            if (user.email) html += `<span class="badge bg-info">${user.email}</span>`;
+            if (user.employee_id) html += `<span class="badge bg-success">EMP: ${user.employee_id}</span>`;
+            if (user.children_count) html += `<span class="badge bg-warning">${user.children_count} Children</span>`;
+            html += '</td><td><span class="badge bg-success"><i class="fas fa-check me-1"></i>Created</span></td></tr>';
+        });
+
+        html += '</tbody></table></div></div></div>';
+    }
+
+    // Warnings Section
+    if (data.warnings && data.warnings.length > 0) {
+        html += '<div class="card mt-3">';
+        html += '<div class="card-header bg-warning text-dark"><h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Warnings</h6></div>';
+        html += '<div class="card-body">';
+        html += '<div class="accordion" id="warningsAccordion">';
+
+        data.warnings.forEach((warning, index) => {
+            html += `<div class="accordion-item">`;
+            html += `<h2 class="accordion-header" id="warning${index}">`;
+            html += `<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#warningCollapse${index}">`;
+            html += `Row ${warning.row}: ${warning.type.replace('_', ' ').toUpperCase()} - ${warning.message}`;
+            html += `</button></h2>`;
+            html += `<div id="warningCollapse${index}" class="accordion-collapse collapse" data-bs-parent="#warningsAccordion">`;
+            html += `<div class="accordion-body small">`;
+            html += `<strong>Data:</strong> ${JSON.stringify(warning.data, null, 2)}`;
+            html += `</div></div></div>`;
+        });
+
+        html += '</div></div></div>';
+    }
+
+    // Errors Section
+    if (data.errors && data.errors.length > 0) {
+        html += '<div class="card mt-3">';
+        html += '<div class="card-header bg-danger text-white"><h6 class="mb-0"><i class="fas fa-times-circle me-2"></i>Errors</h6></div>';
+        html += '<div class="card-body">';
+        html += '<div class="accordion" id="errorsAccordion">';
+
+        data.errors.forEach((error, index) => {
+            html += `<div class="accordion-item">`;
+            html += `<h2 class="accordion-header" id="error${index}">`;
+            html += `<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#errorCollapse${index}">`;
+            html += `Row ${error.row}: ${error.type.replace('_', ' ').toUpperCase()} - ${error.error}`;
+            html += `</button></h2>`;
+            html += `<div id="errorCollapse${index}" class="accordion-collapse collapse" data-bs-parent="#errorsAccordion">`;
+            html += `<div class="accordion-body small">`;
+            html += `<strong>Data:</strong> ${JSON.stringify(error.data, null, 2)}`;
+            html += `</div></div></div>`;
+        });
+
+        html += '</div></div></div>';
+    }
+
+    // Action Buttons
+    html += '<div class="mt-4 text-center">';
+    html += '<button type="button" class="btn btn-primary me-2" onclick="downloadResults()"><i class="fas fa-download me-2"></i>Download Report</button>';
+    html += '<button type="button" class="btn btn-secondary" onclick="resetForm()"><i class="fas fa-redo me-2"></i>Import More Users</button>';
+    html += '</div>';
+
+    resultsContainer.innerHTML = html;
+    resultsContainer.style.display = 'block';
+
+    // Store results for download
+    window.lastImportResults = data;
+}
+
+function downloadResults() {
+    if (!window.lastImportResults) return;
+
+    const data = window.lastImportResults;
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    // Add summary
+    csvContent += "Import Summary\n";
+    csvContent += `Total Rows,${data.total_rows}\n`;
+    csvContent += `Success Count,${data.success_count}\n`;
+    csvContent += `Warning Count,${data.warning_count || 0}\n`;
+    csvContent += `Error Count,${data.error_count}\n`;
+    csvContent += `Success Rate,${data.summary?.success_rate || 0}%\n`;
+    csvContent += `Processing Time,${data.analytics?.processing_time || 0}s\n\n`;
+
+    // Add created users
+    if (data.created_users && data.created_users.length > 0) {
+        csvContent += "Created Users\n";
+        csvContent += "Name,Email,ID,Details\n";
+        data.created_users.forEach(user => {
+            csvContent += `"${user.name}","${user.email || ''}","${user.student_id || user.employee_id || ''}","${user.password || user.pin || ''}"\n`;
+        });
+        csvContent += "\n";
+    }
+
+    // Add errors
+    if (data.errors && data.errors.length > 0) {
+        csvContent += "Errors\n";
+        csvContent += "Row,Type,Error,Data\n";
+        data.errors.forEach(error => {
+            csvContent += `${error.row},"${error.type}","${error.error}","${JSON.stringify(error.data)}"\n`;
+        });
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `import_results_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function resetForm() {
+    document.getElementById('csvUploadForm').reset();
+    document.querySelectorAll('.user-type-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.getElementById('templateDownload').style.display = 'none';
+    document.querySelector('.results-container').style.display = 'none';
+    selectedUserType = null;
+    
+    dropZone.innerHTML = `
+        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+        <h5>Drag & Drop CSV File Here</h5>
+        <p class="text-muted mb-0">or click to browse files</p>
+    `;
+}
+</script>
+{% endblock %}
