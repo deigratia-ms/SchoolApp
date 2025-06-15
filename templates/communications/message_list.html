@@ -176,7 +176,7 @@
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <strong>{{ message.subject }}</strong>
+                                                    <div class="text-dark">{{ message.content|truncatewords:8 }}</div>
                                                     <div class="small text-muted mt-1">{{ message.created_at|date:"M d, Y • H:i" }}</div>
                                                 </div>
                                                 <div class="message-card-meta">
@@ -207,8 +207,8 @@
                                     <table class="table align-items-center mb-0 d-none d-lg-table">
                                         <thead>
                                             <tr>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Sender</th>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Subject</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">From</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Message</th>
                                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
                                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
                                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Actions</th>
@@ -226,7 +226,7 @@
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <p class="text-sm font-weight-bold mb-0">{{ message.subject }}</p>
+                                                        <p class="text-sm mb-0">{{ message.content|truncatewords:10 }}</p>
                                                     </td>
                                                     <td>
                                                         <p class="text-xs text-secondary mb-0">{{ message.created_at|date:"M d, Y" }}</p>
@@ -284,7 +284,7 @@
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <strong>{{ message.subject }}</strong>
+                                                    <div class="text-dark">{{ message.content|truncatewords:8 }}</div>
                                                     <div class="small text-muted mt-1">{{ message.created_at|date:"M d, Y • H:i" }}</div>
                                                 </div>
                                                 <div class="message-card-meta">
@@ -312,8 +312,8 @@
                                     <table class="table align-items-center mb-0 d-none d-lg-table">
                                         <thead>
                                             <tr>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Recipient</th>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Subject</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">To</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Message</th>
                                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
                                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
                                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Actions</th>
@@ -331,7 +331,7 @@
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <p class="text-sm font-weight-bold mb-0">{{ message.subject }}</p>
+                                                        <p class="text-sm mb-0">{{ message.content|truncatewords:10 }}</p>
                                                     </td>
                                                     <td>
                                                         <p class="text-xs text-secondary mb-0">{{ message.created_at|date:"M d, Y" }}</p>

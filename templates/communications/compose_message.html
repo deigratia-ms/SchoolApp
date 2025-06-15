@@ -10,8 +10,11 @@
                 <div class="card-header pb-0">
                     <div class="row">
                         <div class="col-6">
-                            <h5 class="mb-0">Compose New Message</h5>
-                            <p class="text-sm mb-0">Send a message to another user</p>
+                            <h5 class="mb-0">
+                                <i class="fas fa-comment-dots text-primary me-2"></i>
+                                Send a Message
+                            </h5>
+                            <p class="text-sm mb-0">Quick and easy messaging</p>
                         </div>
                         <div class="col-6 text-end">
                             <a href="{% url 'communications:message_list' %}" class="btn btn-secondary">
@@ -170,27 +173,42 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="subject" class="form-label">Subject</label>
-                            <input type="text" class="form-control" id="subject" name="subject" required>
-                        </div>
+                        <!-- Hidden subject field with auto-generated value -->
+                        <input type="hidden" id="subject" name="subject" value="Chat Message">
 
                         <div class="mb-3">
-                            <label for="content" class="form-label">Message</label>
-                            <textarea class="form-control" id="content" name="content" rows="6" required></textarea>
+                            <label for="content" class="form-label fs-5">
+                                <i class="fas fa-comment-dots text-primary me-2"></i>
+                                What do you want to say?
+                            </label>
+                            <textarea class="form-control form-control-lg" id="content" name="content" rows="4"
+                                placeholder="Type your message here..." required
+                                style="font-size: 16px; line-height: 1.5;"></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle text-info"></i>
+                                Just type your message - no subject needed!
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="attachment" class="form-label">Attachment (optional)</label>
-                            <input type="file" class="form-control" id="attachment" name="attachment">
+                        <div class="mb-4">
+                            <label for="attachment" class="form-label fs-6">
+                                <i class="fas fa-paperclip text-secondary me-2"></i>
+                                Attach a file (optional)
+                            </label>
+                            <input type="file" class="form-control form-control-lg" id="attachment" name="attachment"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle text-info"></i>
+                                You can attach images, documents, or other files
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="reset" class="btn btn-secondary me-md-2">
+                            <button type="reset" class="btn btn-outline-secondary me-md-2">
                                 <i class="fas fa-eraser"></i> Clear
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Send Message
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-paper-plane me-2"></i> Send Message
                             </button>
                         </div>
                     </form>
@@ -317,8 +335,8 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedRecipient.style.display = 'block';
         userListCard.style.display = 'none';
         
-        // Auto-scroll to next form field for better flow
-        document.getElementById('subject').focus();
+        // Auto-focus on message content for better flow
+        document.getElementById('content').focus();
     }
     
     // Event Listeners - simple and direct

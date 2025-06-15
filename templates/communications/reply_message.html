@@ -10,8 +10,11 @@
                 <div class="card-header pb-0">
                     <div class="row">
                         <div class="col-6">
-                            <h5 class="mb-0">Reply to Message</h5>
-                            <p class="text-sm mb-0">Send a reply to the message</p>
+                            <h5 class="mb-0">
+                                <i class="fas fa-reply text-primary me-2"></i>
+                                Reply to {{ original_message.sender.get_full_name }}
+                            </h5>
+                            <p class="text-sm mb-0">Continue the conversation</p>
                         </div>
                         <div class="col-6 text-end">
                             <a href="{% url 'communications:message_detail' original_message.id %}" class="btn btn-secondary">
@@ -39,29 +42,56 @@
                             </div>
                         {% endif %}
                         
-                        <!-- Reply To (read-only) -->
-                        <div class="mb-3">
-                            <label for="recipient_name" class="form-label">Reply To</label>
-                            <input type="text" class="form-control bg-light" id="recipient_name" value="{{ original_message.sender.get_full_name }} ({{ original_message.sender.email }})" readonly>
-                            <input type="hidden" name="recipient" value="{{ original_message.sender.id }}">
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="recipient" value="{{ original_message.sender.id }}">
+                        <input type="hidden" name="subject" value="Re: {{ original_message.subject }}">
+
+                        <!-- Reply To Display -->
+                        <div class="mb-4">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-3">
+                                            <div class="avatar-initial rounded-circle bg-gradient-primary">
+                                                {{ original_message.sender.get_full_name|slice:":1" }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Replying to {{ original_message.sender.get_full_name }}</h6>
+                                            <small class="text-muted">{{ original_message.sender.email }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <!-- Subject (pre-filled with Re: prefix) -->
-                        <div class="mb-3">
-                            <label for="subject" class="form-label">Subject</label>
-                            <input type="text" class="form-control" id="subject" name="subject" required value="{{ subject }}">
-                        </div>
-                        
+
                         <!-- Message Content -->
                         <div class="mb-3">
-                            <label for="content" class="form-label">Message</label>
-                            <textarea class="form-control" id="content" name="content" rows="6" required>{{ content_with_quote }}</textarea>
+                            <label for="content" class="form-label fs-5">
+                                <i class="fas fa-comment-dots text-primary me-2"></i>
+                                Your reply
+                            </label>
+                            <textarea class="form-control form-control-lg" id="content" name="content" rows="4"
+                                placeholder="Type your reply here..." required
+                                style="font-size: 16px; line-height: 1.5;"></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle text-info"></i>
+                                Just type your reply - the original message is shown below
+                            </div>
                         </div>
                         
                         <!-- Attachment (optional) -->
-                        <div class="mb-3">
-                            <label for="attachment" class="form-label">Attachment (optional)</label>
-                            <input type="file" class="form-control" id="attachment" name="attachment">
+                        <div class="mb-4">
+                            <label for="attachment" class="form-label fs-6">
+                                <i class="fas fa-paperclip text-secondary me-2"></i>
+                                Attach a file (optional)
+                            </label>
+                            <input type="file" class="form-control form-control-lg" id="attachment" name="attachment"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle text-info"></i>
+                                You can attach images, documents, or other files
+                            </div>
                         </div>
                         
                         <!-- Original Message Preview (collapsed by default) -->
@@ -77,8 +107,7 @@
                                     <div class="card-body p-3">
                                         <div class="original-message-header mb-2">
                                             <strong>From:</strong> {{ original_message.sender.get_full_name }}<br>
-                                            <strong>Date:</strong> {{ original_message.created_at|date:"F d, Y" }} at {{ original_message.created_at|time:"H:i" }}<br>
-                                            <strong>Subject:</strong> {{ original_message.subject }}
+                                            <strong>Date:</strong> {{ original_message.created_at|date:"F d, Y" }} at {{ original_message.created_at|time:"H:i" }}
                                         </div>
                                         <div class="original-message-content p-3 bg-light rounded">
                                             {{ original_message.content|linebreaks }}
@@ -90,11 +119,11 @@
                         
                         <!-- Submission Buttons -->
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="reset" class="btn btn-secondary me-md-2">
+                            <button type="reset" class="btn btn-outline-secondary me-md-2">
                                 <i class="fas fa-eraser"></i> Clear
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Send Reply
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-paper-plane me-2"></i> Send Reply
                             </button>
                         </div>
                     </form>
