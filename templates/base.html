@@ -2293,11 +2293,11 @@ body.color-teal .sidebar {
               <span>Notifications {% if unread_notifications_count > 0 %}<span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>{% endif %}</span>
             </a>
             <a
-              href="{% url 'communications:chat' %}"
-              class="menu-item menu-subitem {% if '/communications/chat/' in request.path %}active{% endif %}"
+              href="{% url 'communications:message_list' %}"
+              class="menu-item menu-subitem {% if '/communications/messages/' in request.path %}active{% endif %}"
             >
-              <i class="fas fa-comments"></i>
-              <span>Chat {% if unread_messages_count > 0 %}<span class="badge bg-danger rounded-pill">{{ unread_messages_count }}</span>{% endif %}</span>
+              <i class="fas fa-envelope"></i>
+              <span>Messages {% if unread_messages_count > 0 %}<span class="badge bg-danger rounded-pill">{{ unread_messages_count }}</span>{% endif %}</span>
             </a>
           </div>
         </div>
@@ -2540,11 +2540,11 @@ body.color-teal .sidebar {
           <span>Attendance</span>
         </a>
         <a
-          href="{% url 'communications:chat' %}"
-          class="menu-item {% if '/communications/chat/' in request.path %}active{% endif %}"
+          href="{% url 'communications:message_list' %}"
+          class="menu-item {% if '/communications/messages/' in request.path %}active{% endif %}"
         >
-          <i class="fas fa-comments"></i>
-          <span>Chat</span>
+          <i class="fas fa-envelope"></i>
+          <span>Messages</span>
         </a>
 
         <!-- Parent Sidebar -->
@@ -2562,11 +2562,11 @@ body.color-teal .sidebar {
             <span>Dashboard</span>
           </a>
           <a
-            href="{% url 'communications:chat' %}"
-            class="menu-item {% if '/communications/chat/' in request.path %}active{% endif %}"
+            href="{% url 'communications:message_list' %}"
+            class="menu-item {% if '/communications/messages/' in request.path %}active{% endif %}"
           >
-            <i class="fas fa-comments"></i>
-            <span>Chat</span>
+            <i class="fas fa-envelope"></i>
+            <span>Messages</span>
           </a>
           <a
             href="{% url 'communications:announcement_list' %}"
@@ -2690,10 +2690,10 @@ body.color-teal .sidebar {
           </a>
           <a
             href="{% url 'communications:message_list' %}"
-            class="menu-item {% if '/communications/chat/' in request.path %}active{% endif %}"
+            class="menu-item {% if '/communications/messages/' in request.path %}active{% endif %}"
           >
-            <i class="fas fa-comments"></i>
-            <span>Chat</span>
+            <i class="fas fa-envelope"></i>
+            <span>Messages</span>
           </a>
           <a
             href="{% url 'communications:announcement_list' %}"
@@ -2806,10 +2806,10 @@ body.color-teal .sidebar {
             <span>Announcements</span>
           </a>
           <a
-            href="{% url 'communications:chat' %}"
-            class="menu-item {% if '/communications/chat/' in request.path %}active{% endif %}"
+            href="{% url 'communications:message_list' %}"
+            class="menu-item {% if '/communications/messages/' in request.path %}active{% endif %}"
           >
-            <i class="fas fa-comments"></i>
+            <i class="fas fa-inbox"></i>
             <span>Messages</span>
           </a>
         </div>

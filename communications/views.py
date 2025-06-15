@@ -21,9 +21,22 @@ def is_teacher(user):
 @login_required
 def message_list(request):
     """
-    Redirect to new WhatsApp-style chat interface.
+    Display a list of messages (inbox and sent) for the current user.
     """
-    return redirect('communications:chat')
+    # Get received and sent messages
+    received_messages = Message.objects.filter(recipient=request.user).order_by('-created_at')
+    sent_messages = Message.objects.filter(sender=request.user).order_by('-created_at')
+
+    # Count unread messages
+    unread_count = received_messages.filter(is_read=False).count()
+
+    context = {
+        'received_messages': received_messages,
+        'sent_messages': sent_messages,
+        'unread_count': unread_count
+    }
+
+    return render(request, 'communications/message_list.html', context)
 
 @login_required
 def inbox(request):
@@ -35,9 +48,9 @@ def inbox(request):
 @login_required
 def sent_messages(request):
     """
-    Redirect to new WhatsApp-style chat interface.
+    Redirect to message_list view.
     """
-    return redirect('communications:chat')
+    return redirect('communications:message_list')
 
 @login_required
 def chat(request):
@@ -440,7 +453,7 @@ def compose_message(request):
             create_message_notification(new_message)
 
             messages.success(request, f"Message sent to {recipient.get_full_name()}.")
-            return redirect('communications:chat')
+            return redirect('communications:message_list')
 
         except CustomUser.DoesNotExist:
             messages.error(request, "Invalid recipient selected.")
