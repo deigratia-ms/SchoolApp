@@ -51,6 +51,20 @@ System{% endblock %} {% block content %}
               <li class="nav-item" role="presentation">
                 <button
                   class="nav-link"
+                  id="communications-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#communications-tab-pane"
+                  type="button"
+                  role="tab"
+                  aria-controls="communications-tab-pane"
+                  aria-selected="false"
+                >
+                  <i class="fas fa-comments me-2"></i>Chat & Communication
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
                   id="appearance-tab"
                   data-bs-toggle="tab"
                   data-bs-target="#appearance-tab-pane"
@@ -314,6 +328,19 @@ System{% endblock %} {% block content %}
                   </div>
                 </div>
 
+
+
+
+              </div>
+
+              <!-- Chat & Communication Tab -->
+              <div
+                class="tab-pane fade"
+                id="communications-tab-pane"
+                role="tabpanel"
+                aria-labelledby="communications-tab"
+                tabindex="0"
+              >
                 <div class="mb-4">
                   <h5 class="border-bottom pb-2">
                     <i class="fas fa-comments me-2 text-primary"></i>Chat & Messaging Settings
@@ -483,31 +510,31 @@ System{% endblock %} {% block content %}
                       name="notify_grades"
                       {% if settings.notify_grades %}checked{% endif %}
                     />
-    <label class="form-check-label" for="notify_grades">
-      Send notifications for new grades
-    </label>
-  </div>
+                    <label class="form-check-label" for="notify_grades">
+                      Send notifications for new grades
+                    </label>
+                  </div>
 
-  <div class="form-check mb-2">
-    <input
-      class="form-check-input"
-      type="checkbox"
-      id="notify_attendance"
-      name="notify_attendance"
-      {% if settings.notify_attendance %}checked{% endif %}
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="notify_attendance"
+                      name="notify_attendance"
+                      {% if settings.notify_attendance %}checked{% endif %}
                     />
-    <label class="form-check-label" for="notify_attendance">
-      Send notifications for attendance updates
-    </label>
-  </div>
+                    <label class="form-check-label" for="notify_attendance">
+                      Send notifications for attendance updates
+                    </label>
+                  </div>
 
-  <div class="form-check mb-2">
-    <input
-      class="form-check-input"
-      type="checkbox"
-      id="notify_events"
-      name="notify_events"
-      {% if settings.notify_events %}checked{% endif %}
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="notify_events"
+                      name="notify_events"
+                      {% if settings.notify_events %}checked{% endif %}
                     />
                     <label class="form-check-label" for="notify_events">
                       Send notifications for new events
