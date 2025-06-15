@@ -4,127 +4,239 @@
 
 {% block extra_css %}
 <style>
-    /* Chat Interface Styles */
+    /* WhatsApp-like Chat Interface Styles */
     .chat-container {
         height: calc(100vh - 120px);
-        min-height: 500px;
+        min-height: 600px;
         overflow: hidden;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+        border-radius: 0.75rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        background: #ffffff;
     }
 
-    /* Left Sidebar */
+    /* Left Sidebar - WhatsApp Style */
     .chat-contacts {
         height: 100%;
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        border-right: 1px solid #e9ecef;
+        background: #f8f9fa;
     }
 
     .contacts-header {
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        background: linear-gradient(135deg, #128c7e 0%, #075e54 100%);
+        color: white;
+        border-bottom: none;
+    }
+
+    .contacts-header h5 {
+        color: white;
+        font-weight: 600;
+        margin: 0;
     }
 
     .contacts-search {
-        padding: 10px 15px;
-        background-color: #fff;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        background-color: #ffffff;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .contacts-search .input-group {
+        border-radius: 25px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .contacts-search .form-control {
+        border: none;
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+
+    .contacts-search .input-group-text {
+        background: white;
+        border: none;
+        padding: 12px 15px;
     }
 
     .contacts-list {
         flex: 1;
         overflow-y: auto;
         padding: 0;
+        background: white;
     }
 
     .contact-item {
         display: flex;
         align-items: center;
-        padding: 12px 15px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f2f5;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
+        background: white;
+        position: relative;
     }
 
     .contact-item:hover {
-        background-color: rgba(0, 0, 0, 0.03);
+        background-color: #f5f6fa;
     }
 
     .contact-item.active {
-        background-color: rgba(13, 110, 253, 0.1);
-        border-left: 3px solid #0d6efd;
+        background-color: #e3f2fd;
+        border-left: 4px solid #128c7e;
+    }
+
+    .contact-item.active::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #128c7e;
     }
 
     .contact-avatar {
-        width: 48px;
-        height: 48px;
+        width: 52px;
+        height: 52px;
         border-radius: 50%;
-        margin-right: 15px;
-        background-color: #6c757d;
+        margin-right: 16px;
+        background: linear-gradient(135deg, #128c7e 0%, #25d366 100%);
         color: white;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 18px;
-        font-weight: bold;
+        font-size: 20px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(18, 140, 126, 0.3);
+        position: relative;
+    }
+
+    .contact-avatar.online::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 14px;
+        height: 14px;
+        background: #25d366;
+        border: 2px solid white;
+        border-radius: 50%;
     }
 
     .contact-info {
         flex: 1;
         min-width: 0;
+        padding-right: 8px;
     }
 
     .contact-name {
         font-weight: 600;
-        margin-bottom: 3px;
+        margin-bottom: 4px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        color: #1f2937;
+        font-size: 16px;
     }
 
     .contact-preview {
-        color: #6c757d;
-        font-size: 13px;
+        color: #6b7280;
+        font-size: 14px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        line-height: 1.3;
+    }
+
+    .contact-preview.unread {
+        font-weight: 600;
+        color: #374151;
     }
 
     .contact-meta {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
+        min-width: 60px;
     }
 
     .contact-time {
         font-size: 12px;
-        color: #6c757d;
-        margin-bottom: 5px;
+        color: #9ca3af;
+        margin-bottom: 6px;
+        font-weight: 500;
+    }
+
+    .contact-time.unread {
+        color: #128c7e;
+        font-weight: 600;
     }
 
     .contact-badge {
-        font-size: 12px;
-        padding: 3px 7px;
-        border-radius: 10px;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        background: #25d366;
+        color: white;
+        font-weight: 600;
+        min-width: 20px;
+        text-align: center;
     }
 
-    /* Chat Area */
+    /* WhatsApp-like Chat Area */
     .chat-messages {
         height: 100%;
         display: flex;
         flex-direction: column;
-        background-color: #f0f2f5;
+        background: linear-gradient(to bottom, #e5ddd5 0%, #e5ddd5 100%);
+        position: relative;
+    }
+
+    .chat-messages::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="chat-bg" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23chat-bg)"/></svg>');
+        opacity: 0.3;
+        pointer-events: none;
     }
 
     .chat-header {
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #128c7e 0%, #075e54 100%);
+        color: white;
+        border-bottom: none;
         display: flex;
         align-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        position: relative;
+        z-index: 10;
+    }
+
+    .chat-header .contact-avatar {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+        margin-right: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .chat-header h6 {
+        color: white;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .chat-header small {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
     }
 
     .chat-body {
@@ -133,6 +245,8 @@
         padding: 20px;
         display: flex;
         flex-direction: column;
+        position: relative;
+        z-index: 5;
     }
 
     .empty-state {
@@ -147,9 +261,10 @@
     }
 
     .message-item {
-        max-width: 70%;
-        margin-bottom: 12px;
+        max-width: 75%;
+        margin-bottom: 8px;
         align-self: flex-start;
+        animation: messageSlideIn 0.3s ease-out;
     }
 
     .message-item.outgoing {
@@ -157,82 +272,154 @@
     }
 
     .message-bubble {
-        padding: 10px 15px;
-        border-radius: 10px;
+        padding: 8px 12px 6px 12px;
+        border-radius: 8px;
         background-color: white;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
         position: relative;
+        word-wrap: break-word;
     }
 
     .message-item.outgoing .message-bubble {
-        background-color: #d9fdd3;
+        background: linear-gradient(135deg, #dcf8c6 0%, #d4f4aa 100%);
+        color: #1f2937;
+    }
+
+    .message-bubble::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .message-item:not(.outgoing) .message-bubble::before {
+        left: -8px;
+        border-left: 8px solid transparent;
+        border-right: 8px solid white;
+        border-bottom: 8px solid white;
+        border-top: 8px solid transparent;
+    }
+
+    .message-item.outgoing .message-bubble::before {
+        right: -8px;
+        border-left: 8px solid #dcf8c6;
+        border-right: 8px solid transparent;
+        border-bottom: 8px solid #dcf8c6;
+        border-top: 8px solid transparent;
     }
 
     .message-text {
-        margin-bottom: 5px;
+        margin-bottom: 4px;
         word-wrap: break-word;
+        line-height: 1.4;
+        font-size: 14px;
     }
 
     .message-time {
         font-size: 11px;
-        color: #6c757d;
+        color: #667085;
         text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 4px;
+        margin-top: 2px;
     }
 
     .message-status {
         font-size: 12px;
-        margin-left: 5px;
+        color: #128c7e;
+    }
+
+    .message-status.read {
+        color: #25d366;
+    }
+
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .chat-footer {
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 16px 20px;
+        background: #f0f2f5;
+        border-top: 1px solid #e9ecef;
+        position: relative;
+        z-index: 10;
     }
 
     .message-form {
         display: flex;
         align-items: center;
+        gap: 8px;
     }
 
     .message-input {
         flex: 1;
-        border-radius: 20px;
-        padding-left: 15px;
-        padding-right: 15px;
+        border-radius: 25px;
+        padding: 12px 20px;
+        border: 1px solid #e9ecef;
+        background: white;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .message-input:focus {
+        border-color: #128c7e;
+        box-shadow: 0 0 0 3px rgba(18, 140, 126, 0.1);
+        outline: none;
     }
 
     .message-send-btn {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
-        margin-left: 10px;
+        background: linear-gradient(135deg, #128c7e 0%, #25d366 100%);
+        border: none;
+        color: white;
         display: flex;
         justify-content: center;
         align-items: center;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(18, 140, 126, 0.3);
+    }
+
+    .message-send-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(18, 140, 126, 0.4);
     }
 
     .message-attach-btn {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
-        margin-right: 10px;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: none;
-        border: none;
-        color: #6c757d;
+        background: white;
+        border: 1px solid #e9ecef;
+        color: #6b7280;
+        transition: all 0.2s ease;
     }
 
     .message-attach-btn:hover {
-        background-color: rgba(0, 0, 0, 0.05);
+        background-color: #f9fafb;
+        color: #128c7e;
+        border-color: #128c7e;
     }
 
-    /* Mobile Specific Styles */
+    /* Enhanced Mobile Styles */
     @media (max-width: 768px) {
         .chat-container {
-            height: calc(100vh - 100px);
+            height: calc(100vh - 80px);
+            border-radius: 0;
         }
 
         .chat-contacts {
@@ -248,7 +435,7 @@
             left: 0;
             z-index: 1000;
             transform: translateX(100%);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .chat-messages.active {
@@ -258,6 +445,114 @@
         .back-to-contacts {
             margin-right: 10px;
         }
+
+        .contact-item {
+            padding: 18px 16px;
+        }
+
+        .contact-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: 18px;
+        }
+
+        .message-item {
+            max-width: 85%;
+        }
+
+        .message-form {
+            gap: 6px;
+        }
+
+        .message-input {
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+    }
+
+    /* Tablet Styles */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .chat-container {
+            height: calc(100vh - 100px);
+        }
+
+        .message-item {
+            max-width: 80%;
+        }
+    }
+
+    /* Status Indicator */
+    .status-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #9ca3af;
+        margin-right: 6px;
+    }
+
+    .status-indicator.online {
+        background: #25d366;
+    }
+
+    .status-indicator.typing {
+        background: #128c7e;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Scroll to bottom button */
+    .scroll-to-bottom {
+        position: absolute;
+        bottom: 80px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(18, 140, 126, 0.9);
+        color: white;
+        border: none;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        z-index: 100;
+        transition: all 0.2s ease;
+    }
+
+    .scroll-to-bottom:hover {
+        background: #128c7e;
+        transform: scale(1.1);
+    }
+
+    /* Message date separator */
+    .date-separator {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+    }
+
+    .date-separator::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .date-separator span {
+        background: #e5ddd5;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        color: #667085;
+        position: relative;
+        z-index: 1;
     }
 
     /* Attachment Preview */
@@ -336,10 +631,17 @@
                         <!-- Contacts Sidebar -->
                         <div class="col-md-4 col-12 chat-contacts" id="chatContacts">
                             <div class="contacts-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Messages</h5>
-                                <a href="#" class="btn btn-sm btn-primary" id="newChatBtn">
-                                    <i class="fas fa-plus"></i> New Chat
-                                </a>
+                                <h5 class="mb-0">
+                                    <i class="fas fa-comments me-2"></i>Messages
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-light btn-outline-light" id="newChatBtn" title="New Chat">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light btn-outline-light" id="refreshChats" title="Refresh">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="contacts-search">
                                 <div class="input-group">
@@ -354,25 +656,30 @@
                                 {% if all_contacts %}
                                     {% for contact in all_contacts %}
                                         <div class="contact-item" data-user-id="{{ contact.id }}">
-                                            <div class="contact-avatar" style="background-color: {{ contact.get_avatar_color }}">
+                                            <div class="contact-avatar {% if contact.is_online %}online{% endif %}" style="background-color: {{ contact.get_avatar_color }}">
                                                 {{ contact.get_full_name|slice:":1" }}
                                             </div>
                                             <div class="contact-info">
                                                 <div class="contact-name">{{ contact.get_full_name }}</div>
-                                                <div class="contact-preview">
+                                                <div class="contact-preview {% if contact.unread_count > 0 %}unread{% endif %}">
                                                     {% if contact.last_message %}
-                                                        {{ contact.last_message.content|truncatechars:30 }}
+                                                        {% if contact.last_message.sender == request.user %}
+                                                            <i class="fas fa-check{% if contact.last_message.is_read %}-double{% endif %} me-1"></i>
+                                                        {% endif %}
+                                                        {{ contact.last_message.content|truncatechars:35 }}
                                                     {% else %}
-                                                        <em>No messages yet</em>
+                                                        <em class="text-muted">Start a conversation...</em>
                                                     {% endif %}
                                                 </div>
                                             </div>
                                             <div class="contact-meta">
                                                 {% if contact.last_message %}
-                                                    <div class="contact-time">{{ contact.last_message.created_at|date:"h:i A" }}</div>
+                                                    <div class="contact-time {% if contact.unread_count > 0 %}unread{% endif %}">
+                                                        {{ contact.last_message.created_at|timesince }} ago
+                                                    </div>
                                                 {% endif %}
                                                 {% if contact.unread_count > 0 %}
-                                                    <span class="badge bg-primary rounded-pill contact-badge">{{ contact.unread_count }}</span>
+                                                    <span class="contact-badge">{{ contact.unread_count }}</span>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -392,11 +699,15 @@
                         <!-- Chat Area -->
                         <div class="col-md-8 col-12 chat-messages" id="chatMessages">
                             <div id="initialChatState" class="empty-state">
-                                <div class="mb-3">
-                                    <i class="fas fa-comment-dots fa-4x text-primary"></i>
+                                <div class="mb-4">
+                                    <i class="fas fa-comments fa-5x" style="color: #128c7e; opacity: 0.6;"></i>
                                 </div>
-                                <h4>Select a contact to start chatting</h4>
-                                <p class="text-muted">Choose a conversation from the left to view messages</p>
+                                <h4 style="color: #374151;">Welcome to Messages</h4>
+                                <p class="text-muted">Select a contact to start chatting<br>
+                                <small>Send and receive messages with your classmates and teachers</small></p>
+                                <button class="btn btn-outline-primary mt-3" id="startNewChatBtn">
+                                    <i class="fas fa-plus me-2"></i>Start New Chat
+                                </button>
                             </div>
 
                             <div id="chatRoom" style="display: none;" class="d-flex flex-column h-100">
@@ -405,13 +716,27 @@
                                         <i class="fas fa-arrow-left"></i>
                                     </button>
                                     <div class="contact-avatar" id="chatContactAvatar">A</div>
-                                    <div class="ms-3">
+                                    <div class="ms-3 flex-grow-1">
                                         <h6 class="mb-0" id="chatContactName">Contact Name</h6>
-                                        <small class="text-muted" id="chatContactStatus">Online</small>
+                                        <small id="chatContactStatus">
+                                            <span class="status-indicator"></span>
+                                            <span class="status-text">Click to view profile</span>
+                                        </small>
+                                    </div>
+                                    <div class="chat-actions d-flex gap-2">
+                                        <button class="btn btn-sm btn-light btn-outline-light" id="chatInfo" title="Chat Info">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-light btn-outline-light" id="chatOptions" title="Options">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="chat-body" id="chatBody">
                                     <!-- Messages will be loaded here -->
+                                    <button class="scroll-to-bottom" id="scrollToBottom" title="Scroll to bottom">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
                                 </div>
                                 <div class="chat-footer">
                                     <form id="messageForm" class="message-form">
@@ -505,7 +830,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM fully loaded and parsed');
-        
+
         // Cache DOM elements
         const contactsList = document.getElementById('contactsList');
         const contactItems = document.querySelectorAll('.contact-item');
@@ -520,6 +845,9 @@
         const recipientId = document.getElementById('recipientId');
         const backToContacts = document.getElementById('backToContacts');
         const newChatBtn = document.getElementById('newChatBtn');
+        const startNewChatBtn = document.getElementById('startNewChatBtn');
+        const refreshChats = document.getElementById('refreshChats');
+        const scrollToBottom = document.getElementById('scrollToBottom');
         const contactSearchInput = document.getElementById('contactSearchInput');
         
         // Log all contact items for debugging
@@ -595,6 +923,63 @@
                 e.preventDefault();
                 const newChatModal = new bootstrap.Modal(document.getElementById('newChatModal'));
                 newChatModal.show();
+            });
+        }
+
+        if (startNewChatBtn) {
+            startNewChatBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const newChatModal = new bootstrap.Modal(document.getElementById('newChatModal'));
+                newChatModal.show();
+            });
+        }
+
+        if (refreshChats) {
+            refreshChats.addEventListener('click', function(e) {
+                e.preventDefault();
+                refreshChatList();
+            });
+        }
+
+        // Scroll to bottom button functionality
+        if (scrollToBottom) {
+            scrollToBottom.addEventListener('click', function() {
+                scrollToChatBottom();
+                scrollToBottom.style.display = 'none';
+            });
+        }
+
+        // Monitor chat scroll position
+        if (chatBody) {
+            chatBody.addEventListener('scroll', function() {
+                const isAtBottom = (chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight) < 30;
+                scrollPositionBottom = isAtBottom;
+
+                if (scrollToBottom) {
+                    scrollToBottom.style.display = isAtBottom ? 'none' : 'flex';
+                }
+            });
+        }
+
+        // Enhanced message input with Enter key support
+        if (messageContent) {
+            messageContent.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (messageForm) {
+                        messageForm.dispatchEvent(new Event('submit'));
+                    }
+                }
+            });
+
+            // Show typing indicator (placeholder for future implementation)
+            let typingTimer;
+            messageContent.addEventListener('input', function() {
+                clearTimeout(typingTimer);
+                // showTypingIndicator();
+                typingTimer = setTimeout(() => {
+                    // hideTypingIndicator();
+                }, 1000);
             });
         }
         
@@ -809,15 +1194,15 @@
             `;
         }
         
-        // Create message HTML
+        // Create message HTML with enhanced WhatsApp-like styling
         messageDiv.innerHTML = `
             <div class="message-bubble">
                 ${attachmentHtml}
                 <div class="message-text">${message.content}</div>
                 <div class="message-time">
-                    ${messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    ${isOutgoing ? `<span class="message-status">
-                        <i class="fas ${message.is_read ? 'fa-check-double text-primary' : 'fa-check'}" title="${message.is_read ? 'Read' : 'Sent'}"></i>
+                    ${formatMessageTime(message.created_at)}
+                    ${isOutgoing ? `<span class="message-status ${message.is_read ? 'read' : ''}">
+                        <i class="fas ${message.is_read ? 'fa-check-double' : 'fa-check'}" title="${message.is_read ? 'Read' : 'Sent'}"></i>
                     </span>` : ''}
                 </div>
             </div>
@@ -835,6 +1220,90 @@
         const chatBody = document.getElementById('chatBody');
         chatBody.scrollTop = chatBody.scrollHeight;
         console.log('Scrolled to bottom of chat');
+    }
+
+    function scrollToChatBottom() {
+        const chatBody = document.getElementById('chatBody');
+        chatBody.scrollTo({
+            top: chatBody.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+
+    function refreshChatList() {
+        console.log('Refreshing chat list...');
+        // Add loading indicator
+        const refreshBtn = document.getElementById('refreshChats');
+        const originalIcon = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        // Simulate refresh (you can implement actual refresh logic here)
+        setTimeout(() => {
+            refreshBtn.innerHTML = originalIcon;
+            // You could reload the page or fetch updated contact list via AJAX
+            location.reload();
+        }, 1000);
+    }
+
+    function addDateSeparator(date) {
+        const chatBody = document.getElementById('chatBody');
+        const today = new Date();
+        const messageDate = new Date(date);
+
+        let dateText;
+        if (messageDate.toDateString() === today.toDateString()) {
+            dateText = 'Today';
+        } else if (messageDate.toDateString() === new Date(today.getTime() - 86400000).toDateString()) {
+            dateText = 'Yesterday';
+        } else {
+            dateText = messageDate.toLocaleDateString();
+        }
+
+        const separator = document.createElement('div');
+        separator.className = 'date-separator';
+        separator.innerHTML = `<span>${dateText}</span>`;
+        chatBody.appendChild(separator);
+    }
+
+    function formatMessageTime(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffInHours = (now - date) / (1000 * 60 * 60);
+
+        if (diffInHours < 24) {
+            return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        } else if (diffInHours < 48) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString();
+        }
+    }
+
+    function updateOnlineStatus(userId, isOnline) {
+        const contactItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
+        if (contactItem) {
+            const avatar = contactItem.querySelector('.contact-avatar');
+            if (isOnline) {
+                avatar.classList.add('online');
+            } else {
+                avatar.classList.remove('online');
+            }
+        }
+
+        // Update chat header if this is the active conversation
+        if (activeContactId === userId) {
+            const statusIndicator = document.querySelector('.status-indicator');
+            const statusText = document.querySelector('.status-text');
+            if (statusIndicator && statusText) {
+                if (isOnline) {
+                    statusIndicator.classList.add('online');
+                    statusText.textContent = 'Online';
+                } else {
+                    statusIndicator.classList.remove('online');
+                    statusText.textContent = 'Last seen recently';
+                }
+            }
+        }
     }
     
     function startMessagePolling() {
