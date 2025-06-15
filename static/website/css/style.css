@@ -19,9 +19,11 @@ body {
 
 /* Header & Navigation */
 .navbar {
-    background: linear-gradient(to right, var(--primary-color), var(--primary-light)) !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    backdrop-filter: blur(20px);
     padding: 0.8rem 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
 }
 
@@ -65,14 +67,15 @@ body {
 .navbar-light .navbar-nav .nav-link {
     color: var(--white) !important;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 1.2rem;
     position: relative;
     z-index: 1;
-    border-radius: 6px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
 }
 
 .navbar-light .navbar-nav .nav-link::after {
@@ -104,12 +107,16 @@ body {
 }
 
 .navbar-light .navbar-nav .nav-link:hover {
-    color: var(--accent-color) !important;
+    color: var(--white) !important;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
 }
 
 .navbar-light .navbar-nav .nav-link.active {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
 
 .navbar-light .navbar-toggler {

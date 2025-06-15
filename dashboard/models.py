@@ -9,7 +9,7 @@ class DashboardPreference(models.Model):
 
     # Theme preferences
     theme = models.CharField(max_length=50, default='default')
-    color_scheme = models.CharField(max_length=50, default='navy')
+    color_scheme = models.CharField(max_length=50, default='modern')
     sidebar_collapsed = models.BooleanField(default=False)
 
     # Notification preferences

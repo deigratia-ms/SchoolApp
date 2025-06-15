@@ -33,10 +33,11 @@
                                         <div class="form-group mb-3">
                                             <label for="color_scheme">Color Scheme</label>
                                             <select class="form-control" id="color_scheme" name="color_scheme">
-                                                <option value="navy" {% if preferences.color_scheme == 'navy' %}selected{% endif %}>Navy</option>
-                                                <option value="blue" {% if preferences.color_scheme == 'blue' %}selected{% endif %}>Blue</option>
-                                                <option value="green" {% if preferences.color_scheme == 'green' %}selected{% endif %}>Green</option>
-                                                <option value="purple" {% if preferences.color_scheme == 'purple' %}selected{% endif %}>Purple</option>
+                                                <option value="modern" {% if preferences.color_scheme == 'modern' %}selected{% endif %}>Modern (Default)</option>
+                                                <option value="navy" {% if preferences.color_scheme == 'navy' %}selected{% endif %}>Navy (Clean White)</option>
+                                                <option value="blue" {% if preferences.color_scheme == 'blue' %}selected{% endif %}>Blue Gradient</option>
+                                                <option value="green" {% if preferences.color_scheme == 'green' %}selected{% endif %}>Green Gradient</option>
+                                                <option value="purple" {% if preferences.color_scheme == 'purple' %}selected{% endif %}>Purple Gradient</option>
                                                 <option value="red" {% if preferences.color_scheme == 'red' %}selected{% endif %}>Red</option>
                                                 <option value="orange" {% if preferences.color_scheme == 'orange' %}selected{% endif %}>Orange</option>
                                                 <option value="teal" {% if preferences.color_scheme == 'teal' %}selected{% endif %}>Teal</option>
@@ -175,7 +176,7 @@
 
             // Remove existing theme/color classes
             $('body').removeClass('theme-default theme-dark theme-light');
-            $('body').removeClass('color-navy color-blue color-green color-purple color-red color-orange color-teal color-black color-pink');
+            $('body').removeClass('color-modern color-navy color-blue color-green color-purple color-red color-orange color-teal color-black color-pink');
 
             // Apply new theme class
             $('body').addClass('theme-' + theme);
