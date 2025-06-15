@@ -75,6 +75,38 @@ def chat(request):
                 return redirect('dashboard:teacher_dashboard')
             else:
                 return redirect('dashboard:admin_dashboard')
+
+        # Check concurrent user limit
+        if school_settings.max_concurrent_users > 0:
+            from django.core.cache import cache
+
+            # Track active chat users in cache
+            cache_key = f"active_chat_users"
+            active_users = cache.get(cache_key, {})
+
+            # Clean up expired users (older than 5 minutes)
+            current_time = timezone.now().timestamp()
+            active_users = {
+                user_id: timestamp for user_id, timestamp in active_users.items()
+                if current_time - timestamp < 300  # 5 minutes
+            }
+
+            # Check if user limit is reached
+            if len(active_users) >= school_settings.max_concurrent_users and str(request.user.id) not in active_users:
+                messages.error(request, f'Chat is currently at capacity ({school_settings.max_concurrent_users} users). Please try again later.')
+                if request.user.is_student:
+                    return redirect('dashboard:student_dashboard')
+                elif request.user.is_parent:
+                    return redirect('dashboard:parent_dashboard')
+                elif request.user.is_teacher:
+                    return redirect('dashboard:teacher_dashboard')
+                else:
+                    return redirect('dashboard:admin_dashboard')
+
+            # Add current user to active users
+            active_users[str(request.user.id)] = current_time
+            cache.set(cache_key, active_users, 600)  # Cache for 10 minutes
+
     except:
         # If settings don't exist, allow messaging as default
         pass
@@ -697,6 +729,27 @@ def send_message_ajax(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'})
 
+    # Check if messaging is enabled
+    from users.models import SchoolSettings
+    from django.utils import timezone
+
+    school_settings = SchoolSettings.objects.first()
+    if not school_settings or not school_settings.enable_messaging:
+        return JsonResponse({'status': 'error', 'message': 'Messaging is currently disabled'})
+
+    # Check daily message limit
+    today = timezone.now().date()
+    today_messages = Message.objects.filter(
+        sender=request.user,
+        created_at__date=today
+    ).count()
+
+    if school_settings.max_messages_per_day > 0 and today_messages >= school_settings.max_messages_per_day:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Daily message limit reached ({school_settings.max_messages_per_day} messages per day)'
+        })
+
     recipient_id = request.POST.get('recipient')
     subject = request.POST.get('subject', 'Chat Message')
     content = request.POST.get('content', '').strip()
@@ -721,9 +774,32 @@ def send_message_ajax(request):
             content=content
         )
 
-        # Handle attachment if provided
+        # Handle attachment with restrictions from school settings
         if 'attachment' in request.FILES:
-            new_message.attachment = request.FILES['attachment']
+            attachment = request.FILES['attachment']
+
+            # File size limit from school settings (teachers get 5MB, others get setting value)
+            max_size_mb = 5 if request.user.role in ['TEACHER', 'ADMIN'] else school_settings.max_file_size_mb
+            max_size = max_size_mb * 1024 * 1024
+
+            if attachment.size > max_size:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'File too large. Maximum {max_size_mb}MB allowed.'
+                })
+
+            # Allowed file types from school settings
+            allowed_extensions = [f'.{ext.strip()}' for ext in school_settings.allowed_file_types.split(',')]
+            file_ext = attachment.name.lower().split('.')[-1] if '.' in attachment.name else ''
+
+            if f'.{file_ext}' not in allowed_extensions:
+                allowed_types = ', '.join([ext.upper().replace('.', '') for ext in allowed_extensions])
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'File type not allowed. Allowed: {allowed_types}'
+                })
+
+            new_message.attachment = attachment
 
         new_message.save()
 
@@ -821,10 +897,34 @@ def get_messages_ajax(request):
 def get_new_messages_ajax(request):
     """
     AJAX endpoint to get new messages since a specific timestamp.
-    Used for real-time chat updates.
+    Used for real-time chat updates with rate limiting.
     """
     from django.utils import timezone
     from django.db.models import Q
+    from django.core.cache import cache
+    import time
+
+    # Rate limiting: Allow max 20 requests per minute per user
+    cache_key = f"message_poll_rate_{request.user.id}"
+    current_time = int(time.time())
+
+    # Get or create rate limit data
+    rate_data = cache.get(cache_key, {'count': 0, 'window_start': current_time})
+
+    # Reset counter if we're in a new minute window
+    if current_time - rate_data['window_start'] >= 60:
+        rate_data = {'count': 0, 'window_start': current_time}
+
+    # Check rate limit
+    if rate_data['count'] >= 20:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Rate limit exceeded. Please wait before checking for new messages.'
+        })
+
+    # Increment counter and save
+    rate_data['count'] += 1
+    cache.set(cache_key, rate_data, 60)
 
     user_id = request.GET.get('user_id')
     since_timestamp = request.GET.get('since')

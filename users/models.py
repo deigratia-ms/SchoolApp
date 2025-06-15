@@ -371,6 +371,19 @@ class SchoolSettings(models.Model):
     enable_messaging = models.BooleanField(default=True, help_text="Enable messaging system across the platform")
     enable_student_to_student_chat = models.BooleanField(default=True, help_text="Allow students to message other students in their class")
 
+    # Advanced chat management
+    max_messages_per_day = models.PositiveIntegerField(default=50, help_text="Maximum messages a user can send per day (0 = unlimited)")
+    max_concurrent_users = models.PositiveIntegerField(default=100, help_text="Maximum simultaneous chat users (0 = unlimited)")
+    auto_delete_messages_days = models.PositiveIntegerField(default=60, help_text="Auto-delete messages after X days (0 = never delete)")
+
+    # File attachment settings
+    max_file_size_mb = models.PositiveIntegerField(default=2, help_text="Maximum file size in MB for attachments")
+    allowed_file_types = models.CharField(
+        max_length=500,
+        default="pdf,doc,docx,txt,jpg,jpeg,png,gif",
+        help_text="Comma-separated list of allowed file extensions (without dots)"
+    )
+
     # Appearance settings
     primary_color = models.CharField(max_length=20, default='#4e73df')
     dark_mode = models.BooleanField(default=False)

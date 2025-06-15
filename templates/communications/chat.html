@@ -1041,6 +1041,54 @@
         
         // Initialize contacts functionality
         setupPotentialContactListeners();
+
+        // Page visibility detection to pause polling when user is away
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // User switched tabs/minimized - pause polling
+                if (messagePollingInterval) {
+                    clearTimeout(messagePollingInterval);
+                    console.log('Paused message polling - user away');
+                }
+            } else {
+                // User returned - resume polling if chat is active
+                if (activeContactId) {
+                    console.log('Resumed message polling - user returned');
+                    startMessagePolling();
+                }
+            }
+        });
+
+        // Pause polling when user is idle for 5 minutes
+        let idleTimer;
+        let isIdle = false;
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            if (isIdle) {
+                isIdle = false;
+                if (activeContactId) {
+                    startMessagePolling();
+                    console.log('Resumed polling - user active again');
+                }
+            }
+
+            idleTimer = setTimeout(() => {
+                isIdle = true;
+                if (messagePollingInterval) {
+                    clearTimeout(messagePollingInterval);
+                    console.log('Paused polling - user idle');
+                }
+            }, 300000); // 5 minutes
+        }
+
+        // Track user activity
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetIdleTimer, true);
+        });
+
+        // Initialize idle timer
+        resetIdleTimer();
     });
     
     // Main function to load a conversation
@@ -1311,14 +1359,43 @@
         if (messagePollingInterval) {
             clearInterval(messagePollingInterval);
         }
-        messagePollingInterval = setInterval(checkNewMessages, 5000);
+
+        // Smart polling: Start with 5 seconds, increase if no activity
+        let pollInterval = 5000;
+        let inactivityCount = 0;
+
+        function smartPoll() {
+            checkNewMessages().then(hasNewMessages => {
+                if (hasNewMessages) {
+                    // Reset to fast polling if there are new messages
+                    pollInterval = 5000;
+                    inactivityCount = 0;
+                } else {
+                    // Gradually increase polling interval if no activity
+                    inactivityCount++;
+                    if (inactivityCount > 6) { // After 30 seconds of no activity
+                        pollInterval = 15000; // Poll every 15 seconds
+                    }
+                    if (inactivityCount > 20) { // After 5 minutes of no activity
+                        pollInterval = 30000; // Poll every 30 seconds
+                    }
+                }
+
+                // Schedule next poll
+                messagePollingInterval = setTimeout(smartPoll, pollInterval);
+            });
+        }
+
+        // Start smart polling
+        smartPoll();
     }
     
     function checkNewMessages() {
-        if (!activeContactId || !lastMessageTimestamp) return;
-        
+        if (!activeContactId || !lastMessageTimestamp) return Promise.resolve(false);
+
         console.log(`Checking for new messages since ${new Date(lastMessageTimestamp).toISOString()}`);
-        fetch(`{% url "communications:get_new_messages_ajax" %}?user_id=${activeContactId}&since=${lastMessageTimestamp}`, {
+
+        return fetch(`{% url "communications:get_new_messages_ajax" %}?user_id=${activeContactId}&since=${lastMessageTimestamp}`, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -1329,23 +1406,27 @@
         .then(data => {
             if (data.status === 'success' && data.messages && data.messages.length > 0) {
                 console.log(`Received ${data.messages.length} new messages`);
-                
+
                 // Check scroll position before adding new messages
                 const chatBody = document.getElementById('chatBody');
                 scrollPositionBottom = (chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight) < 30;
-                
+
                 // Add messages to UI
                 data.messages.forEach(message => {
                     appendMessage(message);
                 });
-                
+
                 // Update latest timestamp
                 lastMessageTimestamp = new Date(data.messages[data.messages.length - 1].created_at).getTime();
                 console.log(`Updated lastMessageTimestamp to: ${lastMessageTimestamp}`);
+
+                return true; // Has new messages
             }
+            return false; // No new messages
         })
         .catch(error => {
             console.error('Error checking for new messages:', error);
+            return false;
         });
     }
     

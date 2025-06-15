@@ -315,41 +315,147 @@ System{% endblock %} {% block content %}
                 </div>
 
                 <div class="mb-4">
-                  <h5 class="border-bottom pb-2">Communication Settings</h5>
-                  
-                  <div class="form-check mb-2">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="enable_messaging"
-                      name="enable_messaging"
-                      {% if settings.enable_messaging %}checked{% endif %}
-                    />
-                    <input type="hidden" name="enable_messaging" value="off">
-                    <label class="form-check-label" for="enable_messaging">
-                      <strong>Enable messaging system</strong>
-                      <span class="text-muted d-block small">If unchecked, messaging will be disabled for all users</span>
-                    </label>
+                  <h5 class="border-bottom pb-2">
+                    <i class="fas fa-comments me-2 text-primary"></i>Chat & Messaging Settings
+                  </h5>
+
+                  <!-- Main messaging toggle -->
+                  <div class="card border-0 bg-light mb-3">
+                    <div class="card-body">
+                      <div class="form-check mb-0">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="enable_messaging"
+                          name="enable_messaging"
+                          {% if settings.enable_messaging %}checked{% endif %}
+                          onchange="toggleMessagingSettings(this.checked)"
+                        />
+                        <input type="hidden" name="enable_messaging" value="off">
+                        <label class="form-check-label" for="enable_messaging">
+                          <strong class="text-primary">
+                            <i class="fas fa-power-off me-1"></i>Enable Messaging System
+                          </strong>
+                          <span class="text-muted d-block small">Master switch - If unchecked, all messaging will be disabled for all users</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div class="form-check mb-2">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="enable_student_to_student_chat"
-                      name="enable_student_to_student_chat"
-                      {% if settings.enable_student_to_student_chat %}checked{% endif %}
-                    />
-                    <input type="hidden" name="enable_student_to_student_chat" value="off">
-                    <label class="form-check-label" for="enable_student_to_student_chat">
-                      <strong>Allow students to message other students</strong>
-                      <span class="text-muted d-block small">If unchecked, students can only message teachers and parents</span>
-                    </label>
+
+                  <!-- Advanced messaging settings -->
+                  <div id="messagingSettings" style="{% if not settings.enable_messaging %}display: none;{% endif %}">
+
+                    <!-- Student-to-Student Chat -->
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <div class="form-check">
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="enable_student_to_student_chat"
+                            name="enable_student_to_student_chat"
+                            {% if settings.enable_student_to_student_chat %}checked{% endif %}
+                          />
+                          <input type="hidden" name="enable_student_to_student_chat" value="off">
+                          <label class="form-check-label" for="enable_student_to_student_chat">
+                            <strong>Allow Student-to-Student Chat</strong>
+                            <span class="text-muted d-block small">Students can message classmates in their grade</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Usage Limits -->
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="max_messages_per_day" class="form-label">
+                          <i class="fas fa-clock me-1"></i>Daily Message Limit
+                        </label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="max_messages_per_day"
+                          name="max_messages_per_day"
+                          value="{{ settings.max_messages_per_day|default:50 }}"
+                          min="0"
+                          max="1000"
+                        />
+                        <div class="form-text">Maximum messages per user per day (0 = unlimited)</div>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="max_concurrent_users" class="form-label">
+                          <i class="fas fa-users me-1"></i>Concurrent Users Limit
+                        </label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="max_concurrent_users"
+                          name="max_concurrent_users"
+                          value="{{ settings.max_concurrent_users|default:100 }}"
+                          min="0"
+                          max="1000"
+                        />
+                        <div class="form-text">Maximum simultaneous chat users (0 = unlimited)</div>
+                      </div>
+                    </div>
+
+                    <!-- Auto-delete Settings -->
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="auto_delete_messages_days" class="form-label">
+                          <i class="fas fa-trash-alt me-1"></i>Auto-delete Messages
+                        </label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="auto_delete_messages_days"
+                          name="auto_delete_messages_days"
+                          value="{{ settings.auto_delete_messages_days|default:60 }}"
+                          min="0"
+                          max="365"
+                        />
+                        <div class="form-text">Delete messages after X days (0 = never delete)</div>
+                      </div>
+                    </div>
+
+                    <!-- File Attachment Settings -->
+                    <div class="mb-3">
+                      <h6 class="text-secondary">
+                        <i class="fas fa-paperclip me-1"></i>File Attachment Settings
+                      </h6>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <label for="max_file_size_mb" class="form-label">Maximum File Size (MB)</label>
+                          <input
+                            type="number"
+                            class="form-control"
+                            id="max_file_size_mb"
+                            name="max_file_size_mb"
+                            value="{{ settings.max_file_size_mb|default:2 }}"
+                            min="1"
+                            max="50"
+                          />
+                          <div class="form-text">Maximum file size for attachments</div>
+                        </div>
+                        <div class="col-md-6">
+                          <label for="allowed_file_types" class="form-label">Allowed File Types</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="allowed_file_types"
+                            name="allowed_file_types"
+                            value="{{ settings.allowed_file_types|default:'pdf,doc,docx,txt,jpg,jpeg,png,gif' }}"
+                          />
+                          <div class="form-text">Comma-separated extensions (without dots)</div>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
-                  
+
                   <div class="alert alert-info small mt-3">
                     <i class="fas fa-info-circle me-2"></i>
-                    <span>Parents can individually restrict chat for their children in the parent dashboard, regardless of these settings.</span>
+                    <strong>Parent Controls:</strong> Parents can individually disable chat for their children in the parent dashboard, regardless of these settings.
                   </div>
                 </div>
 
@@ -827,6 +933,15 @@ This is a test email from your School Management System. If you received this, y
         }
       });
     }
+  });
+
+  // Toggle messaging settings visibility
+  function toggleMessagingSettings(enabled) {
+    const messagingSettings = document.getElementById('messagingSettings');
+    if (messagingSettings) {
+      messagingSettings.style.display = enabled ? 'block' : 'none';
+    }
+  }
 
     // Handle test email button with more robust error handling
     const testEmailBtn = document.getElementById("testEmailBtn");

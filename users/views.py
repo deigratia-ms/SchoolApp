@@ -501,6 +501,13 @@ def school_settings(request):
             settings.enable_messaging = 'enable_messaging' in request.POST and request.POST['enable_messaging'] == 'on'
             settings.enable_student_to_student_chat = 'enable_student_to_student_chat' in request.POST and request.POST['enable_student_to_student_chat'] == 'on'
 
+            # Advanced chat management settings
+            settings.max_messages_per_day = int(request.POST.get('max_messages_per_day', 50))
+            settings.max_concurrent_users = int(request.POST.get('max_concurrent_users', 100))
+            settings.auto_delete_messages_days = int(request.POST.get('auto_delete_messages_days', 60))
+            settings.max_file_size_mb = int(request.POST.get('max_file_size_mb', 2))
+            settings.allowed_file_types = request.POST.get('allowed_file_types', 'pdf,doc,docx,txt,jpg,jpeg,png,gif')
+
             # Security settings
             settings.smtp_use_tls = 'smtp_use_tls' in request.POST and request.POST['smtp_use_tls'] == 'on'
 
@@ -536,6 +543,8 @@ def school_settings(request):
                 'academic_year', 'principal_name', 'smtp_host', 'smtp_port',
                 'smtp_username', 'smtp_password', 'smtp_use_tls',
                 'enable_messaging', 'enable_student_to_student_chat',
+                'max_messages_per_day', 'max_concurrent_users', 'auto_delete_messages_days',
+                'max_file_size_mb', 'allowed_file_types',
                 'notify_assignments', 'notify_grades', 'notify_attendance', 'notify_events',
                 'primary_color', 'dark_mode'
             ])
