@@ -4,8 +4,8 @@
 
 {% block extra_css %}
 <style>
-    /* WhatsApp Web Interface Styles */
-    .whatsapp-container {
+    /* School Chat Interface Styles */
+    .chat-container {
         height: calc(100vh - 100px);
         min-height: 700px;
         background: #f0f2f5;
@@ -455,6 +455,64 @@
         cursor: not-allowed;
     }
 
+    /* Emoji Picker */
+    .emoji-picker {
+        position: absolute;
+        bottom: 70px;
+        left: 16px;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        width: 280px;
+    }
+
+    .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .emoji-item {
+        font-size: 24px;
+        padding: 8px;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .emoji-item:hover {
+        background: #f0f2f5;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .chat-container {
+            height: calc(100vh - 60px);
+        }
+
+        .chat-sidebar {
+            width: 100%;
+            max-width: none;
+        }
+
+        .chat-main {
+            display: none;
+        }
+
+        .chat-sidebar.chat-active {
+            display: none;
+        }
+
+        .chat-main.chat-active {
+            display: flex;
+            width: 100%;
+        }
+    }
+
     .chat-footer {
         padding: 16px 20px;
         background: #f0f2f5;
@@ -731,7 +789,7 @@
 
 {% block content %}
 <div class="container-fluid p-0">
-    <div class="whatsapp-container">
+    <div class="chat-container">
         <!-- Left Sidebar - Chat List -->
         <div class="chat-sidebar">
             <!-- Sidebar Header -->
@@ -808,10 +866,10 @@
             <div id="welcomeState" class="d-flex align-items-center justify-content-center h-100 flex-column">
                 <div class="text-center">
                     <i class="fas fa-comments" style="font-size: 80px; color: #d9d9d9; margin-bottom: 20px;"></i>
-                    <h4 style="color: #41525d; font-weight: 300; margin-bottom: 10px;">WhatsApp Web</h4>
+                    <h4 style="color: #41525d; font-weight: 300; margin-bottom: 10px;">School Chat</h4>
                     <p style="color: #667781; font-size: 14px; max-width: 360px; line-height: 20px;">
-                        Send and receive messages without keeping your phone online.<br>
-                        Use WhatsApp on up to 4 linked devices and 1 phone at the same time.
+                        Connect with your teachers, classmates, and parents.<br>
+                        Send messages, share files, and stay updated with school activities.
                     </p>
                     <button class="btn btn-outline-success mt-3" id="startNewChatBtn" style="border-color: #00a884; color: #00a884;">
                         <i class="fas fa-plus me-2"></i>Start New Chat
@@ -848,6 +906,17 @@
                         <input type="hidden" id="recipientId" name="recipient" value="">
                         <input type="hidden" id="messageSubject" name="subject" value="Chat Message">
                         <input type="file" id="attachment" name="attachment" style="display: none;">
+
+                        <!-- Emoji Picker -->
+                        <div id="emojiPicker" class="emoji-picker" style="display: none;">
+                            <div class="emoji-grid">
+                                <span class="emoji-item">😀</span><span class="emoji-item">😃</span><span class="emoji-item">😄</span><span class="emoji-item">😁</span>
+                                <span class="emoji-item">😊</span><span class="emoji-item">😍</span><span class="emoji-item">🤗</span><span class="emoji-item">🤔</span>
+                                <span class="emoji-item">😎</span><span class="emoji-item">😢</span><span class="emoji-item">😭</span><span class="emoji-item">😡</span>
+                                <span class="emoji-item">👍</span><span class="emoji-item">👎</span><span class="emoji-item">👏</span><span class="emoji-item">🙏</span>
+                                <span class="emoji-item">❤️</span><span class="emoji-item">💯</span><span class="emoji-item">🔥</span><span class="emoji-item">⭐</span>
+                            </div>
+                        </div>
 
                         <div class="message-input-wrapper">
                             <div class="input-actions">
@@ -1028,6 +1097,58 @@
                 document.getElementById('attachment').click();
             });
         }
+
+        // Handle file attachment selection
+        const attachmentInput = document.getElementById('attachment');
+        if (attachmentInput) {
+            attachmentInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    const fileName = file.name;
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+
+                    // Show file preview
+                    const messageInput = document.getElementById('messageContent');
+                    if (messageInput) {
+                        messageInput.placeholder = `📎 ${fileName} (${fileSize}MB) - Type a message...`;
+                        messageInput.style.backgroundColor = '#f0f8ff';
+                    }
+
+                    console.log(`File selected: ${fileName} (${fileSize}MB)`);
+                }
+            });
+        }
+
+        // Handle emoji button
+        const emojiBtn = document.getElementById('emojiBtn');
+        const emojiPicker = document.getElementById('emojiPicker');
+        if (emojiBtn && emojiPicker) {
+            emojiBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Handle emoji selection
+            const emojiItems = document.querySelectorAll('.emoji-item');
+            emojiItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const emoji = this.textContent;
+                    const messageInput = document.getElementById('messageContent');
+                    if (messageInput) {
+                        messageInput.value += emoji;
+                        messageInput.focus();
+                    }
+                    emojiPicker.style.display = 'none';
+                });
+            });
+
+            // Close emoji picker when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!emojiBtn.contains(e.target) && !emojiPicker.contains(e.target)) {
+                    emojiPicker.style.display = 'none';
+                }
+            });
+        }
         
         if (newChatBtn) {
             newChatBtn.addEventListener('click', function(e) {
@@ -1097,8 +1218,9 @@
         if (contactSearchInput) {
             contactSearchInput.addEventListener('input', function() {
                 const searchTerm = this.value.toLowerCase().trim();
-                contactItems.forEach(item => {
-                    const name = item.querySelector('.contact-name').textContent.toLowerCase();
+                const allChatItems = document.querySelectorAll('.chat-item');
+                allChatItems.forEach(item => {
+                    const name = item.querySelector('.chat-name').textContent.toLowerCase();
                     item.style.display = name.includes(searchTerm) || searchTerm === '' ? '' : 'none';
                 });
             });
@@ -1107,19 +1229,27 @@
         if (messageForm) {
             messageForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
                 if (!recipientId.value) {
                     alert('Please select a contact first');
                     return;
                 }
-                
-                if (!messageContent.value.trim() && 
+
+                if (!messageContent.value.trim() &&
                     !document.getElementById('attachment').files[0]) {
                     alert('Please enter a message or attach a file');
                     return;
                 }
-                
+
                 sendMessage();
+            });
+
+            // Handle Enter key to send message
+            messageContent.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    messageForm.dispatchEvent(new Event('submit'));
+                }
             });
         }
         
@@ -1232,23 +1362,23 @@
         console.log(`Set recipient ID input to: ${userId}`);
         
         // Update contact name and avatar
-        const activeContactElem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
+        const activeContactElem = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
         if (activeContactElem) {
-            const name = activeContactElem.querySelector('.contact-name').textContent;
-            const avatar = activeContactElem.querySelector('.contact-avatar').textContent.trim();
-            
+            const name = activeContactElem.querySelector('.chat-name').textContent;
+            const avatar = activeContactElem.querySelector('.chat-avatar').textContent.trim();
+
             document.getElementById('chatContactName').textContent = name;
             document.getElementById('chatContactAvatar').textContent = avatar;
             console.log(`Updated chat header with name: ${name}, avatar: ${avatar}`);
-            
+
             // Remove unread badge if present
-            const badge = activeContactElem.querySelector('.contact-badge');
+            const badge = activeContactElem.querySelector('.chat-unread');
             if (badge) badge.style.display = 'none';
         }
-        
+
         // Show loading spinner
-        const chatBody = document.getElementById('chatBody');
-        chatBody.innerHTML = '<div class="spinner-border text-primary my-5 mx-auto" role="status"><span class="visually-hidden">Loading...</span></div>';
+        const messagesContainer = document.getElementById('messagesContainer');
+        messagesContainer.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
         
         // Fetch messages for this conversation
         console.log(`Fetching messages for user ID: ${userId}`);
@@ -1277,38 +1407,38 @@
             console.log('Parsed response data:', data);
             
             if (data.status === 'success') {
-                // Clear chat body
-                chatBody.innerHTML = '';
-                
+                // Clear messages container
+                messagesContainer.innerHTML = '';
+
                 // Append messages
                 if (data.messages && data.messages.length > 0) {
                     console.log(`Displaying ${data.messages.length} messages`);
                     data.messages.forEach(message => {
                         appendMessage(message);
                     });
-                    
+
                     // Save timestamp of latest message
                     lastMessageTimestamp = new Date(data.messages[data.messages.length - 1].created_at).getTime();
                     console.log(`Set lastMessageTimestamp to: ${lastMessageTimestamp}`);
-                    
+
                     // Scroll to bottom
                     scrollToBottom();
                 } else {
                     // No messages
                     console.log('No messages found for this conversation');
-                    chatBody.innerHTML = '<div class="empty-state"><div class="mb-3"><i class="fas fa-comments fa-3x text-muted"></i></div><h5>No messages yet</h5><p>Send a message to start the conversation</p></div>';
+                    messagesContainer.innerHTML = '<div class="d-flex flex-column align-items-center justify-content-center h-100 text-center p-4"><i class="fas fa-comments fa-3x text-muted mb-3"></i><h5 class="text-muted">No messages yet</h5><p class="text-muted">Send a message to start the conversation</p></div>';
                 }
-                
+
                 // Start polling for new messages
                 startMessagePolling();
             } else {
                 console.error('Error in response:', data.message || 'Unknown error');
-                chatBody.innerHTML = `<div class="alert alert-danger m-3">Error loading messages: ${data.message || 'Unknown error'}</div>`;
+                messagesContainer.innerHTML = `<div class="alert alert-danger m-3">Error loading messages: ${data.message || 'Unknown error'}</div>`;
             }
         })
         .catch(error => {
             console.error('Network or parsing error:', error);
-            chatBody.innerHTML = `<div class="alert alert-danger m-3">Error loading messages: ${error.message}</div>`;
+            messagesContainer.innerHTML = `<div class="alert alert-danger m-3">Error loading messages: ${error.message}</div>`;
         });
     }
     
@@ -1352,7 +1482,7 @@
             `;
         }
         
-        // Create message HTML with WhatsApp Web styling
+        // Create message HTML with chat styling
         messageDiv.innerHTML = `
             <div class="message-bubble ${isOutgoing ? 'outgoing' : 'incoming'}">
                 ${attachmentHtml}
@@ -1516,8 +1646,8 @@
                 console.log(`Received ${data.messages.length} new messages`);
 
                 // Check scroll position before adding new messages
-                const chatBody = document.getElementById('chatBody');
-                scrollPositionBottom = (chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight) < 30;
+                const messagesContainer = document.getElementById('messagesContainer');
+                scrollPositionBottom = (messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight) < 30;
 
                 // Add messages to UI
                 data.messages.forEach(message => {
@@ -1609,30 +1739,30 @@
     }
     
     function updateContactPreview(userId, messageContent, timestamp) {
-        const contactItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
+        const contactItem = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
         if (!contactItem) return;
-        
+
         // Update preview text
-        const previewElem = contactItem.querySelector('.contact-preview');
+        const previewElem = contactItem.querySelector('.chat-preview');
         if (previewElem) {
             previewElem.textContent = messageContent;
         }
-        
+
         // Update time
-        const metaDiv = contactItem.querySelector('.contact-meta');
-        const timeElem = contactItem.querySelector('.contact-time');
+        const metaDiv = contactItem.querySelector('.chat-meta');
+        const timeElem = contactItem.querySelector('.chat-time');
         const messageDate = new Date(timestamp);
         const timeText = messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
+
         if (timeElem) {
             timeElem.textContent = timeText;
         } else if (metaDiv) {
             const newTimeElem = document.createElement('div');
-            newTimeElem.className = 'contact-time';
+            newTimeElem.className = 'chat-time';
             newTimeElem.textContent = timeText;
             metaDiv.insertBefore(newTimeElem, metaDiv.firstChild);
         }
-        
+
         // Move to top
         const parent = contactItem.parentNode;
         if (parent) {
@@ -1666,43 +1796,43 @@
     
     function startNewChat(userId, userName, avatarColor = null) {
         // Check if contact already exists
-        const existingContact = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
+        const existingContact = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
         if (existingContact) {
             console.log(`Contact already exists, selecting: ${userName}`);
             existingContact.click();
             return;
         }
-        
+
         // Create new contact element
         console.log(`Creating new contact for: ${userName}, ID: ${userId}`);
-        
+
         // Use random color if not provided
         if (!avatarColor) {
             avatarColor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`;
         }
-        
+
         // Create new contact HTML
         const contactItem = document.createElement('div');
-        contactItem.className = 'contact-item';
+        contactItem.className = 'chat-item';
         contactItem.setAttribute('data-user-id', userId);
         contactItem.innerHTML = `
-            <div class="contact-avatar" style="background-color: ${avatarColor}">${userName.charAt(0)}</div>
-            <div class="contact-info">
-                <div class="contact-name">${userName}</div>
-                <div class="contact-preview">
+            <div class="chat-avatar" style="background-color: ${avatarColor}">${userName.charAt(0)}</div>
+            <div class="chat-info">
+                <div class="chat-name">${userName}</div>
+                <div class="chat-preview">
                     <em>No messages yet</em>
                 </div>
             </div>
-            <div class="contact-meta"></div>
+            <div class="chat-meta"></div>
         `;
-        
+
         // Add click handler
         contactItem.addEventListener('click', function() {
             loadConversation(userId);
         });
-        
+
         // Find contacts list
-        const contactsList = document.getElementById('contactsList');
+        const contactsList = document.getElementById('chatList');
         if (!contactsList) {
             console.error('Could not find contacts list element');
             return;
