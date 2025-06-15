@@ -901,7 +901,7 @@
                 </div>
                 <!-- Message Input -->
                 <div class="message-input-container">
-                    <form id="messageForm">
+                    <form id="messageForm" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         <input type="hidden" id="recipientId" name="recipient" value="">
                         <input type="hidden" id="messageSubject" name="subject" value="Chat Message">
@@ -1039,7 +1039,8 @@
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log(`Chat clicked directly: ${name}, ID: ${userId}`);
+                    console.log(`🖱️ Chat clicked directly: ${name}, ID: ${userId}`);
+                    alert(`Chat clicked: ${name} (ID: ${userId})`); // Temporary debug alert
                     if (userId) {
                         loadConversation(userId);
                     }
@@ -1159,13 +1160,19 @@
         }
 
         if (startNewChatBtn) {
+            console.log('✅ Start New Chat button found and event listener added');
             startNewChatBtn.addEventListener('click', function(e) {
                 e.preventDefault();
+                console.log('🚀 Start New Chat button clicked!');
+                alert('Start New Chat clicked!'); // Temporary debug alert
                 const newChatModal = new bootstrap.Modal(document.getElementById('newChatModal'));
                 newChatModal.show();
             });
+        } else {
+            console.log('❌ Start New Chat button not found');
         }
 
+        const refreshChats = document.getElementById('refreshChats');
         if (refreshChats) {
             refreshChats.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1174,21 +1181,23 @@
         }
 
         // Scroll to bottom button functionality
-        if (scrollToBottom) {
-            scrollToBottom.addEventListener('click', function() {
+        const scrollToBottomBtn = document.getElementById('scrollToBottom');
+        if (scrollToBottomBtn) {
+            scrollToBottomBtn.addEventListener('click', function() {
                 scrollToChatBottom();
-                scrollToBottom.style.display = 'none';
+                scrollToBottomBtn.style.display = 'none';
             });
         }
 
         // Monitor chat scroll position
+        const chatBody = document.getElementById('messagesContainer');
         if (chatBody) {
             chatBody.addEventListener('scroll', function() {
                 const isAtBottom = (chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight) < 30;
                 scrollPositionBottom = isAtBottom;
 
-                if (scrollToBottom) {
-                    scrollToBottom.style.display = isAtBottom ? 'none' : 'flex';
+                if (scrollToBottomBtn) {
+                    scrollToBottomBtn.style.display = isAtBottom ? 'none' : 'flex';
                 }
             });
         }
@@ -1283,6 +1292,17 @@
         // Initialize contacts functionality
         setupPotentialContactListeners();
 
+        // Add click handlers to existing chat items
+        document.querySelectorAll('.chat-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                if (userId) {
+                    console.log(`Chat item clicked for user ID: ${userId}`);
+                    loadConversation(userId);
+                }
+            });
+        });
+
         // Page visibility detection to pause polling when user is away
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
@@ -1334,11 +1354,13 @@
     
     // Main function to load a conversation
     function loadConversation(userId) {
-        console.log(`loadConversation called with userId: ${userId}`);
+        console.log(`🚀 loadConversation called with userId: ${userId}`);
         if (!userId) {
-            console.error('No user ID provided to loadConversation');
+            console.error('❌ No user ID provided to loadConversation');
             return;
         }
+
+        console.log('✅ Starting conversation load process...');
         
         // Update UI and tracking variables
         activeContactId = userId;
@@ -1353,8 +1375,10 @@
         });
 
         // Show chat interface
-        welcomeState.style.display = 'none';
-        activeChat.style.display = 'flex';
+        const welcomeState = document.getElementById('welcomeState');
+        const activeChat = document.getElementById('activeChat');
+        if (welcomeState) welcomeState.style.display = 'none';
+        if (activeChat) activeChat.style.display = 'flex';
         
         // Set recipient ID for message form
         const recipientIdInput = document.getElementById('recipientId');
