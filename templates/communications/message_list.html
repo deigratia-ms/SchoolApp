@@ -770,33 +770,9 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
                                                     <div class="message-list">
                                                         {% for message in received_messages %}
                                                             <div class="message-item d-flex {% if not message.is_read %}unread{% endif %}"
-                                                                 onclick="
-                                                                     console.log('Loading message:', {{ message.id }});
-                                                                     document.querySelectorAll('.message-item').forEach(function(item) {
-                                                                         item.classList.remove('selected');
-                                                                     });
-                                                                     this.classList.add('selected');
-                                                                     document.getElementById('inboxMessageContent').innerHTML = '<div class=\"text-center p-4\"><i class=\"fas fa-spinner fa-spin\"></i> Loading message...</div>';
-                                                                     fetch('/communications/messages/{{ message.id }}/')
-                                                                         .then(function(response) {
-                                                                             if (!response.ok) throw new Error('Failed to load message');
-                                                                             return response.text();
-                                                                         })
-                                                                         .then(function(html) {
-                                                                             var parser = new DOMParser();
-                                                                             var doc = parser.parseFromString(html, 'text/html');
-                                                                             var messageContent = doc.querySelector('.message-detail, .card-body, .container');
-                                                                             if (messageContent) {
-                                                                                 document.getElementById('inboxMessageContent').innerHTML = messageContent.innerHTML;
-                                                                             } else {
-                                                                                 document.getElementById('inboxMessageContent').innerHTML = '<div class=\"p-4\">' + html + '</div>';
-                                                                             }
-                                                                         })
-                                                                         .catch(function(error) {
-                                                                             console.error('Error loading message:', error);
-                                                                             document.getElementById('inboxMessageContent').innerHTML = '<div class=\"alert alert-danger m-3\">Failed to load message. Please try again.</div>';
-                                                                         });
-                                                                 ">
+                                                                 data-message-id="{{ message.id }}"
+                                                                 data-section="inbox"
+                                                                 onclick="loadMessage(this)">
                                                                 <div class="message-avatar"
                                                                      style="background-color: hsl({{ message.sender.id|add:200 }}deg, 70%, 50%);">
                                                                     {{ message.sender.get_full_name|slice:":1" }}
@@ -866,33 +842,10 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
                                                 {% if sent_messages %}
                                                     <div class="message-list">
                                                         {% for message in sent_messages %}
-                                                            <div class="message-item d-flex" onclick="
-                                                                console.log('Loading sent message:', {{ message.id }});
-                                                                document.querySelectorAll('.message-item').forEach(function(item) {
-                                                                    item.classList.remove('selected');
-                                                                });
-                                                                this.classList.add('selected');
-                                                                document.getElementById('sentMessageContent').innerHTML = '<div class=\"text-center p-4\"><i class=\"fas fa-spinner fa-spin\"></i> Loading message...</div>';
-                                                                fetch('/communications/messages/{{ message.id }}/')
-                                                                    .then(function(response) {
-                                                                        if (!response.ok) throw new Error('Failed to load message');
-                                                                        return response.text();
-                                                                    })
-                                                                    .then(function(html) {
-                                                                        var parser = new DOMParser();
-                                                                        var doc = parser.parseFromString(html, 'text/html');
-                                                                        var messageContent = doc.querySelector('.message-detail, .card-body, .container');
-                                                                        if (messageContent) {
-                                                                            document.getElementById('sentMessageContent').innerHTML = messageContent.innerHTML;
-                                                                        } else {
-                                                                            document.getElementById('sentMessageContent').innerHTML = '<div class=\"p-4\">' + html + '</div>';
-                                                                        }
-                                                                    })
-                                                                    .catch(function(error) {
-                                                                        console.error('Error loading message:', error);
-                                                                        document.getElementById('sentMessageContent').innerHTML = '<div class=\"alert alert-danger m-3\">Failed to load message. Please try again.</div>';
-                                                                    });
-                                                            ">
+                                                            <div class="message-item d-flex"
+                                                                 data-message-id="{{ message.id }}"
+                                                                 data-section="sent"
+                                                                 onclick="loadMessage(this)">
                                                                 <div class="message-avatar"
                                                                      style="background-color: hsl({{ message.recipient.id|add:200 }}deg, 70%, 50%);">
                                                                     {{ message.recipient.get_full_name|slice:":1" }}
@@ -1107,51 +1060,7 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
 
                                         <!-- Compose Form Panel (Right Side) -->
                                         <div class="col-md-7 compose-form-panel">
-                                            <form method="POST" action="{% url 'communications:compose_message' %}" enctype="multipart/form-data" id="composeForm" onsubmit="
-                                                event.preventDefault();
-                                                var formData = new FormData(this);
-                                                var submitBtn = this.querySelector('button[type=submit]');
-                                                var originalText = submitBtn.innerHTML;
-                                                submitBtn.innerHTML = '<i class=\"fas fa-spinner fa-spin me-1\"></i> Sending...';
-                                                submitBtn.disabled = true;
-
-                                                fetch(this.action, {
-                                                    method: 'POST',
-                                                    body: formData,
-                                                    headers: {
-                                                        'X-Requested-With': 'XMLHttpRequest'
-                                                    }
-                                                })
-                                                .then(function(response) {
-                                                    if (response.ok) {
-                                                        return response.json();
-                                                    } else {
-                                                        throw new Error('Failed to send message');
-                                                    }
-                                                })
-                                                .then(function(data) {
-                                                    if (data.success) {
-                                                        alert('Message sent successfully!');
-                                                        document.getElementById('recipient').value = '';
-                                                        document.getElementById('messageContent').value = '';
-                                                        document.querySelector('input[type=file]').value = '';
-                                                        document.querySelectorAll('.user-item').forEach(function(item) {
-                                                            item.classList.remove('selected');
-                                                        });
-                                                    } else {
-                                                        alert('Error: ' + (data.message || 'Failed to send message'));
-                                                    }
-                                                })
-                                                .catch(function(error) {
-                                                    console.error('Error:', error);
-                                                    alert('Failed to send message. Please try again.');
-                                                })
-                                                .finally(function() {
-                                                    submitBtn.innerHTML = originalText;
-                                                    submitBtn.disabled = false;
-                                                });
-                                                return false;
-                                            ">
+                                            <form method="POST" action="{% url 'communications:compose_message' %}" enctype="multipart/form-data" id="composeForm" onsubmit="return submitMessageForm(this)">
                                                 {% csrf_token %}
                                                 <input type="hidden" id="recipient" name="recipient" required>
                                                 <input type="hidden" name="subject" value="Chat Message">
@@ -1291,6 +1200,47 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
 // Function already defined in head, just add other functions here
 console.log('✅ Confirming showSection function is available:', typeof showSection);
 
+// Load message function for side-by-side layout
+function loadMessage(element) {
+    var messageId = element.getAttribute('data-message-id');
+    var section = element.getAttribute('data-section');
+    var contentId = section === 'inbox' ? 'inboxMessageContent' : 'sentMessageContent';
+
+    console.log('Loading message:', messageId, 'for section:', section);
+
+    // Remove selection from all message items
+    document.querySelectorAll('.message-item').forEach(function(item) {
+        item.classList.remove('selected');
+    });
+
+    // Add selection to clicked item
+    element.classList.add('selected');
+
+    // Show loading state
+    document.getElementById(contentId).innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading message...</div>';
+
+    // Fetch message content
+    fetch('/communications/messages/' + messageId + '/')
+        .then(function(response) {
+            if (!response.ok) throw new Error('Failed to load message');
+            return response.text();
+        })
+        .then(function(html) {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, 'text/html');
+            var messageContent = doc.querySelector('.message-detail, .card-body, .container');
+            if (messageContent) {
+                document.getElementById(contentId).innerHTML = messageContent.innerHTML;
+            } else {
+                document.getElementById(contentId).innerHTML = '<div class="p-4">' + html + '</div>';
+            }
+        })
+        .catch(function(error) {
+            console.error('Error loading message:', error);
+            document.getElementById(contentId).innerHTML = '<div class="alert alert-danger m-3">Failed to load message. Please try again.</div>';
+        });
+}
+
 // Load message detail in same pane
 function loadMessageDetail(messageId, returnSection) {
     console.log('Loading message detail:', messageId);
@@ -1351,6 +1301,60 @@ function loadMessageDetail(messageId, returnSection) {
             document.getElementById('messageDetailContent').innerHTML =
                 '<div class="alert alert-danger">Failed to load message. Please try again.</div>';
         });
+}
+
+// Submit message form via AJAX
+function submitMessageForm(form) {
+    event.preventDefault();
+
+    var formData = new FormData(form);
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var originalText = submitBtn.innerHTML;
+
+    // Show loading state
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
+    submitBtn.disabled = true;
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(function(response) {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Failed to send message');
+        }
+    })
+    .then(function(data) {
+        if (data.success) {
+            alert('Message sent successfully!');
+            // Clear form
+            document.getElementById('recipient').value = '';
+            document.getElementById('messageContent').value = '';
+            var fileInput = document.querySelector('input[type="file"]');
+            if (fileInput) fileInput.value = '';
+            // Clear user selection
+            document.querySelectorAll('.user-item').forEach(function(item) {
+                item.classList.remove('selected');
+            });
+        } else {
+            alert('Error: ' + (data.message || 'Failed to send message'));
+        }
+    })
+    .catch(function(error) {
+        console.error('Error:', error);
+        alert('Failed to send message. Please try again.');
+    })
+    .finally(function() {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+
+    return false;
 }
 
 // Mobile sidebar toggle
