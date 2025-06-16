@@ -416,6 +416,78 @@
 </style>
 {% endblock %}
 
+<!-- CRITICAL: Define showSection function immediately -->
+<script>
+function showSection(sectionName) {
+    console.log('showSection called:', sectionName);
+
+    // Hide all sections
+    var sections = document.querySelectorAll('.content-section');
+    for (var i = 0; i < sections.length; i++) {
+        sections[i].style.display = 'none';
+        sections[i].classList.remove('active');
+    }
+
+    // Show target section
+    var targetSection = document.getElementById(sectionName + '-section');
+    if (targetSection) {
+        targetSection.style.display = 'block';
+        targetSection.classList.add('active');
+        console.log('Showing section:', sectionName);
+    }
+
+    // Update sidebar active state
+    var links = document.querySelectorAll('.sidebar-nav-link');
+    for (var i = 0; i < links.length; i++) {
+        links[i].classList.remove('active');
+    }
+
+    // Find and activate correct link
+    var activeLink = document.querySelector('[onclick*="' + sectionName + '"]');
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+
+    // Update header
+    var titles = {
+        'inbox': { title: 'Inbox', subtitle: 'Your received messages' },
+        'sent': { title: 'Sent', subtitle: 'Messages you have sent' },
+        'compose': { title: 'Compose', subtitle: 'Send a new message' }
+    };
+
+    var titleElement = document.getElementById('sectionTitle');
+    var subtitleElement = document.getElementById('sectionSubtitle');
+
+    if (titleElement && titles[sectionName]) {
+        titleElement.textContent = titles[sectionName].title;
+        if (subtitleElement) {
+            subtitleElement.textContent = titles[sectionName].subtitle;
+        }
+    }
+
+    return false;
+}
+
+console.log('showSection function loaded:', typeof showSection);
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM ready, initializing messaging interface...');
+
+    // Hide all sections first
+    var sections = document.querySelectorAll('.content-section');
+    for (var i = 0; i < sections.length; i++) {
+        sections[i].style.display = 'none';
+        sections[i].classList.remove('active');
+    }
+
+    // Show inbox by default
+    setTimeout(function() {
+        showSection('inbox');
+    }, 100);
+});
+</script>
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row">
@@ -440,13 +512,13 @@
                                 </a>
                             </li>
                             <li class="sidebar-nav-item">
-                                <a href="#" class="sidebar-nav-link" onclick="showSection('sent'); return false;">
+                                <a href="#" class="sidebar-nav-link" onclick="console.log('Sent clicked'); showSection('sent'); return false;">
                                     <i class="fas fa-paper-plane sidebar-nav-icon"></i>
                                     <span class="sidebar-nav-text">Sent</span>
                                 </a>
                             </li>
                             <li class="sidebar-nav-item">
-                                <a href="#" class="sidebar-nav-link" onclick="showSection('compose'); return false;">
+                                <a href="#" class="sidebar-nav-link" onclick="console.log('Compose clicked'); showSection('compose'); return false;">
                                     <i class="fas fa-edit sidebar-nav-icon"></i>
                                     <span class="sidebar-nav-text">Compose</span>
                                 </a>
@@ -673,48 +745,48 @@
 
 {% block extra_scripts %}
 <script>
-// Function to show sections - FIXED VERSION
-function showSection(sectionName) {
-    console.log('Switching to section:', sectionName); // Debug log
+// CRITICAL: Define showSection function first to ensure it's available
+window.showSection = function(sectionName) {
+    console.log('showSection called with:', sectionName);
 
-    // Hide ALL sections first
-    const allSections = document.querySelectorAll('.content-section');
-    allSections.forEach(section => {
-        section.classList.remove('active');
-        section.style.display = 'none';
-    });
+    // Hide all sections
+    var sections = document.querySelectorAll('.content-section');
+    for (var i = 0; i < sections.length; i++) {
+        sections[i].style.display = 'none';
+        sections[i].classList.remove('active');
+    }
 
-    // Show the selected section
-    const targetSection = document.getElementById(sectionName + '-section');
+    // Show target section
+    var targetSection = document.getElementById(sectionName + '-section');
     if (targetSection) {
-        targetSection.classList.add('active');
         targetSection.style.display = 'block';
-        console.log('Showing section:', targetSection.id); // Debug log
+        targetSection.classList.add('active');
+        console.log('Showing section:', sectionName);
     } else {
         console.error('Section not found:', sectionName + '-section');
     }
 
     // Update sidebar active state
-    const allLinks = document.querySelectorAll('.sidebar-nav-link');
-    allLinks.forEach(link => {
-        link.classList.remove('active');
-    });
+    var links = document.querySelectorAll('.sidebar-nav-link');
+    for (var i = 0; i < links.length; i++) {
+        links[i].classList.remove('active');
+    }
 
-    // Find and activate the correct link
-    const activeLink = document.querySelector(`[onclick*="${sectionName}"]`);
+    // Find and activate correct link
+    var activeLink = document.querySelector('[onclick*="' + sectionName + '"]');
     if (activeLink) {
         activeLink.classList.add('active');
     }
 
-    // Update header titles
-    const titles = {
+    // Update header
+    var titles = {
         'inbox': { title: 'Inbox', subtitle: 'Your received messages' },
         'sent': { title: 'Sent', subtitle: 'Messages you have sent' },
         'compose': { title: 'Compose', subtitle: 'Send a new message' }
     };
 
-    const titleElement = document.getElementById('sectionTitle');
-    const subtitleElement = document.getElementById('sectionSubtitle');
+    var titleElement = document.getElementById('sectionTitle');
+    var subtitleElement = document.getElementById('sectionSubtitle');
 
     if (titleElement && titles[sectionName]) {
         titleElement.textContent = titles[sectionName].title;
@@ -723,14 +795,17 @@ function showSection(sectionName) {
         }
     }
 
-    // Close mobile sidebar if open
-    if (window.innerWidth <= 768) {
-        const sidebar = document.getElementById('messagingSidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (sidebar) sidebar.classList.remove('show');
-        if (overlay) overlay.classList.remove('show');
-    }
+    return false; // Prevent default link behavior
+};
+
+// Also create a backup function for compatibility
+function showSection(sectionName) {
+    return window.showSection(sectionName);
 }
+
+// Test that function is available
+console.log('showSection function defined:', typeof showSection);
+console.log('window.showSection function defined:', typeof window.showSection);
 
 // Mobile sidebar toggle
 function toggleSidebar() {
@@ -856,7 +931,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show inbox by default after a small delay to ensure DOM is ready
     setTimeout(function() {
-        showSection('inbox');
+        if (typeof window.showSection === 'function') {
+            window.showSection('inbox');
+        } else {
+            console.error('showSection function not available');
+        }
     }, 100);
 
     // Set up user search
