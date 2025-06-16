@@ -87,7 +87,7 @@ def message_list(request):
         except Student.DoesNotExist:
             all_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
     elif user.role == 'PARENT':
-        # Parents can message their children's teachers and admins
+        # Parents can ONLY message teachers and administrators (no students, no other parents)
         try:
             parent = Parent.objects.get(user=user)
             # Get teachers of parent's children
@@ -95,11 +95,14 @@ def message_list(request):
                 teacher__classrooms__in=parent.children.values_list('classroom', flat=True),
                 is_active=True
             )
-            # Get admins
+            # Get ALL teachers (not just their children's teachers) and admins
+            all_teacher_users = CustomUser.objects.filter(role='TEACHER', is_active=True)
             admin_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
 
-            all_users = (teacher_users | admin_users).distinct()
+            # Combine teachers and admins only
+            all_users = (all_teacher_users | admin_users).distinct()
         except Parent.DoesNotExist:
+            # If parent record doesn't exist, can only message admins
             all_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
     else:
         # Default: can only message admins
@@ -290,17 +293,18 @@ def compose_message(request):
             all_users = CustomUser.objects.none()
 
     elif user.role == 'PARENT':
+        # Parents can ONLY message teachers and administrators (no students, no other parents)
         try:
             parent = Parent.objects.get(user=user)
-            children = parent.children.all()
-            # Get teachers of all children
-            teachers = Teacher.objects.filter(
-                Q(teaching_subjects__students__in=children) |  # Subject teachers
-                Q(class_teacher_of__subjects__students__in=children)  # Class teachers
-            ).distinct()
-            all_users = CustomUser.objects.filter(teacher_profile__in=teachers)
+            # Get ALL teachers (not just their children's teachers) and admins
+            all_teacher_users = CustomUser.objects.filter(role='TEACHER', is_active=True)
+            admin_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
+
+            # Combine teachers and admins only
+            all_users = (all_teacher_users | admin_users).distinct()
         except Parent.DoesNotExist:
-            all_users = CustomUser.objects.none()
+            # If parent record doesn't exist, can only message admins
+            all_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
 
     elif user.role == 'TEACHER':
         teacher = Teacher.objects.get(user=user)
@@ -462,17 +466,18 @@ def search_recipients(request):
             all_users = CustomUser.objects.none()
 
     elif user.role == 'PARENT':
+        # Parents can ONLY message teachers and administrators (no students, no other parents)
         try:
             parent = Parent.objects.get(user=user)
-            children = parent.children.all()
-            # Get teachers of all children
-            teachers = Teacher.objects.filter(
-                Q(teaching_subjects__students__in=children) |  # Subject teachers
-                Q(class_teacher_of__subjects__students__in=children)  # Class teachers
-            ).distinct()
-            all_users = CustomUser.objects.filter(teacher_profile__in=teachers)
+            # Get ALL teachers (not just their children's teachers) and admins
+            all_teacher_users = CustomUser.objects.filter(role='TEACHER', is_active=True)
+            admin_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
+
+            # Combine teachers and admins only
+            all_users = (all_teacher_users | admin_users).distinct()
         except Parent.DoesNotExist:
-            all_users = CustomUser.objects.none()
+            # If parent record doesn't exist, can only message admins
+            all_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
 
     elif user.role == 'TEACHER':
         teacher = Teacher.objects.get(user=user)
