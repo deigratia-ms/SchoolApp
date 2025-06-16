@@ -329,6 +329,72 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
         font-size: 12px;
     }
 
+    /* Compose section layout */
+    .compose-container {
+        height: 100%;
+        min-height: 600px;
+    }
+
+    .compose-users-panel {
+        border-right: 1px solid #e9ecef;
+        padding: 20px;
+        background-color: #f8f9fa;
+        height: 100%;
+    }
+
+    .compose-form-panel {
+        padding: 20px;
+        height: 100%;
+    }
+
+    .users-panel-header h6 {
+        color: #495057;
+        font-weight: 600;
+    }
+
+    .user-list-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        background-color: white;
+    }
+
+    .user-search {
+        position: relative;
+    }
+
+    .user-search-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+
+    /* Message compose styling */
+    .message-compose textarea {
+        min-height: 200px;
+        resize: vertical;
+    }
+
+    /* Responsive design for compose section */
+    @media (max-width: 768px) {
+        .compose-container .row {
+            flex-direction: column;
+        }
+
+        .compose-users-panel {
+            border-right: none;
+            border-bottom: 1px solid #e9ecef;
+            max-height: 300px;
+        }
+
+        .user-list-container {
+            max-height: 200px;
+        }
+    }
+
     .message-compose {
         margin-bottom: 20px;
     }
@@ -684,18 +750,18 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
 
                             <!-- Compose Section -->
                             <div class="content-section" id="compose-section">
-                                <div class="compose-form">
-                                    <form method="POST" action="{% url 'communications:compose_message' %}" enctype="multipart/form-data" id="composeForm">
-                                        {% csrf_token %}
+                                <div class="compose-container">
+                                    <div class="row g-0 h-100">
+                                        <!-- User Selection Panel (Left Side) -->
+                                        <div class="col-md-5 compose-users-panel">
+                                            <div class="users-panel-header">
+                                                <h6 class="mb-3">
+                                                    <i class="fas fa-users text-primary me-2"></i>
+                                                    Select Recipient
+                                                </h6>
+                                            </div>
 
-                                        <!-- User Selector -->
-                                        <div class="user-selector">
-                                            <label class="form-label fw-semibold mb-3">
-                                                <i class="fas fa-users text-primary me-2"></i>
-                                                Select Recipient
-                                            </label>
-
-                                            <div class="user-search">
+                                            <div class="user-search mb-3">
                                                 <input type="text" class="form-control" id="userSearch"
                                                        placeholder="Search by name or email..." onkeyup="
                                                            var searchTerm = this.value.toLowerCase();
@@ -721,7 +787,7 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
                                             <!-- Role Filter Buttons -->
                                             <div class="role-filters mb-3">
                                                 <div class="btn-group w-100" role="group">
-                                                    <button type="button" class="btn btn-outline-secondary active" onclick="
+                                                    <button type="button" class="btn btn-outline-secondary active btn-sm" onclick="
                                                         document.querySelectorAll('.role-filters .btn').forEach(function(btn) {
                                                             btn.classList.remove('active');
                                                         });
@@ -741,7 +807,7 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
                                                     ">
                                                         All
                                                     </button>
-                                                    <button type="button" class="btn btn-outline-secondary" onclick="
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="
                                                         document.querySelectorAll('.role-filters .btn').forEach(function(btn) {
                                                             btn.classList.remove('active');
                                                         });
@@ -763,7 +829,7 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
                                                     ">
                                                         Teachers
                                                     </button>
-                                                    <button type="button" class="btn btn-outline-secondary" onclick="
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="
                                                         document.querySelectorAll('.role-filters .btn').forEach(function(btn) {
                                                             btn.classList.remove('active');
                                                         });
@@ -785,7 +851,7 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
                                                     ">
                                                         Students
                                                     </button>
-                                                    <button type="button" class="btn btn-outline-secondary" onclick="
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="
                                                         document.querySelectorAll('.role-filters .btn').forEach(function(btn) {
                                                             btn.classList.remove('active');
                                                         });
@@ -810,46 +876,102 @@ console.log('✅ showSection function loaded in head:', typeof showSection);
                                                 </div>
                                             </div>
 
-                                            <div class="user-list" id="userList">
-                                                {% for user in all_users %}
-                                                    <div class="user-item d-flex align-items-center"
-                                                         data-id="{{ user.id }}"
-                                                         data-name="{{ user.get_full_name|lower }}"
-                                                         data-email="{{ user.email|lower }}"
-                                                         data-role="{{ user.get_role_display|lower }}"
-                                                         onclick="
-                                                             document.querySelectorAll('.user-item').forEach(function(item) {
-                                                                 item.classList.remove('selected');
-                                                             });
-                                                             this.classList.add('selected');
-                                                             var recipientInput = document.getElementById('recipient');
-                                                             if (recipientInput) {
-                                                                 recipientInput.value = this.getAttribute('data-id');
-                                                             }
-                                                             var messageContent = document.getElementById('messageContent');
-                                                             if (messageContent) {
-                                                                 messageContent.focus();
-                                                             }
-                                                             console.log('Selected user:', this.getAttribute('data-name'));
-                                                         ">
-                                                        <div class="user-avatar"
-                                                             style="background-color: hsl({{ user.id|add:200 }}deg, 70%, 50%);">
-                                                            {{ user.get_full_name|slice:":1" }}
+                                            <!-- User List -->
+                                            <div class="user-list-container">
+                                                <div class="user-list" id="userList">
+                                                    {% for user in all_users %}
+                                                        <div class="user-item d-flex align-items-center"
+                                                             data-id="{{ user.id }}"
+                                                             data-name="{{ user.get_full_name|lower }}"
+                                                             data-email="{{ user.email|lower }}"
+                                                             data-role="{{ user.get_role_display|lower }}"
+                                                             onclick="
+                                                                 document.querySelectorAll('.user-item').forEach(function(item) {
+                                                                     item.classList.remove('selected');
+                                                                 });
+                                                                 this.classList.add('selected');
+                                                                 var recipientInput = document.getElementById('recipient');
+                                                                 if (recipientInput) {
+                                                                     recipientInput.value = this.getAttribute('data-id');
+                                                                 }
+                                                                 var messageContent = document.getElementById('messageContent');
+                                                                 if (messageContent) {
+                                                                     messageContent.focus();
+                                                                 }
+                                                                 console.log('Selected user:', this.getAttribute('data-name'));
+                                                             ">
+                                                            <div class="user-avatar"
+                                                                 style="background-color: hsl({{ user.id|add:200 }}deg, 70%, 50%);">
+                                                                {{ user.get_full_name|slice:":1" }}
+                                                            </div>
+                                                            <div class="user-info">
+                                                                <div class="user-name">{{ user.get_full_name }}</div>
+                                                                <div class="user-role">{{ user.get_role_display }} • {{ user.email }}</div>
+                                                            </div>
                                                         </div>
-                                                        <div class="user-info">
-                                                            <div class="user-name">{{ user.get_full_name }}</div>
-                                                            <div class="user-role">{{ user.get_role_display }} • {{ user.email }}</div>
-                                                        </div>
-                                                    </div>
-                                                {% endfor %}
+                                                    {% endfor %}
+                                                </div>
                                             </div>
-
-                                            <input type="hidden" id="recipient" name="recipient" required>
-                                            <input type="hidden" name="subject" value="Chat Message">
                                         </div>
 
-                                        <!-- Message Compose -->
-                                        <div class="message-compose">
+                                        <!-- Compose Form Panel (Right Side) -->
+                                        <div class="col-md-7 compose-form-panel">
+                                            <form method="POST" action="{% url 'communications:compose_message' %}" enctype="multipart/form-data" id="composeForm">
+                                                {% csrf_token %}
+                                                <input type="hidden" id="recipient" name="recipient" required>
+                                                <input type="hidden" name="subject" value="Chat Message">
+
+                                                <!-- Message Compose -->
+                                                <div class="message-compose mb-4">
+                                                    <label class="form-label fw-semibold mb-3">
+                                                        <i class="fas fa-comment-dots text-primary me-2"></i>
+                                                        Your Message
+                                                    </label>
+                                                    <textarea class="form-control" name="content" id="messageContent"
+                                                              placeholder="Type your message here..." required rows="8"></textarea>
+                                                </div>
+
+                                                <!-- File Upload -->
+                                                <div class="file-upload mb-4">
+                                                    <label class="form-label fw-semibold mb-2">
+                                                        <i class="fas fa-paperclip text-secondary me-2"></i>
+                                                        Attach File (Optional)
+                                                    </label>
+                                                    <input type="file" class="form-control" name="attachment"
+                                                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt">
+                                                </div>
+
+                                                <!-- Actions -->
+                                                <div class="compose-actions d-flex gap-2">
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="
+                                                        var recipient = document.getElementById('recipient');
+                                                        var messageContent = document.getElementById('messageContent');
+                                                        var userSearch = document.getElementById('userSearch');
+                                                        var fileInput = document.querySelector('input[type=file]');
+                                                        if (recipient) recipient.value = '';
+                                                        if (messageContent) messageContent.value = '';
+                                                        if (userSearch) userSearch.value = '';
+                                                        if (fileInput) fileInput.value = '';
+                                                        document.querySelectorAll('.user-item').forEach(function(item) {
+                                                            item.classList.remove('selected');
+                                                            item.style.display = 'flex';
+                                                        });
+                                                        document.querySelectorAll('.role-filters .btn').forEach(function(btn) {
+                                                            btn.classList.remove('active');
+                                                        });
+                                                        document.querySelector('.role-filters .btn').classList.add('active');
+                                                        console.log('Form cleared');
+                                                    ">
+                                                        <i class="fas fa-times me-1"></i> Clear
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-paper-plane me-1"></i> Send Message
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                                             <label class="form-label fw-semibold mb-3">
                                                 <i class="fas fa-comment-dots text-primary me-2"></i>
                                                 Your Message

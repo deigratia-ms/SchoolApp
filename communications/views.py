@@ -23,6 +23,9 @@ def message_list(request):
     """
     Display a list of messages (inbox and sent) for the current user.
     """
+    from users.models import CustomUser, Student, Teacher, Parent
+    from django.db.models import Q
+
     # Get received and sent messages
     received_messages = Message.objects.filter(recipient=request.user).order_by('-created_at')
     sent_messages = Message.objects.filter(sender=request.user).order_by('-created_at')
@@ -30,10 +33,86 @@ def message_list(request):
     # Count unread messages
     unread_count = received_messages.filter(is_read=False).count()
 
+    # Get all users for compose functionality (same logic as compose_message view)
+    user = request.user
+    all_users = CustomUser.objects.none()
+
+    if user.role == 'ADMIN':
+        # Admins can message everyone
+        all_users = CustomUser.objects.filter(is_active=True).exclude(id=user.id)
+    elif user.role == 'TEACHER':
+        # Teachers can message students in their classes, other teachers, parents, and admins
+        try:
+            teacher = Teacher.objects.get(user=user)
+            # Get students in teacher's classes
+            student_users = CustomUser.objects.filter(
+                student__classroom__in=teacher.classrooms.all(),
+                is_active=True
+            )
+            # Get parents of students in teacher's classes
+            parent_users = CustomUser.objects.filter(
+                parent__children__classroom__in=teacher.classrooms.all(),
+                is_active=True
+            )
+            # Get other teachers and admins
+            teacher_admin_users = CustomUser.objects.filter(
+                Q(role='TEACHER') | Q(role='ADMIN'),
+                is_active=True
+            ).exclude(id=user.id)
+
+            all_users = (student_users | parent_users | teacher_admin_users).distinct()
+        except Teacher.DoesNotExist:
+            all_users = CustomUser.objects.filter(
+                Q(role='TEACHER') | Q(role='ADMIN'),
+                is_active=True
+            ).exclude(id=user.id)
+    elif user.role == 'STUDENT':
+        # Students can message their teachers, classmates, and admins
+        try:
+            student = Student.objects.get(user=user)
+            # Get teachers of student's class
+            teacher_users = CustomUser.objects.filter(
+                teacher__classrooms=student.classroom,
+                is_active=True
+            )
+            # Get classmates
+            classmate_users = CustomUser.objects.filter(
+                student__classroom=student.classroom,
+                is_active=True
+            ).exclude(id=user.id)
+            # Get admins
+            admin_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
+
+            all_users = (teacher_users | classmate_users | admin_users).distinct()
+        except Student.DoesNotExist:
+            all_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
+    elif user.role == 'PARENT':
+        # Parents can message their children's teachers and admins
+        try:
+            parent = Parent.objects.get(user=user)
+            # Get teachers of parent's children
+            teacher_users = CustomUser.objects.filter(
+                teacher__classrooms__in=parent.children.values_list('classroom', flat=True),
+                is_active=True
+            )
+            # Get admins
+            admin_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
+
+            all_users = (teacher_users | admin_users).distinct()
+        except Parent.DoesNotExist:
+            all_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
+    else:
+        # Default: can only message admins
+        all_users = CustomUser.objects.filter(role='ADMIN', is_active=True)
+
+    # Order users by name
+    all_users = all_users.order_by('first_name', 'last_name')
+
     context = {
         'received_messages': received_messages,
         'sent_messages': sent_messages,
-        'unread_count': unread_count
+        'unread_count': unread_count,
+        'all_users': all_users,  # Add users for compose functionality
     }
 
     return render(request, 'communications/message_list.html', context)
