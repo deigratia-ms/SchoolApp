@@ -302,6 +302,18 @@
         background: #f8f9fa;
     }
 
+    .role-filters .btn {
+        font-size: 12px;
+        padding: 6px 12px;
+        border-color: #dee2e6;
+    }
+
+    .role-filters .btn.active {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: #fff;
+    }
+
     .compose-actions {
         display: flex;
         justify-content: flex-end;
@@ -361,6 +373,17 @@
         }
     }
 
+    /* Content sections - CRITICAL: Only one visible at a time */
+    .content-section {
+        display: none !important;
+        height: 100%;
+        width: 100%;
+    }
+
+    .content-section.active {
+        display: block !important;
+    }
+
     /* Empty state */
     .empty-state {
         display: flex;
@@ -403,12 +426,12 @@
                     <div class="col-md-3 messaging-sidebar" id="messagingSidebar">
                         <div class="sidebar-header">
                             <h5 class="mb-1">Messages</h5>
-                            <small class="text-muted">Professional communication</small>
+                            <small class="text-muted">Communication Center</small>
                         </div>
 
                         <ul class="sidebar-nav">
                             <li class="sidebar-nav-item">
-                                <a href="#" class="sidebar-nav-link active" data-section="inbox">
+                                <a href="#" class="sidebar-nav-link active" onclick="showSection('inbox'); return false;">
                                     <i class="fas fa-inbox sidebar-nav-icon"></i>
                                     <span class="sidebar-nav-text">Inbox</span>
                                     {% if unread_count > 0 %}
@@ -417,13 +440,13 @@
                                 </a>
                             </li>
                             <li class="sidebar-nav-item">
-                                <a href="#" class="sidebar-nav-link" data-section="sent">
+                                <a href="#" class="sidebar-nav-link" onclick="showSection('sent'); return false;">
                                     <i class="fas fa-paper-plane sidebar-nav-icon"></i>
                                     <span class="sidebar-nav-text">Sent</span>
                                 </a>
                             </li>
                             <li class="sidebar-nav-item">
-                                <a href="#" class="sidebar-nav-link" data-section="compose">
+                                <a href="#" class="sidebar-nav-link" onclick="showSection('compose'); return false;">
                                     <i class="fas fa-edit sidebar-nav-icon"></i>
                                     <span class="sidebar-nav-text">Compose</span>
                                 </a>
@@ -454,7 +477,7 @@
 
                         <div class="main-content">
                             <!-- Inbox Section -->
-                            <div class="content-section active" id="inbox-section">
+                            <div class="content-section" id="inbox-section">
 
                                 {% if received_messages %}
                                     <div class="message-list">
@@ -491,10 +514,10 @@
                                         <div class="empty-state-icon">
                                             <i class="fas fa-inbox"></i>
                                         </div>
-                                        <div class="empty-state-title">Your inbox is empty</div>
+                                        <div class="empty-state-title">No Messages</div>
                                         <div class="empty-state-text">
-                                            You have no messages in your inbox.<br>
-                                            When someone sends you a message, it will appear here.
+                                            Your inbox is currently empty.<br>
+                                            New messages will appear here when received.
                                         </div>
                                     </div>
                                 {% endif %}
@@ -534,10 +557,10 @@
                                         <div class="empty-state-icon">
                                             <i class="fas fa-paper-plane"></i>
                                         </div>
-                                        <div class="empty-state-title">No sent messages</div>
+                                        <div class="empty-state-title">No Sent Messages</div>
                                         <div class="empty-state-text">
-                                            You haven't sent any messages yet.<br>
-                                            Use the compose feature to send your first message.
+                                            You have not sent any messages yet.<br>
+                                            Use the Compose section to send messages.
                                         </div>
                                     </div>
                                 {% endif %}
@@ -552,14 +575,32 @@
                                         <!-- User Selector -->
                                         <div class="user-selector">
                                             <label class="form-label fw-semibold mb-3">
-                                                <i class="fas fa-user-friends text-primary me-2"></i>
+                                                <i class="fas fa-users text-primary me-2"></i>
                                                 Select Recipient
                                             </label>
 
                                             <div class="user-search">
                                                 <input type="text" class="form-control" id="userSearch"
-                                                       placeholder="Search for people by name or email...">
+                                                       placeholder="Search by name or email..." onkeyup="filterUsers()">
                                                 <i class="fas fa-search user-search-icon"></i>
+                                            </div>
+
+                                            <!-- Role Filter Buttons -->
+                                            <div class="role-filters mb-3">
+                                                <div class="btn-group w-100" role="group">
+                                                    <button type="button" class="btn btn-outline-secondary active" onclick="filterByRole('all')">
+                                                        All
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="filterByRole('teacher')">
+                                                        Teachers
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="filterByRole('student')">
+                                                        Students
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="filterByRole('parent')">
+                                                        Parents
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div class="user-list" id="userList">
@@ -568,6 +609,7 @@
                                                          data-id="{{ user.id }}"
                                                          data-name="{{ user.get_full_name|lower }}"
                                                          data-email="{{ user.email|lower }}"
+                                                         data-role="{{ user.get_role_display|lower }}"
                                                          onclick="selectUser(this)">
                                                         <div class="user-avatar"
                                                              style="background-color: hsl({{ user.id|add:200 }}deg, 70%, 50%);">
@@ -575,7 +617,7 @@
                                                         </div>
                                                         <div class="user-info">
                                                             <div class="user-name">{{ user.get_full_name }}</div>
-                                                            <div class="user-role">{{ user.get_role_display }}</div>
+                                                            <div class="user-role">{{ user.get_role_display }} • {{ user.email }}</div>
                                                         </div>
                                                     </div>
                                                 {% endfor %}
@@ -631,98 +673,96 @@
 
 {% block extra_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the messaging interface
-    initializeMessaging();
-});
+// Function to show sections - FIXED VERSION
+function showSection(sectionName) {
+    console.log('Switching to section:', sectionName); // Debug log
 
-function initializeMessaging() {
-    // Set up sidebar navigation
-    const sidebarLinks = document.querySelectorAll('.sidebar-nav-link');
-    const contentSections = document.querySelectorAll('.content-section');
-
-    sidebarLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const section = this.dataset.section;
-            switchSection(section);
-        });
+    // Hide ALL sections first
+    const allSections = document.querySelectorAll('.content-section');
+    allSections.forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
     });
 
-    // Set up user search
-    const userSearch = document.getElementById('userSearch');
-    if (userSearch) {
-        userSearch.addEventListener('input', filterUsers);
+    // Show the selected section
+    const targetSection = document.getElementById(sectionName + '-section');
+    if (targetSection) {
+        targetSection.classList.add('active');
+        targetSection.style.display = 'block';
+        console.log('Showing section:', targetSection.id); // Debug log
+    } else {
+        console.error('Section not found:', sectionName + '-section');
     }
 
-    // Set up form submission
-    const composeForm = document.getElementById('composeForm');
-    if (composeForm) {
-        composeForm.addEventListener('submit', function(e) {
-            const recipient = document.getElementById('recipient').value;
-            const content = document.getElementById('messageContent').value.trim();
-
-            if (!recipient) {
-                e.preventDefault();
-                alert('Please select a recipient');
-                return;
-            }
-
-            if (!content) {
-                e.preventDefault();
-                alert('Please enter a message');
-                return;
-            }
-        });
-    }
-}
-
-function switchSection(section) {
     // Update sidebar active state
-    document.querySelectorAll('.sidebar-nav-link').forEach(link => {
+    const allLinks = document.querySelectorAll('.sidebar-nav-link');
+    allLinks.forEach(link => {
         link.classList.remove('active');
     });
-    document.querySelector(`[data-section="${section}"]`).classList.add('active');
 
-    // Update content sections
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    document.getElementById(`${section}-section`).classList.add('active');
+    // Find and activate the correct link
+    const activeLink = document.querySelector(`[onclick*="${sectionName}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
 
-    // Update header
+    // Update header titles
     const titles = {
         'inbox': { title: 'Inbox', subtitle: 'Your received messages' },
         'sent': { title: 'Sent', subtitle: 'Messages you have sent' },
         'compose': { title: 'Compose', subtitle: 'Send a new message' }
     };
 
-    document.getElementById('sectionTitle').textContent = titles[section].title;
-    document.getElementById('sectionSubtitle').textContent = titles[section].subtitle;
+    const titleElement = document.getElementById('sectionTitle');
+    const subtitleElement = document.getElementById('sectionSubtitle');
 
-    // Close mobile sidebar
+    if (titleElement && titles[sectionName]) {
+        titleElement.textContent = titles[sectionName].title;
+        if (subtitleElement) {
+            subtitleElement.textContent = titles[sectionName].subtitle;
+        }
+    }
+
+    // Close mobile sidebar if open
     if (window.innerWidth <= 768) {
-        toggleSidebar();
+        const sidebar = document.getElementById('messagingSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
     }
 }
 
+// Mobile sidebar toggle
 function toggleSidebar() {
     const sidebar = document.getElementById('messagingSidebar');
     const overlay = document.getElementById('sidebarOverlay');
 
-    sidebar.classList.toggle('show');
-    overlay.classList.toggle('show');
+    if (sidebar) sidebar.classList.toggle('show');
+    if (overlay) overlay.classList.toggle('show');
 }
 
+// User search functionality
 function filterUsers() {
-    const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+    const searchInput = document.getElementById('userSearch');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.toLowerCase();
     const userItems = document.querySelectorAll('.user-item');
+    const activeRoleFilter = document.querySelector('.role-filters .btn.active');
+    const roleFilter = activeRoleFilter ? activeRoleFilter.textContent.toLowerCase() : 'all';
 
     userItems.forEach(item => {
-        const name = item.dataset.name;
-        const email = item.dataset.email;
+        const name = item.getAttribute('data-name') || '';
+        const email = item.getAttribute('data-email') || '';
+        const role = item.getAttribute('data-role') || '';
 
-        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+        // Check search term match
+        const searchMatch = searchTerm === '' || name.includes(searchTerm) || email.includes(searchTerm);
+
+        // Check role filter match
+        const roleMatch = roleFilter === 'all' || role.includes(roleFilter);
+
+        if (searchMatch && roleMatch) {
             item.style.display = 'flex';
         } else {
             item.style.display = 'none';
@@ -730,6 +770,19 @@ function filterUsers() {
     });
 }
 
+// Role filter functionality
+function filterByRole(role) {
+    // Update active button
+    document.querySelectorAll('.role-filters .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Apply filter
+    filterUsers();
+}
+
+// User selection
 function selectUser(element) {
     // Remove previous selection
     document.querySelectorAll('.user-item').forEach(item => {
@@ -740,42 +793,49 @@ function selectUser(element) {
     element.classList.add('selected');
 
     // Set recipient value
-    document.getElementById('recipient').value = element.dataset.id;
-
-    // Focus on message content
-    document.getElementById('messageContent').focus();
-}
-
-function clearForm() {
-    // Clear form fields
-    document.getElementById('recipient').value = '';
-    document.getElementById('messageContent').value = '';
-    document.getElementById('userSearch').value = '';
-
-    // Clear file input
-    const fileInput = document.querySelector('input[type="file"]');
-    if (fileInput) {
-        fileInput.value = '';
+    const recipientInput = document.getElementById('recipient');
+    if (recipientInput) {
+        recipientInput.value = element.getAttribute('data-id');
     }
 
-    // Clear user selection
+    // Focus on message content
+    const messageContent = document.getElementById('messageContent');
+    if (messageContent) {
+        messageContent.focus();
+    }
+}
+
+// Clear compose form
+function clearForm() {
+    const recipient = document.getElementById('recipient');
+    const messageContent = document.getElementById('messageContent');
+    const userSearch = document.getElementById('userSearch');
+    const fileInput = document.querySelector('input[type="file"]');
+
+    if (recipient) recipient.value = '';
+    if (messageContent) messageContent.value = '';
+    if (userSearch) userSearch.value = '';
+    if (fileInput) fileInput.value = '';
+
+    // Clear user selection and show all users
     document.querySelectorAll('.user-item').forEach(item => {
         item.classList.remove('selected');
         item.style.display = 'flex';
     });
 }
 
+// Message actions
 function viewMessage(messageId) {
-    window.location.href = `/communications/messages/${messageId}/`;
+    window.location.href = '/communications/messages/' + messageId + '/';
 }
 
 function replyMessage(messageId) {
-    window.location.href = `/communications/messages/${messageId}/reply/`;
+    window.location.href = '/communications/messages/' + messageId + '/reply/';
 }
 
 function deleteMessage(messageId) {
     if (confirm('Are you sure you want to delete this message?')) {
-        window.location.href = `/communications/messages/${messageId}/delete/`;
+        window.location.href = '/communications/messages/' + messageId + '/delete/';
     }
 }
 
@@ -783,18 +843,48 @@ function refreshMessages() {
     window.location.reload();
 }
 
-// Add CSS for content sections
-const style = document.createElement('style');
-style.textContent = `
-    .content-section {
-        display: none;
-        height: 100%;
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, initializing messaging interface...'); // Debug log
+
+    // CRITICAL: Hide all sections first, then show inbox
+    const allSections = document.querySelectorAll('.content-section');
+    allSections.forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
+    });
+
+    // Show inbox by default after a small delay to ensure DOM is ready
+    setTimeout(function() {
+        showSection('inbox');
+    }, 100);
+
+    // Set up user search
+    const userSearch = document.getElementById('userSearch');
+    if (userSearch) {
+        userSearch.addEventListener('input', filterUsers);
     }
 
-    .content-section.active {
-        display: block;
+    // Form validation
+    const composeForm = document.getElementById('composeForm');
+    if (composeForm) {
+        composeForm.addEventListener('submit', function(e) {
+            const recipient = document.getElementById('recipient');
+            const content = document.getElementById('messageContent');
+
+            if (!recipient || !recipient.value) {
+                e.preventDefault();
+                alert('Please select a recipient');
+                return false;
+            }
+
+            if (!content || !content.value.trim()) {
+                e.preventDefault();
+                alert('Please enter a message');
+                return false;
+            }
+        });
     }
-`;
-document.head.appendChild(style);
+});
 </script>
 {% endblock %}
