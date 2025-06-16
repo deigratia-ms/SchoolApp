@@ -351,6 +351,12 @@ def compose_message(request):
 
         # Validate required fields
         if not (recipient_id and subject and content):
+            # Handle AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': "Please fill in all required fields."
+                })
             messages.error(request, "Please fill in all required fields.")
             return render(request, 'communications/compose_message.html', {
                 'all_users': all_users,
@@ -378,10 +384,23 @@ def compose_message(request):
             # Create notification for recipient
             create_message_notification(new_message)
 
+            # Handle AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f"Message sent to {recipient.get_full_name()}."
+                })
+
             messages.success(request, f"Message sent to {recipient.get_full_name()}.")
             return redirect('communications:message_list')
 
         except CustomUser.DoesNotExist:
+            # Handle AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': "Invalid recipient selected."
+                })
             messages.error(request, "Invalid recipient selected.")
 
     # GET request - show compose form with all potential recipients
