@@ -20,7 +20,18 @@ class AttendanceRecord(models.Model):
     class Meta:
         unique_together = ('classroom', 'date')
         ordering = ['-date']
-    
+
+    def update_counts(self):
+        """Update the attendance counts based on student attendance records"""
+        student_attendances = self.student_attendance.all()
+
+        self.present_count = student_attendances.filter(status='PRESENT').count()
+        self.absent_count = student_attendances.filter(status='ABSENT').count()
+        self.late_count = student_attendances.filter(status='LATE').count()
+        self.excused_count = student_attendances.filter(status='EXCUSED').count()
+
+        self.save()
+
     def __str__(self):
         return f"Attendance for {self.classroom} on {self.date}"
 

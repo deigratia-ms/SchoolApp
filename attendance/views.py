@@ -476,7 +476,7 @@ def take_class_attendance(request, classroom_id):
         for student in students:
             status = request.POST.get(f'status_{student.id}', 'ABSENT')
             remarks = request.POST.get(f'remarks_{student.id}', '')
-            
+
             student_attendance, created = StudentAttendance.objects.update_or_create(
                 attendance_record=attendance_record,
                 student=student,
@@ -485,7 +485,10 @@ def take_class_attendance(request, classroom_id):
                     'remarks': remarks
                 }
             )
-        
+
+        # Update attendance counts
+        attendance_record.update_counts()
+
         messages.success(request, f"Attendance for {classroom.name} on {today.strftime('%Y-%m-%d')} has been recorded.")
         
         # Redirect to attendance record detail
@@ -1204,7 +1207,7 @@ def edit_record(request, record_id):
         for student in students:
             status = request.POST.get(f'status_{student.id}', 'ABSENT')
             remarks = request.POST.get(f'remarks_{student.id}', '')
-            
+
             student_attendance, created = StudentAttendance.objects.update_or_create(
                 attendance_record=record,
                 student=student,
@@ -1213,7 +1216,10 @@ def edit_record(request, record_id):
                     'remarks': remarks
                 }
             )
-        
+
+        # Update attendance counts
+        record.update_counts()
+
         messages.success(request, f"Attendance record for {record.classroom.name} on {record.date.strftime('%Y-%m-%d')} has been updated.")
         return redirect('attendance:record_detail', record_id=record.id)
     
