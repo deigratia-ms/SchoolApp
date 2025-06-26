@@ -62,6 +62,14 @@ def safe_file_url(file_field):
 
     try:
         # Try to get the URL from the file field
-        return file_field.url
+        url = file_field.url
+
+        # Check if it's a local path that doesn't exist in production
+        if url.startswith('/course_materials/') or url.startswith('course_materials/'):
+            # This is a local path that won't work in production with Cloudinary
+            # Return None to trigger the fallback UI
+            return None
+
+        return url
     except (ValueError, AttributeError, FileNotFoundError):
         return None
