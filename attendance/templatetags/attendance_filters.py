@@ -8,7 +8,9 @@ def getattr(obj, attr):
     if obj is None:
         return None
     try:
-        return getattr(obj, attr)
+        # Use Python's built-in getattr function, not the template filter
+        import builtins
+        return builtins.getattr(obj, attr)
     except (AttributeError, TypeError):
         return None
 
