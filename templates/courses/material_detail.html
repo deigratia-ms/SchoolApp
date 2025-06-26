@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load file_filters %}
 
 {% block title %}{{ material.title }} | Deigratia Montessori School{% endblock %}
 
@@ -505,7 +506,7 @@
                                         <th scope="row">
                                             <i class="fas fa-weight-hanging text-info me-2"></i>Size:
                                         </th>
-                                        <td>{{ material.file.size|filesizeformat }}</td>
+                                        <td>{{ material.file|safe_file_size_formatted }}</td>
                                     </tr>
                                     {% endif %}
                                 </tbody>

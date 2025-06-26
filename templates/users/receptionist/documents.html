@@ -188,8 +188,8 @@
                         <small class="text-muted">
                             <i class="fas fa-file me-1"></i>
                             {{ document.file.name|slice:"10:" }}
-                            {% if document.file.size %}
-                                ({{ document.file.size|filesizeformat }})
+                            {% if document.safe_file_size %}
+                                ({{ document.safe_file_size|filesizeformat }})
                             {% endif %}
                         </small>
                     </div>

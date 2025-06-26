@@ -196,8 +196,8 @@
                         <!-- Upload Info -->
                         <div class="small text-muted mb-3">
                             <div><i class="fas fa-calendar me-1"></i>{{ document.created_at|date:"M d, Y" }}</div>
-                            {% if document.file.size %}
-                                <div><i class="fas fa-weight me-1"></i>{{ document.file.size|filesizeformat }}</div>
+                            {% if document.safe_file_size %}
+                                <div><i class="fas fa-weight me-1"></i>{{ document.safe_file_size|filesizeformat }}</div>
                             {% endif %}
                         </div>
                         

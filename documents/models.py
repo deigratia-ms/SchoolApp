@@ -79,6 +79,21 @@ class DocumentUpload(models.Model):
             return f"Parent: {self.parent.user.get_full_name()}"
         return "Unknown"
 
+    @property
+    def safe_file_size(self):
+        """Get file size safely, handling Cloudinary storage"""
+        if not self.file:
+            return None
+        try:
+            # For Cloudinary, try to get size from the file field
+            # If it fails, we'll return None
+            if hasattr(self.file, 'size') and self.file.size:
+                return self.file.size
+            # For Cloudinary files, size might not be available
+            return None
+        except (FileNotFoundError, OSError, AttributeError):
+            return None
+
     def clean(self):
         # Ensure either student or parent is set, but not both
         if not self.student and not self.parent:

@@ -106,6 +106,34 @@ class CourseMaterial(models.Model):
         """Check if the material has a file attachment"""
         return bool(self.file)
 
+    @property
+    def file_exists(self):
+        """Check if the file actually exists on storage (Cloudinary-aware)"""
+        if not self.file:
+            return False
+        try:
+            # For Cloudinary, we can check if the file has a URL
+            # If it has a URL, it likely exists
+            return bool(self.file.url)
+        except:
+            return False
+
+    @property
+    def safe_file_size(self):
+        """Get file size safely, handling Cloudinary storage"""
+        if not self.file:
+            return None
+        try:
+            # For Cloudinary, try to get size from the file field
+            # If it fails, we'll return a default or None
+            if hasattr(self.file, 'size') and self.file.size:
+                return self.file.size
+            # For Cloudinary files, size might not be available
+            # We can try to get it from the resource info
+            return None
+        except (FileNotFoundError, OSError, AttributeError):
+            return None
+
 
 class YouTubeVideo(models.Model):
     """

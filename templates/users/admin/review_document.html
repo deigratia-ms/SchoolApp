@@ -170,8 +170,8 @@
                             {% endif %}
                             
                             <p class="text-muted mb-3">{{ document.file.name|slice:"10:" }}</p>
-                            {% if document.file.size %}
-                                <p class="small text-muted mb-3">Size: {{ document.file.size|filesizeformat }}</p>
+                            {% if document.safe_file_size %}
+                                <p class="small text-muted mb-3">Size: {{ document.safe_file_size|filesizeformat }}</p>
                             {% endif %}
                             
                             <div class="d-grid gap-2 d-md-block">
