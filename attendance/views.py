@@ -439,10 +439,15 @@ def take_class_attendance(request, classroom_id):
         return redirect('attendance:take_attendance')
     
     # Get all students in this class
-    class_subjects = ClassSubject.objects.filter(classroom=classroom)
-    students = Student.objects.filter(
-        enrolled_subjects__in=class_subjects
-    ).distinct().order_by('user__first_name', 'user__last_name')
+    # First try to get students directly from the classroom
+    students = classroom.students.all().order_by('user__first_name', 'user__last_name')
+
+    # If no students found, try through ClassSubject (fallback)
+    if not students.exists():
+        class_subjects = ClassSubject.objects.filter(classroom=classroom)
+        students = Student.objects.filter(
+            enrolled_subjects__in=class_subjects
+        ).distinct().order_by('user__first_name', 'user__last_name')
     
     today = request.GET.get('date', None)
     if today:
@@ -1185,10 +1190,15 @@ def edit_record(request, record_id):
         record.save()
         
         # Get all students in this class
-        class_subjects = ClassSubject.objects.filter(classroom=record.classroom)
-        students = Student.objects.filter(
-            enrolled_subjects__in=class_subjects
-        ).distinct()
+        # First try to get students directly from the classroom
+        students = record.classroom.students.all()
+
+        # If no students found, try through ClassSubject (fallback)
+        if not students.exists():
+            class_subjects = ClassSubject.objects.filter(classroom=record.classroom)
+            students = Student.objects.filter(
+                enrolled_subjects__in=class_subjects
+            ).distinct()
         
         # Update student attendances
         for student in students:
@@ -1208,10 +1218,15 @@ def edit_record(request, record_id):
         return redirect('attendance:record_detail', record_id=record.id)
     
     # Get all students in this class
-    class_subjects = ClassSubject.objects.filter(classroom=record.classroom)
-    students = Student.objects.filter(
-        enrolled_subjects__in=class_subjects
-    ).distinct().order_by('user__first_name', 'user__last_name')
+    # First try to get students directly from the classroom
+    students = record.classroom.students.all().order_by('user__first_name', 'user__last_name')
+
+    # If no students found, try through ClassSubject (fallback)
+    if not students.exists():
+        class_subjects = ClassSubject.objects.filter(classroom=record.classroom)
+        students = Student.objects.filter(
+            enrolled_subjects__in=class_subjects
+        ).distinct().order_by('user__first_name', 'user__last_name')
     
     # Get existing attendance statuses
     student_statuses = {}

@@ -225,7 +225,7 @@ def profile(request):
             if user.role == CustomUser.Role.STUDENT:
                 student = Student.objects.create(
                     user=user,
-                    student_id=f"S{user.id:05d}",  # Default student ID
+                    student_id=f"DGMS{user.id:05d}",  # Default student ID with DGMS prefix
                     pin=''.join(random.choices(string.digits, k=5)),  # Random 5-digit PIN
                     grade="",
                     section=""
@@ -1547,7 +1547,7 @@ def generate_student_id():
     while True:
         # Use secrets.randbelow to generate a secure random number between 0 and 89999
         # Then add 10000 to ensure 5-digit number between 10000 and 99999
-        student_id = f'STU{10000 + secrets.randbelow(90000)}'
+        student_id = f'DGMS{10000 + secrets.randbelow(90000)}'
         if not Student.objects.filter(student_id=student_id).exists():
             return student_id
 

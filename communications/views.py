@@ -45,13 +45,14 @@ def message_list(request):
         try:
             teacher = Teacher.objects.get(user=user)
             # Get students in teacher's classes
+            teacher_classrooms = teacher.assigned_classrooms.all()
             student_users = CustomUser.objects.filter(
-                student__classroom__in=teacher.classrooms.all(),
+                student_profile__classrooms__in=teacher_classrooms,
                 is_active=True
             )
             # Get parents of students in teacher's classes
             parent_users = CustomUser.objects.filter(
-                parent__children__classroom__in=teacher.classrooms.all(),
+                parent_profile__children__classrooms__in=teacher_classrooms,
                 is_active=True
             )
             # Get other teachers and admins
@@ -70,14 +71,14 @@ def message_list(request):
         # Students can message their teachers, classmates, and admins
         try:
             student = Student.objects.get(user=user)
-            # Get teachers of student's class
+            # Get teachers of student's classrooms
             teacher_users = CustomUser.objects.filter(
-                teacher__classrooms=student.classroom,
+                teacher_profile__assigned_classrooms__in=student.classrooms.all(),
                 is_active=True
             )
             # Get classmates
             classmate_users = CustomUser.objects.filter(
-                student__classroom=student.classroom,
+                student_profile__classrooms__in=student.classrooms.all(),
                 is_active=True
             ).exclude(id=user.id)
             # Get admins
@@ -90,9 +91,13 @@ def message_list(request):
         # Parents can ONLY message teachers and administrators (no students, no other parents)
         try:
             parent = Parent.objects.get(user=user)
-            # Get teachers of parent's children
+            # Get teachers of parent's children's classrooms
+            children_classrooms = []
+            for child in parent.children.all():
+                children_classrooms.extend(child.classrooms.all())
+
             teacher_users = CustomUser.objects.filter(
-                teacher__classrooms__in=parent.children.values_list('classroom', flat=True),
+                teacher_profile__assigned_classrooms__in=children_classrooms,
                 is_active=True
             )
             # Get ALL teachers (not just their children's teachers) and admins

@@ -204,7 +204,7 @@
     const generateIDBtn = document.getElementById("generateID");
     if (generateIDBtn) {
       generateIDBtn.addEventListener("click", function () {
-        const prefix = "STU";
+        const prefix = "DGMS";
         const random = Math.floor(10000 + Math.random() * 90000); // 5-digit number
         document.getElementById("student_id").value = `${prefix}${random}`;
       });

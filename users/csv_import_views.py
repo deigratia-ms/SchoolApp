@@ -21,7 +21,7 @@ from .utils import send_school_email
 def generate_student_id():
     """Generate a unique student ID"""
     while True:
-        student_id = f'STU{10000 + secrets.randbelow(90000)}'
+        student_id = f'DGMS{10000 + secrets.randbelow(90000)}'
         if not Student.objects.filter(student_id=student_id).exists():
             return student_id
 

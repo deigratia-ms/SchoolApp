@@ -235,7 +235,15 @@
                                 {% endif %}
 
                                 {% if not selected_classroom and user.is_admin or user.is_teacher %}
-                                <td>{{ report_card.student.classroom.name }} {% if report_card.student.classroom.section %}({{ report_card.student.classroom.section }}){% endif %}</td>
+                                <td>
+                                    {% with classroom=report_card.student.classrooms.first %}
+                                        {% if classroom %}
+                                            {{ classroom.name }} {% if classroom.section %}({{ classroom.section }}){% endif %}
+                                        {% else %}
+                                            Not assigned
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
                                 {% endif %}
 
                                 <td>{{ report_card.term }}</td>
