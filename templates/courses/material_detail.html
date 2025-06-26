@@ -339,8 +339,8 @@
             </nav>
         </div>
         <div class="material-actions d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto">
-            {% if material.file %}
-            <a href="{{ material.file.url }}" class="btn btn-success" target="_blank">
+            {% if material.file and material.file|safe_file_url %}
+            <a href="{{ material.file|safe_file_url }}" class="btn btn-success" target="_blank">
                 <i class="fas fa-download me-1"></i>Download
             </a>
             {% endif %}
@@ -398,12 +398,19 @@
                     </h6>
                 </div>
                 <div class="card-body text-center">
-                    <a href="{{ material.file.url }}" data-bs-toggle="modal" data-bs-target="#imageModal" class="image-link">
-                        <img src="{{ material.file.url }}" alt="{{ material.title }}" class="img-fluid rounded" style="max-height: 300px;">
+                    {% if material.file|safe_file_url %}
+                    <a href="{{ material.file|safe_file_url }}" data-bs-toggle="modal" data-bs-target="#imageModal" class="image-link">
+                        <img src="{{ material.file|safe_file_url }}" alt="{{ material.title }}" class="img-fluid rounded" style="max-height: 300px;">
                         <div class="mt-2 text-primary">
                             <i class="fas fa-search-plus me-1"></i> Click to enlarge
                         </div>
                     </a>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                        <p class="text-muted">Image not available</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% else %}
@@ -412,12 +419,19 @@
                     <h6 class="m-0 font-weight-bold">Image Preview</h6>
                 </div>
                 <div class="card-body text-center">
-                    <a href="{{ material.file.url }}" data-bs-toggle="modal" data-bs-target="#imageModal" class="image-link">
-                        <img src="{{ material.file.url }}" alt="{{ material.title }}" class="img-fluid rounded" style="max-height: 300px;">
+                    {% if material.file|safe_file_url %}
+                    <a href="{{ material.file|safe_file_url }}" data-bs-toggle="modal" data-bs-target="#imageModal" class="image-link">
+                        <img src="{{ material.file|safe_file_url }}" alt="{{ material.title }}" class="img-fluid rounded" style="max-height: 300px;">
                         <div class="mt-2 text-primary">
                             <i class="fas fa-search-plus me-1"></i> Click to enlarge
                         </div>
                     </a>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                        <p class="text-muted">Image not available</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -435,10 +449,19 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center p-0">
-                    <img src="{{ material.file.url }}" class="img-fluid" alt="{{ material.title }}">
+                    {% if material.file|safe_file_url %}
+                    <img src="{{ material.file|safe_file_url }}" class="img-fluid" alt="{{ material.title }}">
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                        <p class="text-muted">Image not available</p>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="modal-footer">
-                    <a href="{{ material.file.url }}" download class="btn btn-primary"><i class="fas fa-download me-1"></i> Download</a>
+                    {% if material.file|safe_file_url %}
+                    <a href="{{ material.file|safe_file_url }}" download class="btn btn-primary"><i class="fas fa-download me-1"></i> Download</a>
+                    {% endif %}
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -511,9 +534,9 @@
                         </tbody>
                     </table>
 
-                    {% if material.file %}
+                    {% if material.file and material.file|safe_file_url %}
                     <div class="d-grid mt-3">
-                        <a href="{{ material.file.url }}" class="btn btn-primary" download>
+                        <a href="{{ material.file|safe_file_url }}" class="btn btn-primary" download>
                             <i class="fas fa-download me-1"></i>Download File
                         </a>
                     </div>
@@ -555,18 +578,26 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    {% if material.file.name|lower|slice:"-3:" == 'pdf' %}
-                        <div class="ratio ratio-16x9 material-preview">
-                            <iframe src="{{ material.file.url }}" title="{{ material.title }}" allowfullscreen></iframe>
-                        </div>
+                    {% if material.file|safe_file_url %}
+                        {% if material.file.name|lower|slice:"-3:" == 'pdf' %}
+                            <div class="ratio ratio-16x9 material-preview">
+                                <iframe src="{{ material.file|safe_file_url }}" title="{{ material.title }}" allowfullscreen></iframe>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas {% if material.file.name|lower|slice:"-3:" == 'doc' or material.file.name|lower|slice:"-4:" == 'docx' %}fa-file-word{% elif material.file.name|lower|slice:"-3:" == 'ppt' or material.file.name|lower|slice:"-4:" == 'pptx' %}fa-file-powerpoint{% elif material.file.name|lower|slice:"-3:" == 'xls' or material.file.name|lower|slice:"-4:" == 'xlsx' %}fa-file-excel{% else %}fa-file-alt{% endif %} fa-5x mb-3 text-primary"></i>
+                                <h5>Ready to learn something new?</h5>
+                                <p class="mb-3">This file needs to be downloaded to view.</p>
+                                <a href="{{ material.file|safe_file_url }}" class="btn btn-lg btn-primary" target="_blank">
+                                    <i class="fas fa-download me-2"></i>Get File
+                                </a>
+                            </div>
+                        {% endif %}
                     {% else %}
                         <div class="text-center py-4">
-                            <i class="fas {% if material.file.name|lower|slice:"-3:" == 'doc' or material.file.name|lower|slice:"-4:" == 'docx' %}fa-file-word{% elif material.file.name|lower|slice:"-3:" == 'ppt' or material.file.name|lower|slice:"-4:" == 'pptx' %}fa-file-powerpoint{% elif material.file.name|lower|slice:"-3:" == 'xls' or material.file.name|lower|slice:"-4:" == 'xlsx' %}fa-file-excel{% else %}fa-file-alt{% endif %} fa-5x mb-3 text-primary"></i>
-                            <h5>Ready to learn something new?</h5>
-                            <p class="mb-3">This file needs to be downloaded to view.</p>
-                            <a href="{{ material.file.url }}" class="btn btn-lg btn-primary" target="_blank">
-                                <i class="fas fa-download me-2"></i>Get File
-                            </a>
+                            <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                            <h5>File not available</h5>
+                            <p class="text-muted">This file is currently not accessible.</p>
                         </div>
                     {% endif %}
                 </div>
@@ -657,9 +688,9 @@
                             </table>
                         </div>
 
-                        {% if material.file %}
+                        {% if material.file and material.file|safe_file_url %}
                         <div class="d-grid mt-3">
-                            <a href="{{ material.file.url }}" class="btn btn-primary" download>
+                            <a href="{{ material.file|safe_file_url }}" class="btn btn-primary" download>
                                 <i class="fas fa-download me-1"></i>Download File
                             </a>
                         </div>

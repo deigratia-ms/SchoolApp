@@ -42,10 +42,26 @@ def file_exists(file_field):
     """
     if not file_field:
         return False
-    
+
     try:
         # For Cloudinary, we can check if the file has a URL
         # If it has a URL, it likely exists
         return bool(file_field.url)
     except:
         return False
+
+
+@register.filter
+def safe_file_url(file_field):
+    """
+    Safely get file URL, handling Cloudinary storage and missing files.
+    Returns the file URL or None if not available.
+    """
+    if not file_field:
+        return None
+
+    try:
+        # Try to get the URL from the file field
+        return file_field.url
+    except (ValueError, AttributeError, FileNotFoundError):
+        return None

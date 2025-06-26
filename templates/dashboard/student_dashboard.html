@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load file_filters %}
 {% block title %}Student Dashboard - Deigratia Montessori School{% endblock %}
 
 {% block extra_css %}
@@ -587,10 +588,14 @@
             >
               <div class="list-group">
                 {% for material in course_materials %}
+                {% if material.file|safe_file_url %}
                 <a
-                  href="{{ material.file.url }}"
+                  href="{{ material.file|safe_file_url }}"
                   class="list-group-item list-group-item-action"
                 >
+                {% else %}
+                <div class="list-group-item">
+                {% endif %}
                   <div class="d-flex w-100 justify-content-between">
                     <h6 class="mb-1">{{ material.title }}</h6>
                     <small>{{ material.created_at|date:"M d, Y" }}</small>
@@ -606,7 +611,11 @@
                       >{{ material.created_by.get_full_name }}</span
                     >
                   </small>
+                {% if material.file|safe_file_url %}
                 </a>
+                {% else %}
+                </div>
+                {% endif %}
                 {% empty %}
                 <div class="text-center py-3">
                   <p class="text-muted">No course materials available</p>

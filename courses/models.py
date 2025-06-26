@@ -134,6 +134,16 @@ class CourseMaterial(models.Model):
         except (FileNotFoundError, OSError, AttributeError):
             return None
 
+    @property
+    def safe_file_url(self):
+        """Get file URL safely, handling Cloudinary storage"""
+        if not self.file:
+            return None
+        try:
+            return self.file.url
+        except (ValueError, AttributeError, FileNotFoundError):
+            return None
+
 
 class YouTubeVideo(models.Model):
     """
