@@ -17,8 +17,9 @@
     @media (max-width: 767.98px) {
         .kid-friendly-card {
             max-width: 100%;
-            margin: 0;
-            border-radius: 8px;
+            margin: 0 0 0.5rem 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     }
 
@@ -53,8 +54,9 @@
     @media (max-width: 767.98px) {
         .professional-card {
             max-width: 100%;
-            margin: 0;
-            border-radius: 8px;
+            margin: 0 0 0.5rem 0;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
     }
 
@@ -202,10 +204,10 @@
             display: none; /* Hide text on mobile, show only icons */
         }
 
-        /* Make container full width on mobile */
+        /* Make container full width on mobile with minimal padding */
         .container, .container-fluid {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
         }
 
         /* Remove extra margins on mobile */
@@ -215,8 +217,19 @@
         }
 
         .col-12, .col-xl-10 {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+        }
+
+        /* Reduce card padding on mobile for more content space */
+        .kid-friendly-card .card-body,
+        .professional-card .card-body {
+            padding: 0.75rem;
+        }
+
+        .kid-friendly-card .card-header,
+        .professional-card .card-header {
+            padding: 0.75rem;
         }
 
         /* Mobile header adjustments */
@@ -236,6 +249,71 @@
 
         .d-flex.flex-wrap .btn-group .btn {
             flex: 1;
+        }
+
+        /* Maximize content area on mobile */
+        body {
+            padding: 0;
+        }
+
+        /* Remove any extra spacing on mobile */
+        .mb-3, .mb-4 {
+            margin-bottom: 0.5rem !important;
+        }
+
+        /* Optimize text content for mobile */
+        .rich-content {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Make tables more mobile-friendly */
+        .table-responsive {
+            margin: 0;
+        }
+
+        /* Reduce breadcrumb padding */
+        .breadcrumb {
+            padding: 0.5rem 0;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Optimize navigation spacing */
+        nav[aria-label="breadcrumb"] {
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    /* Extra aggressive mobile optimization for very small screens */
+    @media (max-width: 575.98px) {
+        .container, .container-fluid {
+            padding-left: 0.125rem;
+            padding-right: 0.125rem;
+        }
+
+        .col-12, .col-xl-10 {
+            padding-left: 0.125rem;
+            padding-right: 0.125rem;
+        }
+
+        .kid-friendly-card .card-body,
+        .professional-card .card-body {
+            padding: 0.5rem;
+        }
+
+        .kid-friendly-card .card-header,
+        .professional-card .card-header {
+            padding: 0.5rem;
+        }
+
+        /* Minimize all margins on very small screens */
+        .mb-3, .mb-4 {
+            margin-bottom: 0.25rem !important;
+        }
+
+        .kid-friendly-card,
+        .professional-card {
+            margin-bottom: 0.25rem;
         }
     }
 </style>
