@@ -532,3 +532,26 @@ def sync_student_enrollments(sender, instance, **kwargs):
                         logger.debug(f"Added student to subject {subject.subject} in {subject.classroom}")
     except Exception as e:
         logger.error(f"Error synchronizing student enrollments: {str(e)}", exc_info=True)
+
+
+@receiver(post_save, sender=ClassSubject)
+def auto_enroll_students_in_new_subject(sender, instance, created, **kwargs):
+    """
+    When a new subject is added to a class, automatically enroll all students
+    in that class to the new subject.
+    """
+    if created:  # Only for newly created ClassSubject instances
+        try:
+            with transaction.atomic():
+                # Get all students in this classroom
+                students_in_class = instance.classroom.students.all()
+
+                if students_in_class.exists():
+                    # Add all students to this new subject
+                    instance.students.add(*students_in_class)
+                    logger.info(f"Auto-enrolled {students_in_class.count()} students in new subject {instance.subject.name} for class {instance.classroom.name}")
+                else:
+                    logger.info(f"No students found in class {instance.classroom.name} to enroll in subject {instance.subject.name}")
+
+        except Exception as e:
+            logger.error(f"Error auto-enrolling students in new subject {instance.subject.name}: {str(e)}", exc_info=True)
