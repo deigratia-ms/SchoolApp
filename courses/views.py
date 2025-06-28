@@ -1319,15 +1319,19 @@ def edit_material(request, material_id):
 
             # Handle file upload or removal
             if remove_file and material.file:
-                # Delete the existing file
-                if os.path.isfile(material.file.path):
-                    os.remove(material.file.path)
+                # Delete the existing file (works with both local and Cloudinary storage)
+                try:
+                    material.file.delete(save=False)
+                except Exception as e:
+                    print(f"Warning: Could not delete old file: {e}")
                 material.file = None
             elif file:
                 # If there's a new file and an existing file, delete the old one
                 if material.file:
-                    if os.path.isfile(material.file.path):
-                        os.remove(material.file.path)
+                    try:
+                        material.file.delete(save=False)
+                    except Exception as e:
+                        print(f"Warning: Could not delete old file: {e}")
                 material.file = file
 
             material.save()
@@ -1362,10 +1366,12 @@ def delete_material(request, material_id):
 
     if request.method == 'POST':
         try:
-            # If there's a file, delete it
+            # If there's a file, delete it (works with both local and Cloudinary storage)
             if material.file:
-                if os.path.isfile(material.file.path):
-                    os.remove(material.file.path)
+                try:
+                    material.file.delete(save=False)
+                except Exception as e:
+                    print(f"Warning: Could not delete file: {e}")
 
             material_title = material.title
             material.delete()

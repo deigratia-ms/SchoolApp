@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from users.models import Teacher, Student
+from website.storage import get_cloudinary_storage, get_file_storage, is_image_file, is_video_file
 
 class Subject(models.Model):
     """
@@ -85,7 +86,7 @@ class CourseMaterial(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     content = models.TextField(blank=True, null=True, help_text="Rich text content for notes")
-    file = models.FileField(upload_to='course_materials/', blank=True, null=True)
+    file = models.FileField(upload_to='course_materials/', storage=get_cloudinary_storage, blank=True, null=True)
     is_draft = models.BooleanField(default=False, help_text="Save as draft before publishing")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='uploaded_materials')
     created_at = models.DateTimeField(auto_now_add=True)
