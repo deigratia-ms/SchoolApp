@@ -2826,13 +2826,6 @@ body.color-teal .sidebar {
             <i class="fas fa-calendar"></i>
             <span>School Calendar</span>
           </a>
-          <a
-            href="{% url 'appointments:appointment_list' %}"
-            class="menu-item {% if '/appointments/' in request.path %}active{% endif %}"
-          >
-            <i class="fas fa-calendar-check"></i>
-            <span>Appointments</span>
-          </a>
         </div>
 
         <div class="sidebar-section">
@@ -2841,11 +2834,18 @@ body.color-teal .sidebar {
             <span>Visitor Management</span>
           </div>
           <a
-            href="{% url 'users:manage_visitor_logs' %}"
-            class="menu-item {% if '/users/receptionist/visitor-logs/' in request.path %}active{% endif %}"
+            href="{% url 'users:visitor_log' %}"
+            class="menu-item {% if '/users/receptionist/visitor-log/' in request.path %}active{% endif %}"
           >
             <i class="fas fa-id-badge"></i>
-            <span>Visitor Logs</span>
+            <span>Manage Visitors</span>
+          </a>
+          <a
+            href="{% url 'users:visitor_history' %}"
+            class="menu-item {% if '/users/receptionist/visitor-history/' in request.path %}active{% endif %}"
+          >
+            <i class="fas fa-history"></i>
+            <span>Visitor History</span>
           </a>
         </div>
 

@@ -122,6 +122,16 @@ urlpatterns = [
     path('receptionist/new-appointment/', receptionist_views.new_appointment, name='new_appointment'),
     path('receptionist/view-appointments/', receptionist_views.view_appointments, name='view_appointments'),
     path('receptionist/visitor-logs/', receptionist_views.manage_visitor_logs, name='manage_visitor_logs'),
+    path('receptionist/visitor-logs/<int:visitor_id>/edit/', receptionist_views.edit_visitor, name='edit_visitor'),
+    path('receptionist/visitor-logs/<int:visitor_id>/delete/', receptionist_views.delete_visitor, name='delete_visitor'),
+
+    # New visitor log functionality
+    path('receptionist/checkout-visitor/<int:visitor_id>/', receptionist_views.checkout_visitor_message, name='checkout_visitor'),
+    path('receptionist/edit-visitor/<int:visitor_id>/', receptionist_views.edit_visitor_message, name='edit_visitor_message'),
+    path('receptionist/delete-visitor/<int:visitor_id>/', receptionist_views.delete_visitor_message, name='delete_visitor_message'),
+    path('receptionist/visitor-history/', receptionist_views.visitor_history, name='visitor_history'),
+    path('search-parents/', receptionist_views.search_parents_ajax, name='search_parents_ajax'),
+    path('receptionist/visitor-logs/<int:visitor_id>/send-thank-you/', receptionist_views.send_thank_you_email, name='send_thank_you_email'),
     path('receptionist/documents/', receptionist_views.view_documents, name='view_documents'),
 
 
@@ -133,4 +143,7 @@ urlpatterns = [
     path('admin/documents/<int:document_id>/review/', admin_views.review_document, name='review_document'),
     path('admin/admission-enquiries/', admin_views.manage_admission_enquiries, name='manage_admission_enquiries'),
     path('admin/visitor-logs/', admin_views.manage_visitor_logs, name='manage_visitor_logs'),
+    path('admin/visitor-logs/<int:visitor_id>/edit/', admin_views.edit_visitor_admin, name='edit_visitor_admin'),
+    path('admin/visitor-logs/<int:visitor_id>/delete/', admin_views.delete_visitor_admin, name='delete_visitor_admin'),
+    path('admin/visitor-logs/<int:visitor_id>/checkout/', admin_views.checkout_visitor_admin, name='checkout_visitor_admin'),
 ]

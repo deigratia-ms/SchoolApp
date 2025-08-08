@@ -101,13 +101,17 @@ class StaffMemberAdmin(admin.ModelAdmin):
 
 @admin.register(SchoolSettings)
 class SchoolSettingsAdmin(admin.ModelAdmin):
-    list_display = ('school_name', 'email', 'phone')
+    list_display = ('school_name', 'email', 'phone', 'enable_visitor_thank_you_emails')
     fieldsets = (
         ('School Information', {
             'fields': ('school_name', 'logo', 'address', 'phone', 'email', 'website')
         }),
         ('Email Configuration', {
             'fields': ('smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_use_tls')
+        }),
+        ('Visitor Management Settings', {
+            'fields': ('enable_visitor_thank_you_emails', 'visitor_thank_you_email_template'),
+            'description': 'Configure visitor thank you email settings. Use {visitor_name}, {school_name}, {visit_date} as placeholders in the template.'
         }),
     )
 

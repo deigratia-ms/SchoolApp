@@ -354,6 +354,18 @@ class SchoolSettings(models.Model):
     principal_name = models.CharField(max_length=100, blank=True, null=True)
     academic_year = models.CharField(max_length=20, blank=True, null=True)
 
+    # Visitor management settings
+    enable_visitor_thank_you_emails = models.BooleanField(
+        default=True,
+        help_text="Enable automatic thank you emails for visitors on checkout"
+    )
+    visitor_thank_you_email_template = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Default template for visitor thank you emails. Use {visitor_name}, {school_name}, {visit_date} as placeholders.",
+        default="Dear {visitor_name},\n\nThank you for visiting {school_name} today. We appreciate your time and hope you had a pleasant experience.\n\nBest regards,\n{school_name} Team"
+    )
+
     # SMTP settings for email notifications
     smtp_host = models.CharField(max_length=255, blank=True, null=True)
     smtp_port = models.PositiveIntegerField(blank=True, null=True)

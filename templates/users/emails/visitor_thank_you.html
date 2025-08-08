@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank you for visiting {{ school_name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #006064, #00838f);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .logo {
+            max-height: 60px;
+            margin-bottom: 15px;
+        }
+        .school-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .header-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+            background-color: white;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #006064;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .main-message {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+        .visit-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #006064;
+            margin: 25px 0;
+        }
+        .visit-details h4 {
+            color: #006064;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .detail-value {
+            color: #6c757d;
+        }
+        .contact-section {
+            background-color: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .contact-section h4 {
+            color: #28a745;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .contact-info {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+        }
+        .footer-logo {
+            max-height: 40px;
+            margin-bottom: 15px;
+        }
+        .footer-school-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #006064;
+            margin-bottom: 10px;
+        }
+        .footer-address {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        .footer-links {
+            margin-bottom: 15px;
+        }
+        .footer-links a {
+            color: #006064;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .footer-disclaimer {
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+        .highlight {
+            color: #006064;
+            font-weight: 600;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .detail-row {
+                flex-direction: column;
+            }
+            .detail-label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with School Logo and Name -->
+        <div class="header">
+            {% if school_logo %}
+            <img src="{{ school_logo }}" alt="{{ school_name }} Logo" class="logo">
+            {% endif %}
+            <div class="school-name">{{ school_name }}</div>
+            <div class="header-subtitle">Thank you for visiting us!</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div class="greeting">Dear {{ visitor_name }},</div>
+            
+            <div class="main-message">
+                Thank you for visiting <span class="highlight">{{ school_name }}</span> today. We truly appreciate the time you took to visit our campus and hope you had a pleasant and informative experience.
+            </div>
+
+            <!-- Visit Details -->
+            <div class="visit-details">
+                <h4>📋 Visit Summary</h4>
+                <div class="detail-row">
+                    <span class="detail-label">Visit Date:</span>
+                    <span class="detail-value">{{ visit_date }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Purpose:</span>
+                    <span class="detail-value">{{ purpose }}</span>
+                </div>
+                {% if person_to_visit %}
+                <div class="detail-row">
+                    <span class="detail-label">Person Visited:</span>
+                    <span class="detail-value">{{ person_to_visit }}</span>
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <span class="detail-label">Checked Out:</span>
+                    <span class="detail-value">{{ checkout_time }}</span>
+                </div>
+            </div>
+
+            <div class="main-message">
+                We hope your visit provided you with valuable insights about our school community. Whether you're a prospective parent, partner, or community member, we're grateful for your interest in {{ school_name }}.
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-section">
+                <h4>📞 Stay Connected</h4>
+                <div class="contact-info">
+                    <strong>Need more information or have questions?</strong><br>
+                    We're here to help! Feel free to reach out to us anytime:
+                    <br><br>
+                    <strong>📧 Email:</strong> {{ school_email }}<br>
+                    <strong>📱 Phone:</strong> {{ school_phone }}<br>
+                    <strong>🌐 Website:</strong> <a href="{{ school_website }}" style="color: #28a745;">{{ school_website }}</a><br>
+                    <strong>📍 Address:</strong> {{ school_address }}
+                </div>
+            </div>
+
+            <div class="main-message">
+                Thank you once again for choosing to visit us. We look forward to welcoming you back to our campus soon!
+            </div>
+
+            <p style="margin-top: 30px; font-size: 16px;">
+                Warm regards,<br>
+                <strong>{{ school_name }} Team</strong>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            {% if school_logo %}
+            <img src="{{ school_logo }}" alt="{{ school_name }} Logo" class="footer-logo">
+            {% endif %}
+            <div class="footer-school-name">{{ school_name }}</div>
+            <div class="footer-address">
+                {{ school_address }}<br>
+                {{ school_phone }} | {{ school_email }}
+            </div>
+            <div class="footer-links">
+                <a href="{{ school_website }}">Visit Our Website</a>
+                <a href="mailto:{{ school_email }}">Contact Us</a>
+            </div>
+            <div class="footer-disclaimer">
+                This email was sent automatically by our visitor management system.<br>
+                Please do not reply to this email. For inquiries, contact us using the information above.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

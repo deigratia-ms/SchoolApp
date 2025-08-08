@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visitor History - Receptionist{% endblock %}
+
+{% block extra_css %}
+<style>
+    .visitor-history-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #6c757d;
+    }
+    
+    .visitor-history-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .checkout-badge {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+    }
+    
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .search-filters {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-history me-2 text-secondary"></i>Visitor History
+            </h2>
+            <p class="text-muted mb-0">View all checked-out visitors</p>
+        </div>
+        <div>
+            <a href="{% url 'users:visitor_log' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Active Visitors
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filters">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Search Visitor</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search_query }}" placeholder="Search by name...">
+            </div>
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" 
+                       value="{{ date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" 
+                       value="{{ date_to }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-search me-1"></i>Search
+                </button>
+                <a href="{% url 'users:visitor_history' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ total_visitors }}</h4>
+                    <small>Total Visitors</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-day fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ today_visitors }}</h4>
+                    <small>Today's Visitors</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-week fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ week_visitors }}</h4>
+                    <small>This Week</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ month_visitors }}</h4>
+                    <small>This Month</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visitor History Cards -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Visitor History
+                {% if visitor_history %}
+                    <span class="badge bg-secondary ms-2">{{ visitor_history.paginator.count }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if visitor_history %}
+                <div class="row">
+                    {% for visitor in visitor_history %}
+                    <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                        <div class="card visitor-history-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0 fw-bold">
+                                        {% if visitor.subject %}
+                                            {% if "[CHECKED_OUT]" in visitor.subject %}
+                                                {% with visitor.subject|slice:"23:" as visitor_name %}
+                                                    {% if visitor_name|slice:":3" == "og " %}
+                                                        {{ visitor_name|slice:"3:" }}
+                                                    {% else %}
+                                                        {{ visitor_name }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% else %}
+                                                {{ visitor.subject }}
+                                            {% endif %}
+                                        {% else %}
+                                            Unknown Visitor
+                                        {% endif %}
+                                    </h6>
+                                    <span class="checkout-badge">
+                                        <i class="fas fa-check-circle me-1"></i>Checked Out
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clipboard me-1"></i>
+                                        {% if visitor.content %}
+                                            {{ visitor.content|truncatewords:10 }}
+                                        {% else %}
+                                            No details provided
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ visitor.created_at|date:"M d, Y g:i A" }}
+                                    </small>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-success">
+                                        <i class="fas fa-sign-out-alt me-1"></i>
+                                        {% if "Checked out at:" in visitor.content %}
+                                            Checked out
+                                        {% else %}
+                                            Recently checked out
+                                        {% endif %}
+                                    </small>
+                                    
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-info btn-sm" 
+                                                onclick="viewHistoryDetails({{ visitor.id }}, '{{ visitor.subject|escapejs }}', '{{ visitor.content|escapejs }}', '{{ visitor.created_at|date:"M d, Y g:i A" }}')" 
+                                                title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if request.user.role == 'ADMIN' %}
+                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                onclick="deleteHistoryRecord({{ visitor.id }}, '{{ visitor.subject|escapejs }}')" 
+                                                title="Delete Record">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if visitor_history.has_other_pages %}
+                <div class="pagination-container">
+                    <nav aria-label="Visitor history pagination">
+                        <ul class="pagination">
+                            {% if visitor_history.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ visitor_history.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ visitor_history.number }} of {{ visitor_history.paginator.num_pages }}</span>
+                            </li>
+                            
+                            {% if visitor_history.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ visitor_history.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ visitor_history.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Last</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No visitor history found</h5>
+                    <p class="text-muted">Checked-out visitors will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- View History Details Modal -->
+<div class="modal fade" id="viewHistoryModal" tabindex="-1" aria-labelledby="viewHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewHistoryModalLabel">
+                    <i class="fas fa-history me-2"></i>Visitor History Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user me-2"></i>Visitor Name</h6>
+                        <p id="modalHistoryVisitorName" class="text-muted">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-calendar me-2"></i>Visit Date</h6>
+                        <p id="modalHistoryVisitorDate" class="text-muted">-</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <h6><i class="fas fa-clipboard me-2"></i>Visit Details</h6>
+                        <div id="modalHistoryVisitorContent" class="text-muted" style="white-space: pre-line;">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete History Record Modal -->
+<div class="modal fade" id="deleteHistoryModal" tabindex="-1" aria-labelledby="deleteHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteHistoryModalLabel">
+                    <i class="fas fa-trash me-2"></i>Delete History Record
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5>Are you sure?</h5>
+                    <p>Do you want to permanently delete the history record for <strong id="deleteHistoryVisitorName">-</strong>?</p>
+                    <p class="text-muted small">This action cannot be undone.</p>
+                </div>
+                <input type="hidden" id="deleteHistoryVisitorId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteHistory()">
+                    <i class="fas fa-trash me-1"></i>Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // View history details
+    function viewHistoryDetails(visitorId, subject, content, date) {
+        // Extract visitor name from subject
+        let visitorName = 'Unknown Visitor';
+        if (subject && subject.includes('[CHECKED_OUT]')) {
+            visitorName = subject.replace('[CHECKED_OUT] [VISITOR] Visitor Log - ', '').replace('og - ', '');
+        }
+        
+        // Populate modal with data
+        document.getElementById('modalHistoryVisitorName').textContent = visitorName;
+        document.getElementById('modalHistoryVisitorDate').textContent = date;
+        document.getElementById('modalHistoryVisitorContent').textContent = content || 'No details available';
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('viewHistoryModal'));
+        modal.show();
+    }
+
+    // Delete history record
+    function deleteHistoryRecord(visitorId, subject) {
+        // Extract visitor name from subject
+        let visitorName = 'Unknown Visitor';
+        if (subject && subject.includes('[CHECKED_OUT]')) {
+            visitorName = subject.replace('[CHECKED_OUT] [VISITOR] Visitor Log - ', '').replace('og - ', '');
+        }
+        
+        // Populate delete modal
+        document.getElementById('deleteHistoryVisitorName').textContent = visitorName;
+        document.getElementById('deleteHistoryVisitorId').value = visitorId;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteHistoryModal'));
+        modal.show();
+    }
+
+    // Confirm delete history
+    function confirmDeleteHistory() {
+        const visitorId = document.getElementById('deleteHistoryVisitorId').value;
+        
+        // Make AJAX call to delete history record
+        fetch(`/users/receptionist/delete-visitor/${visitorId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'History record deleted successfully');
+                // Close modal and reload page
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteHistoryModal'));
+                modal.hide();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showAlert('error', data.message || 'Error deleting history record');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error deleting history record');
+        });
+    }
+
+    // Alert function
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at the top of the container
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

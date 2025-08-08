@@ -77,6 +77,68 @@
         text-align: center;
         color: #6c757d;
     }
+
+    /* Enhanced Modal Styling */
+    .modal-lg {
+        max-width: 480px; /* Reduced from 800px by 40% */
+    }
+
+    .modal-body {
+        padding: 1.2rem; /* Reduced from 2rem */
+    }
+
+    .modal-body h6 {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .modal-body .form-label {
+        font-weight: 500;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .modal-body p {
+        color: #212529;
+        font-weight: 500;
+        line-height: 1.4;
+        margin-bottom: 0.5rem;
+    }
+
+    .bg-light {
+        background-color: #f8f9fa !important;
+    }
+
+    .border-bottom {
+        border-bottom: 2px solid #e9ecef !important;
+    }
+
+    .rounded-circle {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .modal-body .row {
+        margin-bottom: 0;
+    }
+
+    .modal-body .mb-4:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    .modal-body .d-flex {
+        align-items: flex-start;
+    }
+
+    .modal-body .fw-bold {
+        font-size: 1.1rem;
+    }
 </style>
 {% endblock %}
 
@@ -135,23 +197,104 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-list me-2"></i>Recent Visitors
+                        <i class="fas fa-list me-2"></i>Recent Visitor Logs
+                        {% if recent_visitors %}
+                            <span class="badge bg-primary ms-2">{{ recent_visitors|length }}</span>
+                        {% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
                     {% if recent_visitors %}
                         <div class="row">
                             {% for visitor in recent_visitors %}
-                            <div class="col-lg-6 mb-3">
-                                <div class="card visitor-card">
-                                    <div class="card-body">
-                                        <h6 class="card-title">{{ visitor.subject }}</h6>
-                                        <p class="card-text small text-muted">{{ visitor.content|truncatewords:25 }}</p>
+                            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                                <div class="card visitor-card border-left-success shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="avatar-sm bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="card-title mb-0 fw-bold">
+                                                    {% if visitor.subject %}
+                                                        {% if "[VISITOR]" in visitor.subject %}
+                                                            {% with visitor.subject|slice:"19:" as visitor_name %}
+                                                                {% if visitor_name|slice:":3" == "og " %}
+                                                                    {{ visitor_name|slice:"3:" }}
+                                                                {% else %}
+                                                                    {{ visitor_name }}
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        {% else %}
+                                                            {{ visitor.subject }}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        Unknown Visitor
+                                                    {% endif %}
+                                                </h6>
+                                                <small class="text-muted">by {{ visitor.sender.get_full_name }}</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- Email Information (if available) -->
+                                        {% if visitor.content and "Email:" in visitor.content %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-envelope me-1"></i>
+                                                    {% for line in visitor.content.splitlines %}
+                                                        {% if "Email:" in line %}
+                                                            {{ line|slice:"6:"|truncatechars:25 }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="mb-2">
+                                            <small class="text-muted d-block">Purpose:</small>
+                                            <p class="card-text small mb-1">
+                                                {% with visitor.content|truncatewords:8 as content %}
+                                                    {% if content %}
+                                                        {{ content }}
+                                                    {% else %}
+                                                        <span class="text-muted">Not specified</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </p>
+                                        </div>
+
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">
-                                                <i class="fas fa-clock me-1"></i>{{ visitor.created_at|timesince }} ago
-                                            </small>
-                                            <span class="badge bg-success time-badge">{{ visitor.created_at|date:"H:i" }}</span>
+                                            <div>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>{{ visitor.created_at|date:"M d, Y" }}
+                                                </small>
+                                                <br>
+                                                <small class="text-success">
+                                                    <i class="fas fa-clock me-1"></i>{{ visitor.created_at|timesince }} ago
+                                                </small>
+                                            </div>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-outline-info btn-sm"
+                                                        onclick="viewVisitorDetails({{ visitor.id }}, '{{ visitor.subject|escapejs }}', '{{ visitor.content|escapejs }}', '{{ visitor.created_at|date:"M d, Y g:i A" }}')"
+                                                        title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-success btn-sm"
+                                                        onclick="checkOutVisitor({{ visitor.id }}, '{{ visitor.subject|escapejs }}')"
+                                                        title="Check Out">
+                                                    <i class="fas fa-sign-out-alt"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                        onclick="editVisitorLog({{ visitor.id }}, '{{ visitor.subject|escapejs }}', '{{ visitor.content|escapejs }}')"
+                                                        title="Edit Log">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                        onclick="deleteVisitorLog({{ visitor.id }}, '{{ visitor.subject|escapejs }}')"
+                                                        title="Delete Log">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -162,7 +305,7 @@
                         <div class="text-center py-5">
                             <i class="fas fa-user-clock fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No visitors logged yet</h5>
-                            <p class="text-muted">Start by logging your first visitor</p>
+                            <p class="text-muted">Start by logging your first visitor above</p>
                         </div>
                     {% endif %}
                 </div>
@@ -188,6 +331,11 @@
                         <div class="col-md-6 mb-3">
                             <label for="visitor_name" class="form-label">Visitor Name *</label>
                             <input type="text" class="form-control" id="visitor_name" name="visitor_name" required>
+                            <div id="parent_suggestions" class="dropdown-menu" style="display: none; position: absolute; z-index: 1000; width: 100%;"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="visitor_email" class="form-label">Email (Optional)</label>
+                            <input type="email" class="form-control" id="visitor_email" name="visitor_email" placeholder="For thank you email">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="visitor_phone" class="form-label">Phone Number</label>
@@ -231,11 +379,603 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success" id="submitVisitorBtn">
                         <i class="fas fa-save me-2"></i>Log Visitor
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for visitor actions -->
+<script>
+    // Global functions for visitor actions - defined immediately to ensure availability
+    function viewVisitorDetails(visitorId, subject, content, date) {
+        // Extract visitor name from subject
+        let visitorName = 'Unknown Visitor';
+        if (subject && subject.includes('[VISITOR]')) {
+            visitorName = subject.replace('[VISITOR] Visitor Log - ', '').replace('og - ', '');
+        }
+
+        // Parse content to extract structured information
+        const parsedData = parseVisitorContent(content || '');
+
+        // Populate basic information
+        document.getElementById('modalVisitorName').textContent = visitorName;
+        document.getElementById('modalVisitorDate').textContent = date;
+        document.getElementById('modalLoggedBy').textContent = parsedData.loggedBy || 'Not specified';
+
+        // Always show contact information section
+        document.getElementById('modalVisitorPhone').textContent = parsedData.phone || 'Not provided';
+        document.getElementById('modalVisitorEmail').textContent = parsedData.email || 'Not provided';
+
+        // Populate visit details
+        document.getElementById('modalVisitorPurpose').textContent = parsedData.purpose || 'Not specified';
+        document.getElementById('modalPersonToVisit').textContent = parsedData.personToVisit || 'Not specified';
+
+        // Populate additional information
+        const additionalSection = document.getElementById('additionalInfoSection');
+        if (parsedData.additionalInfo) {
+            additionalSection.style.display = 'block';
+            document.getElementById('modalAdditionalInfo').textContent = parsedData.additionalInfo;
+        } else {
+            additionalSection.style.display = 'none';
+        }
+
+        // Store visitor ID for checkout
+        document.getElementById('viewVisitorModal').setAttribute('data-visitor-id', visitorId);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('viewVisitorModal'));
+        modal.show();
+    }
+
+    function parseVisitorContent(content) {
+        const data = {
+            phone: null,
+            email: null,
+            purpose: null,
+            personToVisit: null,
+            loggedBy: null,
+            additionalInfo: null
+        };
+
+        if (!content) return data;
+
+        // Split content into lines and parse each field
+        const lines = content.split(/\r?\n|\r/);
+        let remainingContent = [];
+
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+
+            // Extract logged by information
+            if (line.toLowerCase().includes('logged by:')) {
+                data.loggedBy = line.replace(/logged by:/i, '').trim();
+                // Remove role information in parentheses for cleaner display
+                data.loggedBy = data.loggedBy.replace(/\s*\([^)]*\)/g, '');
+                continue;
+            }
+
+            // Skip other redundant information
+            if (line.includes('New Visitor Logged:') ||
+                line.includes('Visitor Name:') ||
+                line.includes('Date:') ||
+                line.includes('Time In:')) {
+                continue;
+            }
+
+            // Extract phone number
+            if (line.toLowerCase().includes('phone:')) {
+                data.phone = line.replace(/phone:/i, '').trim();
+                if (data.phone === 'Not provided') data.phone = null;
+            }
+            // Extract email
+            else if (line.toLowerCase().includes('email:')) {
+                data.email = line.replace(/email:/i, '').trim();
+                if (data.email === 'Not provided') data.email = null;
+            }
+            // Extract purpose
+            else if (line.toLowerCase().includes('purpose:')) {
+                data.purpose = line.replace(/purpose:/i, '').trim();
+            }
+            // Extract person to visit
+            else if (line.toLowerCase().includes('person to visit:')) {
+                data.personToVisit = line.replace(/person to visit:/i, '').trim();
+            }
+            // Collect other information
+            else if (line.length > 0) {
+                remainingContent.push(line);
+            }
+        }
+
+        // Join remaining content as additional info
+        if (remainingContent.length > 0) {
+            data.additionalInfo = remainingContent.join(' ');
+        }
+
+        return data;
+    }
+
+    function editVisitorLog(visitorId, subject, content) {
+        // Extract visitor name from subject
+        let visitorName = 'Unknown Visitor';
+        if (subject && subject.includes('[VISITOR]')) {
+            visitorName = subject.replace('[VISITOR] Visitor Log - ', '').replace('og - ', '');
+        }
+
+        // Parse content to extract structured information
+        const parsedData = parseVisitorContent(content || '');
+
+        // Populate edit form with all available data
+        document.getElementById('editVisitorName').value = visitorName;
+        document.getElementById('editVisitorPhone').value = parsedData.phone || '';
+        document.getElementById('editVisitorEmail').value = parsedData.email || '';
+        document.getElementById('editPersonToVisit').value = parsedData.personToVisit || '';
+        document.getElementById('editVisitorPurpose').value = parsedData.purpose || '';
+        document.getElementById('editVisitorId').value = visitorId;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editVisitorModal'));
+        modal.show();
+    }
+
+    function deleteVisitorLog(visitorId, subject) {
+        // Extract visitor name from subject
+        let visitorName = 'Unknown Visitor';
+        if (subject && subject.includes('[VISITOR]')) {
+            visitorName = subject.replace('[VISITOR] Visitor Log - ', '').replace('og - ', '');
+        }
+
+        // Populate delete modal
+        document.getElementById('deleteVisitorName').textContent = visitorName;
+        document.getElementById('deleteVisitorId').value = visitorId;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteVisitorModal'));
+        modal.show();
+    }
+
+    function checkOutVisitor(visitorId, subject) {
+        // Extract visitor name from subject
+        let visitorName = 'Unknown Visitor';
+        if (subject && subject.includes('[VISITOR]')) {
+            visitorName = subject.replace('[VISITOR] Visitor Log - ', '').replace('og - ', '');
+        }
+
+        if (confirm(`Check out ${visitorName}?\n\nThis will move the visitor to history and send a thank you email if available.`)) {
+            // Show loading state
+            const checkoutBtn = document.querySelector(`button[onclick*="checkOutVisitor(${visitorId}"]`);
+            let originalText = 'Check Out'; // Default text
+
+            if (checkoutBtn) {
+                originalText = checkoutBtn.innerHTML;
+                checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                checkoutBtn.disabled = true;
+            }
+
+            // Make AJAX call to check out visitor
+            fetch(`/users/receptionist/checkout-visitor/${visitorId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message);
+                    // Remove the visitor card from the page
+                    if (checkoutBtn) {
+                        const visitorCard = checkoutBtn.closest('.col-xl-3');
+                        if (visitorCard) {
+                            visitorCard.style.transition = 'all 0.3s ease';
+                            visitorCard.style.opacity = '0';
+                            visitorCard.style.transform = 'scale(0.8)';
+                            setTimeout(() => {
+                                visitorCard.remove();
+                                updateVisitorCount();
+                            }, 300);
+                        }
+                    }
+                } else {
+                    showAlert('error', data.message || 'Error checking out visitor');
+                    // Restore button state
+                    if (checkoutBtn) {
+                        checkoutBtn.innerHTML = originalText;
+                        checkoutBtn.disabled = false;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Error checking out visitor. Please try again.');
+                // Restore button state
+                if (checkoutBtn) {
+                    checkoutBtn.innerHTML = originalText;
+                    checkoutBtn.disabled = false;
+                }
+            });
+        }
+    }
+
+    function updateVisitorCount() {
+        const visitorCards = document.querySelectorAll('.visitor-card').length;
+        const badge = document.querySelector('.badge.bg-primary');
+        if (badge) {
+            badge.textContent = visitorCards;
+        }
+    }
+
+    function showAlert(type, message) {
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+        // Insert at the top of the container
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(alertDiv, container.firstChild);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                const bsAlert = new bootstrap.Alert(alertDiv);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+
+    // Global function for selecting staff from search results
+    function selectStaff(name, id) {
+        const searchInput = document.getElementById('person_to_visit_search');
+        const hiddenInput = document.getElementById('person_to_visit');
+        const resultsDiv = document.getElementById('search_results');
+
+        if (searchInput && hiddenInput && resultsDiv) {
+            searchInput.value = name;
+            hiddenInput.value = name;
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+
+            // Clear any pending searches
+            if (typeof searchTimeout !== 'undefined' && searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            if (typeof currentRequest !== 'undefined' && currentRequest) {
+                currentRequest.abort();
+                currentRequest = null;
+            }
+        }
+    }
+
+    // Global function for displaying search results
+    function displaySearchResults(results) {
+        const resultsDiv = document.getElementById('search_results');
+
+        if (!resultsDiv) return;
+
+        // Clear previous results first
+        resultsDiv.innerHTML = '';
+
+        if (!results || results.length === 0) {
+            resultsDiv.innerHTML = '<div class="search-no-results">No staff members found. You can continue typing to enter a custom name.</div>';
+            resultsDiv.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        results.forEach(staff => {
+            // Escape quotes in names to prevent JavaScript errors
+            const safeName = staff.name.replace(/'/g, "\\'");
+            html += `
+                <div class="search-result-item" onclick="selectStaff('${safeName}', '${staff.id}')">
+                    <div class="search-result-name">${staff.name}</div>
+                    <div class="search-result-role">${staff.role}</div>
+                </div>
+            `;
+        });
+
+        resultsDiv.innerHTML = html;
+        resultsDiv.style.display = 'block';
+    }
+
+    // Global function for checking out visitor from modal
+    function checkOutFromModal() {
+        const visitorId = document.getElementById('viewVisitorModal').getAttribute('data-visitor-id');
+        const visitorName = document.getElementById('modalVisitorName').textContent;
+
+        // Close the view modal first
+        const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewVisitorModal'));
+        if (viewModal) {
+            viewModal.hide();
+        }
+
+        // Trigger checkout
+        setTimeout(() => {
+            checkOutVisitor(visitorId, `[VISITOR] Visitor Log - ${visitorName}`);
+        }, 300);
+    }
+
+    // Global function for saving visitor edits
+    function saveVisitorEdit() {
+        const visitorId = document.getElementById('editVisitorId').value;
+        const visitorName = document.getElementById('editVisitorName').value;
+        const visitorPhone = document.getElementById('editVisitorPhone').value;
+        const visitorEmail = document.getElementById('editVisitorEmail').value;
+        const personToVisit = document.getElementById('editPersonToVisit').value;
+        const visitorPurpose = document.getElementById('editVisitorPurpose').value;
+
+        if (!visitorName || !visitorPurpose) {
+            showAlert('warning', 'Please fill in all required fields (marked with *)');
+            return;
+        }
+
+        // Make AJAX call to save changes
+        fetch(`/users/receptionist/edit-visitor/${visitorId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                visitor_name: visitorName,
+                visitor_phone: visitorPhone,
+                visitor_email: visitorEmail,
+                person_to_visit: personToVisit,
+                purpose: visitorPurpose
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Visitor log updated successfully');
+                // Close modal and reload page
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editVisitorModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showAlert('error', data.message || 'Error updating visitor log');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error updating visitor log');
+        });
+    }
+
+    // Global function for confirming visitor deletion
+    function confirmDeleteVisitor() {
+        const visitorId = document.getElementById('deleteVisitorId').value;
+
+        // Make AJAX call to delete visitor
+        fetch(`/users/receptionist/delete-visitor/${visitorId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Visitor log deleted successfully');
+                // Close modal and reload page
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteVisitorModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showAlert('error', data.message || 'Error deleting visitor log');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error deleting visitor log');
+        });
+    }
+</script>
+
+<!-- View Visitor Details Modal -->
+<div class="modal fade" id="viewVisitorModal" tabindex="-1" aria-labelledby="viewVisitorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewVisitorModalLabel">
+                    <i class="fas fa-eye me-2"></i>Visitor Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Visitor Information Header -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary rounded-circle p-2 me-3">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Visitor Name</h6>
+                                <p id="modalVisitorName" class="mb-0 fw-bold text-dark">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date and Logged By Information -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Date & Time</label>
+                            <p id="modalVisitorDate" class="mb-0 fw-bold text-dark">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Logged By</label>
+                            <p id="modalLoggedBy" class="mb-0 fw-bold text-dark">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="row mb-3" id="contactInfoSection">
+                    <div class="col-12">
+                        <h6 class="border-bottom pb-1 mb-2">
+                            <i class="fas fa-address-book me-2 text-primary"></i>Contact Information
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Phone Number</label>
+                            <p id="modalVisitorPhone" class="mb-0">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Email Address</label>
+                            <p id="modalVisitorEmail" class="mb-0">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visit Details -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="border-bottom pb-1 mb-2">
+                            <i class="fas fa-clipboard-list me-2 text-success"></i>Visit Details
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Purpose of Visit</label>
+                            <p id="modalVisitorPurpose" class="mb-0">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Person to Visit</label>
+                            <p id="modalPersonToVisit" class="mb-0">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="row" id="additionalInfoSection" style="display: none;">
+                    <div class="col-12">
+                        <h6 class="border-bottom pb-1 mb-2">
+                            <i class="fas fa-info-circle me-2 text-warning"></i>Additional Information
+                        </h6>
+                        <div class="bg-light p-2 rounded">
+                            <p id="modalAdditionalInfo" class="mb-0 text-muted small">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="checkOutFromModal()">
+                    <i class="fas fa-sign-out-alt me-1"></i>Check Out
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Visitor Modal -->
+<div class="modal fade" id="editVisitorModal" tabindex="-1" aria-labelledby="editVisitorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVisitorModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Visitor Log
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editVisitorForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editVisitorName" class="form-label">Visitor Name *</label>
+                            <input type="text" class="form-control" id="editVisitorName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editVisitorPhone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="editVisitorPhone" placeholder="Optional">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editVisitorEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="editVisitorEmail" placeholder="Optional">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editPersonToVisit" class="form-label">Person to Visit</label>
+                            <input type="text" class="form-control" id="editPersonToVisit" placeholder="Optional">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editVisitorPurpose" class="form-label">Purpose of Visit *</label>
+                        <textarea class="form-control" id="editVisitorPurpose" rows="3" required placeholder="Describe the purpose of the visit"></textarea>
+                    </div>
+                    <input type="hidden" id="editVisitorId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveVisitorEdit()">
+                    <i class="fas fa-save me-1"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Visitor Modal -->
+<div class="modal fade" id="deleteVisitorModal" tabindex="-1" aria-labelledby="deleteVisitorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteVisitorModalLabel">
+                    <i class="fas fa-trash me-2"></i>Delete Visitor Log
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5>Are you sure?</h5>
+                    <p>Do you want to delete the visitor log for <strong id="deleteVisitorName">-</strong>?</p>
+                    <p class="text-muted small">This action cannot be undone.</p>
+                </div>
+                <input type="hidden" id="deleteVisitorId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteVisitor()">
+                    <i class="fas fa-trash me-1"></i>Delete
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -246,12 +986,128 @@
     let searchTimeout;
     let currentRequest;
 
-    // Set current time when modal opens
-    document.getElementById('newVisitorModal').addEventListener('shown.bs.modal', function () {
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set current time when modal opens
+        document.getElementById('newVisitorModal').addEventListener('shown.bs.modal', function () {
         const now = new Date();
         const timeString = now.toTimeString().slice(0, 5);
         document.getElementById('time_in').value = timeString;
         document.getElementById('visitor_name').focus();
+    });
+
+    // Parent search functionality for visitor name
+    document.getElementById('visitor_name').addEventListener('input', function() {
+        const query = this.value.trim();
+        const suggestionsDiv = document.getElementById('parent_suggestions');
+
+        // Clear previous timeout
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+
+        if (query.length < 2) {
+            suggestionsDiv.style.display = 'none';
+            return;
+        }
+
+        // Debounce the search to avoid too many requests
+        searchTimeout = setTimeout(() => {
+            // Search for parents
+            fetch(`/users/search-parents/?q=${encodeURIComponent(query)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.parents && data.parents.length > 0) {
+                        let html = '';
+                        data.parents.forEach(parent => {
+                            const safeName = parent.name.replace(/'/g, "\\'");
+                            const safeEmail = parent.email.replace(/'/g, "\\'");
+                            const safePhone = parent.phone.replace(/'/g, "\\'");
+                            html += `<a class="dropdown-item" href="#" onclick="selectParent('${safeName}', '${safeEmail}', '${safePhone}')">
+                                <strong>${parent.name}</strong><br>
+                                <small class="text-muted">${parent.email}</small>
+                            </a>`;
+                        });
+                        suggestionsDiv.innerHTML = html;
+                        suggestionsDiv.style.display = 'block';
+                    } else {
+                        suggestionsDiv.innerHTML = '<div class="dropdown-item-text text-muted">No parents found</div>';
+                        suggestionsDiv.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching parents:', error);
+                    suggestionsDiv.innerHTML = '<div class="dropdown-item-text text-danger">Error searching parents</div>';
+                    suggestionsDiv.style.display = 'block';
+                });
+        }, 300); // 300ms delay
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        const suggestionsDiv = document.getElementById('parent_suggestions');
+        const visitorNameInput = document.getElementById('visitor_name');
+
+        if (!suggestionsDiv.contains(e.target) && e.target !== visitorNameInput) {
+            suggestionsDiv.style.display = 'none';
+        }
+    });
+
+    function selectParent(name, email, phone) {
+        document.getElementById('visitor_name').value = name;
+        document.getElementById('visitor_email').value = email || '';
+        document.getElementById('visitor_phone').value = phone || '';
+        document.getElementById('parent_suggestions').style.display = 'none';
+    }
+
+    // Form validation and submission handling
+    document.querySelector('#newVisitorModal form').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitVisitorBtn');
+        const visitorName = document.getElementById('visitor_name').value.trim();
+        const purpose = document.getElementById('purpose').value;
+        const timeIn = document.getElementById('time_in').value;
+
+        // Basic validation
+        if (!visitorName) {
+            e.preventDefault();
+            showAlert('warning', 'Please enter the visitor name');
+            document.getElementById('visitor_name').focus();
+            return;
+        }
+
+        if (!purpose) {
+            e.preventDefault();
+            showAlert('warning', 'Please select the purpose of visit');
+            document.getElementById('purpose').focus();
+            return;
+        }
+
+        if (!timeIn) {
+            e.preventDefault();
+            showAlert('warning', 'Please enter the time in');
+            document.getElementById('time_in').focus();
+            return;
+        }
+
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging Visitor...';
+        submitBtn.disabled = true;
+    });
+
+    // Reset form and button state when modal is hidden
+    document.getElementById('newVisitorModal').addEventListener('hidden.bs.modal', function () {
+        const submitBtn = document.getElementById('submitVisitorBtn');
+        submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Log Visitor';
+        submitBtn.disabled = false;
+
+        // Clear form
+        this.querySelector('form').reset();
+        document.getElementById('parent_suggestions').style.display = 'none';
     });
 
     // Clear form when modal is hidden
@@ -269,6 +1125,11 @@
         resultsDiv.style.display = 'none';
         resultsDiv.innerHTML = '';
 
+        // Reset purpose dropdown (remove any custom options)
+        const purposeSelect = document.getElementById('purpose');
+        const customOptions = purposeSelect.querySelectorAll('option:not([value=""]):not([value="Parent Meeting"]):not([value="Student Admission"]):not([value="Document Collection"]):not([value="Fee Payment"]):not([value="Complaint/Inquiry"]):not([value="Vendor/Supplier"]):not([value="Official Business"]):not([value="Other"])');
+        customOptions.forEach(option => option.remove());
+
         // Cancel any pending requests
         if (searchTimeout) {
             clearTimeout(searchTimeout);
@@ -280,26 +1141,38 @@
         }
     });
 
-    // Auto-fill other purpose
-    document.getElementById('purpose').addEventListener('change', function() {
-        if (this.value === 'Other') {
-            const customPurpose = prompt('Please specify the purpose of visit:');
-            if (customPurpose) {
-                const option = new Option(customPurpose, customPurpose, true, true);
-                this.appendChild(option);
+    // Handle "Other" purpose selection with popup
+    const purposeSelect = document.getElementById('purpose');
+    if (purposeSelect) {
+        purposeSelect.addEventListener('change', function() {
+            console.log('Purpose changed to:', this.value); // Debug log
+            if (this.value === 'Other') {
+                const customPurpose = prompt('Please specify the purpose of visit:');
+                console.log('Custom purpose entered:', customPurpose); // Debug log
+                if (customPurpose && customPurpose.trim()) {
+                    // Create a new option with the custom purpose
+                    const option = new Option(customPurpose.trim(), customPurpose.trim(), true, true);
+                    this.appendChild(option);
+                } else {
+                    // If user cancels or enters empty text, reset to empty selection
+                    this.value = '';
+                }
             }
-        }
-    });
+        });
+    }
 
     // Staff search functionality
-    document.getElementById('person_to_visit_search').addEventListener('input', function() {
-        const query = this.value.trim();
-        const resultsDiv = document.getElementById('search_results');
+    const searchInput = document.getElementById('person_to_visit_search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            console.log('Search input triggered:', this.value); // Debug log
+            const query = this.value.trim();
+            const resultsDiv = document.getElementById('search_results');
 
-        // Clear previous timeout
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
 
         // Cancel previous request
         if (currentRequest) {
@@ -332,6 +1205,9 @@
             })
                 .then(response => {
                     if (!response.ok) {
+                        if (response.status === 302 || response.status === 403) {
+                            throw new Error('Authentication required. Please refresh the page and try again.');
+                        }
                         throw new Error('Network response was not ok');
                     }
                     return response.json();
@@ -348,63 +1224,26 @@
                     }
                 });
         }, 300);
-    });
-
-    function displaySearchResults(results) {
-        const resultsDiv = document.getElementById('search_results');
-
-        // Clear previous results first
-        resultsDiv.innerHTML = '';
-
-        if (!results || results.length === 0) {
-            resultsDiv.innerHTML = '<div class="search-no-results">No staff members found</div>';
-            resultsDiv.style.display = 'block';
-            return;
-        }
-
-        let html = '';
-        results.forEach(staff => {
-            // Escape quotes in names to prevent JavaScript errors
-            const safeName = staff.name.replace(/'/g, "\\'");
-            html += `
-                <div class="search-result-item" onclick="selectStaff('${safeName}', '${staff.id}')">
-                    <div class="search-result-name">${staff.name}</div>
-                    <div class="search-result-role">${staff.role}</div>
-                </div>
-            `;
         });
-
-        resultsDiv.innerHTML = html;
-        resultsDiv.style.display = 'block';
     }
 
-    function selectStaff(name, id) {
-        const searchInput = document.getElementById('person_to_visit_search');
-        const hiddenInput = document.getElementById('person_to_visit');
-        const resultsDiv = document.getElementById('search_results');
 
-        searchInput.value = name;
-        hiddenInput.value = name;
-        resultsDiv.style.display = 'none';
-        resultsDiv.innerHTML = '';
 
-        // Clear any pending searches
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
-        if (currentRequest) {
-            currentRequest.abort();
-            currentRequest = null;
-        }
-    }
 
-    // Hide search results when clicking outside
+
+    // Hide search results when clicking outside and handle custom names
     document.addEventListener('click', function(event) {
         const searchInput = document.getElementById('person_to_visit_search');
         const resultsDiv = document.getElementById('search_results');
+        const hiddenInput = document.getElementById('person_to_visit');
 
         if (!searchInput.contains(event.target) && !resultsDiv.contains(event.target)) {
             resultsDiv.style.display = 'none';
+
+            // If user has typed something but hasn't selected from results, use the typed value
+            if (searchInput.value.trim() && !hiddenInput.value) {
+                hiddenInput.value = searchInput.value.trim();
+            }
         }
     });
 
@@ -417,12 +1256,66 @@
         }
     });
 
-    // Clear selection when user starts typing again
+    // Handle keyboard events for search input
     document.getElementById('person_to_visit_search').addEventListener('keydown', function(event) {
+        const hiddenInput = document.getElementById('person_to_visit');
+        const resultsDiv = document.getElementById('search_results');
+
         // If user is typing (not just navigating), clear the selection
         if (event.key.length === 1 || event.key === 'Backspace' || event.key === 'Delete') {
-            document.getElementById('person_to_visit').value = '';
+            hiddenInput.value = '';
+        }
+
+        // Handle Enter or Tab to accept current input as custom name
+        if (event.key === 'Enter' || event.key === 'Tab') {
+            if (this.value.trim() && !hiddenInput.value) {
+                hiddenInput.value = this.value.trim();
+                resultsDiv.style.display = 'none';
+
+                // Cancel any pending searches
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                if (currentRequest) {
+                    currentRequest.abort();
+                    currentRequest = null;
+                }
+            }
+        }
+
+        // Handle Escape to close search results
+        if (event.key === 'Escape') {
+            resultsDiv.style.display = 'none';
         }
     });
+
+    // Functions are now defined globally above - no duplicates needed here
+
+
+
+
+
+    // Utility function to show alerts
+    function showAlert(type, message) {
+        const alertContainer = document.querySelector('.container-fluid');
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        alertContainer.insertAdjacentHTML('afterbegin', alertHtml);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+
+    }); // End DOMContentLoaded
 </script>
 {% endblock %}

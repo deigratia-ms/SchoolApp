@@ -90,6 +90,7 @@ def visitor_log(request):
         # Handle new visitor entry
         visitor_name = request.POST.get('visitor_name')
         visitor_phone = request.POST.get('visitor_phone')
+        visitor_email = request.POST.get('visitor_email')
         purpose = request.POST.get('purpose')
         person_to_visit = request.POST.get('person_to_visit')
         time_in = request.POST.get('time_in')
@@ -105,7 +106,8 @@ def visitor_log(request):
 New Visitor Logged:
 
 Visitor Name: {visitor_name}
-Phone: {visitor_phone}
+Phone: {visitor_phone or 'Not provided'}
+Email: {visitor_email or 'Not provided'}
 Purpose: {purpose}
 Person to Visit: {person_to_visit}
 Time In: {time_in}
@@ -130,17 +132,355 @@ Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
             
         return redirect('users:visitor_log')
     
-    # Get recent visitor logs
+    # Get recent visitor logs (newest first) - only active ones (not checked out)
     recent_visitors = Message.objects.filter(
         subject__icontains='[VISITOR]',
         sender=request.user
+    ).exclude(
+        subject__icontains='[CHECKED_OUT]'
     ).order_by('-created_at')[:20]
-    
+
     context = {
         'recent_visitors': recent_visitors,
     }
-    
+
     return render(request, 'users/receptionist/visitor_log.html', context)
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def checkout_visitor_message(request, visitor_id):
+    """Check out a visitor message and send thank you email if email is provided"""
+    if request.method == 'POST':
+        try:
+            # Get the visitor message
+            visitor_message = Message.objects.get(id=visitor_id, sender=request.user)
+
+            # Extract visitor details from the message
+            visitor_name = visitor_message.subject.replace('[VISITOR] Visitor Log - ', '')
+            visitor_email = None
+
+            # Parse email from message content if available
+            content_lines = visitor_message.content.split('\n')
+            for line in content_lines:
+                line = line.strip()
+                if line.lower().startswith('email:') and 'not provided' not in line.lower():
+                    visitor_email = line.replace('Email:', '').replace('email:', '').strip()
+                    if visitor_email and '@' in visitor_email:  # Basic email validation
+                        break
+                    else:
+                        visitor_email = None
+
+            # Update the message subject to indicate checkout
+            visitor_message.subject = f"[CHECKED_OUT] {visitor_message.subject}"
+            visitor_message.content += f"\n\nChecked out at: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            visitor_message.save()
+
+            # Send thank you email if email is provided
+            email_sent = False
+            email_error = None
+
+            if visitor_email and visitor_email != 'Not provided' and '@' in visitor_email:
+                try:
+                    from users.utils import send_school_email
+                    from users.models import SchoolSettings
+                    from django.template.loader import render_to_string
+
+                    # Get school settings for proper email configuration
+                    school_settings = SchoolSettings.objects.first()
+                    school_name = school_settings.school_name if school_settings else 'Deigratia Montessori School'
+
+                    # Parse visitor details from message content
+                    content_lines = visitor_message.content.split('\n')
+                    purpose = 'Not specified'
+                    person_to_visit = 'Not specified'
+
+                    for line in content_lines:
+                        line = line.strip()
+                        if line.lower().startswith('purpose:'):
+                            purpose = line.replace('Purpose:', '').replace('purpose:', '').strip()
+                        elif line.lower().startswith('person to visit:'):
+                            person_to_visit = line.replace('Person to Visit:', '').replace('person to visit:', '').strip()
+
+                    # Prepare email context
+                    email_context = {
+                        'visitor_name': visitor_name,
+                        'school_name': school_name,
+                        'school_logo': school_settings.logo.url if school_settings and school_settings.logo else None,
+                        'school_email': school_settings.email if school_settings else 'info@deigratiams.edu.gh',
+                        'school_phone': school_settings.phone if school_settings else '+233 123 456 789',
+                        'school_website': 'https://deigratiams.edu.gh',
+                        'school_address': school_settings.address if school_settings else 'Oyibi, Greater Accra Region, Ghana',
+                        'visit_date': timezone.now().strftime('%B %d, %Y'),
+                        'checkout_time': timezone.now().strftime('%B %d, %Y at %I:%M %p'),
+                        'purpose': purpose,
+                        'person_to_visit': person_to_visit if person_to_visit != 'Not specified' else None,
+                    }
+
+                    # Render HTML email template
+                    html_message = render_to_string('users/emails/visitor_thank_you.html', email_context)
+
+                    # Plain text version
+                    plain_message = f"""Dear {visitor_name},
+
+Thank you for visiting {school_name} today. We hope you had a pleasant experience.
+
+Visit Details:
+- Date: {email_context['visit_date']}
+- Purpose: {purpose}
+{f"- Person Visited: {person_to_visit}" if person_to_visit != 'Not specified' else ""}
+
+If you have any questions or need further assistance, please don't hesitate to contact us.
+
+Best regards,
+{school_name} Team
+
+---
+{school_name}
+{email_context['school_address']}
+{email_context['school_phone']} | {email_context['school_email']}
+{email_context['school_website']}"""
+
+                    subject = f"Thank you for visiting {school_name}"
+
+                    # Use the school's email utility function with HTML
+                    sent_count = send_school_email(
+                        subject=subject,
+                        message=plain_message.strip(),
+                        recipient_list=[visitor_email],
+                        html_message=html_message,
+                        fail_silently=False
+                    )
+
+                    if sent_count > 0:
+                        email_sent = True
+                    else:
+                        email_error = "Email could not be sent (SMTP configuration issue)"
+
+                except Exception as e:
+                    email_error = f"Error sending thank you email: {str(e)}"
+                    print(f"Email error: {e}")  # For debugging
+
+            # Prepare response message
+            response_message = f'Visitor {visitor_name} checked out successfully'
+
+            if visitor_email and visitor_email != 'Not provided' and '@' in visitor_email:
+                if email_sent:
+                    response_message += f' and thank you email sent to {visitor_email}'
+                elif email_error:
+                    response_message += f' but email failed: {email_error}'
+                else:
+                    response_message += ' but email could not be sent'
+            elif visitor_email and visitor_email != 'Not provided':
+                response_message += ' (invalid email address provided)'
+            else:
+                response_message += ' (no email address provided)'
+
+            return JsonResponse({
+                'success': True,
+                'message': response_message,
+                'email_sent': email_sent,
+                'email_error': email_error
+            })
+
+        except Message.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Visitor log not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error checking out visitor: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def edit_visitor_message(request, visitor_id):
+    """Edit a visitor log message"""
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+
+            # Get the visitor message
+            visitor_message = Message.objects.get(id=visitor_id, sender=request.user)
+
+            visitor_name = data.get('visitor_name')
+            visitor_email = data.get('visitor_email', '')
+            purpose = data.get('purpose')
+
+            # Update the message
+            visitor_message.subject = f"[VISITOR] Visitor Log - {visitor_name}"
+
+            # Update the content
+            content_lines = visitor_message.content.split('\n')
+            new_content = f"""
+New Visitor Logged:
+
+Visitor Name: {visitor_name}
+Phone: {content_lines[3].replace('Phone:', '').strip() if len(content_lines) > 3 else 'Not provided'}
+Email: {visitor_email or 'Not provided'}
+Purpose: {purpose}
+Person to Visit: {content_lines[6].replace('Person to Visit:', '').strip() if len(content_lines) > 6 else 'Not specified'}
+Time In: {content_lines[7].replace('Time In:', '').strip() if len(content_lines) > 7 else 'Not specified'}
+
+Logged by: {request.user.get_full_name()} (Receptionist)
+Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
+            """
+
+            visitor_message.content = new_content.strip()
+            visitor_message.save()
+
+            return JsonResponse({'success': True, 'message': 'Visitor log updated successfully'})
+
+        except Message.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Visitor log not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error updating visitor log: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def delete_visitor_message(request, visitor_id):
+    """Delete a visitor log message"""
+    if request.method == 'POST':
+        try:
+            # Get the visitor message
+            visitor_message = Message.objects.get(id=visitor_id, sender=request.user)
+            visitor_name = visitor_message.subject.replace('[VISITOR] Visitor Log - ', '')
+
+            # Delete the message
+            visitor_message.delete()
+
+            return JsonResponse({'success': True, 'message': f'Visitor log for {visitor_name} deleted successfully'})
+
+        except Message.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Visitor log not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error deleting visitor log: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def search_parents_ajax(request):
+    """Search for parents to auto-fill visitor information"""
+    query = request.GET.get('q', '').strip()
+
+    if len(query) < 2:
+        return JsonResponse({'parents': []})
+
+    try:
+        from users.models import Parent
+
+        # Search for parents by name, email, or phone
+        parents = Parent.objects.select_related('user').filter(
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query) |
+            Q(user__email__icontains=query) |
+            Q(user__phone_number__icontains=query)
+        )[:10]  # Limit to 10 results
+
+        parent_data = []
+        for parent in parents:
+            parent_data.append({
+                'name': parent.user.get_full_name(),
+                'email': parent.user.email or '',
+                'phone': parent.user.phone_number or '',
+            })
+
+        return JsonResponse({'parents': parent_data})
+
+    except Exception as e:
+        return JsonResponse({'parents': [], 'error': str(e)})
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def visitor_history(request):
+    """View all checked-out visitors with pagination and search"""
+    from django.core.paginator import Paginator
+    from datetime import datetime, timedelta
+
+    # Get search parameters
+    search_query = request.GET.get('search', '').strip()
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    # Get checked-out visitor messages
+    visitor_history = Message.objects.filter(
+        subject__icontains='[CHECKED_OUT]',
+        sender=request.user
+    ).order_by('-created_at')
+
+    # Apply search filter
+    if search_query:
+        visitor_history = visitor_history.filter(
+            Q(subject__icontains=search_query) |
+            Q(content__icontains=search_query)
+        )
+
+    # Apply date filters
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            visitor_history = visitor_history.filter(created_at__date__gte=date_from_obj)
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            visitor_history = visitor_history.filter(created_at__date__lte=date_to_obj)
+        except ValueError:
+            pass
+
+    # Calculate statistics
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+
+    total_visitors = Message.objects.filter(
+        subject__icontains='[CHECKED_OUT]',
+        sender=request.user
+    ).count()
+
+    today_visitors = Message.objects.filter(
+        subject__icontains='[CHECKED_OUT]',
+        sender=request.user,
+        created_at__date=today
+    ).count()
+
+    week_visitors = Message.objects.filter(
+        subject__icontains='[CHECKED_OUT]',
+        sender=request.user,
+        created_at__date__gte=week_start
+    ).count()
+
+    month_visitors = Message.objects.filter(
+        subject__icontains='[CHECKED_OUT]',
+        sender=request.user,
+        created_at__date__gte=month_start
+    ).count()
+
+    # Pagination
+    paginator = Paginator(visitor_history, 20)  # 20 records per page
+    page_number = request.GET.get('page')
+    visitor_history_page = paginator.get_page(page_number)
+
+    context = {
+        'visitor_history': visitor_history_page,
+        'search_query': search_query,
+        'date_from': date_from,
+        'date_to': date_to,
+        'total_visitors': total_visitors,
+        'today_visitors': today_visitors,
+        'week_visitors': week_visitors,
+        'month_visitors': month_visitors,
+    }
+
+    return render(request, 'users/receptionist/visitor_history.html', context)
 
 @login_required
 @user_passes_test(is_receptionist)
@@ -344,11 +684,13 @@ def search_staff_ajax(request):
 
     results = []
     for staff_member in staff:
+        # Get role display - handle the case where get_role_display might not be recognized by static analysis
+        role_display = getattr(staff_member, 'get_role_display', lambda: staff_member.role)()
         results.append({
             'id': staff_member.id,
-            'text': f"{staff_member.get_full_name()} ({staff_member.get_role_display()})",
+            'text': f"{staff_member.get_full_name()} ({role_display})",
             'name': staff_member.get_full_name(),
-            'role': staff_member.get_role_display(),
+            'role': role_display,
             'email': staff_member.email
         })
 
@@ -636,9 +978,13 @@ def view_appointments(request):
     return render(request, 'users/receptionist/view_appointments.html', context)
 
 @login_required
-@user_passes_test(is_receptionist)
 def manage_visitor_logs(request):
     """Manage visitor check-in/check-out"""
+    # Check if user has permission (receptionist or admin)
+    if not (request.user.role in ['RECEPTIONIST', 'ADMIN']):
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('dashboard:index')
+
     from documents.models import VisitorLog
     from django.core.paginator import Paginator
 
@@ -751,6 +1097,273 @@ def manage_visitor_logs(request):
     }
 
     return render(request, 'users/receptionist/visitor_logs.html', context)
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def edit_visitor(request, visitor_id):
+    """Edit visitor information"""
+    from documents.models import VisitorLog
+    from django.http import JsonResponse
+    import json
+
+    visitor = get_object_or_404(VisitorLog, id=visitor_id)
+
+    if request.method == 'POST':
+        try:
+            # Get form data
+            visitor.visitor_name = request.POST.get('visitor_name', visitor.visitor_name)
+            visitor.visitor_phone = request.POST.get('visitor_phone', visitor.visitor_phone)
+            visitor.visitor_email = request.POST.get('visitor_email', visitor.visitor_email)
+            visitor.visitor_type = request.POST.get('visitor_type', visitor.visitor_type)
+            visitor.company_organization = request.POST.get('company_organization', visitor.company_organization)
+            visitor.purpose = request.POST.get('purpose', visitor.purpose)
+            visitor.purpose_description = request.POST.get('purpose_description', visitor.purpose_description)
+            visitor.person_to_meet = request.POST.get('person_to_meet', visitor.person_to_meet)
+            visitor.notes = request.POST.get('notes', visitor.notes)
+
+            # Handle expected duration
+            expected_duration = request.POST.get('expected_duration')
+            if expected_duration:
+                visitor.expected_duration = int(expected_duration)
+
+            # Handle boolean fields
+            visitor.id_verified = request.POST.get('id_verified') == 'on'
+            visitor.visitor_badge_issued = request.POST.get('visitor_badge_issued') == 'on'
+
+            visitor.save()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Visitor information updated successfully'})
+            else:
+                messages.success(request, 'Visitor information updated successfully')
+                return redirect('users:manage_visitor_logs')
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            else:
+                messages.error(request, f'Error updating visitor: {str(e)}')
+                return redirect('users:manage_visitor_logs')
+
+    # For GET requests, return visitor data as JSON for modal
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        visitor_data = {
+            'id': visitor.id,
+            'visitor_name': visitor.visitor_name,
+            'visitor_phone': visitor.visitor_phone or '',
+            'visitor_email': visitor.visitor_email or '',
+            'visitor_type': visitor.visitor_type,
+            'company_organization': visitor.company_organization or '',
+            'purpose': visitor.purpose,
+            'purpose_description': visitor.purpose_description or '',
+            'person_to_meet': visitor.person_to_meet or '',
+            'expected_duration': visitor.expected_duration or '',
+            'notes': visitor.notes or '',
+            'id_verified': visitor.id_verified,
+            'visitor_badge_issued': visitor.visitor_badge_issued,
+        }
+        return JsonResponse(visitor_data)
+
+    return redirect('users:manage_visitor_logs')
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def delete_visitor(request, visitor_id):
+    """Delete visitor record"""
+    from documents.models import VisitorLog
+    from django.http import JsonResponse
+
+    visitor = get_object_or_404(VisitorLog, id=visitor_id)
+
+    if request.method == 'POST':
+        try:
+            visitor_name = visitor.visitor_name
+            visitor.delete()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': f'Visitor {visitor_name} deleted successfully'})
+            else:
+                messages.success(request, f'Visitor {visitor_name} deleted successfully')
+                return redirect('users:manage_visitor_logs')
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            else:
+                messages.error(request, f'Error deleting visitor: {str(e)}')
+                return redirect('users:manage_visitor_logs')
+
+    return redirect('users:manage_visitor_logs')
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def checkout_visitor(request, visitor_id):
+    """Check out a visitor"""
+    from documents.models import VisitorLog
+    from django.http import JsonResponse
+
+    visitor = get_object_or_404(VisitorLog, id=visitor_id)
+
+    if request.method == 'POST':
+        try:
+            # Check if visitor is already checked out
+            if visitor.check_out_time:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Visitor is already checked out'})
+                else:
+                    messages.error(request, 'Visitor is already checked out')
+                    return redirect('users:manage_visitor_logs')
+
+            # Check out the visitor
+            visitor.check_out_time = timezone.now()
+            checkout_notes = request.POST.get('checkout_notes', '')
+            if checkout_notes:
+                visitor.notes = (visitor.notes or '') + f'\nCheckout notes: {checkout_notes}'
+            visitor.save()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Visitor {visitor.visitor_name} checked out successfully',
+                    'checkout_time': visitor.check_out_time.strftime('%Y-%m-%d %H:%M:%S') if visitor.check_out_time else ''
+                })
+            else:
+                messages.success(request, f'Visitor {visitor.visitor_name} checked out successfully')
+                return redirect('users:manage_visitor_logs')
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            else:
+                messages.error(request, f'Error checking out visitor: {str(e)}')
+                return redirect('users:manage_visitor_logs')
+
+    return redirect('users:manage_visitor_logs')
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def send_thank_you_email(request, visitor_id):
+    """Send thank you email to visitor"""
+    from documents.models import VisitorLog
+    from django.http import JsonResponse
+    from users.models import SchoolSettings
+    from users.utils import send_school_email
+
+    visitor = get_object_or_404(VisitorLog, id=visitor_id)
+
+    if request.method == 'POST':
+        try:
+            # Check if visitor has email
+            if not visitor.visitor_email:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Visitor does not have an email address'})
+                else:
+                    messages.error(request, 'Visitor does not have an email address')
+                    return redirect('users:manage_visitor_logs')
+
+            # Get school settings
+            school_settings = SchoolSettings.objects.first()
+            if not school_settings or not school_settings.enable_visitor_thank_you_emails:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Thank you emails are disabled'})
+                else:
+                    messages.error(request, 'Thank you emails are disabled')
+                    return redirect('users:manage_visitor_logs')
+
+            # Get custom message or use professional template
+            custom_message = request.POST.get('custom_message', '').strip()
+
+            if custom_message:
+                # Use custom message as plain text
+                email_content = custom_message
+                html_message = None
+            else:
+                # Use professional HTML template
+                from django.template.loader import render_to_string
+
+                email_context = {
+                    'visitor_name': visitor.visitor_name,
+                    'school_name': school_settings.school_name,
+                    'school_logo': school_settings.logo.url if school_settings and school_settings.logo else None,
+                    'school_email': school_settings.email if school_settings else 'info@deigratiams.edu.gh',
+                    'school_phone': school_settings.phone if school_settings else '+233 123 456 789',
+                    'school_website': 'https://deigratiams.edu.gh',
+                    'school_address': school_settings.address if school_settings else 'Oyibi, Greater Accra Region, Ghana',
+                    'visit_date': visitor.check_in_time.strftime('%B %d, %Y') if visitor.check_in_time else timezone.now().strftime('%B %d, %Y'),
+                    'checkout_time': timezone.now().strftime('%B %d, %Y at %I:%M %p'),
+                    'purpose': visitor.purpose or 'Not specified',
+                    'person_to_visit': visitor.person_to_meet if hasattr(visitor, 'person_to_meet') else None,
+                }
+
+                # Render HTML email template
+                html_message = render_to_string('users/emails/visitor_thank_you.html', email_context)
+
+                # Plain text version
+                email_content = f"""Dear {visitor.visitor_name},
+
+Thank you for visiting {school_settings.school_name} today. We hope you had a pleasant experience.
+
+Visit Details:
+- Date: {email_context['visit_date']}
+- Purpose: {email_context['purpose']}
+{f"- Person Visited: {email_context['person_to_visit']}" if email_context['person_to_visit'] else ""}
+
+If you have any questions or need further assistance, please don't hesitate to contact us.
+
+Best regards,
+{school_settings.school_name} Team"""
+
+            # Send email
+            subject = f"Thank you for visiting {school_settings.school_name}"
+            send_school_email(
+                subject=subject,
+                message=email_content,
+                recipient_list=[visitor.visitor_email],
+                html_message=html_message,
+                fail_silently=False
+            )
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': f'Thank you email sent to {visitor.visitor_email}'})
+            else:
+                messages.success(request, f'Thank you email sent to {visitor.visitor_email}')
+                return redirect('users:manage_visitor_logs')
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            else:
+                messages.error(request, f'Error sending thank you email: {str(e)}')
+                return redirect('users:manage_visitor_logs')
+
+    # For GET requests, return visitor data and email template
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        school_settings = SchoolSettings.objects.first()
+        template = school_settings.visitor_thank_you_email_template if school_settings else "Dear {visitor_name},\n\nThank you for visiting {school_name} today. We appreciate your time and hope you had a pleasant experience.\n\nBest regards,\n{school_name} Team"
+
+        # Ensure template is not None before calling format
+        if template:
+            default_message = template.format(
+                visitor_name=visitor.visitor_name,
+                school_name=school_settings.school_name if school_settings else "Our School",
+                visit_date=visitor.check_in_time.strftime('%B %d, %Y') if visitor.check_in_time else "today"
+            )
+        else:
+            default_message = f"Dear {visitor.visitor_name},\n\nThank you for visiting our school today. We appreciate your time and hope you had a pleasant experience.\n\nBest regards,\nSchool Team"
+
+        return JsonResponse({
+            'visitor_name': visitor.visitor_name,
+            'visitor_email': visitor.visitor_email or '',
+            'default_message': default_message,
+            'has_email': bool(visitor.visitor_email),
+            'emails_enabled': school_settings.enable_visitor_thank_you_emails if school_settings else False
+        })
+
+    return redirect('users:manage_visitor_logs')
 
 @login_required
 @user_passes_test(is_receptionist)

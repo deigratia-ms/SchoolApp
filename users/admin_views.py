@@ -327,3 +327,144 @@ def manage_visitor_logs(request):
     }
     
     return render(request, 'users/admin/visitor_logs.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def edit_visitor_admin(request, visitor_id):
+    """Edit visitor information (Admin)"""
+    from django.http import JsonResponse
+
+    visitor = get_object_or_404(VisitorLog, id=visitor_id)
+
+    if request.method == 'POST':
+        try:
+            # Get form data
+            visitor.visitor_name = request.POST.get('visitor_name', visitor.visitor_name)
+            visitor.visitor_phone = request.POST.get('visitor_phone', visitor.visitor_phone)
+            visitor.visitor_email = request.POST.get('visitor_email', visitor.visitor_email)
+            visitor.visitor_type = request.POST.get('visitor_type', visitor.visitor_type)
+            visitor.company_organization = request.POST.get('company_organization', visitor.company_organization)
+            visitor.purpose = request.POST.get('purpose', visitor.purpose)
+            visitor.purpose_description = request.POST.get('purpose_description', visitor.purpose_description)
+            visitor.person_to_meet = request.POST.get('person_to_meet', visitor.person_to_meet)
+            visitor.notes = request.POST.get('notes', visitor.notes)
+
+            # Handle expected duration
+            expected_duration = request.POST.get('expected_duration')
+            if expected_duration:
+                visitor.expected_duration = int(expected_duration)
+
+            # Handle boolean fields
+            visitor.id_verified = request.POST.get('id_verified') == 'on'
+            visitor.visitor_badge_issued = request.POST.get('visitor_badge_issued') == 'on'
+
+            visitor.save()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Visitor information updated successfully'})
+            else:
+                messages.success(request, 'Visitor information updated successfully')
+                return redirect('users:manage_visitor_logs')
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            else:
+                messages.error(request, f'Error updating visitor: {str(e)}')
+                return redirect('users:manage_visitor_logs')
+
+    # For GET requests, return visitor data as JSON for modal
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        visitor_data = {
+            'id': visitor.id,
+            'visitor_name': visitor.visitor_name,
+            'visitor_phone': visitor.visitor_phone or '',
+            'visitor_email': visitor.visitor_email or '',
+            'visitor_type': visitor.visitor_type,
+            'company_organization': visitor.company_organization or '',
+            'purpose': visitor.purpose,
+            'purpose_description': visitor.purpose_description or '',
+            'person_to_meet': visitor.person_to_meet or '',
+            'expected_duration': visitor.expected_duration or '',
+            'notes': visitor.notes or '',
+            'id_verified': visitor.id_verified,
+            'visitor_badge_issued': visitor.visitor_badge_issued,
+        }
+        return JsonResponse(visitor_data)
+
+    return redirect('users:manage_visitor_logs')
+
+
+@login_required
+@user_passes_test(is_admin)
+def delete_visitor_admin(request, visitor_id):
+    """Delete visitor record (Admin)"""
+    from django.http import JsonResponse
+
+    visitor = get_object_or_404(VisitorLog, id=visitor_id)
+
+    if request.method == 'POST':
+        try:
+            visitor_name = visitor.visitor_name
+            visitor.delete()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': f'Visitor {visitor_name} deleted successfully'})
+            else:
+                messages.success(request, f'Visitor {visitor_name} deleted successfully')
+                return redirect('users:manage_visitor_logs')
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            else:
+                messages.error(request, f'Error deleting visitor: {str(e)}')
+                return redirect('users:manage_visitor_logs')
+
+    return redirect('users:manage_visitor_logs')
+
+
+@login_required
+@user_passes_test(is_admin)
+def checkout_visitor_admin(request, visitor_id):
+    """Check out a visitor (Admin)"""
+    from django.http import JsonResponse
+
+    visitor = get_object_or_404(VisitorLog, id=visitor_id)
+
+    if request.method == 'POST':
+        try:
+            # Check if visitor is already checked out
+            if visitor.check_out_time:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Visitor is already checked out'})
+                else:
+                    messages.error(request, 'Visitor is already checked out')
+                    return redirect('users:manage_visitor_logs')
+
+            # Check out the visitor
+            visitor.check_out_time = timezone.now()
+            checkout_notes = request.POST.get('checkout_notes', '')
+            if checkout_notes:
+                visitor.notes = (visitor.notes or '') + f'\nCheckout notes: {checkout_notes}'
+            visitor.save()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Visitor {visitor.visitor_name} checked out successfully',
+                    'checkout_time': visitor.check_out_time.strftime('%Y-%m-%d %H:%M:%S')
+                })
+            else:
+                messages.success(request, f'Visitor {visitor.visitor_name} checked out successfully')
+                return redirect('users:manage_visitor_logs')
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            else:
+                messages.error(request, f'Error checking out visitor: {str(e)}')
+                return redirect('users:manage_visitor_logs')
+
+    return redirect('users:manage_visitor_logs')
