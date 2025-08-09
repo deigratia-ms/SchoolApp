@@ -131,11 +131,12 @@
                         
                         <!-- User Type Selection -->
                         <div class="mb-4">
-                            <label class="form-label">Select User Type *</label>
+                            <label class="form-label">Select User Type <span class="text-danger">*</span></label>
+                            <div class="form-text mb-3">Choose the type of users you want to import from your CSV file</div>
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <div class="user-type-card" onclick="selectUserType('students')">
-                                        <input type="radio" name="user_type" value="students" class="d-none" required>
+                                        <input type="radio" name="user_type" value="students" class="d-none">
                                         <i class="fas fa-graduation-cap user-type-icon text-primary"></i>
                                         <h6 class="mb-1">Students</h6>
                                         <p class="small text-muted mb-0">Import student records with parent linking</p>
@@ -143,7 +144,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <div class="user-type-card" onclick="selectUserType('teachers')">
-                                        <input type="radio" name="user_type" value="teachers" class="d-none" required>
+                                        <input type="radio" name="user_type" value="teachers" class="d-none">
                                         <i class="fas fa-chalkboard-teacher user-type-icon text-success"></i>
                                         <h6 class="mb-1">Teachers</h6>
                                         <p class="small text-muted mb-0">Import teaching staff with qualifications</p>
@@ -151,7 +152,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <div class="user-type-card" onclick="selectUserType('parents')">
-                                        <input type="radio" name="user_type" value="parents" class="d-none" required>
+                                        <input type="radio" name="user_type" value="parents" class="d-none">
                                         <i class="fas fa-users user-type-icon text-info"></i>
                                         <h6 class="mb-1">Parents</h6>
                                         <p class="small text-muted mb-0">Import parent accounts with child linking</p>
@@ -159,7 +160,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <div class="user-type-card" onclick="selectUserType('staff')">
-                                        <input type="radio" name="user_type" value="staff" class="d-none" required>
+                                        <input type="radio" name="user_type" value="staff" class="d-none">
                                         <i class="fas fa-user-tie user-type-icon text-warning"></i>
                                         <h6 class="mb-1">Staff</h6>
                                         <p class="small text-muted mb-0">Import administrative and support staff</p>
@@ -185,6 +186,23 @@
                             <h5>Drag & Drop CSV File Here</h5>
                             <p class="text-muted mb-0">or click to browse files</p>
                             <input type="file" id="csvFile" name="csv_file" class="d-none" accept=".csv" required>
+                        </div>
+
+                        <!-- CSV Preview Section -->
+                        <div id="csvPreviewSection" class="mb-4" style="display: none;">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-eye me-2"></i>CSV Preview</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearPreview()">
+                                        <i class="fas fa-times me-1"></i>Clear
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div id="previewContent">
+                                        <!-- Preview content will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Email Options -->
@@ -368,17 +386,31 @@ function selectUserType(userType) {
     document.querySelectorAll('.user-type-card').forEach(card => {
         card.classList.remove('selected');
     });
-    
+
+    // Clear any error styling from the user type section
+    const userTypeSection = document.querySelector('.mb-4:has(.user-type-card)');
+    if (userTypeSection) {
+        userTypeSection.style.border = '';
+        userTypeSection.style.padding = '';
+    }
+
     // Select current type
     event.currentTarget.classList.add('selected');
     event.currentTarget.querySelector('input[type="radio"]').checked = true;
-    
+
     selectedUserType = userType;
-    
+
     // Update template download link
     const templateDownload = document.getElementById('templateDownload');
     templateDownload.href = `/users/csv/template/${userType}/`;
     templateDownload.style.display = 'inline-flex';
+
+    // Update drop zone text if file is already selected
+    if (csvFile.files.length > 0) {
+        updateDropZoneText(csvFile.files[0].name);
+        // Auto-preview the file
+        previewCSV();
+    }
 }
 
 // File drop zone functionality
@@ -400,17 +432,25 @@ dropZone.addEventListener('dragleave', function(e) {
 dropZone.addEventListener('drop', function(e) {
     e.preventDefault();
     dropZone.classList.remove('dragover');
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
         csvFile.files = files;
         updateDropZoneText(files[0].name);
+        // Auto-preview if user type is selected
+        if (selectedUserType) {
+            previewCSV();
+        }
     }
 });
 
 csvFile.addEventListener('change', function() {
     if (this.files.length > 0) {
         updateDropZoneText(this.files[0].name);
+        // Auto-preview if user type is selected
+        if (selectedUserType) {
+            previewCSV();
+        }
     }
 });
 
@@ -419,22 +459,187 @@ function updateDropZoneText(fileName) {
         <i class="fas fa-file-csv fa-3x text-success mb-3"></i>
         <h5>File Selected</h5>
         <p class="text-muted mb-0">${fileName}</p>
+        ${selectedUserType ? '<button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="previewCSV()"><i class="fas fa-eye me-1"></i>Preview Data</button>' : ''}
     `;
+}
+
+// CSV Preview Functions
+function previewCSV() {
+    if (!selectedUserType) {
+        alert('Please select a user type first.');
+        return;
+    }
+
+    if (!csvFile.files.length) {
+        alert('Please select a CSV file first.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('csv_file', csvFile.files[0]);
+    formData.append('user_type', selectedUserType);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    // Show loading state
+    const previewSection = document.getElementById('csvPreviewSection');
+    const previewContent = document.getElementById('previewContent');
+
+    previewSection.style.display = 'block';
+    previewContent.innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+            <p>Loading CSV preview...</p>
+        </div>
+    `;
+
+    fetch('/users/csv/preview/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Preview response:', data);
+        if (data.success) {
+            displayPreview(data);
+        } else {
+            previewContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error:</strong> ${escapeHtml(data.error || 'Unknown error')}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Preview error:', error);
+        previewContent.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Error:</strong> ${escapeHtml(error.message)}
+            </div>
+        `;
+    });
+}
+
+function displayPreview(data) {
+    const previewContent = document.getElementById('previewContent');
+
+    // Debug logging
+    console.log('Preview data:', data);
+
+    let validationWarnings = '';
+    if (data.validation_errors && data.validation_errors.length > 0) {
+        validationWarnings = `
+            <div class="alert alert-warning mb-3">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Validation Issues Found:</h6>
+                <ul class="mb-0">
+                    ${data.validation_errors.map(error => `<li>${escapeHtml(error)}</li>`).join('')}
+                </ul>
+                ${data.has_more_errors ? '<p class="mb-0 mt-2"><small>...and more issues. Please review your CSV file.</small></p>' : ''}
+            </div>
+        `;
+    }
+
+    let tableHTML = `
+        <div class="mb-3">
+            <strong>Total Rows:</strong> ${data.total_rows} |
+            <strong>Preview:</strong> First ${Math.min(10, data.preview_rows.length)} rows
+        </div>
+        ${validationWarnings}
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Row</th>
+                        ${data.headers.map(header => `<th>${escapeHtml(header)}</th>`).join('')}
+                        <th>Issues</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    data.preview_rows.forEach(row => {
+        const hasIssues = row.validation_issues && row.validation_issues.length > 0;
+        tableHTML += `
+            <tr class="${hasIssues ? 'table-warning' : ''}">
+                <td><strong>${row.row_number}</strong></td>
+                ${data.headers.map(header => {
+                    const cellValue = row.data[header] || '';
+                    const displayValue = cellValue.trim() === '' ? '<em class="text-muted">empty</em>' : escapeHtml(cellValue);
+                    return `<td>${displayValue}</td>`;
+                }).join('')}
+                <td>
+                    ${hasIssues ?
+                        `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>${escapeHtml(row.validation_issues.join(', '))}</span>` :
+                        '<span class="text-success"><i class="fas fa-check me-1"></i>OK</span>'
+                    }
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    previewContent.innerHTML = tableHTML;
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function clearPreview() {
+    document.getElementById('csvPreviewSection').style.display = 'none';
+    document.getElementById('previewContent').innerHTML = '';
 }
 
 // Form submission with progress tracking
 document.getElementById('csvUploadForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    // Validate user type selection
     if (!selectedUserType) {
-        alert('Please select a user type.');
+        // Highlight the user type selection area
+        const userTypeSection = document.querySelector('.mb-4:has(.user-type-card)');
+        if (userTypeSection) {
+            userTypeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            userTypeSection.style.border = '2px solid #dc3545';
+            userTypeSection.style.borderRadius = '8px';
+            userTypeSection.style.padding = '10px';
+            setTimeout(() => {
+                userTypeSection.style.border = '';
+                userTypeSection.style.padding = '';
+            }, 3000);
+        }
+        alert('Please select a user type before uploading.');
         return;
     }
 
+    // Validate file selection
     if (!csvFile.files.length) {
-        alert('Please select a CSV file.');
+        const dropZone = document.getElementById('dropZone');
+        dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        dropZone.style.border = '2px solid #dc3545';
+        setTimeout(() => {
+            dropZone.style.border = '';
+        }, 3000);
+        alert('Please select a CSV file to upload.');
         return;
     }
+
+    // Hide preview section during processing
+    document.getElementById('csvPreviewSection').style.display = 'none';
 
     // Show progress
     document.querySelector('.progress-container').style.display = 'block';
@@ -447,6 +652,11 @@ document.getElementById('csvUploadForm').addEventListener('submit', function(e) 
     // Prepare form data
     const formData = new FormData(this);
 
+    // Explicitly add the file to ensure it's included
+    if (csvFile.files.length > 0) {
+        formData.set('csv_file', csvFile.files[0]);
+    }
+
     // Start progress simulation (since we can't track real-time progress easily)
     let progressInterval = startProgressSimulation();
 
@@ -458,9 +668,15 @@ document.getElementById('csvUploadForm').addEventListener('submit', function(e) 
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
         clearInterval(progressInterval);
+        console.log('Upload response:', data);
 
         // Show final progress
         if (data.total_rows) {
@@ -478,6 +694,7 @@ document.getElementById('csvUploadForm').addEventListener('submit', function(e) 
         document.getElementById('submitBtn').disabled = false;
         document.getElementById('submitBtn').innerHTML = '<i class="fas fa-upload me-2"></i>Upload & Process CSV';
 
+        console.error('Upload error:', error);
         alert('An error occurred: ' + error.message);
     });
 });
@@ -674,8 +891,10 @@ function resetForm() {
     });
     document.getElementById('templateDownload').style.display = 'none';
     document.querySelector('.results-container').style.display = 'none';
+    document.querySelector('.progress-container').style.display = 'none';
+    clearPreview();
     selectedUserType = null;
-    
+
     dropZone.innerHTML = `
         <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
         <h5>Drag & Drop CSV File Here</h5>

@@ -14,6 +14,7 @@ from django.utils import timezone
 from datetime import datetime
 
 from .models import CustomUser, Student, Parent, Teacher, StaffMember
+from courses.models import ClassRoom
 from .decorators import is_admin
 from .utils import send_school_email
 
@@ -29,6 +30,67 @@ def generate_student_id():
 def generate_pin():
     """Generate a 5-digit PIN for student login"""
     return ''.join(secrets.choice(string.digits) for _ in range(5))
+
+
+def parse_date(date_string):
+    """Parse date string in multiple formats"""
+    if not date_string or not date_string.strip():
+        return None
+
+    date_string = date_string.strip()
+
+    # Try different date formats
+    date_formats = [
+        '%Y-%m-%d',      # 2015-05-15
+        '%m/%d/%Y',      # 5/15/2015
+        '%d/%m/%Y',      # 15/5/2015
+        '%m-%d-%Y',      # 5-15-2015
+        '%d-%m-%Y',      # 15-5-2015
+        '%Y/%m/%d',      # 2015/5/15
+    ]
+
+    for date_format in date_formats:
+        try:
+            return datetime.strptime(date_string, date_format).date()
+        except ValueError:
+            continue
+
+    # If no format matches, raise an error with helpful message
+    raise ValueError(f"Date '{date_string}' doesn't match any expected format. Please use YYYY-MM-DD, MM/DD/YYYY, or DD/MM/YYYY format.")
+
+
+def find_or_create_classroom(grade_text, section_text=""):
+    """Find or create a ClassRoom object based on grade and section text"""
+    if not grade_text or not grade_text.strip():
+        return None
+
+    grade_text = grade_text.strip()
+    section_text = section_text.strip() if section_text else ""
+
+    # Extract grade level from text like "Grade 1", "Grade 2", etc.
+    import re
+    grade_match = re.search(r'(\d+)', grade_text)
+    grade_level = int(grade_match.group(1)) if grade_match else 0
+
+    # Create a standardized name
+    if section_text:
+        name = f"{grade_text} {section_text}"
+    else:
+        name = grade_text
+
+    # Try to find existing classroom
+    classroom = ClassRoom.objects.filter(name=name).first()
+
+    if not classroom:
+        # Create new classroom
+        classroom = ClassRoom.objects.create(
+            name=name,
+            section=section_text,
+            grade_level=grade_level,
+            capacity=30  # Default capacity
+        )
+
+    return classroom
 
 
 def generate_employee_id(role):
@@ -135,9 +197,114 @@ def download_csv_template(request, user_type):
 
 
 @user_passes_test(is_admin)
+def preview_csv(request):
+    """Preview CSV file contents before processing"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    csv_file = request.FILES.get('csv_file')
+    user_type = request.POST.get('user_type')
+
+    if not csv_file:
+        return JsonResponse({'error': 'No file uploaded'}, status=400)
+
+    if not csv_file.name.endswith('.csv'):
+        return JsonResponse({'error': 'File must be a CSV'}, status=400)
+
+    if user_type not in ['students', 'teachers', 'parents', 'staff']:
+        return JsonResponse({'error': 'Invalid user type'}, status=400)
+
+    try:
+        # Read CSV file
+        csv_data = csv_file.read().decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(csv_data))
+
+        # Get headers
+        headers = csv_reader.fieldnames
+
+        # Read first 10 rows for preview
+        preview_rows = []
+        validation_errors = []
+
+        for row_num, row in enumerate(csv_reader, start=2):
+            if len(preview_rows) >= 10:  # Limit preview to 10 rows
+                break
+
+            # Basic validation for preview
+            validation_issues = []
+
+            if user_type == 'students':
+                if not row.get('first_name', '').strip():
+                    validation_issues.append('Missing first name')
+                if not row.get('last_name', '').strip():
+                    validation_issues.append('Missing last name')
+                if not row.get('grade', '').strip():
+                    validation_issues.append('Missing grade')
+                # Note: Students don't need email - system will generate one
+
+            elif user_type == 'teachers':
+                if not row.get('first_name', '').strip():
+                    validation_issues.append('Missing first name')
+                if not row.get('last_name', '').strip():
+                    validation_issues.append('Missing last name')
+                if not row.get('email', '').strip():
+                    validation_issues.append('Missing email')
+
+            elif user_type == 'parents':
+                if not row.get('first_name', '').strip():
+                    validation_issues.append('Missing first name')
+                if not row.get('last_name', '').strip():
+                    validation_issues.append('Missing last name')
+                if not row.get('email', '').strip():
+                    validation_issues.append('Missing email')
+
+            elif user_type == 'staff':
+                if not row.get('first_name', '').strip():
+                    validation_issues.append('Missing first name')
+                if not row.get('last_name', '').strip():
+                    validation_issues.append('Missing last name')
+                if not row.get('email', '').strip():
+                    validation_issues.append('Missing email')
+                if not row.get('role', '').strip():
+                    validation_issues.append('Missing role')
+
+            preview_rows.append({
+                'row_number': row_num,
+                'data': dict(row),
+                'validation_issues': validation_issues
+            })
+
+            if validation_issues:
+                validation_errors.extend([f"Row {row_num}: {issue}" for issue in validation_issues])
+
+        # Count total rows
+        csv_file.seek(0)  # Reset file pointer
+        csv_data = csv_file.read().decode('utf-8')
+        total_rows = len(list(csv.DictReader(io.StringIO(csv_data))))
+
+        return JsonResponse({
+            'success': True,
+            'headers': headers,
+            'preview_rows': preview_rows,
+            'total_rows': total_rows,
+            'validation_errors': validation_errors[:20],  # Limit to first 20 errors
+            'has_more_errors': len(validation_errors) > 20
+        })
+
+    except UnicodeDecodeError:
+        return JsonResponse({'error': 'File encoding error. Please ensure the file is saved as UTF-8.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Error reading CSV file: {str(e)}'}, status=400)
+
+
+@user_passes_test(is_admin)
 def process_csv_upload(request):
     """Process CSV file upload for bulk user creation with enhanced error handling and logging"""
+
     if request.method != 'POST':
+        # Redirect GET requests to the upload page instead of returning 405
+        if request.method == 'GET':
+            return redirect('users:csv_upload_page')
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     csv_file = request.FILES.get('csv_file')
@@ -297,17 +464,14 @@ def create_student_from_csv(row, send_emails=True):
 
         # Smart Student ID handling
         student_id = provided_student_id
+        id_warning = None
         if student_id:
             # Check if provided ID already exists
             if Student.objects.filter(student_id=student_id).exists():
                 # Generate new ID and warn admin
                 original_id = student_id
                 student_id = generate_student_id()
-                return {
-                    'success': True,
-                    'warning': f'Student ID "{original_id}" already exists. Generated new ID: {student_id}',
-                    'user_info': {'note': 'ID was auto-generated due to duplicate'}
-                }
+                id_warning = f'Student ID "{original_id}" already exists. Generated new ID: {student_id}'
         else:
             # Auto-generate if not provided
             student_id = generate_student_id()
@@ -321,8 +485,17 @@ def create_student_from_csv(row, send_emails=True):
         else:
             pin = generate_pin()
 
+        # Generate email for student: first letter of first name + last name + @deigratiams.edu.gh
+        base_email = f"{first_name[0].lower()}{last_name.lower()}@deigratiams.edu.gh"
+        email = base_email
+
+        # Check if email already exists and add number if needed
+        counter = 1
+        while CustomUser.objects.filter(email=email).exists():
+            email = f"{first_name[0].lower()}{last_name.lower()}{counter:02d}@deigratiams.edu.gh"
+            counter += 1
+
         # Create student user
-        email = f"{student_id}@school.internal"
         user = CustomUser.objects.create_user(
             email=email,
             password=pin,
@@ -331,13 +504,16 @@ def create_student_from_csv(row, send_emails=True):
             role=CustomUser.Role.STUDENT
         )
         
+        # Find or create classroom
+        classroom = find_or_create_classroom(grade, section)
+
         # Create student profile
         student = Student.objects.create(
             user=user,
             student_id=student_id,
             pin=pin,
-            date_of_birth=datetime.strptime(date_of_birth, '%Y-%m-%d').date() if date_of_birth else None,
-            grade=grade,
+            date_of_birth=parse_date(date_of_birth),
+            grade=classroom,  # This is now a ClassRoom object
             section=section
         )
         
@@ -350,9 +526,13 @@ def create_student_from_csv(row, send_emails=True):
             try:
                 # Try to find existing parent by email
                 parent_user = CustomUser.objects.get(email=parent_email)
-                if hasattr(parent_user, 'parent_profile'):
-                    parent = parent_user.parent_profile
-                    parent_linked = True
+                if parent_user.role == CustomUser.Role.PARENT:
+                    try:
+                        parent = Parent.objects.get(user=parent_user)
+                        parent_linked = True
+                    except Parent.DoesNotExist:
+                        # User exists but no parent profile - skip linking
+                        parent = None
                 else:
                     # User exists but not a parent - skip linking to avoid conflicts
                     parent = None
@@ -369,12 +549,21 @@ def create_student_from_csv(row, send_emails=True):
                             phone_number=parent_phone,
                             role=CustomUser.Role.PARENT
                         )
+
+                        # Store password for welcome email
+                        parent_user.initial_password = parent_password
+                        parent_user.save()
+
                         parent = Parent.objects.create(
                             user=parent_user,
                             occupation=parent_occupation,
                             relationship=parent_relationship
                         )
                         parent_created = True
+
+                        # Send welcome email to parent
+                        if send_emails:
+                            send_parent_welcome_email(parent_user, parent_password)
                         parent_linked = True
 
                         # Send parent welcome email using existing system
@@ -412,17 +601,23 @@ def create_student_from_csv(row, send_emails=True):
         }
 
         if parent_email:
-            if parent_created:
+            if parent_created and parent:
                 user_info['parent_status'] = f'✓ New parent created: {parent.user.get_full_name()}'
-            elif parent_linked:
+            elif parent_linked and parent:
                 user_info['parent_status'] = f'✓ Linked to existing parent: {parent.user.get_full_name()}'
             else:
                 user_info['parent_status'] = '⚠ Parent linking failed (student still created)'
 
-        return {
+        result = {
             'success': True,
             'user_info': user_info
         }
+
+        # Add warning if student ID was changed
+        if id_warning:
+            result['warning'] = id_warning
+
+        return result
         
     except Exception as e:
         return {'success': False, 'error': str(e)}
@@ -465,7 +660,7 @@ def create_teacher_from_csv(row, send_emails=True):
             subject_specialization=subject_specialization,
             qualification=qualification,
             experience_years=int(experience_years) if experience_years.isdigit() else 0,
-            hire_date=datetime.strptime(hire_date, '%Y-%m-%d').date() if hire_date else timezone.now().date(),
+            hire_date=parse_date(hire_date) if hire_date else timezone.now().date(),
             salary=float(salary) if salary else 0.0
         )
         
@@ -514,6 +709,104 @@ def send_student_registration_email(student, parent):
 
     except Exception as e:
         print(f"Failed to send student registration email: {e}")
+
+
+def send_parent_welcome_email(user, password):
+    """Send welcome email specifically for parents created via CSV import"""
+    try:
+        try:
+            from website.models import SchoolSettings
+        except ImportError:
+            SchoolSettings = None
+        from .utils import send_school_email
+
+        # Get school settings
+        if SchoolSettings:
+            school_settings = SchoolSettings.objects.first()
+            school_name = school_settings.school_name if school_settings else "Deigratia Montessori School"
+        else:
+            school_name = "Deigratia Montessori School"
+
+        # Prepare welcome email content
+        subject = f"Welcome to {school_name} - Parent Account Created"
+
+        plain_message = f"""
+Dear {user.get_full_name()},
+
+Welcome to {school_name}! Your parent account has been created successfully.
+
+Your login credentials:
+Email: {user.email}
+Password: {password}
+
+You can log in at: https://deigratiams.edu.gh/users/parent-login/
+
+For security reasons, please change your password after your first login.
+
+Through your parent portal, you can:
+- View your children's academic progress
+- Check attendance records
+- Communicate with teachers
+- Access school announcements
+- View fee information
+
+If you have any questions or need assistance, please contact the school administration.
+
+Best regards,
+The Administration Team
+{school_name}
+        """
+
+        html_message = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px;">Welcome to {school_name}</h2>
+
+                <p>Dear {user.get_full_name()},</p>
+
+                <p>Welcome to {school_name}! Your parent account has been created successfully.</p>
+
+                <div style="background-color: #f8f9fc; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #4e73df;">
+                    <h3 style="margin-top: 0; color: #4e73df;">Your Login Credentials</h3>
+                    <p><strong>Email:</strong> {user.email}</p>
+                    <p><strong>Password:</strong> {password}</p>
+                    <p><strong>Login URL:</strong> <a href="https://deigratiams.edu.gh/users/parent-login/" style="color: #4e73df;">Parent Portal</a></p>
+                </div>
+
+                <p style="color: #666; font-size: 13px;">For security reasons, please change your password after your first login.</p>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: #2c3e50;">Through your parent portal, you can:</h4>
+                    <ul style="color: #555;">
+                        <li>View your children's academic progress</li>
+                        <li>Check attendance records</li>
+                        <li>Communicate with teachers</li>
+                        <li>Access school announcements</li>
+                        <li>View fee information</li>
+                    </ul>
+                </div>
+
+                <p>If you have any questions or need assistance, please contact the school administration.</p>
+
+                <p>Best regards,<br>
+                The Administration Team<br>
+                {school_name}</p>
+            </div>
+        </div>
+        """
+
+        # Send the welcome email
+        send_school_email(
+            subject=subject,
+            message=plain_message,
+            recipient_list=[user.email],
+            html_message=html_message
+        )
+
+        print(f"Welcome email sent successfully to parent: {user.email}")
+
+    except Exception as e:
+        print(f"Failed to send welcome email to parent {user.email}: {e}")
 
 
 def trigger_welcome_email(user, password=None):
@@ -574,9 +867,9 @@ def create_parent_from_csv(row, send_emails=True):
             students = Student.objects.filter(student_id__in=student_ids)
             parent.children.add(*students)
 
-        # Send welcome email using existing system
+        # Send welcome email using parent-specific function
         if send_emails:
-            trigger_welcome_email(user, password)
+            send_parent_welcome_email(user, password)
 
         return {
             'success': True,

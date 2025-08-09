@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView as DjangoPasswordResetConfirmView, PasswordResetCompleteView
 from django.core.mail import send_mail, BadHeaderError
@@ -19,6 +19,7 @@ from django.template.loader import render_to_string
 from django.views.generic.edit import FormView
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from decouple import config
+from typing import Any, Dict, List, Optional, Union
 
 from .utils import send_school_email
 from .models import (
@@ -48,7 +49,7 @@ def is_parent(user):
     return user.is_authenticated and user.role == CustomUser.Role.PARENT
 
 # Authentication views
-def custom_login(request):
+def custom_login(request) -> HttpResponse:
     """Regular login for admins using email and password"""
     if request.user.is_authenticated:
         return redirect('dashboard:index')
@@ -58,9 +59,13 @@ def custom_login(request):
         password = request.POST.get('password')
 
         user = authenticate(request, email=email, password=password)
+        # Ensure user is typed as CustomUser for static analysis
+        from .models import CustomUser
+        if user is not None and not isinstance(user, CustomUser):
+            user = CustomUser.objects.get(pk=user.pk)
 
         if user is not None:
-            if user.is_verified:
+            if getattr(user, "is_verified", False):
                 if user.is_admin:
                     return redirect('admin:index')  # Redirect admin users to the admin interface
                 login(request, user)
@@ -73,7 +78,7 @@ def custom_login(request):
 
     return render(request, 'users/login.html')
 
-def student_login(request):
+def student_login(request) -> HttpResponse:
     """Special login for students using student ID and PIN with flexible ID format handling"""
     if request.user.is_authenticated:
         return redirect('dashboard:index')
@@ -84,9 +89,12 @@ def student_login(request):
 
         # Use the flexible student authentication backend
         user = authenticate(request, student_id=student_id, pin=pin)
+        from .models import CustomUser
+        if user is not None and not isinstance(user, CustomUser):
+            user = CustomUser.objects.get(pk=user.pk)
 
         if user is not None:
-            if user.is_verified:
+            if getattr(user, "is_verified", False):
                 login(request, user)
                 return redirect('dashboard:index')
             else:
@@ -96,7 +104,7 @@ def student_login(request):
 
     return render(request, 'users/student_login.html')
 
-def teacher_login(request):
+def teacher_login(request) -> HttpResponse:
     """Special login for teachers using staff ID and password"""
     if request.user.is_authenticated:
         return redirect('dashboard:index')
@@ -110,14 +118,18 @@ def teacher_login(request):
             # Get the teacher's user and authenticate directly with email and password
             user = authenticate(request, email=teacher.user.email, password=password)
 
-            if user is not None and user.is_verified:
-                if user.role == CustomUser.Role.TEACHER:
-                    login(request, user)
-                    return redirect('dashboard:index')
+            if user is not None:
+                from .models import CustomUser
+                if not isinstance(user, CustomUser):
+                    user = CustomUser.objects.get(pk=user.pk)
+                if getattr(user, "is_verified", False):
+                    if user.role == CustomUser.Role.TEACHER:
+                        login(request, user)
+                        return redirect('dashboard:index')
+                    else:
+                        messages.error(request, 'Invalid credentials. Please use the appropriate login page for your role.')
                 else:
-                    messages.error(request, 'Invalid credentials. Please use the appropriate login page for your role.')
-            else:
-                messages.error(request, 'Invalid credentials or your account is not verified.')
+                    messages.error(request, 'Invalid credentials or your account is not verified.')
         except Teacher.DoesNotExist:
             messages.error(request, 'Invalid staff ID or password.')
 
@@ -134,8 +146,11 @@ def parent_login(request):
 
         # Directly authenticate with email and password
         user = authenticate(request, email=email, password=password)
+        from .models import CustomUser
+        if user is not None and not isinstance(user, CustomUser):
+            user = CustomUser.objects.get(pk=user.pk)
 
-        if user is not None and user.is_verified:
+        if user is not None and getattr(user, "is_verified", False):
             if user.role == CustomUser.Role.PARENT:
                 login(request, user)
                 return redirect('dashboard:index')
@@ -152,7 +167,7 @@ def custom_logout(request):
     return redirect('users:login')
 
 @user_passes_test(is_admin)
-def admin_dashboard(request):
+def admin_dashboard_main(request):
     """Custom admin dashboard view"""
     return render(request, 'dashboard/admin_dashboard.html')
 
@@ -168,9 +183,12 @@ def admin_login(request):
         password = request.POST.get('password')
 
         user = authenticate(request, email=email, password=password)
+        from .models import CustomUser
+        if user is not None and not isinstance(user, CustomUser):
+            user = CustomUser.objects.get(pk=user.pk)
 
         if user is not None and user.is_admin:
-            if user.is_verified:
+            if getattr(user, "is_verified", False):
                 login(request, user)
                 return redirect('dashboard:admin_dashboard')
             else:
@@ -366,12 +384,15 @@ def request_pin_reset(request):
             student.save()
 
             # Get the parent's email
-            parents = student.parents.all()
-            if parents.exists():
-                # Assuming we only email the first parent for simplicity
-                parent = parents.first()
-                parent_email = parent.user.email
+            parents = getattr(student, "parents", None)
+            parent = None
+            if parents:
+                if hasattr(parents, 'all'):  # It's a related manager
+                    parent = parents.all().first()
+                elif isinstance(parents, list) and parents:  # It's a list
+                    parent = parents[0]
 
+            if parent and parent.user.email:
                 # Send email to parent
                 subject = "Student PIN Reset"
                 message = f"""
@@ -386,11 +407,11 @@ def request_pin_reset(request):
                 Sincerely,
                 The School Administration
                 """
-                send_school_email(subject, message, recipient_list=[parent_email])
+                send_school_email(subject, message, recipient_list=[parent.user.email])
                 messages.success(request, f"PIN reset for student {student.user.get_full_name()}. Email sent to parent.")
             else:
-                messages.error(request, f"No parent found for student {student.user.get_full_name()}.  PIN reset, but no email sent.")
-            return redirect('users:user_management') # Or wherever is appropriate
+                messages.error(request, f"No parent with a valid email found for student {student.user.get_full_name()}. PIN was reset, but no email was sent.")
+            return redirect('users:user_management')  # Or wherever is appropriate
         except Student.DoesNotExist:
             messages.error(request, "Invalid student ID.")
             form = PasswordResetForm()  # Create a new form instance
@@ -1108,8 +1129,7 @@ def create_user(request):
                 is_verified=True
             )
 
-            # Store initial password for welcome email
-            user.initial_password = password
+            # Store initial password for welcome email (removed, not a model field)
             user.save()
 
             # Handle Teacher role
@@ -1583,8 +1603,7 @@ def register_teacher(request):
             is_verified=True
         )
 
-        # Store initial password for welcome email
-        user.initial_password = password
+        # Store initial password for welcome email (removed, not a model field)
         user.save()
 
         # Create teacher profile
@@ -1833,8 +1852,7 @@ def register_parent(request):
                 is_verified=True
             )
             user.set_password(password)
-            # Store initial password for welcome email
-            user.initial_password = password
+            # Store initial password for welcome email (removed, not a model field)
             # Don't skip welcome email
             user.skip_welcome_email = False
             user.save()
@@ -3047,7 +3065,7 @@ def admission_letter_batch_generate(request):
     # Get all students, grades, and sections
     students = Student.objects.all().order_by('grade', 'user__first_name', 'user__last_name')
     grades = Student.objects.values_list('grade', flat=True).distinct()
-    sections = Student.objects.values_list('section', flat(True)).distinct()
+    sections = Student.objects.values_list('section', flat=True).distinct()
 
     # Get current year for academic year suggestion
     current_year = timezone.now().year
@@ -3597,182 +3615,6 @@ def admission_letter_delete(request, letter_id):
     # If not POST method, redirect to detail page
     return redirect('users:admission_letter_detail', letter_id=letter_id)
 
-@user_passes_test(is_admin)
-def id_card_deactivate(request, card_id):
-    """Deactivate an ID card"""
-    id_card = get_object_or_404(IDCard, id=card_id)
-
-    if request.method == 'POST':
-        id_card.is_active = False
-        id_card.save()
-        messages.success(request, f"ID card for {id_card.user.get_full_name()} has been deactivated.")
-
-        # Check if AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f"ID card deactivated successfully."
-            })
-
-        return redirect('users:id_card_detail', card_id=id_card.id)
-
-    # If not POST, redirect to detail page
-    return redirect('users:id_card_detail', card_id=id_card.id)
-
-@user_passes_test(is_admin)
-def id_card_activate(request, card_id):
-    """Activate an ID card"""
-    id_card = get_object_or_404(IDCard, id=card_id)
-
-    if request.method == 'POST':
-        id_card.is_active = True
-        id_card.save()
-        messages.success(request, f"ID card for {id_card.user.get_full_name()} has been activated.")
-
-        # Check if AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f"ID card activated successfully."
-            })
-
-        return redirect('users:id_card_detail', card_id=id_card.id)
-
-    # If not POST, redirect to detail page
-    return redirect('users:id_card_detail', card_id=id_card.id)
-
-@user_passes_test(is_admin)
-def id_card_regenerate(request, card_id):
-    """Regenerate an ID card with new details"""
-    old_card = get_object_or_404(IDCard, id=card_id)
-
-    if request.method == 'POST':
-        # Get form data
-        template_id = request.POST.get('template_id')
-        expiry_date = request.POST.get('expiry_date')
-
-        try:
-            # Get template
-            template = IDCardTemplate.objects.get(id=template_id)
-
-            # Generate a new card number
-            card_number = f"ID-{old_card.user.role}-{old_card.user.id}-{int(timezone.now().timestamp())}"
-
-            # Create new card with updated details
-            new_card = IDCard.objects.create(
-                user=old_card.user,
-                template=template,
-                card_number=card_number,
-                issue_date=timezone.now().date(),
-                expiry_date=expiry_date,
-                barcode_data=old_card.barcode_data,
-                additional_info=old_card.additional_info,
-                is_active=True
-            )
-
-            # Deactivate old card
-            old_card.is_active = False
-            old_card.save()
-
-            messages.success(request, f"ID card for {old_card.user.get_full_name()} has been regenerated successfully.")
-            return redirect('users:id_card_detail', card_id=new_card.id)
-
-        except IDCardTemplate.DoesNotExist:
-            messages.error(request, "Template not found.")
-            return redirect('users:id_card_detail', card_id=old_card.id)
-        except Exception as e:
-            messages.error(request, f"Error regenerating ID card: {str(e)}")
-            return redirect('users:id_card_detail', card_id=old_card.id)
-
-    # If not POST, redirect to detail page
-    return redirect('users:id_card_detail', card_id=old_card.id)
-
-# Update test_email view to handle AJAX requests
-@user_passes_test(is_admin)
-def test_email(request):
-    """Test the SMTP email configuration"""
-    from .utils import send_school_email
-    from django.http import JsonResponse
-
-    if request.method != 'POST':
-        messages.error(request, 'Invalid request method.')
-        return redirect('users:school_settings')
-
-    # Get the test email details
-    test_email = request.POST.get('test_email')
-    test_subject = request.POST.get('test_subject')
-    test_content = request.POST.get('test_content')
-
-    if not (test_email and test_subject and test_content):
-        messages.error(request, 'All fields are required.')
-        # Check if AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': "All fields are required."
-            })
-        return redirect('users:school_settings')
-
-    # Get the school settings
-    school_settings = SchoolSettings.objects.first()
-    if not school_settings:
-        messages.error(request, 'School settings not found.')
-        # Check if AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': "School settings not found."
-            })
-        return redirect('users:school_settings')
-
-    # Check if SMTP settings are configured
-    if not (school_settings.smtp_host and school_settings.smtp_port and
-            school_settings.smtp_username and school_settings.smtp_password):
-        messages.error(request, 'SMTP settings are not fully configured.')
-        # Check if AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': "SMTP settings are not fully configured."
-            })
-        return redirect('users:school_settings')
-
-    try:
-        # Send the test email using our utility function
-        sent = send_school_email(
-            subject=test_subject,
-            message=test_content,
-            recipient_list=[test_email],
-            html_message=f"<p>{test_content}</p>",
-            from_email=school_settings.smtp_username
-        )
-
-        if sent:
-            messages.success(request, f'Test email sent successfully to {test_email}.')
-            # Check if AJAX request
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'message': f"Test email sent successfully to {test_email}."
-                })
-        else:
-            messages.error(request, 'Failed to send test email. Please check your SMTP settings.')
-            # Check if AJAX request
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'message': "Failed to send test email. Please check your SMTP settings."
-                })
-    except Exception as e:
-        messages.error(request, f'Error sending test email: {str(e)}')
-        # Check if AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': f"Error sending test email: {str(e)}"
-            })
-
-    return redirect('users:school_settings')
 
 
 @user_passes_test(is_admin)
@@ -3830,7 +3672,7 @@ def staff_management(request):
 
 
 @user_passes_test(is_admin)
-def export_staff_excel(request):
+def export_staff_excel(request) -> HttpResponse:
     """Export staff data to Excel file"""
     role_filter = request.GET.get('role', None)
     search_query = request.GET.get('search', None)
@@ -3935,3 +3777,43 @@ def export_staff_excel(request):
     wb.save(response)
     return response
 
+
+@user_passes_test(is_admin)
+@require_POST
+def resend_welcome_email(request, user_id):
+    """Resend welcome email to a specific user"""
+    try:
+        user = get_object_or_404(CustomUser, id=user_id)
+
+        # Import the parent welcome email function
+        from .csv_import_views import send_parent_welcome_email
+
+        # Generate a new password for the email
+        import secrets
+        import string
+        password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+
+        # Update user's password
+        user.set_password(password)
+        user.save()
+
+        # Send welcome email based on user role
+        if user.role == CustomUser.Role.PARENT:
+            send_parent_welcome_email(user, password)
+        else:
+            # For other roles, use the existing trigger_welcome_email function
+            from .csv_import_views import trigger_welcome_email
+            # user.initial_password = password  # Removed, not a model field
+            user.save()
+            trigger_welcome_email(user, password)
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Welcome email sent successfully to {user.get_full_name()}'
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })

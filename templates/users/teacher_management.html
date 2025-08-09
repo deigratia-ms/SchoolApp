@@ -6,9 +6,14 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Teacher Management</h1>
-        <a href="{% url 'users:register_teacher' %}" class="btn btn-primary">
-            <i class="fas fa-user-plus me-2"></i>Add New Teacher
-        </a>
+        <div class="btn-group">
+            <a href="{% url 'users:register_teacher' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>Add New Teacher
+            </a>
+            <a href="{% url 'users:csv_upload_page' %}" class="btn btn-success">
+                <i class="fas fa-file-csv me-2"></i>Bulk Import CSV
+            </a>
+        </div>
     </div>
 
     <!-- Filter Card -->
@@ -285,25 +290,3 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize DataTable
-        if ($.fn.DataTable && document.getElementById('teachersTable')) {
-            $('#teachersTable').DataTable({
-                "pageLength": 25,
-                "columnDefs": [
-                    { "orderable": false, "targets": 5 } // Disable sorting on actions column
-                ],
-                "language": {
-                    "search": "Quick search:",
-                    "zeroRecords": "No matching teachers found",
-                    "info": "Showing _START_ to _END_ of _TOTAL_ teachers",
-                    "infoEmpty": "No teachers available",
-                    "infoFiltered": "(filtered from _MAX_ total teachers)"
-                }
-            });
-        }
-    });
-</script>
-{% endblock %}

@@ -4,11 +4,17 @@
 
 {% block content %}
 <div class="container-fluid">
+    {% csrf_token %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Parent Management</h1>
-        <a href="{% url 'users:register_parent' %}" class="btn btn-primary">
-            <i class="fas fa-user-plus me-2"></i>Add New Parent
-        </a>
+        <div class="btn-group">
+            <a href="{% url 'users:register_parent' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>Add New Parent
+            </a>
+            <a href="{% url 'users:csv_upload_page' %}" class="btn btn-success">
+                <i class="fas fa-file-csv me-2"></i>Bulk Import CSV
+            </a>
+        </div>
     </div>
 
     <!-- Filter Card -->
@@ -162,6 +168,10 @@
                                             <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-sm btn-info me-1" title="Link to Child">
                                                 <i class="fas fa-child"></i>
                                             </a>
+                                            <button type="button" class="btn btn-sm btn-warning me-1" title="Resend Welcome Email"
+                                                    onclick="resendWelcomeEmail('{{ parent.user.id|escapejs }}', '{{ parent.user.get_full_name|escapejs }}')">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
                                             {% if parent.user.id != request.user.id %}
                                                 <a href="{% url 'users:delete_user' parent.user.id %}" class="btn btn-sm btn-danger" title="Delete Parent">
                                                     <i class="fas fa-trash"></i>
@@ -274,6 +284,10 @@
                                                     <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-info">
                                                         <i class="fas fa-link me-2"></i>Link to Children
                                                     </a>
+                                                    <button type="button" class="btn btn-warning"
+                                                            onclick="resendWelcomeEmail('{{ parent.user.id|escapejs }}', '{{ parent.user.get_full_name|escapejs }}')" title="Resend Welcome Email">
+                                                                <i class="fas fa-envelope me-2"></i>Resend Welcome Email
+                                                            </button>
                                                 </div>
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                             </div>
@@ -348,27 +362,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize DataTable
-        if ($.fn.DataTable && document.getElementById('parentsTable')) {
-            $('#parentsTable').DataTable({
-                "pageLength": 25,
-                "columnDefs": [
-                    { "orderable": false, "targets": 5 } // Disable sorting on actions column
-                ],
-                "language": {
-                    "search": "Quick search:",
-                    "zeroRecords": "No matching parents found",
-                    "info": "Showing _START_ to _END_ of _TOTAL_ parents",
-                    "infoEmpty": "No parents available",
-                    "infoFiltered": "(filtered from _MAX_ total parents)"
-                }
-            });
-        }
-    });
-</script>
 {% endblock %}

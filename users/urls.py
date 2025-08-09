@@ -40,8 +40,9 @@ urlpatterns = [
     path('reset-password/<int:user_id>/', views.reset_password, name='reset_password'),
 
     # CSV Import URLs
-    path('csv/upload/', csv_import_views.csv_upload_page, name='csv_upload_page'),
+    path('csv/', csv_import_views.csv_upload_page, name='csv_upload_page'),
     path('csv/template/<str:user_type>/', csv_import_views.download_csv_template, name='download_csv_template'),
+    path('csv/preview/', csv_import_views.preview_csv, name='preview_csv'),
     path('csv/upload/', csv_import_views.process_csv_upload, name='process_csv_upload'),
 
     # Password Reset - Using Django's built-in views with custom templates
@@ -146,4 +147,7 @@ urlpatterns = [
     path('admin/visitor-logs/<int:visitor_id>/edit/', admin_views.edit_visitor_admin, name='edit_visitor_admin'),
     path('admin/visitor-logs/<int:visitor_id>/delete/', admin_views.delete_visitor_admin, name='delete_visitor_admin'),
     path('admin/visitor-logs/<int:visitor_id>/checkout/', admin_views.checkout_visitor_admin, name='checkout_visitor_admin'),
+
+    # Resend welcome email
+    path('resend-welcome-email/<int:user_id>/', views.resend_welcome_email, name='resend_welcome_email'),
 ]

@@ -1,0 +1,4 @@
+first_name,last_name,date_of_birth,grade,section,parent_email,parent_first_name,parent_last_name,parent_phone,parent_occupation
+John,Doe,5/15/2015,Grade 1,A,john.parent@example.com,Jane,Doe,0123456789,Teacher
+Mary,Smith,8/20/2014,Grade 2,B,mary.parent@example.com,Robert,Smith,0987654321,Engineer
+Alice,Johnson,12/3/2015,Grade 1,C,alice.parent@example.com,Michael,Johnson,0555123456,Doctor

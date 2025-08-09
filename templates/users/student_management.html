@@ -6,9 +6,14 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Student Management</h1>
-        <a href="{% url 'users:register_student' %}" class="btn btn-primary">
-            <i class="fas fa-user-plus me-2"></i>Add New Student
-        </a>
+        <div class="btn-group">
+            <a href="{% url 'users:register_student' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>Add New Student
+            </a>
+            <a href="{% url 'users:csv_upload_page' %}" class="btn btn-success">
+                <i class="fas fa-file-csv me-2"></i>Bulk Import CSV
+            </a>
+        </div>
     </div>
 
     <!-- Filter Card -->
@@ -335,27 +340,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize DataTable
-        if ($.fn.DataTable && document.getElementById('studentsTable')) {
-            $('#studentsTable').DataTable({
-                "pageLength": 25,
-                "columnDefs": [
-                    { "orderable": false, "targets": 5 } // Disable sorting on actions column
-                ],
-                "language": {
-                    "search": "Quick search:",
-                    "zeroRecords": "No matching students found",
-                    "info": "Showing _START_ to _END_ of _TOTAL_ students",
-                    "infoEmpty": "No students available",
-                    "infoFiltered": "(filtered from _MAX_ total students)"
-                }
-            });
-        }
-    });
-</script>
 {% endblock %}
