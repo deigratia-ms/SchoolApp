@@ -1543,7 +1543,10 @@ def edit_user(request, user_id):
 
     return render(request, 'users/edit_user.html', context)
 
-# ... (rest of the code remains the same)
+@user_passes_test(is_admin)
+def delete_user(request, user_id):
+    """Delete a user"""
+    user = get_object_or_404(CustomUser, id=user_id)
 
     if request.method == 'POST':
         user.delete()
