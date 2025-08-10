@@ -39,8 +39,8 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">User Information</h6>
-                    <span class="badge bg-{{ user.is_active|yesno:'success,danger' }}">
-                        {{ user.is_active|yesno:'Active,Inactive' }}
+                    <span class="badge bg-{{ edited_user.is_active|yesno:'success,danger' }}">
+                        {{ edited_user.is_active|yesno:'Active,Inactive' }}
                     </span>
                 </div>
                 <div class="card-body">
@@ -64,7 +64,7 @@
                                 <div class="d-flex flex-wrap gap-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="role" id="roleAdmin" value="ADMIN"
-                                               {% if user.role == 'ADMIN' %}checked{% endif %}
+                                               {% if edited_user.role == 'ADMIN' %}checked{% endif %}
                                                {% if not request.user.is_admin %}disabled{% endif %}>
                                         <label class="form-check-label" for="roleAdmin">
                                             <i class="fas fa-user-shield text-danger me-1"></i> Administrator
@@ -72,7 +72,7 @@
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="role" id="roleTeacher" value="TEACHER"
-                                               {% if user.role == 'TEACHER' %}checked{% endif %}
+                                               {% if edited_user.role == 'TEACHER' %}checked{% endif %}
                                                {% if not request.user.is_admin %}disabled{% endif %}>
                                         <label class="form-check-label" for="roleTeacher">
                                             <i class="fas fa-chalkboard-teacher text-success me-1"></i> Teacher
@@ -80,7 +80,7 @@
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="role" id="roleStudent" value="STUDENT"
-                                               {% if user.role == 'STUDENT' %}checked{% endif %}
+                                               {% if edited_user.role == 'STUDENT' %}checked{% endif %}
                                                {% if not request.user.is_admin %}disabled{% endif %}>
                                         <label class="form-check-label" for="roleStudent">
                                             <i class="fas fa-user-graduate text-primary me-1"></i> Student
@@ -88,7 +88,7 @@
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="role" id="roleParent" value="PARENT"
-                                               {% if user.role == 'PARENT' %}checked{% endif %}
+                                               {% if edited_user.role == 'PARENT' %}checked{% endif %}
                                                {% if not request.user.is_admin %}disabled{% endif %}>
                                         <label class="form-check-label" for="roleParent">
                                             <i class="fas fa-users text-info me-1"></i> Parent/Guardian
@@ -112,18 +112,18 @@
                                 <div class="col-md-6">
                                     <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="first_name" name="first_name" 
-                                           value="{{ user.first_name }}" required>
+                                           value="{{ edited_user.first_name }}" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="last_name" name="last_name" 
-                                           value="{{ user.last_name }}" required>
+                                           value="{{ edited_user.last_name }}" required>
                                 </div>
                                 
                                 <div class="col-md-6">
                                     <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control" id="email" name="email"
-                                           value="{{ user.email }}" required>
+                                           value="{{ edited_user.email }}" required>
                                 </div>
                                 
                                 <div class="col-md-6">
@@ -131,8 +131,8 @@
                                     <input class="form-control" type="file" id="profile_picture" name="profile_picture" accept="image/*">
                                     <div class="form-text">
                                         Current: 
-                                        {% if user.profile_picture %}
-                                            <a href="{{ user.profile_picture.url }}" target="_blank">View current image</a>
+                                        {% if edited_user.profile_picture %}
+                                            <a href="{{ edited_user.profile_picture.url }}" target="_blank">View current image</a>
                                         {% else %}
                                             No image uploaded
                                         {% endif %}
@@ -143,7 +143,7 @@
                         
                         <!-- Teacher-specific Fields -->
                         <div id="teacher-fields" class="role-fields form-section mb-4" 
-                             {% if user.is_teacher %}style="display: block;"{% endif %}>
+                             {% if edited_user.is_teacher %}style="display: block;"{% endif %}>
                             <h5 class="form-section-title">Teacher Information</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -250,7 +250,7 @@
                         
                         <!-- Student-specific Fields -->
                         <div id="student-fields" class="role-fields form-section mb-4" 
-                             {% if user.is_student %}style="display: block;"{% endif %}>
+                             {% if edited_user.is_student %}style="display: block;"{% endif %}>
                             <h5 class="form-section-title">Student Information</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -374,7 +374,7 @@
                         
                         <!-- Parent-specific Fields -->
                         <div id="parent-fields" class="role-fields form-section mb-4" 
-                             {% if user.is_parent %}style="display: block;"{% endif %}>
+                             {% if edited_user.is_parent %}style="display: block;"{% endif %}>
                             <h5 class="form-section-title">Parent/Guardian Information</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -414,13 +414,14 @@
                                                                 <td>{{ child.user.get_full_name }}</td>
                                                                 <td>{{ child.grade }}</td>
                                                                 <td>{{ child.section }}</td>
-                                                                <td>
+                                                                 <td>
                                                                     <a href="#" class="btn btn-sm btn-outline-danger" 
                                                                        data-child-id="{{ child.id }}" 
-                                                                       onclick="unlinkChild({{ child.id }}, '{{ child.user.get_full_name }}')">
+                                                                       data-child-name="{{ child.user.get_full_name|escape }}"
+                                                                       onclick="unlinkChild(this.dataset.childId, this.dataset.childName)">
                                                                         <i class="fas fa-unlink"></i>
                                                                     </a>
-                                                                </td>
+                                                              </td>
                                                             </tr>
                                                         {% endfor %}
                                                     </tbody>
@@ -495,8 +496,8 @@
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h6 class="mb-0">Last Login</h6>
                         <span>
-                            {% if user.last_login %}
-                                {{ user.last_login|date:"F j, Y, g:i a" }}
+                            {% if edited_user.last_login %}
+                                {{ edited_user.last_login|date:"F j, Y, g:i a" }}
                             {% else %}
                                 Never
                             {% endif %}
@@ -512,8 +513,8 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        {% if user.is_student %}
-                            <a href="{% url 'users:generate_id_card' user.id %}" class="btn btn-info">
+                        {% if edited_user.is_student %}
+                            <a href="{% url 'users:generate_id_card' edited_user.id %}" class="btn btn-info">
                                 <i class="fas fa-id-card me-2"></i>Generate ID Card
                             </a>
                             <a href="{% url 'users:generate_admission_letter' student.id %}" class="btn btn-primary">
@@ -525,7 +526,7 @@
                             <i class="fas fa-key me-2"></i>Reset Password
                         </a>
                         
-                        {% if user.id != request.user.id %}
+                        {% if edited_user.id != request.user.id %}
                             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
                                 <i class="fas fa-trash-alt me-2"></i>Delete User
                             </button>
@@ -551,7 +552,7 @@
                     <strong>Warning!</strong> This action cannot be undone.
                 </div>
                 
-                <p>Are you sure you want to delete the user <strong>{{ user.get_full_name }}</strong>?</p>
+                <p>Are you sure you want to delete the user <strong>{{ edited_user.get_full_name }}</strong>?</p>
                 <p>This will remove all user data, including:</p>
                 <ul>
                     <li>Personal information</li>
@@ -561,7 +562,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form action="{% url 'users:delete_user' user.id %}" method="post">
+                <form action="{% url 'users:delete_user' edited_user.id %}" method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Delete User</button>
                 </form>
@@ -578,10 +579,10 @@
                 <h5 class="modal-title" id="resetPasswordModalLabel">Reset User Password</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'users:reset_password' user.id %}" method="post" id="resetPasswordForm">
+            <form action="{% url 'users:reset_password' edited_user.id %}" method="post" id="resetPasswordForm">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <p>Generate a new password for <strong>{{ user.get_full_name }}</strong>.</p>
+                    <p>Generate a new password for <strong>{{ edited_user.get_full_name }}</strong>.</p>
                     
                     <div class="mb-3">
                         <label for="new_password" class="form-label">New Password</label>

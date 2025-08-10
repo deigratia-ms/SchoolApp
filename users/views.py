@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.http import require_GET, require_POST
+from django.core.paginator import Paginator, EmptyPage
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView as DjangoPasswordResetConfirmView, PasswordResetCompleteView
 from django.core.mail import send_mail, BadHeaderError
@@ -21,6 +22,7 @@ from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from decouple import config
 from typing import Any, Dict, List, Optional, Union
 import csv
+import json
 
 from .utils import send_school_email
 from .models import (
@@ -36,6 +38,9 @@ import secrets
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Helper functions for role-based access
 def is_admin(user):
@@ -1006,12 +1011,53 @@ def parent_management(request):
         elif status_filter == 'inactive':
             parents = parents.filter(user__is_active=False)
 
+    # Render without pagination (template expects a simple list)
     return render(request, 'users/parent_management.html', {
         'parents': parents,
+        'parents_count': parents.count(),
         'search_query': search_query,
         'relationship_filter': relationship_filter,
         'status_filter': status_filter,
     })
+
+@user_passes_test(is_admin)
+def parent_detail(request, parent_id):
+    """View parent details"""
+    try:
+        parent = get_object_or_404(Parent, id=parent_id)
+        context = {
+            'parent': parent,
+        }
+        return render(request, 'users/parent_detail.html', context)
+    except Parent.DoesNotExist:
+        messages.error(request, 'Parent not found.')
+        return redirect('users:parent_management')
+
+@user_passes_test(is_admin)
+def teacher_detail(request, teacher_id):
+    """View teacher details"""
+    try:
+        teacher = get_object_or_404(Teacher, id=teacher_id)
+        context = {
+            'teacher': teacher,
+        }
+        return render(request, 'users/teacher_detail.html', context)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found.')
+        return redirect('users:teacher_management')
+
+@user_passes_test(is_admin)
+def student_detail(request, student_id):
+    """View student details"""
+    try:
+        student = get_object_or_404(Student, id=student_id)
+        context = {
+            'student': student,
+        }
+        return render(request, 'users/student_detail.html', context)
+    except Student.DoesNotExist:
+        messages.error(request, 'Student not found.')
+        return redirect('users:student_management')
 
 @user_passes_test(is_admin)
 def create_user(request):
@@ -1461,7 +1507,7 @@ def edit_user(request, user_id):
         return redirect('users:user_management')
 
     # For GET request, display the form with user data
-    context = {'user': user}
+    context = {'edited_user': user}
 
     # Add staff members for supervisor selection
     staff_members = StaffMember.objects.all()
@@ -1497,10 +1543,7 @@ def edit_user(request, user_id):
 
     return render(request, 'users/edit_user.html', context)
 
-@user_passes_test(is_admin)
-def delete_user(request, user_id):
-    """Delete a user"""
-    user = get_object_or_404(CustomUser, id=user_id)
+# ... (rest of the code remains the same)
 
     if request.method == 'POST':
         user.delete()
@@ -2066,30 +2109,223 @@ Best regards,
 
 @user_passes_test(is_admin)
 def link_parent_to_child(request):
-    """Link a parent to a child (student)"""
+    """Link a parent to one or many students. Supports large datasets via AJAX search."""
+    from django.views.decorators.http import require_http_methods
     if request.method == 'POST':
-        parent_id = request.POST.get('parent_id')
-        student_id = request.POST.get('student_id')
-
+        # Accept JSON or form-encoded
         try:
-            parent = Parent.objects.get(id=parent_id)
-            student = Student.objects.get(id=student_id)
+            if request.headers.get('Content-Type', '').startswith('application/json'):
+                import json
+                payload = json.loads(request.body.decode('utf-8'))
+                parent_id = payload.get('parent_id')
+                student_ids = payload.get('student_ids') or []
+                # Fallback single
+                if not student_ids and payload.get('student_id'):
+                    student_ids = [payload['student_id']]
+            else:
+                parent_id = request.POST.get('parent_id')
+                # student_ids[] or comma-separated student_ids
+                student_ids = request.POST.getlist('student_ids') or request.POST.get('student_ids', '')
+                if isinstance(student_ids, str) and student_ids:
+                    student_ids = [s.strip() for s in student_ids.split(',') if s.strip()]
+                # Fallback single
+                if not student_ids and request.POST.get('student_id'):
+                    student_ids = [request.POST.get('student_id')]
 
-            parent.children.add(student)
+            if not parent_id or not student_ids:
+                return JsonResponse({'success': False, 'error': 'parent_id and student_ids are required'}, status=400)
+
+            parent = Parent.objects.select_related('user').get(id=parent_id)
+            students_qs = Student.objects.select_related('user').filter(id__in=student_ids)
+            linked = 0
+            for stu in students_qs:
+                parent.children.add(stu)
+                linked += 1
             parent.save()
 
-            messages.success(request, f'Successfully linked {student.user.get_full_name()} to {parent.user.get_full_name()}.')
-        except (Parent.DoesNotExist, Student.DoesNotExist):
-            messages.error(request, 'Parent or student not found.')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Content-Type', '').startswith('application/json'):
+                return JsonResponse({'success': True, 'linked_count': linked, 'parent': {'id': parent.id, 'name': parent.user.get_full_name()}})
+            else:
+                messages.success(request, f'Successfully linked {linked} student(s) to {parent.user.get_full_name()}.')
+                return redirect('users:parent_detail', parent_id=parent.id)
+        except Parent.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Parent not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-        return redirect('users:user_management')
+    # GET: render enhanced linking UI. Allow preselection via ?parent_id= or ?student_id=
+    parent_id = request.GET.get('parent_id')
+    student_id = request.GET.get('student_id')
+    preselected_parent = None
+    preselected_student = None
+    if parent_id:
+        preselected_parent = Parent.objects.select_related('user').filter(id=parent_id).first()
+    if student_id:
+        preselected_student = Student.objects.select_related('user').filter(id=student_id).first()
 
-    parents = Parent.objects.all()
-    students = Student.objects.all()
+    # Provide parents list for left-hand accordion (with children prefetch)
+    from django.db.models import Prefetch
+    children_qs = Student.objects.select_related('user').all()
+    parents_qs = Parent.objects.select_related('user').prefetch_related(
+        Prefetch('children', queryset=children_qs)
+    ).order_by('user__last_name', 'user__first_name')
+
+    # Paginate left panel parents
+    try:
+        parent_page_num = int(request.GET.get('parent_page') or 1)
+    except (TypeError, ValueError):
+        parent_page_num = 1
+    try:
+        parent_page_size = int(request.GET.get('parent_page_size') or 10)
+    except (TypeError, ValueError):
+        parent_page_size = 10
+    parents_paginator = Paginator(parents_qs, parent_page_size)
+    parents_page = parents_paginator.get_page(parent_page_num)
+
     return render(request, 'users/link_parent_child.html', {
-        'parents': parents,
-        'students': students
+        'preselected_parent': preselected_parent,
+        'preselected_student': preselected_student,
+        'parents_page': parents_page,
     })
+
+@user_passes_test(is_admin)
+def teacher_detail(request, user_id):
+    """Dedicated detail page for a teacher identified by the related User ID."""
+    from django.shortcuts import get_object_or_404
+    from .models import Teacher
+    teacher = get_object_or_404(Teacher.objects.select_related('user'), user__id=user_id)
+    return render(request, 'users/teacher_detail.html', {
+        'teacher': teacher,
+    })
+
+@user_passes_test(is_admin)
+def student_detail(request, user_id):
+    """Dedicated detail page for a student identified by the related User ID."""
+    from django.shortcuts import get_object_or_404
+    from .models import Student
+    student = get_object_or_404(Student.objects.select_related('user'), user__id=user_id)
+    return render(request, 'users/student_detail.html', {
+        'student': student,
+    })
+
+@login_required
+@user_passes_test(is_admin)
+@require_GET
+def api_search_parents(request):
+    """Paginated search for parents by name/email/phone."""
+    # Allow both AJAX and direct browser requests
+    try:
+        q = (request.GET.get('q') or '').strip()
+        try:
+            page_num = int(request.GET.get('page') or 1)
+        except (TypeError, ValueError):
+            page_num = 1
+        try:
+            page_size = int(request.GET.get('page_size') or 10)
+        except (TypeError, ValueError):
+            page_size = 10
+
+        qs = Parent.objects.select_related('user').filter(user__isnull=False)
+        if q:
+            qs = qs.filter(
+                Q(user__first_name__icontains=q) |
+                Q(user__last_name__icontains=q) |
+                Q(user__email__icontains=q) |
+                Q(user__phone_number__icontains=q)
+            )
+        qs = qs.order_by('user__last_name', 'user__first_name')
+
+        paginator = Paginator(qs, page_size)
+        page = paginator.get_page(page_num)
+
+        results = []
+        for p in page.object_list:
+            u = p.user
+            results.append({
+                'id': p.id,
+                'name': u.get_full_name(),
+                'email': u.email,
+                'phone': getattr(u, 'phone_number', '') or ''
+            })
+
+        return JsonResponse({
+            'page': page.number if paginator.num_pages else 1,
+            'pages': paginator.num_pages,
+            'count': paginator.count,
+            'results': results,
+        })
+    except Exception as e:
+        logger.exception('api_search_parents failed')
+        return JsonResponse({'error': 'Server error'}, status=500)
+
+@login_required
+@user_passes_test(is_admin)
+@require_GET
+def api_search_students(request):
+    """Paginated search for students by name/ID/email."""
+    # Allow both AJAX and direct browser requests
+    try:
+        q = (request.GET.get('q') or '').strip()
+        try:
+            page_num = int(request.GET.get('page') or 1)
+        except (TypeError, ValueError):
+            page_num = 1
+        try:
+            page_size = int(request.GET.get('page_size') or 20)
+        except (TypeError, ValueError):
+            page_size = 20
+
+        qs = Student.objects.select_related('user').filter(user__isnull=False)
+        if q:
+            qs = qs.filter(
+                Q(user__first_name__icontains=q) |
+                Q(user__last_name__icontains=q) |
+                Q(user__email__icontains=q) |
+                Q(student_id__icontains=q)
+            )
+        qs = qs.order_by('user__last_name', 'user__first_name')
+
+        paginator = Paginator(qs, page_size)
+        page = paginator.get_page(page_num)
+
+        results = []
+        for s in page.object_list:
+            u = s.user
+            # Safely stringify possibly-related fields to avoid JSON serialization issues
+            student_id = getattr(s, 'student_id', '') or ''
+            grade_val = getattr(s, 'grade', '')
+            if grade_val is None:
+                grade_str = ''
+            else:
+                grade_str = getattr(grade_val, 'name', None)
+                if grade_str is None:
+                    grade_str = str(grade_val)
+            section_val = getattr(s, 'section', '')
+            if section_val is None:
+                section_str = ''
+            else:
+                section_str = getattr(section_val, 'name', None)
+                if section_str is None:
+                    section_str = str(section_val)
+
+            results.append({
+                'id': s.id,
+                'name': u.get_full_name(),
+                'email': u.email,
+                'student_id': student_id,
+                'grade': grade_str,
+                'section': section_str
+            })
+
+        return JsonResponse({
+            'page': page.number if paginator.num_pages else 1,
+            'pages': paginator.num_pages,
+            'count': paginator.count,
+            'results': results,
+        })
+    except Exception as e:
+        logger.exception('api_search_students failed')
+        return JsonResponse({'error': 'Server error'}, status=500)
 
 @user_passes_test(is_admin)
 def search_parent(request):
@@ -2112,6 +2348,122 @@ def search_parent(request):
         'parents': parents,
         'query': query
     })
+
+
+@login_required
+@user_passes_test(is_admin)
+def api_search_parents(request):
+    """JSON API (legacy route): delegates to robust parent search; accepts direct browser or AJAX."""
+    try:
+        q = (request.GET.get('q') or '').strip()
+        try:
+            page_num = int(request.GET.get('page') or 1)
+        except (TypeError, ValueError):
+            page_num = 1
+        try:
+            page_size = int(request.GET.get('page_size') or 10)
+        except (TypeError, ValueError):
+            page_size = 10
+
+        qs = Parent.objects.select_related('user').filter(user__isnull=False)
+        if q:
+            qs = qs.filter(
+                Q(user__first_name__icontains=q) |
+                Q(user__last_name__icontains=q) |
+                Q(user__email__icontains=q) |
+                Q(user__phone_number__icontains=q)
+            )
+        qs = qs.order_by('user__last_name', 'user__first_name')
+
+        paginator = Paginator(qs, page_size)
+        page = paginator.get_page(page_num)
+
+        results = []
+        for p in page.object_list:
+            u = p.user
+            results.append({
+                'id': p.id,
+                'name': u.get_full_name(),
+                'email': u.email,
+                'phone': getattr(u, 'phone_number', '') or ''
+            })
+
+        return JsonResponse({
+            'results': results,
+            'page': page.number if paginator.num_pages else 1,
+            'pages': paginator.num_pages,
+            'count': paginator.count,
+        })
+    except Exception:
+        logger.exception('api_search_parents (legacy) failed')
+        return JsonResponse({'error': 'Server error'}, status=500)
+
+
+@login_required
+@user_passes_test(is_admin)
+def api_search_students(request):
+    """JSON API (legacy route): robust student search; accepts direct browser or AJAX."""
+    try:
+        q = (request.GET.get('q') or '').strip()
+        try:
+            page_num = int(request.GET.get('page') or 1)
+        except (TypeError, ValueError):
+            page_num = 1
+        try:
+            page_size = int(request.GET.get('page_size') or 20)
+        except (TypeError, ValueError):
+            page_size = 20
+
+        qs = Student.objects.select_related('user').filter(user__isnull=False)
+        if q:
+            qs = qs.filter(
+                Q(user__first_name__icontains=q) |
+                Q(user__last_name__icontains=q) |
+                Q(user__email__icontains=q) |
+                Q(student_id__icontains=q)
+            )
+        qs = qs.order_by('user__last_name', 'user__first_name')
+
+        paginator = Paginator(qs, page_size)
+        page = paginator.get_page(page_num)
+
+        results = []
+        for s in page.object_list:
+            u = s.user
+            student_id = getattr(s, 'student_id', '') or ''
+            grade_val = getattr(s, 'grade', '')
+            if grade_val is None:
+                grade_str = ''
+            else:
+                grade_str = getattr(grade_val, 'name', None)
+                if grade_str is None:
+                    grade_str = str(grade_val)
+            section_val = getattr(s, 'section', '')
+            if section_val is None:
+                section_str = ''
+            else:
+                section_str = getattr(section_val, 'name', None)
+                if section_str is None:
+                    section_str = str(section_val)
+
+            results.append({
+                'id': s.id,
+                'name': u.get_full_name(),
+                'email': u.email,
+                'student_id': student_id,
+                'grade': grade_str,
+                'section': section_str,
+            })
+
+        return JsonResponse({
+            'results': results,
+            'page': page.number if paginator.num_pages else 1,
+            'pages': paginator.num_pages,
+            'count': paginator.count,
+        })
+    except Exception:
+        logger.exception('api_search_students (legacy) failed')
+        return JsonResponse({'error': 'Server error'}, status=500)
 
 @user_passes_test(is_admin)
 def unlink_parent_child(request):
@@ -4015,3 +4367,90 @@ def resend_welcome_email(request, user_id):
             'success': False,
             'error': str(e)
         })
+
+
+@user_passes_test(is_admin)
+@require_POST
+def resend_welcome_email_bulk(request):
+    """Resend welcome emails to a set of selected parents (and optionally other roles)."""
+    try:
+        data = json.loads(request.body or '{}')
+        user_ids = data.get('user_ids', [])
+        if not isinstance(user_ids, list) or not user_ids:
+            return JsonResponse({'success': False, 'error': 'No user_ids provided.'})
+
+        # Limit to existing users; primarily target parents for this page
+        users = CustomUser.objects.filter(id__in=user_ids)
+
+        from .csv_import_views import send_parent_welcome_email, trigger_welcome_email
+        import secrets, string
+
+        sent = 0
+        failed = 0
+        errors: List[str] = []
+
+        for user in users:
+            try:
+                password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+                user.set_password(password)
+                user.save()
+
+                if user.role == CustomUser.Role.PARENT:
+                    send_parent_welcome_email(user, password)
+                else:
+                    trigger_welcome_email(user, password)
+                sent += 1
+            except Exception as ex:
+                failed += 1
+                errors.append(f"{user.email}: {str(ex)}")
+
+        return JsonResponse({'success': True, 'sent': sent, 'failed': failed, 'errors': errors[:5]})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@user_passes_test(is_admin)
+def parent_detail(request, parent_id: int):
+    """Dedicated read-only detail page for a Parent."""
+    parent = get_object_or_404(Parent.objects.select_related('user'), id=parent_id)
+    # Prefetch children to minimize queries
+    from django.db.models import Prefetch
+    children_qs = Student.objects.select_related('user').all()
+    parent = Parent.objects.select_related('user').prefetch_related(
+        Prefetch('children', queryset=children_qs)
+    ).get(id=parent_id)
+
+    context = {
+        'parent': parent,
+    }
+    return render(request, 'users/parents/detail.html', context)
+
+
+@user_passes_test(is_admin)
+@require_POST
+def resend_welcome_email_all(request):
+    """Resend welcome emails to ALL parents. Use with caution for large datasets."""
+    try:
+        from .csv_import_views import send_parent_welcome_email
+        import secrets, string
+
+        parents = CustomUser.objects.filter(role=CustomUser.Role.PARENT)
+        sent = 0
+        failed = 0
+        errors: List[str] = []
+
+        for user in parents:
+            try:
+                password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+                user.set_password(password)
+                user.save()
+                send_parent_welcome_email(user, password)
+                sent += 1
+            except Exception as ex:
+                failed += 1
+                errors.append(f"{user.email}: {str(ex)}")
+
+        return JsonResponse({'success': True, 'sent': sent, 'failed': failed, 'errors': errors[:5]})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

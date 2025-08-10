@@ -42,7 +42,7 @@ urlpatterns = [
     path('delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
     path('reset-password/<int:user_id>/', views.reset_password, name='reset_password'),
     
-    path('reset-password/<int:user_id>/', views.reset_password, name='reset_password'),
+    
 
     # CSV Import URLs
     path('csv/', csv_import_views.csv_upload_page, name='csv_upload_page'),
@@ -72,6 +72,8 @@ urlpatterns = [
     # Parent registration
     path('register-parent/', views.register_parent, name='register_parent'),
     path('link-parent-to-child/', views.link_parent_to_child, name='link_parent_to_child'),
+    path('api/parents/search/', views.api_search_parents, name='api_search_parents'),
+    path('api/students/search/', views.api_search_students, name='api_search_students'),
     path('search-parent/', views.search_parent, name='search_parent'),
     path('unlink-parent-child/', views.unlink_parent_child, name='unlink_parent_child'),
     
@@ -156,4 +158,12 @@ urlpatterns = [
 
     # Resend welcome email
     path('resend-welcome-email/<int:user_id>/', views.resend_welcome_email, name='resend_welcome_email'),
+    path('resend-welcome-email/bulk/', views.resend_welcome_email_bulk, name='resend_welcome_email_bulk'),
+    path('resend-welcome-email/all/', views.resend_welcome_email_all, name='resend_welcome_email_all'),
+    
+    # Parent detail page
+    path('parents/<int:parent_id>/', views.parent_detail, name='parent_detail'),
+    # Teacher and Student detail pages
+    path('teachers/<int:user_id>/', views.teacher_detail, name='teacher_detail'),
+    path('students/<int:user_id>/', views.student_detail, name='student_detail'),
 ]

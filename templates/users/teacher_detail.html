@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Details - {{ teacher.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Teacher Details</h1>
+    <div class="btn-group">
+      <a href="{% url 'users:edit_user' teacher.user.id %}" class="btn btn-primary"><i class="fas fa-edit me-2"></i>Edit</a>
+      <a href="{% url 'users:teacher_management' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Teachers</a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-4 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          {% if teacher.user.profile_picture %}
+            <img src="{{ teacher.user.profile_picture.url }}" alt="{{ teacher.user.get_full_name }}" class="rounded-circle mb-3" width="150" height="150">
+          {% else %}
+            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+              <span style="font-size: 48px;">{{ teacher.user.first_name|first }}{{ teacher.user.last_name|first }}</span>
+            </div>
+          {% endif %}
+          <h4 class="mb-1">{{ teacher.user.get_full_name }}</h4>
+          <span class="badge bg-success">Teacher</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8 mb-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Username:</div>
+            <div class="col-sm-8">{{ teacher.user.username }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Email:</div>
+            <div class="col-sm-8">{{ teacher.user.email }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Phone:</div>
+            <div class="col-sm-8">{{ teacher.user.phone_number|default:"Not provided" }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Date Joined:</div>
+            <div class="col-sm-8">{{ teacher.user.date_joined|date:"F j, Y" }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Last Login:</div>
+            <div class="col-sm-8">{% if teacher.user.last_login %}{{ teacher.user.last_login|date:"F j, Y, g:i a" }}{% else %}Never{% endif %}</div>
+          </div>
+
+          <h6 class="border-bottom pb-2 mb-3 mt-4">Teacher Information</h6>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Employee ID:</div>
+            <div class="col-sm-8">{{ teacher.employee_id }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Department:</div>
+            <div class="col-sm-8">{{ teacher.department }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Qualification:</div>
+            <div class="col-sm-8">{{ teacher.qualification }}</div>
+          </div>
+
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Classes:</div>
+            <div class="col-sm-8">
+              <ul class="list-unstyled mb-0">
+                {% for class_subject in teacher.teaching_subjects.all %}
+                  <li>
+                    {{ class_subject.classroom.name }} {% if class_subject.classroom.section %}({{ class_subject.classroom.section }}){% endif %} - {{ class_subject.subject.name }}
+                  </li>
+                {% empty %}
+                  <li>No classes assigned</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body d-flex justify-content-between">
+          <a href="{% url 'users:teacher_documents' teacher.user.id %}" class="btn btn-info"><i class="fas fa-file-alt me-2"></i>View Documents</a>
+          <div>
+            <a href="{% url 'users:edit_user' teacher.user.id %}" class="btn btn-primary me-2"><i class="fas fa-edit me-2"></i>Edit</a>
+            {% if teacher.user.id != request.user.id %}
+              <a href="{% url 'users:delete_user' teacher.user.id %}" class="btn btn-outline-danger"><i class="fas fa-trash me-2"></i>Delete</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -20,6 +20,12 @@
             <a href="{% url 'users:export_parents' 'excel' %}" class="btn btn-outline-success">
                 <i class="fas fa-file-excel me-2"></i>Export Excel
             </a>
+            <button id="btnResendSelected" type="button" class="btn btn-warning" onclick="resendWelcomeEmailSelected()">
+                <i class="fas fa-envelope-open-text me-2"></i>Resend Selected
+            </button>
+            <button id="btnResendAll" type="button" class="btn btn-danger" onclick="resendWelcomeEmailAll()">
+                <i class="fas fa-paper-plane me-2"></i>Resend To All
+            </button>
         </div>
     </div>
 
@@ -76,7 +82,15 @@
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Parent Directory</h6>
-            <span class="badge bg-primary">{{ parents|length }} Parents</span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary">{{ parents|length }} Parents</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnResendSelected" title="Resend Welcome to Selected" onclick="resendWelcomeEmailSelected()">
+                    <i class="fas fa-paper-plane me-1"></i>Resend Selected
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="btnResendAll" title="Resend Welcome to All" onclick="resendWelcomeEmailAll()">
+                    <i class="fas fa-bullhorn me-1"></i>Resend To All
+                </button>
+            </div>
         </div>
         <div class="card-body">
             {% if parents %}
@@ -84,6 +98,9 @@
                     <table class="table table-bordered table-hover" id="parentsTable">
                         <thead class="bg-primary text-white">
                             <tr>
+                                <th style="width: 36px;" class="text-center">
+                                    <input type="checkbox" id="selectAllParents" onclick="toggleSelectAll(this)">
+                                </th>
                                 <th style="width: 250px;">Name</th>
                                 <th style="width: 120px;">Relationship</th>
                                 <th>Children</th>
@@ -95,6 +112,9 @@
                         <tbody>
                             {% for parent in parents %}
                                 <tr>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="parent-select" value="{{ parent.user.id }}">
+                                    </td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             {% if parent.user.profile_picture %}
@@ -108,7 +128,7 @@
                                             {% endif %}
                                             <div>
                                                 <div class="fw-bold text-primary">
-                                                    <a href="#" class="text-primary text-decoration-none" data-bs-toggle="modal" data-bs-target="#userDetailModal{{ parent.user.id }}">
+                                                    <a href="{% url 'users:parent_detail' parent.id %}" class="text-primary text-decoration-none">
                                                         {{ parent.user.get_full_name }}
                                                     </a>
                                                 </div>
@@ -167,17 +187,12 @@
                                             <a href="{% url 'users:edit_user' parent.user.id %}" class="btn btn-sm btn-primary me-1" title="Edit Parent">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" class="btn btn-sm btn-success me-1" title="View Details"
-                                                    data-bs-toggle="modal" data-bs-target="#userDetailModal{{ parent.user.id }}">
+                                            <a href="{% url 'users:parent_detail' parent.id %}" class="btn btn-sm btn-success me-1" title="View Details">
                                                 <i class="fas fa-eye"></i>
-                                            </button>
+                                            </a>
                                             <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-sm btn-info me-1" title="Link to Child">
                                                 <i class="fas fa-child"></i>
                                             </a>
-                                            <button type="button" class="btn btn-sm btn-warning me-1" title="Resend Welcome Email"
-                                                    onclick="resendWelcomeEmail('{{ parent.user.id|escapejs }}', '{{ parent.user.get_full_name|escapejs }}')">
-                                                <i class="fas fa-envelope"></i>
-                                            </button>
                                             {% if parent.user.id != request.user.id %}
                                                 <a href="{% url 'users:delete_user' parent.user.id %}" class="btn btn-sm btn-danger" title="Delete Parent">
                                                     <i class="fas fa-trash"></i>
@@ -186,120 +201,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
-                                <!-- Parent Detail Modal -->
-                                <div class="modal fade" id="userDetailModal{{ parent.user.id }}" tabindex="-1" aria-labelledby="userDetailModalLabel{{ parent.user.id }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="userDetailModalLabel{{ parent.user.id }}">Parent Details: {{ parent.user.get_full_name }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="row">
-                                                    <div class="col-md-4 text-center mb-4">
-                                                        {% if parent.user.profile_picture %}
-                                                            <img src="{{ parent.user.profile_picture.url }}" alt="{{ parent.user.get_full_name }}" 
-                                                                class="rounded-circle mb-3" width="150" height="150">
-                                                        {% else %}
-                                                            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                                                                style="width: 150px; height: 150px;">
-                                                                <span style="font-size: 48px;">{{ parent.user.first_name|first }}{{ parent.user.last_name|first }}</span>
-                                                            </div>
-                                                        {% endif %}
-                                                        <h5>{{ parent.user.get_full_name }}</h5>
-                                                        <span class="badge bg-info">{{ parent.relationship }}</span>
-                                                    </div>
-                                                    <div class="col-md-8">
-                                                        <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-4 fw-bold">Username:</div>
-                                                            <div class="col-sm-8">{{ parent.user.username }}</div>
-                                                        </div>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-4 fw-bold">Email:</div>
-                                                            <div class="col-sm-8">{{ parent.user.email }}</div>
-                                                        </div>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-4 fw-bold">Phone:</div>
-                                                            <div class="col-sm-8">{{ parent.user.phone_number|default:"Not provided" }}</div>
-                                                        </div>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-4 fw-bold">Date Joined:</div>
-                                                            <div class="col-sm-8">{{ parent.user.date_joined|date:"F j, Y" }}</div>
-                                                        </div>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-4 fw-bold">Last Login:</div>
-                                                            <div class="col-sm-8">
-                                                                {% if parent.user.last_login %}
-                                                                    {{ parent.user.last_login|date:"F j, Y, g:i a" }}
-                                                                {% else %}
-                                                                    Never
-                                                                {% endif %}
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <h6 class="border-bottom pb-2 mb-3 mt-4">Parent Information</h6>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-4 fw-bold">Relationship:</div>
-                                                            <div class="col-sm-8">{{ parent.relationship }}</div>
-                                                        </div>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-4 fw-bold">Occupation:</div>
-                                                            <div class="col-sm-8">{{ parent.occupation|default:"Not provided" }}</div>
-                                                        </div>
-                                                        
-                                                        <h6 class="border-bottom pb-2 mb-3 mt-4">Children</h6>
-                                                        <div class="row mb-2">
-                                                            <div class="col-sm-12">
-                                                                {% if parent.children.all %}
-                                                                    <div class="d-flex flex-column">
-                                                                        {% for child in parent.children.all %}
-                                                                            <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
-                                                                                <span class="badge bg-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
-                                                                                    {{ child.user.first_name|first }}
-                                                                                </span>
-                                                                                <div>
-                                                                                    <div class="fw-bold">{{ child.user.get_full_name }}</div>
-                                                                                    <div class="small text-muted">
-                                                                                        <span class="me-2">ID: {{ child.student_id }}</span>
-                                                                                        <span>Grade {{ child.grade }}{% if child.section %} - {{ child.section }}{% endif %}</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        {% endfor %}
-                                                                    </div>
-                                                                {% else %}
-                                                                    <div class="alert alert-light">
-                                                                        <p class="text-muted mb-2">No children linked to this parent.</p>
-                                                                        <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-sm btn-primary">
-                                                                            <i class="fas fa-link me-2"></i>Link to Children
-                                                                        </a>
-                                                                    </div>
-                                                                {% endif %}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <div class="btn-group">
-                                                    <a href="{% url 'users:edit_user' parent.user.id %}" class="btn btn-primary">
-                                                        <i class="fas fa-edit me-2"></i>Edit Parent
-                                                    </a>
-                                                    <a href="{% url 'users:link_parent_to_child' %}?parent_id={{ parent.id }}" class="btn btn-info">
-                                                        <i class="fas fa-link me-2"></i>Link to Children
-                                                    </a>
-                                                    <button type="button" class="btn btn-warning"
-                                                            onclick="resendWelcomeEmail('{{ parent.user.id|escapejs }}', '{{ parent.user.get_full_name|escapejs }}')" title="Resend Welcome Email">
-                                                                <i class="fas fa-envelope me-2"></i>Resend Welcome Email
-                                                            </button>
-                                                </div>
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -368,4 +269,153 @@
         </div>
     </div>
 </div>
+
+<script>
+  // CSRF helper from Django docs
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  async function resendWelcomeEmail(userId, fullName) {
+    const csrftoken = getCookie('csrftoken');
+    const btns = document.querySelectorAll(`button[onclick*="resendWelcomeEmail('${userId}'"]`);
+    btns.forEach(b => { b.disabled = true; b.dataset.originalHtml = b.innerHTML; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; });
+
+    // Build URL by injecting the ID into a reversed placeholder URL
+    const baseUrl = '{% url "users:resend_welcome_email" 0 %}';
+    const url = baseUrl.replace('/0/', `/${userId}/`);
+
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({})
+      });
+      const data = await resp.json();
+      if (data.success) {
+        showToast('Success', data.message || `Welcome email sent to ${fullName}.`, 'bg-success');
+      } else {
+        showToast('Error', data.error || 'Failed to send welcome email.', 'bg-danger');
+      }
+    } catch (e) {
+      showToast('Error', 'Network or server error while sending email.', 'bg-danger');
+    } finally {
+      btns.forEach(b => { b.disabled = false; b.innerHTML = b.dataset.originalHtml || '<i class="fas fa-envelope"></i>'; });
+    }
+  }
+
+  function toggleSelectAll(master) {
+    document.querySelectorAll('.parent-select').forEach(cb => cb.checked = master.checked);
+  }
+
+  function getSelectedParentIds() {
+    return Array.from(document.querySelectorAll('.parent-select:checked')).map(cb => cb.value);
+  }
+
+  async function resendWelcomeEmailSelected() {
+    const ids = getSelectedParentIds();
+    if (!ids.length) {
+      showToast('Info', 'No parents selected.', 'bg-info');
+      return;
+    }
+    await resendWelcomeEmailBulk(ids);
+  }
+
+  async function resendWelcomeEmailBulk(userIds) {
+    const csrftoken = getCookie('csrftoken');
+    const url = '{% url "users:resend_welcome_email_bulk" %}';
+    const btn = document.getElementById('btnResendSelected');
+    if (btn) { btn.disabled = true; btn.dataset.originalHtml = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; }
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+        body: JSON.stringify({ user_ids: userIds })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        showToast('Success', `Sent: ${data.sent} | Failed: ${data.failed}`, 'bg-success');
+      } else {
+        showToast('Error', data.error || 'Bulk send failed.', 'bg-danger');
+      }
+    } catch (e) {
+      showToast('Error', 'Network or server error during bulk send.', 'bg-danger');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.originalHtml || 'Resend Selected'; }
+    }
+  }
+
+  async function resendWelcomeEmailAll() {
+    if (!confirm('Resend welcome email to ALL parents? This may take a while.')) return;
+    const csrftoken = getCookie('csrftoken');
+    const url = '{% url "users:resend_welcome_email_all" %}';
+    const btn = document.getElementById('btnResendAll');
+    if (btn) { btn.disabled = true; btn.dataset.originalHtml = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; }
+    try {
+      const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken }, body: JSON.stringify({}) });
+      const data = await resp.json();
+      if (data.success) {
+        showToast('Success', `Sent: ${data.sent} | Failed: ${data.failed}`, 'bg-success');
+      } else {
+        showToast('Error', data.error || 'Send-to-all failed.', 'bg-danger');
+      }
+    } catch (e) {
+      showToast('Error', 'Network or server error during send-to-all.', 'bg-danger');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.originalHtml || 'Resend To All'; }
+    }
+  }
+
+  function showToast(title, message, headerClass) {
+    // Simple Bootstrap toast generator (requires Bootstrap 5)
+    const containerId = 'toast-container';
+    let container = document.getElementById(containerId);
+    if (!container) {
+      container = document.createElement('div');
+      container.id = containerId;
+      container.className = 'position-fixed top-0 end-0 p-3';
+      container.style.zIndex = 1080;
+      document.body.appendChild(container);
+    }
+
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast align-items-center text-white border-0 show';
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `
+      <div class="toast-header ${headerClass} text-white">
+        <strong class="me-auto">${title}</strong>
+        <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body text-dark bg-white">${message}</div>
+    `;
+    container.appendChild(toastEl);
+    setTimeout(() => { toastEl.remove(); }, 5000);
+  }
+  // Improve modal focus to prevent flicker/blink from focus bounce
+  document.addEventListener('DOMContentLoaded', function () {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(m => {
+      m.addEventListener('shown.bs.modal', (e) => {
+        const closeBtn = e.target.querySelector('.btn-close');
+        if (closeBtn) closeBtn.focus();
+      });
+    });
+  });
+</script>
 {% endblock %}

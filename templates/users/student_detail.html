@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Details - {{ student.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Student Details</h1>
+    <div class="btn-group">
+      <a href="{% url 'users:edit_user' student.user.id %}" class="btn btn-primary"><i class="fas fa-edit me-2"></i>Edit</a>
+      <a href="{% url 'users:student_management' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Students</a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-4 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          {% if student.user.profile_picture %}
+            <img src="{{ student.user.profile_picture.url }}" alt="{{ student.user.get_full_name }}" class="rounded-circle mb-3" width="150" height="150">
+          {% else %}
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+              <span style="font-size: 48px;">{{ student.user.first_name|first }}{{ student.user.last_name|first }}</span>
+            </div>
+          {% endif %}
+          <h4 class="mb-1">{{ student.user.get_full_name }}</h4>
+          <span class="badge bg-primary">Student</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8 mb-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Username:</div>
+            <div class="col-sm-8">{{ student.user.username }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Email:</div>
+            <div class="col-sm-8">{{ student.user.email }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Phone:</div>
+            <div class="col-sm-8">{{ student.user.phone_number|default:"Not provided" }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Date Joined:</div>
+            <div class="col-sm-8">{{ student.user.date_joined|date:"F j, Y" }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Last Login:</div>
+            <div class="col-sm-8">{% if student.user.last_login %}{{ student.user.last_login|date:"F j, Y, g:i a" }}{% else %}Never{% endif %}</div>
+          </div>
+
+          <h6 class="border-bottom pb-2 mb-3 mt-4">Student Information</h6>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Student ID:</div>
+            <div class="col-sm-8">{{ student.student_id }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">Class/Grade:</div>
+            <div class="col-sm-8">
+              {% if student.grade %}
+                {{ student.grade.name }}{% if student.grade.section %} {{ student.grade.section }}{% endif %}
+              {% else %}
+                {% with classroom=student.classrooms.first %}
+                  {% if classroom %}
+                    {{ classroom.name }}{% if classroom.section %} {{ classroom.section }}{% endif %}
+                  {% else %}
+                    Not assigned to any class
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-4 fw-bold">PIN:</div>
+            <div class="col-sm-8">{{ student.pin }}</div>
+          </div>
+
+          <h6 class="border-bottom pb-2 mb-3 mt-4">Enrolled Subjects</h6>
+          <div class="row mb-2">
+            <div class="col-sm-12">
+              <ul class="list-unstyled mb-0">
+                {% if student.grade %}
+                  {% with current_class_subjects=student.enrolled_subjects.all|dictsort:"classroom.id" %}
+                    {% with has_subjects=False %}
+                      {% for subject in current_class_subjects %}
+                        {% if subject.classroom.id == student.grade.id %}
+                          <li>{{ subject.subject.name }}</li>
+                          {% with has_subjects=True %}{% endwith %}
+                        {% endif %}
+                      {% endfor %}
+                      {% if not has_subjects %}
+                        <li>No subjects enrolled for current class</li>
+                      {% endif %}
+                    {% endwith %}
+                  {% endwith %}
+                {% else %}
+                  <li>No class assigned</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+
+          <h6 class="border-bottom pb-2 mb-3 mt-4">Parents/Guardians</h6>
+          <div class="row mb-2">
+            <div class="col-sm-12">
+              <ul class="list-unstyled mb-0">
+                {% for parent in student.parents.all %}
+                  <li>
+                    <a href="{% url 'users:parent_detail' parent.id %}">{{ parent.user.get_full_name }} ({{ parent.relationship }})</a>
+                  </li>
+                {% empty %}
+                  <li>No parents linked</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body d-flex justify-content-between">
+          <a href="{% url 'users:generate_id_card' student.user.id %}" class="btn btn-info"><i class="fas fa-id-card me-2"></i>Generate ID Card</a>
+          <div>
+            <a href="{% url 'users:edit_user' student.user.id %}" class="btn btn-primary me-2"><i class="fas fa-edit me-2"></i>Edit</a>
+            {% if student.user.id != request.user.id %}
+              <a href="{% url 'users:delete_user' student.user.id %}" class="btn btn-outline-danger"><i class="fas fa-trash me-2"></i>Delete</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
