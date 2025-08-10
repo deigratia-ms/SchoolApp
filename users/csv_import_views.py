@@ -12,8 +12,9 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from datetime import datetime
+import re
 
-from .models import CustomUser, Student, Parent, Teacher, StaffMember
+from .models import CustomUser, Student, Parent, Teacher, StaffMember, SchoolSettings
 from courses.models import ClassRoom
 from .decorators import is_admin
 from .utils import send_school_email
@@ -30,6 +31,54 @@ def generate_student_id():
 def generate_pin():
     """Generate a 5-digit PIN for student login"""
     return ''.join(secrets.choice(string.digits) for _ in range(5))
+
+
+def generate_student_school_email(first_name: str, last_name: str) -> str:
+    """Generate a school email for a student.
+    Uses first initial + last name, e.g., jdoe@deigratiams.edu.gh.
+    If taken, appends the smallest available 2-digit suffix starting from 01 (e.g., jdoe01@...).
+    """
+    # Resolve domain from SchoolSettings; fallback to default if not configured
+    default_domain = "deigratiams.edu.gh"
+    settings_obj = SchoolSettings.objects.first()
+    configured = (settings_obj.student_email_domain.strip() if settings_obj and settings_obj.student_email_domain else "")
+    domain = configured or default_domain
+    local_base = f"{(first_name or '')[:1].lower()}{(last_name or '').lower()}".strip()
+    if not local_base:
+        # Fallback to a random local part if names are missing
+        local_base = f"student{secrets.randbelow(100000)}"
+
+    base_email = f"{local_base}@{domain}"
+
+    # Fetch possible clashes (same base with optional 2-digit suffix)
+    existing_emails = list(
+        CustomUser.objects.filter(
+            email__istartswith=local_base,
+            email__iendswith=f"@{domain}"
+        ).values_list('email', flat=True)
+    )
+    existing_lower = {e.lower() for e in existing_emails}
+
+    # If the base email is free, use it
+    if base_email.lower() not in existing_lower:
+        return base_email
+
+    # Collect used numeric suffixes like local_base + 01, 02, ...
+    used_nums = set()
+    pattern = re.compile(rf"^{re.escape(local_base)}(\d{{2}})@{re.escape(domain)}$", re.IGNORECASE)
+    for e in existing_lower:
+        m = pattern.match(e)
+        if m:
+            try:
+                used_nums.add(int(m.group(1)))
+            except Exception:
+                continue
+
+    # Find the smallest available suffix starting at 1
+    n = 1
+    while n in used_nums:
+        n += 1
+    return f"{local_base}{n:02d}@{domain}"
 
 
 def parse_date(date_string):
@@ -342,7 +391,11 @@ def process_csv_upload(request):
                 'email_success': 0,
                 'email_failures': 0,
                 'duplicate_emails': 0,
-                'validation_errors': 0
+                'validation_errors': 0,
+                'parents_not_provided': 0,
+                'parents_created_new': 0,
+                'parents_linked_existing': 0,
+                'parent_profiles_autocreated': 0
             }
         }
 
@@ -357,6 +410,9 @@ def process_csv_upload(request):
             try:
                 # Create user based on type
                 if user_type == 'students':
+                    # Track missing parent details before processing student
+                    if not row.get('parent_email', '').strip():
+                        results['analytics']['parents_not_provided'] += 1
                     result = create_student_from_csv(row, send_emails)
                 elif user_type == 'teachers':
                     result = create_teacher_from_csv(row, send_emails)
@@ -372,6 +428,15 @@ def process_csv_upload(request):
                     # Track email success
                     if send_emails:
                         results['analytics']['email_success'] += 1
+
+                    # Additional analytics for student-parent relations
+                    if user_type == 'students':
+                        if result.get('parent_created'):
+                            results['analytics']['parents_created_new'] += 1
+                        if result.get('parent_linked'):
+                            results['analytics']['parents_linked_existing'] += 1
+                        if result.get('parent_autocreated_profile'):
+                            results['analytics']['parent_profiles_autocreated'] += 1
 
                 else:
                     # Categorize errors
@@ -485,15 +550,8 @@ def create_student_from_csv(row, send_emails=True):
         else:
             pin = generate_pin()
 
-        # Generate email for student: first letter of first name + last name + @deigratiams.edu.gh
-        base_email = f"{first_name[0].lower()}{last_name.lower()}@deigratiams.edu.gh"
-        email = base_email
-
-        # Check if email already exists and add number if needed
-        counter = 1
-        while CustomUser.objects.filter(email=email).exists():
-            email = f"{first_name[0].lower()}{last_name.lower()}{counter:02d}@deigratiams.edu.gh"
-            counter += 1
+        # Generate email for student with minimal suffix only if needed
+        email = generate_student_school_email(first_name, last_name)
 
         # Create student user
         user = CustomUser.objects.create_user(
@@ -521,6 +579,7 @@ def create_student_from_csv(row, send_emails=True):
         parent = None
         parent_created = False
         parent_linked = False
+        parent_autocreated_profile = False
 
         if parent_email:
             try:
@@ -531,8 +590,17 @@ def create_student_from_csv(row, send_emails=True):
                         parent = Parent.objects.get(user=parent_user)
                         parent_linked = True
                     except Parent.DoesNotExist:
-                        # User exists but no parent profile - skip linking
-                        parent = None
+                        # User exists but no parent profile - auto-create profile and link
+                        try:
+                            parent = Parent.objects.create(
+                                user=parent_user,
+                                occupation=parent_occupation,
+                                relationship=parent_relationship or 'Parent'
+                            )
+                            parent_autocreated_profile = True
+                            parent_linked = True
+                        except Exception:
+                            parent = None
                 else:
                     # User exists but not a parent - skip linking to avoid conflicts
                     parent = None
@@ -610,7 +678,10 @@ def create_student_from_csv(row, send_emails=True):
 
         result = {
             'success': True,
-            'user_info': user_info
+            'user_info': user_info,
+            'parent_created': parent_created,
+            'parent_linked': parent_linked,
+            'parent_autocreated_profile': parent_autocreated_profile
         }
 
         # Add warning if student ID was changed

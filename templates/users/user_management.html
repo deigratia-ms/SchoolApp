@@ -13,6 +13,12 @@
             <a href="{% url 'users:csv_upload_page' %}" class="btn btn-success">
                 <i class="fas fa-upload me-2"></i>Bulk Import CSV
             </a>
+            <a href="{% url 'users:export_users' 'csv' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-file-csv me-2"></i>Export CSV
+            </a>
+            <a href="{% url 'users:export_users' 'excel' %}" class="btn btn-outline-success">
+                <i class="fas fa-file-excel me-2"></i>Export Excel
+            </a>
         </div>
     </div>
 

@@ -373,6 +373,14 @@ class SchoolSettings(models.Model):
     smtp_password = models.CharField(max_length=255, blank=True, null=True)
     smtp_use_tls = models.BooleanField(default=True)
 
+    # Student email generation settings
+    student_email_domain = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Domain used for auto-generated student emails (e.g., deigratiams.edu.gh). Leave blank to use default."
+    )
+
     # Notification settings
     notify_assignments = models.BooleanField(default=True)
     notify_grades = models.BooleanField(default=True)

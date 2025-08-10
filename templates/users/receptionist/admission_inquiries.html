@@ -39,9 +39,14 @@
                     </h2>
                     <p class="text-muted mb-0">Handle new admission inquiries and track submissions</p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newInquiryModal">
-                    <i class="fas fa-plus me-2"></i>New Inquiry
-                </button>
+                <div class="btn-group">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newInquiryModal">
+                        <i class="fas fa-plus me-2"></i>New Inquiry
+                    </button>
+                    <a href="{% url 'users:receptionist_enquiries' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-clipboard-list me-2"></i>View All Enquiries
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -145,6 +150,14 @@
                             <input type="tel" class="form-control" id="phone" name="phone" required>
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label for="child_name" class="form-label">Child's Name *</label>
+                            <input type="text" class="form-control" id="child_name" name="child_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="child_age" class="form-label">Child's Age *</label>
+                            <input type="number" min="0" class="form-control" id="child_age" name="child_age" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="grade_interested" class="form-label">Grade Interested *</label>
                             <select class="form-select" id="grade_interested" name="grade_interested" required>
                                 <option value="">Select Grade</option>
@@ -152,6 +165,14 @@
                                 <option value="{{ grade.name }}">{{ grade.name }}</option>
                                 {% endfor %}
                             </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="preferred_start_date" class="form-label">Preferred Start Date</label>
+                            <input type="date" class="form-control" id="preferred_start_date" name="preferred_start_date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="how_did_you_hear" class="form-label">How did you hear about us?</label>
+                            <input type="text" class="form-control" id="how_did_you_hear" name="how_did_you_hear" placeholder="e.g., Friend, Online, Flyer">
                         </div>
                         <div class="col-12 mb-3">
                             <label for="message" class="form-label">Additional Information</label>

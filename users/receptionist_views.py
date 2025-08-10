@@ -10,6 +10,7 @@ import json
 
 from .models import CustomUser, Student, Teacher, Parent, StaffMember
 from communications.models import Message, Announcement, Event
+from documents.models import VisitorLog, AdmissionEnquiry
 from appointments.models import Appointment
 from courses.models import ClassRoom
 
@@ -28,6 +29,10 @@ def admission_inquiries(request):
         phone = request.POST.get('phone')
         grade_interested = request.POST.get('grade_interested')
         message_text = request.POST.get('message')
+        child_name = request.POST.get('child_name')
+        child_age_raw = request.POST.get('child_age')
+        preferred_start_date_raw = request.POST.get('preferred_start_date')
+        how_did_you_hear = request.POST.get('how_did_you_hear')
         
         # For now, we'll store this as a message to admin
         # In a full implementation, you'd have an AdmissionInquiry model
@@ -56,6 +61,60 @@ Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
                     subject=f"[INQUIRY] New Admission Inquiry - {name}",
                     content=inquiry_message.strip()
                 )
+
+                # Persist to structured AdmissionEnquiry (safe defaults)
+                try:
+                    # Parse child_age safely
+                    try:
+                        child_age = int(child_age_raw) if child_age_raw not in (None, "") else None
+                    except ValueError:
+                        child_age = None
+
+                    # Map grade_interested to program_of_interest choices
+                    # Valid choices: toddler, primary, elementary
+                    program_map = {
+                        'toddler': 'toddler',
+                        'nursery': 'toddler',
+                        'kg': 'toddler',
+                        'kindergarten': 'toddler',
+                        'primary': 'primary',
+                        'basic': 'primary',
+                        'elementary': 'elementary',
+                        'jhs': 'elementary',
+                        'junior high': 'elementary',
+                    }
+                    gi = (grade_interested or '').strip().lower()
+                    program_of_interest = 'primary'
+                    for key, val in program_map.items():
+                        if key in gi:
+                            program_of_interest = val
+                            break
+
+                    # Parse preferred start date
+                    preferred_start_date = None
+                    if preferred_start_date_raw:
+                        try:
+                            preferred_start_date = datetime.strptime(preferred_start_date_raw, '%Y-%m-%d').date()
+                        except Exception:
+                            preferred_start_date = None
+
+                    if child_name and child_age is not None:
+                        AdmissionEnquiry.objects.create(
+                            parent_name=name or 'Unknown',
+                            parent_email=email or '',
+                            parent_phone=phone or '',
+                            child_name=child_name,
+                            child_age=child_age,
+                            program_of_interest=program_of_interest,
+                            preferred_start_date=preferred_start_date,
+                            message=message_text or '',
+                            how_did_you_hear=how_did_you_hear or None,
+                            assigned_to=None,
+                        )
+                    else:
+                        messages.warning(request, "Inquiry recorded, but structured record needs child's name and age.")
+                except Exception as e:
+                    messages.warning(request, f"Inquiry recorded, but saving structured record failed: {str(e)}")
                 
                 messages.success(request, f"Admission inquiry for {name} has been recorded and sent to administration.")
             else:
@@ -122,6 +181,49 @@ Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
                     subject=f"[VISITOR] Visitor Log - {visitor_name}",
                     content=visitor_message.strip()
                 )
+
+                # Also persist to VisitorLog model (safe defaults)
+                # Map free-text purpose to choice or default to 'other'
+                purpose_value = (purpose or '').strip().lower()
+                valid_purposes = {
+                    'meeting': 'meeting',
+                    'school_tour': 'school_tour',
+                    'tour': 'school_tour',
+                    'pickup': 'pickup_dropoff',
+                    'dropoff': 'pickup_dropoff',
+                    'pickup_dropoff': 'pickup_dropoff',
+                    'delivery': 'delivery',
+                    'maintenance': 'maintenance',
+                    'inspection': 'inspection',
+                    'event': 'event',
+                    'other': 'other',
+                }
+                mapped_purpose = valid_purposes.get(purpose_value, 'other')
+
+                # Default visitor_type safely
+                # If purpose hints admissions, set prospective_parent otherwise 'other'
+                if 'admission' in purpose_value or 'enquiry' in purpose_value or 'inquiry' in purpose_value:
+                    visitor_type = 'prospective_parent'
+                else:
+                    visitor_type = 'other'
+
+                try:
+                    VisitorLog.objects.create(
+                        visitor_name=visitor_name or 'Unknown Visitor',
+                        visitor_phone=visitor_phone or None,
+                        visitor_email=visitor_email or None,
+                        visitor_type=visitor_type,
+                        purpose=mapped_purpose,
+                        purpose_description=purpose if purpose else None,
+                        person_to_meet=person_to_visit or None,
+                        received_by=request.user,
+                        notes=None,
+                        id_verified=False,
+                        visitor_badge_issued=False,
+                    )
+                except Exception as e:
+                    # Do not fail the request; log a warning message for staff
+                    messages.warning(request, f"Visitor logged, but saving structured record failed: {str(e)}")
                 
                 messages.success(request, f"Visitor {visitor_name} has been logged successfully.")
             else:
@@ -1418,3 +1520,44 @@ def view_documents(request):
     }
 
     return render(request, 'users/receptionist/documents.html', context)
+
+
+@login_required
+@user_passes_test(is_receptionist)
+def receptionist_enquiries(request):
+    """Read-only list of AdmissionEnquiry with filters and pagination for receptionists"""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+
+    status = request.GET.get('status', '')
+    program = request.GET.get('program', '')
+    search = request.GET.get('search', '')
+
+    enquiries = AdmissionEnquiry.objects.select_related('assigned_to').all()
+
+    if status:
+        enquiries = enquiries.filter(status=status)
+    if program:
+        enquiries = enquiries.filter(program_of_interest=program)
+    if search:
+        enquiries = enquiries.filter(
+            Q(parent_name__icontains=search) |
+            Q(child_name__icontains=search) |
+            Q(parent_email__icontains=search) |
+            Q(parent_phone__icontains=search)
+        )
+
+    enquiries = enquiries.order_by('-created_at')
+
+    paginator = Paginator(enquiries, 20)
+    page = request.GET.get('page')
+    enquiries_page = paginator.get_page(page)
+
+    context = {
+        'enquiries': enquiries_page,
+        'status_filter': status,
+        'program_filter': program,
+        'search_query': search,
+    }
+
+    return render(request, 'users/receptionist/enquiries_list.html', context)

@@ -109,6 +109,10 @@ class SchoolSettingsAdmin(admin.ModelAdmin):
         ('Email Configuration', {
             'fields': ('smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_use_tls')
         }),
+        ('User Generation Settings', {
+            'fields': ('student_email_domain',),
+            'description': 'Configure the domain used for auto-generated student emails. Leave blank to use the default domain.'
+        }),
         ('Visitor Management Settings', {
             'fields': ('enable_visitor_thank_you_emails', 'visitor_thank_you_email_template'),
             'description': 'Configure visitor thank you email settings. Use {visitor_name}, {school_name}, {visit_date} as placeholders in the template.'

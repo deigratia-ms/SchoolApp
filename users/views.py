@@ -20,12 +20,14 @@ from django.views.generic.edit import FormView
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from decouple import config
 from typing import Any, Dict, List, Optional, Union
+import csv
 
 from .utils import send_school_email
 from .models import (
     CustomUser, Teacher, Student, Parent, StaffMember, SchoolSettings,
     IDCardTemplate, IDCard, AdmissionLetterTemplate, AdmissionLetter
 )
+from .csv_import_views import generate_student_school_email
 from courses.models import ClassRoom
 
 import random
@@ -1024,8 +1026,11 @@ def create_user(request):
                 student_id = request.POST.get('student_id', '') or generate_student_id()
                 pin = request.POST.get('pin', '') or generate_pin()
 
-                # Create a unique email for the student using student ID
-                email = f"{student_id}@school.internal"
+                # Generate school email using first initial + last name and minimal suffix only if needed
+                email = generate_student_school_email(
+                    request.POST.get('first_name'),
+                    request.POST.get('last_name')
+                )
 
                 # Create user with student role
                 user = CustomUser.objects.create_user(
@@ -1741,8 +1746,11 @@ def register_student(request):
             student_id = request.POST.get('student_id', '') or generate_student_id()
             pin = request.POST.get('pin', '') or generate_pin()
 
-            # Create a unique email for the student using student ID
-            email = f"{student_id}@school.internal"
+            # Generate school email using first initial + last name and minimal suffix only if needed
+            email = generate_student_school_email(
+                request.POST.get('first_name'),
+                request.POST.get('last_name')
+            )
 
             # Create user with student role
             user = CustomUser.objects.create_user(
@@ -3776,6 +3784,196 @@ def export_staff_excel(request) -> HttpResponse:
     # Save workbook to response
     wb.save(response)
     return response
+
+
+# === Generic tabular export helper and category export views ===
+@login_required
+def export_users(request, format_type: str):
+    """Export all users to CSV or Excel."""
+    if not (request.user.is_staff or getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_admin', False)):
+        messages.error(request, "You don't have permission to export users.")
+        return redirect('users:user_management')
+
+    qs = CustomUser.objects.all().order_by('last_name', 'first_name')
+    headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Active', 'Created At']
+    rows: List[List[Any]] = []
+    for u in qs:
+        rows.append([
+            u.id,
+            u.email,
+            u.first_name,
+            u.last_name,
+            u.get_role_display(),
+            u.phone_number or '',
+            'Yes' if u.is_active else 'No',
+            u.date_joined.strftime('%Y-%m-%d %H:%M') if getattr(u, 'date_joined', None) else '',
+        ])
+    return _export_tabular(headers, rows, filename_prefix='users', format_type=format_type)
+
+
+@login_required
+def export_teachers(request, format_type: str):
+    """Export teachers to CSV/Excel."""
+    if not (request.user.is_staff or getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_admin', False)):
+        messages.error(request, "You don't have permission to export teachers.")
+        return redirect('users:teacher_management')
+
+    qs = Teacher.objects.select_related('user').all().order_by('user__last_name', 'user__first_name')
+    headers = ['Employee ID', 'First Name', 'Last Name', 'Email', 'Department', 'Qualification']
+    rows: List[List[Any]] = []
+    for t in qs:
+        rows.append([
+            getattr(t, 'employee_id', '') or '',
+            t.user.first_name,
+            t.user.last_name,
+            t.user.email or '',
+            getattr(t, 'department', '') or '',
+            getattr(t, 'qualification', '') or '',
+        ])
+    return _export_tabular(headers, rows, filename_prefix='teachers', format_type=format_type)
+
+
+@login_required
+def export_students(request, format_type: str):
+    """Export students to CSV/Excel."""
+    if not (request.user.is_staff or getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_admin', False)):
+        messages.error(request, "You don't have permission to export students.")
+        return redirect('users:student_management')
+
+    qs = Student.objects.select_related('user', 'grade').all().order_by('user__last_name', 'user__first_name')
+    headers = ['Student ID', 'First Name', 'Last Name', 'Email', 'Class', 'Section', 'Status']
+    rows: List[List[Any]] = []
+    for s in qs:
+        class_name = ''
+        try:
+            class_name = s.grade.name if getattr(s, 'grade', None) else ''
+        except Exception:
+            class_name = ''
+        section_val = ''
+        try:
+            section_val = getattr(s.grade, 'section', '') or ''
+        except Exception:
+            section_val = ''
+        status_display = ''
+        if hasattr(s, 'get_status_display'):
+            try:
+                status_display = s.get_status_display()
+            except Exception:
+                status_display = ''
+        rows.append([
+            getattr(s, 'student_id', '') or '',
+            s.user.first_name,
+            s.user.last_name,
+            s.user.email or '',
+            class_name,
+            section_val,
+            status_display,
+        ])
+    return _export_tabular(headers, rows, filename_prefix='students', format_type=format_type)
+
+
+@login_required
+def export_parents(request, format_type: str):
+    """Export parents to CSV/Excel."""
+    if not (request.user.is_staff or getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_admin', False)):
+        messages.error(request, "You don't have permission to export parents.")
+        return redirect('users:parent_management')
+
+    qs = Parent.objects.select_related('user').prefetch_related('children', 'children__user').all().order_by('user__last_name', 'user__first_name')
+    headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Occupation', 'Relationship', 'Children']
+    rows: List[List[Any]] = []
+    for p in qs:
+        children_names: List[str] = []
+        try:
+            for child in p.children.all():
+                children_names.append(f"{child.user.first_name} {child.user.last_name}")
+        except Exception:
+            pass
+        rows.append([
+            p.user.first_name,
+            p.user.last_name,
+            p.user.email or '',
+            p.user.phone_number or '',
+            getattr(p, 'occupation', '') or '',
+            getattr(p, 'relationship', '') or '',
+            "; ".join(children_names),
+        ])
+    return _export_tabular(headers, rows, filename_prefix='parents', format_type=format_type)
+
+
+@login_required
+def export_staff(request, format_type: str):
+    """Export non-teaching staff to CSV/Excel."""
+    if not (request.user.is_staff or getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_admin', False)):
+        messages.error(request, "You don't have permission to export staff.")
+        return redirect('users:staff_management')
+
+    qs = StaffMember.objects.select_related('user').all().order_by('user__last_name', 'user__first_name')
+    headers = ['First Name', 'Last Name', 'Email', 'Role', 'Department/Type', 'Phone']
+    rows: List[List[Any]] = []
+    for sm in qs:
+        dept_or_type = getattr(sm, 'department', '') or getattr(sm, 'staff_type', '') or ''
+        rows.append([
+            sm.user.first_name,
+            sm.user.last_name,
+            sm.user.email or '',
+            sm.user.get_role_display(),
+            dept_or_type,
+            sm.user.phone_number or '',
+        ])
+    return _export_tabular(headers, rows, filename_prefix='staff', format_type=format_type)
+
+
+def _export_tabular(headers: List[str], rows: List[List[Any]], filename_prefix: str, format_type: str) -> HttpResponse:
+    """Export tabular data. Defaults to CSV; supports Excel when requested."""
+    if format_type == 'excel':
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"{filename_prefix.capitalize()} Data"
+
+        # headers
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+
+        # rows
+        for row_num, row in enumerate(rows, 2):
+            for col_num, value in enumerate(row, 1):
+                ws.cell(row=row_num, column=col_num, value=value)
+
+        # autosize
+        for column in ws.columns:
+            max_length = 0
+            column_letter = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except Exception:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'{filename_prefix}_{timestamp}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        wb.save(response)
+        return response
+    # Default: CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename_prefix}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return response
+
+
+@login_required
+def export_staff_excel(request):
+    """Compatibility wrapper for existing template link to export staff to Excel."""
+    return export_staff(request, 'excel')
 
 
 @user_passes_test(is_admin)
