@@ -4532,25 +4532,32 @@ def admin_create_assessment_weight(request):
         is_default = 'is_default' in request.POST
 
         # Get component weights and inclusion flags
-        classwork_weight = float(request.POST.get('classwork_weight', 0))
+        # Helper to safely convert possibly-blank inputs to float 0.0
+        def _to_float(val):
+            try:
+                return float(val) if val not in (None, '') else 0.0
+            except (TypeError, ValueError):
+                return 0.0
+
+        classwork_weight = _to_float(request.POST.get('classwork_weight'))
         include_classwork = 'include_classwork' in request.POST
 
-        quiz_weight = float(request.POST.get('quiz_weight', 0))
+        quiz_weight = _to_float(request.POST.get('quiz_weight'))
         include_quizzes = 'include_quizzes' in request.POST
 
-        test_weight = float(request.POST.get('test_weight', 0))
+        test_weight = _to_float(request.POST.get('test_weight'))
         include_tests = 'include_tests' in request.POST
 
-        midterm_weight = float(request.POST.get('midterm_weight', 0))
+        midterm_weight = _to_float(request.POST.get('midterm_weight'))
         include_midterm = 'include_midterms' in request.POST  # Form uses midterms (plural)
 
-        project_weight = float(request.POST.get('project_weight', 0))
+        project_weight = _to_float(request.POST.get('project_weight'))
         include_projects = 'include_projects' in request.POST
 
-        final_exam_weight = float(request.POST.get('exam_weight', 0))  # Form uses exam_weight
+        final_exam_weight = _to_float(request.POST.get('exam_weight'))  # Form uses exam_weight
         include_final_exam = 'include_exams' in request.POST  # Form uses include_exams
 
-        attendance_weight = float(request.POST.get('attendance_weight', 0))
+        attendance_weight = _to_float(request.POST.get('attendance_weight'))
         include_attendance = 'include_attendance' in request.POST
 
         term = request.POST.get('term')
