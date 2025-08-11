@@ -94,6 +94,70 @@
                                             <i class="fas fa-users text-info me-1"></i> Parent/Guardian
                                         </label>
                                     </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleAccountant" value="ACCOUNTANT"
+                                               {% if edited_user.role == 'ACCOUNTANT' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleAccountant">
+                                            <i class="fas fa-calculator text-warning me-1"></i> Accountant
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleSecretary" value="SECRETARY"
+                                               {% if edited_user.role == 'SECRETARY' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleSecretary">
+                                            <i class="fas fa-user-tie text-secondary me-1"></i> Secretary
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleReceptionist" value="RECEPTIONIST"
+                                               {% if edited_user.role == 'RECEPTIONIST' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleReceptionist">
+                                            <i class="fas fa-bell text-info me-1"></i> Receptionist
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleSecurity" value="SECURITY"
+                                               {% if edited_user.role == 'SECURITY' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleSecurity">
+                                            <i class="fas fa-shield-alt text-dark me-1"></i> Security
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleJanitor" value="JANITOR"
+                                               {% if edited_user.role == 'JANITOR' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleJanitor">
+                                            <i class="fas fa-broom text-success me-1"></i> Janitor
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleCook" value="COOK"
+                                               {% if edited_user.role == 'COOK' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleCook">
+                                            <i class="fas fa-utensils text-danger me-1"></i> Cook
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleCleaner" value="CLEANER"
+                                               {% if edited_user.role == 'CLEANER' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleCleaner">
+                                            <i class="fas fa-soap text-primary me-1"></i> Cleaner
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleStaff" value="STAFF"
+                                               {% if edited_user.role == 'STAFF' %}checked{% endif %}
+                                               {% if not request.user.is_admin %}disabled{% endif %}>
+                                        <label class="form-check-label" for="roleStaff">
+                                            <i class="fas fa-id-badge text-muted me-1"></i> Other Staff
+                                        </label>
+                                    </div>
                                 </div>
                                 
                                 {% if not request.user.is_admin %}

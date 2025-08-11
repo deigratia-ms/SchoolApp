@@ -74,6 +74,7 @@ urlpatterns = [
     path('link-parent-to-child/', views.link_parent_to_child, name='link_parent_to_child'),
     path('api/parents/search/', views.api_search_parents, name='api_search_parents'),
     path('api/students/search/', views.api_search_students, name='api_search_students'),
+    path('api/users/search/', views.api_search_users, name='api_search_users'),
     path('search-parent/', views.search_parent, name='search_parent'),
     path('unlink-parent-child/', views.unlink_parent_child, name='unlink_parent_child'),
     

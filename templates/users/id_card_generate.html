@@ -71,6 +71,22 @@ System{% endblock %} {% block extra_css %}
     margin-top: 5px;
   }
   
+  /* Ensure preview body text remains readable on light backgrounds */
+  .preview-body,
+  .preview-name,
+  .preview-info,
+  .preview-info-item,
+  .preview-info-label,
+  .preview-info-item div,
+  .preview-footer {
+    color: #222;
+  }
+  /* Keep header and role badge text white on darker backgrounds */
+  .preview-header,
+  .preview-role-badge {
+    color: #fff;
+  }
+  
   .preview-name {
     font-size: 16px;
     font-weight: bold;
@@ -421,9 +437,8 @@ System{% endblock %} {% block extra_css %}
                 {% if school_settings.logo %}
                 <img src="{{ school_settings.logo.url }}" alt="School Logo" style="height: 18px; margin-right: 5px;">
                 {% endif %}
-                {{ school_settings.school_name|default:"School Name" }}
+                {{ school_settings.school_name|default:"School Name" }} ID Card
               </div>
-              <div>SCHOOL ID CARD</div>
             </div>
             
             <!-- Card Body - Landscape layout -->
@@ -728,14 +743,16 @@ System{% endblock %} {% block extra_css %}
       templateSelect.selectedIndex = 0;
     }
 
+    // Role map in outer scope so multiple functions can use it
+    const roleMap = {
+      ADMIN: "Administrator",
+      TEACHER: "Teacher",
+      STUDENT: "Student",
+      PARENT: "Parent",
+    };
+
     // Convert role code to display text
     function getRoleDisplay(roleCode) {
-      const roleMap = {
-        ADMIN: "Administrator",
-        TEACHER: "Teacher",
-        STUDENT: "Student",
-        PARENT: "Parent",
-      };
       return roleMap[roleCode] || roleCode;
     }
 
@@ -768,22 +785,21 @@ System{% endblock %} {% block extra_css %}
       previewDeptItem.style.display = 'none';
       previewChildItem.style.display = 'none';
       
+      // Clear any previously forced text color so CSS controls text contrast
+      previewCard.style.color = '';
+      
       // Show appropriate items and set styling based on role
       if (roleCode === 'STUDENT' || role === 'Student') {
         previewCard.style.backgroundColor = '#3498db'; // Blue
-        previewCard.style.color = '#FFFFFF';
         previewClassItem.style.display = 'flex';
       } else if (roleCode === 'TEACHER' || role === 'Teacher') {
         previewCard.style.backgroundColor = '#27ae60'; // Green
-        previewCard.style.color = '#FFFFFF';
         previewDeptItem.style.display = 'flex';
       } else if (roleCode === 'PARENT' || role === 'Parent') {
         previewCard.style.backgroundColor = '#8e44ad'; // Purple
-        previewCard.style.color = '#FFFFFF';
         previewChildItem.style.display = 'flex';
       } else if (roleCode === 'ADMIN' || role === 'Administrator') {
         previewCard.style.backgroundColor = '#e74c3c'; // Red
-        previewCard.style.color = '#FFFFFF';
       }
       
       // Show preview section
@@ -851,11 +867,7 @@ System{% endblock %} {% block extra_css %}
         cardDetailsSection.style.display = "block";
         additionalInfoSection.style.display = "block";
 
-        // Update template in preview
-        const selectedOption = this.options[this.selectedIndex];
-        previewHeader.textContent = selectedOption.textContent
-          .split(" (")[0]
-          .toUpperCase();
+        // Keep header as '<School Name> ID Card'; do not override with template name
 
         // Enable generate button
         generateButton.disabled = false;

@@ -2218,6 +2218,12 @@ def api_search_parents(request):
     """Paginated search for parents by name/email/phone."""
     # Allow both AJAX and direct browser requests
     try:
+        # Authorization and method checks: return [] to keep frontends expecting arrays happy on failure
+        if not request.user.is_authenticated or not is_admin(request.user):
+            return JsonResponse([], safe=False)
+        if request.method != 'GET':
+            return JsonResponse([], safe=False)
+
         q = (request.GET.get('q') or '').strip()
         try:
             page_num = int(request.GET.get('page') or 1)
@@ -2251,15 +2257,137 @@ def api_search_parents(request):
                 'phone': getattr(u, 'phone_number', '') or ''
             })
 
-        return JsonResponse({
-            'page': page.number if paginator.num_pages else 1,
-            'pages': paginator.num_pages,
-            'count': paginator.count,
-            'results': results,
-        })
+        # By default, return a simple array for compatibility with frontends expecting an array.
+        # If the client requests paginated metadata, return an object with pagination fields.
+        paginated_flag = (request.GET.get('paginated') or '').strip().lower() in ('1', 'true', 'yes')
+        if paginated_flag:
+            return JsonResponse({
+                'page': page.number if paginator.num_pages else 1,
+                'pages': paginator.num_pages,
+                'count': paginator.count,
+                'results': results,
+            })
+        else:
+            return JsonResponse(results, safe=False)
     except Exception as e:
         logger.exception('api_search_parents failed')
         return JsonResponse({'error': 'Server error'}, status=500)
+
+
+def api_search_users(request):
+    """Generic paginated search for users with optional role filtering.
+    Query params:
+      - q: text to search (email, first_name, last_name, phone)
+      - role: one of student, teacher, parent, staff, admin (optional)
+      - page: page number (default 1)
+      - page_size: items per page (default 20)
+    """
+    try:
+        q = (request.GET.get('q') or '').strip()
+        role_param = (request.GET.get('role') or '').strip().lower()
+        try:
+            page_num = int(request.GET.get('page') or 1)
+        except (TypeError, ValueError):
+            page_num = 1
+        try:
+            page_size = int(request.GET.get('page_size') or 20)
+        except (TypeError, ValueError):
+            page_size = 20
+
+        # Map simple role strings to enum values
+        role_map = {
+            'student': CustomUser.Role.STUDENT,
+            'teacher': CustomUser.Role.TEACHER,
+            'parent': CustomUser.Role.PARENT,
+            'staff': CustomUser.Role.STAFF,
+            'admin': CustomUser.Role.ADMIN,
+        }
+
+        qs = CustomUser.objects.all().select_related('student_profile', 'teacher_profile', 'parent_profile')
+        if role_param in role_map:
+            qs = qs.filter(role=role_map[role_param])
+
+        if q:
+            qs = qs.filter(
+                Q(email__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q) |
+                Q(phone_number__icontains=q)
+            )
+
+        qs = qs.order_by('last_name', 'first_name')
+
+        paginator = Paginator(qs, page_size)
+        page = paginator.get_page(page_num)
+
+        results = []
+        for u in page.object_list:
+            # Build role fields
+            try:
+                role_display = u.get_role_display()
+            except Exception:
+                role_display = str(getattr(u, 'role', '') or '')
+            role_code = str(getattr(u, 'role', '') or '')
+
+            # Names and initials
+            full_name = u.get_full_name()
+            first_name = getattr(u, 'first_name', '') or ''
+            last_name = getattr(u, 'last_name', '') or ''
+            if not full_name:
+                full_name = (first_name + ' ' + last_name).strip()
+            initials = ''
+            try:
+                if full_name:
+                    initials = ''.join([part[0] for part in full_name.split() if part][:2]).upper()
+                if not initials and (first_name or last_name):
+                    initials = ((first_name[:1] or '') + (last_name[:1] or '')).upper()
+                if not initials and getattr(u, 'email', ''):
+                    initials = u.email[:2].upper()
+            except Exception:
+                initials = ''
+
+            # Username fallback (system uses email login)
+            username = getattr(u, 'username', None)
+            if not username:
+                username = u.email or str(u.id)
+
+            item = {
+                'user_id': u.id,
+                'username': username,
+                'full_name': full_name,
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': u.email,
+                'role': role_code,
+                'role_display': role_display,
+                'initials': initials,
+            }
+
+            # Include student_id if available
+            try:
+                sp = getattr(u, 'student_profile', None)
+                if sp and getattr(sp, 'student_id', None):
+                    item['student_id'] = sp.student_id
+            except Exception:
+                pass
+
+            results.append(item)
+
+        # Default: return simple array for compatibility. If explicitly requested, include pagination metadata.
+        paginated_flag = (request.GET.get('paginated') or '').strip().lower() in ('1', 'true', 'yes')
+        if paginated_flag:
+            return JsonResponse({
+                'page': page.number if paginator.num_pages else 1,
+                'pages': paginator.num_pages,
+                'count': paginator.count,
+                'results': results,
+            })
+        else:
+            return JsonResponse(results, safe=False)
+    except Exception:
+        logger.exception('api_search_users failed')
+        # Return empty array for frontend compatibility (avoids data.forEach errors)
+        return JsonResponse([], safe=False)
 
 @login_required
 @user_passes_test(is_admin)
@@ -3443,6 +3571,163 @@ def admission_letter_batch_generate(request):
         'academic_year_suggestion': academic_year_suggestion
     })
 
+def _generate_admission_letter_body(letter, request=None):
+    """Generate formatted admission letter body from template.
+    Extracted to module scope so multiple views can reuse reliably.
+    """
+    student = letter.student
+    user = student.user
+    school_settings = SchoolSettings.objects.first()
+
+    # Login credentials block
+    login_url = ''
+    if request:
+        login_url = f"<li><strong>Login URL:</strong> {request.build_absolute_uri('/')[:-1]}/users/student-login/</li>"
+
+    login_credentials = f"""
+    <div style="border: 1px solid #ddd; padding: 15px; margin: 20px 0; background-color: #f9f9f9;">
+        <h4 style="margin-top: 0;">Student Login Credentials</h4>
+        <p>Please use the following credentials to log into the student portal:</p>
+        <ul>
+            <li><strong>Student ID:</strong> {student.student_id}</li>
+            <li><strong>PIN:</strong> {student.pin}</li>
+            {login_url}
+        </ul>
+        <p>Please keep these credentials secure and do not share them with others.</p>
+    </div>
+    """
+
+    # Intro paragraph
+    intro_paragraph = f"""
+    <p>Dear {user.get_full_name()},</p>
+    <p>We are pleased to inform you that you have been admitted to Grade {letter.grade_admitted} at {school_settings.school_name if school_settings else 'our school'} for the academic year {letter.academic_year}. On behalf of the faculty and staff, I would like to extend a warm welcome to you as you begin your educational journey with us.</p>
+    <p>Your admission reflects our confidence in your abilities and potential for academic excellence. We look forward to providing you with quality education in a nurturing environment.</p>
+    """
+
+    # Context data for template (include safe defaults for optional fields)
+    # Portal URL (best-effort)
+    portal_url = None
+    try:
+        if request is not None:
+            portal_url = request.build_absolute_uri('/users/student-login/')
+    except Exception:
+        portal_url = '/users/student-login/'
+
+    # Helpful info block parents/students can use
+    system_usage_info = f"""
+    <h4>Using Our School Portal</h4>
+    <p>You can access the school portal to:</p>
+    <ul>
+      <li>View timetables, attendance, and academic calendar</li>
+      <li>Check continuous assessment scores and term results</li>
+      <li>Download assignments and coursework</li>
+      <li>Pay fees and view receipts</li>
+      <li>Receive announcements and messages from the school</li>
+    </ul>
+    <p><strong>Portal URL:</strong> {portal_url or ''}</p>
+    <p>Keep your Student ID and PIN safe. Do not share them with others.</p>
+    """
+
+    context_data = {
+        'school_name': school_settings.school_name if school_settings else "School Management System",
+        'student_name': user.get_full_name(),
+        'student_id': student.student_id,
+        'grade': letter.grade_admitted,
+        'section': letter.section_admitted,
+        'academic_year': letter.academic_year,
+        'admission_date': letter.admission_date.strftime('%B %d, %Y'),
+        'current_date': timezone.now().strftime('%B %d, %Y'),
+        'reference_number': letter.reference_number,
+        'pin': student.pin,
+        'start_date': (letter.admission_date + timedelta(days=14)).strftime('%B %d, %Y'),
+        'school_address': school_settings.address if school_settings else '',
+        'school_phone': school_settings.phone if school_settings else '',
+        'school_email': school_settings.email if school_settings else '',
+        'principal_name': school_settings.principal_name if school_settings and hasattr(school_settings, 'principal_name') else 'School Principal',
+        'signatory_name': getattr(letter.template, 'signatory_name', '') or 'School Principal',
+        'signatory_position': getattr(letter.template, 'signatory_position', '') or 'Principal',
+        'footer_text': getattr(letter.template, 'footer_text', '') or f"This is an official document from {school_settings.school_name if school_settings else 'School Management System'}. Please keep this letter for your records.",
+        'login_credentials': login_credentials,
+        'intro_paragraph': intro_paragraph,
+        'additional_info': '',
+        'system_usage_info': system_usage_info,
+        'portal_url': portal_url or ''
+    }
+
+    # Add additional info if present
+    if letter.additional_info:
+        try:
+            # If it's a dict, expose keys and also a readable block
+            if isinstance(letter.additional_info, dict):
+                context_data.update(letter.additional_info)
+                # simple serialization
+                lines = []
+                for k, v in letter.additional_info.items():
+                    lines.append(f"<div><strong>{k.replace('_',' ').title()}:</strong> {v}</div>")
+                context_data['additional_info'] = "\n".join(lines)
+            else:
+                # If string or other, just include as-is
+                context_data['additional_info'] = str(letter.additional_info)
+        except Exception:
+            # Fallback to empty string if something goes wrong
+            context_data['additional_info'] = ''
+
+    # Attempt to format the template with our data (support both {braces} and {{ django }} syntax)
+    try:
+        # Start with the raw body template and render as-is.
+        # The template may include {intro_paragraph} / {{ intro_paragraph }} and {login_credentials} / {{ login_credentials }}.
+        enhanced_template = letter.template.body_template or ""
+
+        class SafeDict(dict):
+            def __missing__(self, key):
+                return ''
+
+        # 1) First render through Django template engine to support {{ }} and filters
+        from django.template import engines
+        django_engine = engines['django']
+        tpl = django_engine.from_string(enhanced_template)
+        # Provide full objects so nested lookups like letter.template.signatory_name work
+        django_context = {
+            **context_data,
+            'letter': letter,
+            'student': student,
+            'school_settings': school_settings,
+        }
+        rendered = tpl.render(django_context)
+
+        # 2) Then replace brace-style placeholders
+        brace_rendered = rendered.format_map(SafeDict(context_data))
+
+        # 3) Auto-append useful sections if missing to enrich the letter
+        body_lc = brace_rendered.lower()
+        final_parts = [brace_rendered.strip()]
+
+        # Add login credentials if not present
+        if not any(token in body_lc for token in ["login information", "student login", "student id:", "pin:", "{login_credentials}", "{{ login_credentials"]):
+            final_parts.append("\n\n" + login_credentials)
+
+        # Add portal usage info if not present
+        if "using our school portal" not in body_lc and "system_usage_info" not in body_lc:
+            final_parts.append("\n\n" + system_usage_info)
+
+        # Add signature if not present
+        has_signature = any(token in body_lc for token in ["best regards", "director", "principal", "signatory", "signature"])
+        if not has_signature:
+            sign_name = context_data.get('signatory_name') or context_data.get('principal_name') or 'School Principal'
+            sign_pos = context_data.get('signatory_position') or 'Principal'
+            final_parts.append(f"\n\nBest regards,<br>{sign_name}<br><em>{sign_pos}</em>")
+
+        # Add footer if not present
+        if "official document" not in body_lc and "keep this letter" not in body_lc:
+            final_parts.append("\n\n" + context_data.get('footer_text', ''))
+
+        return "\n".join(p for p in final_parts if p)
+    except KeyError as e:
+        return f"Error processing template: Missing field {str(e)}"
+    except Exception as e:
+        return f"Error processing template: {str(e)}"
+
+
 @user_passes_test(is_admin)
 def admission_letter_detail(request, letter_id):
     """View details of an admission letter"""
@@ -3530,8 +3815,8 @@ def admission_letter_detail(request, letter_id):
     student = letter.student
     user = student.user
 
-    # Use the helper function to generate the letter body
-    processed_body = generate_letter_body(letter, request)
+    # Use the module-level helper to generate the letter body
+    processed_body = _generate_admission_letter_body(letter, request)
 
     return render(request, 'users/admission_letter_detail.html', {
         'letter': letter,
@@ -3552,31 +3837,10 @@ def admission_letter_print(request, letter_id):
     # Get school settings
     school_settings = SchoolSettings.objects.first()
 
-    # Process the template with student data
-    student = letter.student
-    user = student.user
-
-    # Prepare context data for template processing
-    context_data = {
-        'student_name': user.get_full_name(),
-        'student_id': student.student_id,
-        'grade': letter.grade_admitted,
-        'section': letter.section_admitted,
-        'academic_year': letter.academic_year,
-        'admission_date': letter.admission_date.strftime('%B %d, %Y'),
-        'current_date': timezone.now().strftime('%B %d, %Y')
-    }
-
-    # Also add any fields from additional_info
-    if letter.additional_info:
-        for key, value in letter.additional_info.items():
-            context_data[key] = value
-
-    # Process the template body
-    from string import Template
+    # Use the same processing logic as the detail view to support `{placeholder}` templates
+    # This ensures placeholders like {student_name} are filled correctly in print view too.
     try:
-        body_template = Template(letter.template.body_template)
-        processed_body = body_template.safe_substitute(**context_data)
+        processed_body = _generate_admission_letter_body(letter, request)
     except Exception as e:
         processed_body = f"Error processing template: {str(e)}"
 

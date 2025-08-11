@@ -1,40 +1,24 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Print Admission Letter</title>
+  <style>
+  /* Page setup for printing */
+  @page {
+    size: A4 portrait; /* Use 'letter' if preferred */
+    margin: 0.5in;
+  }
 
-{% block title %}Print Admission Letter - School Management System{% endblock %}
-
-{% block extra_head %}
-<style>
   @media print {
-    /* Hide navigation elements when printing */
-    .navbar,
-    .sidebar,
-    .footer,
-    .no-print,
-    .btn {
-      display: none !important;
-    }
-
-    /* Full page content */
-    .content-wrapper {
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Reset Bootstrap container for better print layout */
-    .container-fluid {
-      width: 100%;
-      max-width: 100%;
-      padding: 0;
-      margin: 0;
-    }
-
-    /* Letter styling */
-    .letter-container {
-      padding: 0.5in;
-      margin: 0;
-      width: 8.5in;
-      max-width: 100%;
-    }
+    /* Only print the print area */
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+    /* Reset container visuals for clean print */
+    .letter-container { border: none; box-shadow: none; padding: 0; margin: 0; width: 100%; max-width: 100%; }
+  }
 
     /* Show page breaks properly */
     .page-break {
@@ -60,9 +44,20 @@
     body {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
-      color-adjust: exact !important;
     }
-  }
+
+    /* Slightly smaller elements to help fit in one page */
+    .letter-header .school-name { font-size: 1.5rem; }
+    .letter-body { font-size: 0.95rem; }
+
+    /* Ensure logo scales well and is centered */
+    .school-logo {
+      max-height: 60px;
+      max-width: 60px;
+      display: block;
+      margin: 0 auto 0.5rem auto;
+    }
+  
 
   /* Non-print styles */
   .letter-container {
@@ -160,138 +155,41 @@
   .print-controls {
     margin-bottom: 1.5rem;
   }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container-fluid">
-  <!-- Print Controls - Only visible on screen -->
-  <div class="print-controls no-print">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3">Admission Letter</h1>
-      <div>
-        <a
-          href="{% url 'users:admission_letter_detail' letter_id=letter.id %}"
-          class="btn btn-secondary me-2"
-        >
-          <i class="fas fa-arrow-left"></i> Back to Details
-        </a>
-        <button onclick="window.print();" class="btn btn-primary">
-          <i class="fas fa-print me-2"></i>Print Letter
-        </button>
-      </div>
-    </div>
-
-    <div class="alert alert-info">
-      <i class="fas fa-info-circle me-2"></i>
-      Ready to print. Click the button above or use your browser's print
-      function (Ctrl+P / Cmd+P).
-    </div>
-  </div>
-
-  <!-- Admission Letter -->
-  <div class="letter-container">
+  </style>
+</head>
+<body>
+  <div id="printArea" class="letter-container">
     <!-- Letter Header -->
     <div class="letter-header">
-      <div class="row align-items-center">
-        <div class="col-2 text-center">
-          {% if school_settings.logo %}
-          <img
-            src="{{ school_settings.logo.url }}"
-            alt="{{ school_settings.school_name }} Logo"
-            class="school-logo"
-          />
-          {% else %}
-          <i class="fas fa-school fa-3x text-primary"></i>
-          {% endif %}
-        </div>
-        <div class="col-8 text-center">
-          <div class="school-name">
-            {{ school_settings.school_name|default:"School Management System" }}
-          </div>
-          <div class="school-address">
-            {{ school_settings.address|default:"School Address" }}
-          </div>
-          <div class="school-contact">
-            {% if school_settings.phone %}Tel: {{ school_settings.phone }}{% endif %}
-            {% if school_settings.email %} | Email: {{ school_settings.email }}{% endif %}
-            {% if school_settings.website %} | {{ school_settings.website }}{% endif %}
-          </div>
-        </div>
-        <div class="col-2">
-          <!-- Placeholder for balance -->
+      <div style="text-align:center;">
+        {% if school_settings.logo %}
+        <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }} Logo" class="school-logo" />
+        {% endif %}
+        <div class="school-name">{{ school_settings.school_name|default:"School Management System" }}</div>
+        <div class="school-address">{{ school_settings.address|default:"School Address" }}</div>
+        <div class="school-contact">
+          {% if school_settings.phone %}Tel: {{ school_settings.phone }}{% endif %}
+          {% if school_settings.email %} | Email: {{ school_settings.email }}{% endif %}
+          {% if school_settings.website %} | {{ school_settings.website }}{% endif %}
         </div>
       </div>
     </div>
 
     <!-- Reference Number & Date -->
-    <div class="row">
-      <div class="col-6">
-        <div class="letter-ref">
-          <strong>Reference:</strong> {{ letter.reference_number }}
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="letter-date">
-          <strong>Date:</strong> {{ letter.created_at|date:"F d, Y" }}
-        </div>
-      </div>
+    <div style="display:flex; justify-content:space-between; font-size:0.95rem; margin-bottom:1rem;">
+      <div class="letter-ref"><strong>Reference:</strong> {{ letter.reference_number }}</div>
+      <div class="letter-date"><strong>Date:</strong> {{ letter.created_at|date:"F d, Y" }}</div>
     </div>
 
     <!-- Letter Body -->
     <div class="letter-body">{{ processed_body|safe }}</div>
-
-    <!-- Login Credentials -->
-    <div class="credentials-box">
-      <h4>Important: Student Login Information</h4>
-      <div class="credentials-details">
-        <div>
-          <strong>Student ID:</strong>
-          <span>{{ letter.student.student_id }}</span>
-        </div>
-        <div>
-          <strong>PIN:</strong>
-          <span>{{ letter.student.pin }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Signature -->
-    <div class="letter-signature">
-      {% if letter.template.signature_image %}
-      <img
-        src="{{ letter.template.signature_image.url }}"
-        alt="Signature"
-        class="signature-image"
-      />
-      {% endif %}
-      <div class="signatory-name">
-        {{ letter.template.signatory_name|default:"School Principal" }}
-      </div>
-      <div class="signatory-title">
-        {{ letter.template.signatory_position|default:"Principal" }}
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="letter-footer">
-      {% if letter.template.footer_text %}
-        {{ letter.template.footer_text }}
-      {% else %}
-        This is an official document from {{ school_settings.school_name|default:"School Management System" }}. Please keep this letter for your records.
-      {% endif %}
-    </div>
   </div>
-</div>
-
-<!-- Auto-print script when in print mode -->
-{% if print_mode %}
-<script>
-  window.onload = function () {
-    setTimeout(function () {
-      window.print();
-    }, 1000);
-  };
-</script>
-{% endif %}
-{% endblock content %}
+  {% if print_mode %}
+  <script>
+    window.onload = function () {
+      setTimeout(function () { window.print(); }, 500);
+    };
+  </script>
+  {% endif %}
+</body>
+</html>
