@@ -3002,6 +3002,12 @@ def id_card_generate(request):
     users = CustomUser.objects.all().order_by('role', 'email')
     templates = IDCardTemplate.objects.filter(is_active=True)
 
+    # Fallback: if no templates exist, create sensible defaults
+    if not templates.exists():
+        create_default_templates()
+        templates = IDCardTemplate.objects.filter(is_active=True)
+        messages.info(request, 'Default ID card templates were created for you.')
+
     return render(request, 'users/id_card_generate.html', {
         'users': users,
         'templates': templates,
@@ -3067,6 +3073,12 @@ def id_card_batch_generate(request):
 
     # For GET request, display the form
     templates = IDCardTemplate.objects.filter(is_active=True)
+
+    # Fallback: ensure templates exist
+    if not templates.exists():
+        create_default_templates()
+        templates = IDCardTemplate.objects.filter(is_active=True)
+        messages.info(request, 'Default ID card templates were created for you.')
 
     # Get users by role for selection
     students = CustomUser.objects.filter(role=CustomUser.Role.STUDENT).order_by('email')

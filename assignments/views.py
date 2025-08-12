@@ -4207,37 +4207,42 @@ def enter_term_grades(request):
     assessment_config = None
 
     # Get active assessment weight configuration
-    # First check for term-specific configuration, then fall back to default
+    # 1) Try term-specific, 2) default from DB, 3) model's default factory, 4) in-memory fallback
     if selected_term:
         assessment_config = AssessmentWeightConfiguration.objects.filter(
             academic_term=selected_term,
             is_default=False
         ).first()
 
-    # If no term-specific config found, use the default
     if not assessment_config:
         assessment_config = AssessmentWeightConfiguration.objects.filter(
             is_default=True
         ).first()
 
-    # If still no config, create a default one
     if not assessment_config:
-        # Create basic default configuration with traditional weights
-        assessment_config = {
-            'include_classwork': True,
-            'classwork_weight': 10,
-            'include_quizzes': False,
-            'quiz_weight': 0,
-            'include_tests': False,
-            'test_weight': 0,
-            'include_midterm': True,
-            'midterm_weight': 20,
-            'include_projects': True,
-            'project_weight': 10,
-            'include_final_exam': True,
-            'final_exam_weight': 60,
-            'is_default': True
-        }
+        # Attempt to create or fetch a default via model helper
+        assessment_config = AssessmentWeightConfiguration.get_default_configuration()
+
+    if not assessment_config:
+        # Final fallback: in-memory defaults if no admin exists to create DB row
+        from types import SimpleNamespace
+        assessment_config = SimpleNamespace(
+            include_classwork=True,
+            classwork_weight=10,
+            include_quizzes=False,
+            quiz_weight=0,
+            include_tests=False,
+            test_weight=0,
+            include_midterm=True,
+            midterm_weight=20,
+            include_projects=True,
+            project_weight=10,
+            include_final_exam=True,
+            final_exam_weight=60,
+            include_attendance=False,
+            attendance_weight=0,
+            is_default=True
+        )
 
     # Get enabled assessment components and their weights
     enabled_components = []

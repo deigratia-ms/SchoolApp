@@ -24,54 +24,84 @@
         position: relative;
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
     
     /* Card Header */
     .id-card-header {
-        background-color: rgba(0,0,0,0.15);
+        background-color: {{ id_card.template.header_color|default:'rgba(0,0,0,0.15)' }};
         color: {{ id_card.template.text_color }};
-        padding: 10px 15px;
+        padding: 8px 10px;
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         align-items: center;
-        font-weight: bold;
-        font-size: 14px;
+        gap: 4px;
         border-bottom: 1px solid rgba(255,255,255,0.2);
+        position: relative;
+        z-index: 5; /* ensure header stays above background artwork */
+        flex-shrink: 0; /* never collapse header */
+    }
+
+    .id-card-header .header-top {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: 6px;
+    }
+    .id-card-header .header-top .school-name {
+        font-weight: 700;
+        font-size: clamp(12px, 2vw, 14px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .id-card-header .header-bottom {
+        width: 100%;
+        text-align: center;
+        font-weight: 600;
+        font-size: clamp(10px, 1.7vw, 12.5px);
+        line-height: 1.1;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* allow up to 2 lines for long texts */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
     
     /* Card Body - Landscape layout */
     .id-card-body {
         flex: 1;
         display: flex;
-        padding: 10px;
+        padding: 6px; /* tighter to leave room for footer */
         {% if id_card.template.background_image %}
         background-image: url("{{ id_card.template.background_image.url }}");
         background-size: cover;
         background-position: center;
         {% endif %}
+        box-sizing: border-box;
+        min-height: 0; /* allow flexbox to size without overflow */
     }
     
     /* Left column for photo */
     .id-card-photo-section {
-        width: 90px;
+        width: 84px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-right: 10px;
+        margin-right: 6px;
     }
     
     /* School Logo */
     .id-card-logo {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         object-fit: contain;
         margin-bottom: 8px;
     }
     
     /* User Photo */
     .id-card-photo {
-        width: 80px;
-        height: 100px;
+        width: 72px;
+        height: 90px;
         border: 2px solid rgba(255,255,255,0.5);
         border-radius: 4px;
         overflow: hidden;
@@ -94,17 +124,20 @@
         display: inline-block;
         padding: 2px 8px;
         border-radius: 10px;
-        font-size: 11px;
-        margin-bottom: 5px;
+        font-size: 10px;
+        margin-bottom: 4px;
     }
     
     /* User Name */
     .id-card-name {
-        font-size: 16px;
+        font-size: 14.5px;
         font-weight: bold;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         padding-bottom: 4px;
         border-bottom: 1px solid rgba(255,255,255,0.3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     /* User Information */
@@ -113,10 +146,10 @@
     }
     
     .id-card-info-item {
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         display: flex;
-        font-size: 12px;
-        line-height: 1.3;
+        font-size: 10.5px;
+        line-height: 1.2;
     }
     
     .id-card-info-label {
@@ -136,10 +169,19 @@
     /* Card Footer */
     .id-card-footer {
         text-align: center;
-        font-size: 10px;
-        padding: 6px;
+        font-size: 9px;
+        line-height: 1.2;
+        padding: 6px 8px; /* slightly tighter to avoid clipping */
         background-color: rgba(0,0,0,0.1);
         border-top: 1px solid rgba(255,255,255,0.2);
+        box-sizing: border-box;
+        white-space: normal;
+        word-break: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* allow up to 3 lines for long schools */
+        -webkit-box-orient: vertical;
+        overflow: hidden; /* cap to two lines */
+        flex-shrink: 0; /* never collapse footer */
     }
     
     /* CR80 indicator */
@@ -200,15 +242,15 @@
                                 </div>
                             {% endif %}
                             
-                            <!-- Card Header with School Name -->
+                            <!-- Card Header with School Name (top) and Header Text (bottom) -->
                             <div class="id-card-header">
-                                <div>
+                                <div class="header-top">
                                     {% if school_settings.logo %}
-                                        <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }}" style="height: 18px; margin-right: 5px;">
+                                        <img src="{{ school_settings.logo.url }}" alt="{{ school_settings.school_name }}" style="height: 16px;">
                                     {% endif %}
-                                    {{ school_settings.school_name|default:"School Name" }}
+                                    <div class="school-name">{{ school_settings.school_name|default:"School Name" }}</div>
                                 </div>
-                                <div>{{ id_card.template.header_text }}</div>
+                                <div class="header-bottom">{{ id_card.template.header_text }}</div>
                             </div>
                             
                             <!-- Card Body - Landscape layout -->
