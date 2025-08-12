@@ -19,8 +19,8 @@
         border-radius: 10px;
         box-shadow: 0 0 20px rgba(0,0,0,0.1);
         overflow: hidden;
-        background-color: {{ id_card.template.background_color }};
-        color: {{ id_card.template.text_color }};
+        background-color: var(--id-bg-color, #ffffff);
+        color: var(--id-text-color, #000000);
         position: relative;
         display: flex;
         flex-direction: column;
@@ -29,8 +29,8 @@
     
     /* Card Header */
     .id-card-header {
-        background-color: {{ id_card.template.header_color|default:'rgba(0,0,0,0.15)' }};
-        color: {{ id_card.template.text_color }};
+        background-color: var(--id-header-color, rgba(0,0,0,0.15));
+        color: var(--id-text-color, #000000);
         padding: 8px 10px;
         display: flex;
         flex-direction: column;
@@ -63,6 +63,7 @@
         line-height: 1.1;
         display: -webkit-box;
         -webkit-line-clamp: 2; /* allow up to 2 lines for long texts */
+        line-clamp: 2; /* standard property for compatibility */
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -72,11 +73,9 @@
         flex: 1;
         display: flex;
         padding: 6px; /* tighter to leave room for footer */
-        {% if id_card.template.background_image %}
-        background-image: url("{{ id_card.template.background_image.url }}");
+        background-image: var(--id-bg-image, none);
         background-size: cover;
         background-position: center;
-        {% endif %}
         box-sizing: border-box;
         min-height: 0; /* allow flexbox to size without overflow */
     }
@@ -179,6 +178,7 @@
         word-break: break-word;
         display: -webkit-box;
         -webkit-line-clamp: 3; /* allow up to 3 lines for long schools */
+        line-clamp: 3; /* standard property for compatibility */
         -webkit-box-orient: vertical;
         overflow: hidden; /* cap to two lines */
         flex-shrink: 0; /* never collapse footer */
@@ -231,7 +231,12 @@
                 <div class="card-body">
                     <div class="id-card-container">
                         <div class="cr80-indicator">CR80 Standard (2.125" × 3.375") - Landscape</div>
-                        <div class="id-card" id="idCardPreview">
+                        <div class="id-card" id="idCardPreview" style="
+                            --id-bg-color: {{ id_card.template.background_color|default:'#ffffff' }};
+                            --id-text-color: {{ id_card.template.text_color|default:'#000000' }};
+                            --id-header-color: {{ id_card.template.header_color|default:'rgba(0,0,0,0.15)' }};
+                            --id-bg-image: {% if id_card.template.background_image %}url('{{ id_card.template.background_image.url }}'){% else %}none{% endif %};
+                        ">
                             {% if not id_card.is_active %}
                                 <div class="status-badge">
                                     <span class="badge bg-danger">INACTIVE</span>
